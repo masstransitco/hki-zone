@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Apple-inspired minimal color system */
+    --background: 255 255 255;
+    --foreground: 28 28 30; /* Apple's primary text */
+    --card: 255 255 255;
+    --card-foreground: 28 28 30;
+    --popover: 255 255 255;
+    --popover-foreground: 28 28 30;
+    --primary: 0 122 255; /* Apple's system blue */
+    --primary-foreground: 255 255 255;
+    --secondary: 246 246 246; /* Apple's secondary background */
+    --secondary-foreground: 28 28 30;
+    --muted: 246 246 246;
+    --muted-foreground: 142 142 147; /* Apple's secondary text */
+    --accent: 246 246 246;
+    --accent-foreground: 28 28 30;
+    --destructive: 255 59 48; /* Apple's red */
+    --destructive-foreground: 255 255 255;
+    --border: 229 229 234; /* Apple's separator */
+    --input: 246 246 246;
+    --ring: 0 122 255;
+    --radius: 0.75rem; /* 12px - Apple's standard radius */
+
+    /* Apple-specific colors */
+    --apple-blue: 0 122 255;
+    --apple-gray-1: 142 142 147;
+    --apple-gray-2: 174 174 178;
+    --apple-gray-3: 199 199 204;
+    --apple-gray-4: 209 209 214;
+    --apple-gray-5: 229 229 234;
+    --apple-gray-6: 242 242 247;
+  }
+
+  .dark {
+    /* Apple's dark mode colors - fixed */
+    --background: 0 0 0;
+    --foreground: 255 255 255;
+    --card: 28 28 30; /* Apple's elevated background */
+    --card-foreground: 255 255 255;
+    --popover: 28 28 30;
+    --popover-foreground: 255 255 255;
+    --primary: 10 132 255; /* Apple's blue in dark mode */
+    --primary-foreground: 255 255 255;
+    --secondary: 28 28 30;
+    --secondary-foreground: 255 255 255;
+    --muted: 28 28 30;
+    --muted-foreground: 142 142 147;
+    --accent: 44 44 46; /* Apple's tertiary background */
+    --accent-foreground: 255 255 255;
+    --destructive: 255 69 58; /* Apple's red in dark mode */
+    --destructive-foreground: 255 255 255;
+    --border: 44 44 46; /* Apple's separator in dark */
+    --input: 28 28 30;
+    --ring: 10 132 255;
+
+    /* Apple-specific dark colors - fixed */
+    --apple-blue: 10 132 255;
+    --apple-gray-1: 142 142 147;
+    --apple-gray-2: 99 99 102;
+    --apple-gray-3: 72 72 74;
+    --apple-gray-4: 58 58 60;
+    --apple-gray-5: 44 44 46;
+    --apple-gray-6: 28 28 30;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom scrollbar - minimal slate styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(142, 142, 147, 0.3);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(142, 142, 147, 0.5);
+  background-clip: content-box;
+}
+
+/* Smooth transitions */
+* {
+  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Logo and wordmark styling */
+.logo-wordmark {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.logo-wordmark-chinese {
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Hide scrollbar for topic chips */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Minimal focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 dark:focus:ring-slate-500 dark:focus:ring-offset-slate-900;
+}
+
+/* Apple-style focus rings */
+.apple-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-background;
+}
+
+/* Apple-style shadows */
+.apple-shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.apple-shadow {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.apple-shadow-lg {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Apple-style backdrop blur */
+.apple-blur {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Typography hierarchy */
+.text-title-1 {
+  @apply text-3xl font-bold tracking-tight;
+}
+
+.text-title-2 {
+  @apply text-2xl font-semibold tracking-tight;
+}
+
+.text-title-3 {
+  @apply text-xl font-semibold;
+}
+
+.text-headline {
+  @apply text-lg font-semibold;
+}
+
+.text-body {
+  @apply text-base;
+}
+
+.text-callout {
+  @apply text-base font-medium;
+}
+
+.text-subhead {
+  @apply text-sm font-medium;
+}
+
+.text-footnote {
+  @apply text-sm;
+}
+
+.text-caption-1 {
+  @apply text-xs;
+}
+
+.text-caption-2 {
+  @apply text-xs font-medium;
+}
