@@ -1,56 +1,88 @@
-import Link from "next/link"
-import Image from "next/image"
+"use client"
+
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Clock, ExternalLink } from "lucide-react"
-import type { Article } from "@/lib/types"
 import { formatDistanceToNow } from "date-fns"
+import Link from "next/link"
+import { useLanguage } from "./language-provider"
+import { analytics } from "@/lib/analytics"
+import type { Article } from "@/lib/types"
 
 interface ArticleCardProps {
   article: Article
 }
 
 export default function ArticleCard({ article }: ArticleCardProps) {
+  const { t } = useLanguage()
+
+  const handleArticleClick = () => {
+    analytics.trackArticleView(article.id, article.source, article.topic)
+  }
+
   return (
-    <article className="bg-white dark:bg-[rgb(28,28,30)] rounded-xl p-4 apple-shadow-sm hover:apple-shadow transition-all duration-200 border border-[rgb(229,229,234)] dark:border-[rgb(44,44,46)] hover:border-[rgb(209,209,214)] dark:hover:border-[rgb(58,58,60)]">
-      <Link href={`/article/${article.id}`} className="block apple-focus rounded-lg">
-        <div className="flex gap-4">
-          <div className="flex-1 min-w-0">
-            <h2 className="text-headline text-[rgb(28,28,30)] dark:text-white line-clamp-2 mb-2 leading-snug">
-              {article.title}
-            </h2>
-
-            <p className="text-footnote text-[rgb(142,142,147)] line-clamp-3 mb-3 leading-relaxed">{article.summary}</p>
-
-            <div className="flex items-center justify-between text-caption-1 text-[rgb(174,174,178)] dark:text-[rgb(99,99,102)]">
-              <div className="flex items-center gap-3">
-                <span className="text-caption-2 text-[rgb(0,122,255)] dark:text-[rgb(10,132,255)] font-medium">
-                  {article.source}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span>{formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>
-                </div>
-              </div>
-
-              <ExternalLink className="w-3 h-3 opacity-50" />
+    <Card className="group hover:shadow-md transition-all duration-200 border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+      <CardContent className="p-4">
+        <div className="flex flex-col gap-3">
+          {/* Header with source and time */}
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <Badge
+              variant="secondary"
+              className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+            >
+              {article.source}
+            </Badge>
+            <div className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              <span>
+                {formatDistanceToNow(new Date(article.publishedAt))} {t("time.ago")}
+              </span>
             </div>
           </div>
 
+          {/* Article image */}
           {article.imageUrl && (
-            <div className="w-20 h-20 flex-shrink-0">
-              <Image
+            <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+              <img
                 src={article.imageUrl || "/placeholder.svg"}
                 alt={article.title}
-                width={80}
-                height={80}
-                className="w-full h-full object-cover rounded-lg border border-[rgb(229,229,234)] dark:border-[rgb(58,58,60)]"
-                onError={(e) => {
-                  e.currentTarget.style.display = "none"
-                }}
+                className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                loading="lazy"
               />
             </div>
           )}
+
+          {/* Title and summary */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+              {article.title}
+            </h3>
+            {article.summary && (
+              <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">{article.summary}</p>
+            )}
+          </div>
+
+          {/* Topic and read more */}
+          <div className="flex items-center justify-between">
+            {article.topic && (
+              <Badge
+                variant="outline"
+                className="text-xs border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-400"
+              >
+                {t(`topics.${article.topic.toLowerCase()}`)}
+              </Badge>
+            )}
+            <Link
+              href={`/article/${article.id}`}
+              onClick={handleArticleClick}
+              className="inline-flex items-center gap-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
+            >
+              {t("article.readMore")}
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
         </div>
-      </Link>
-    </article>
+      </CardContent>
+    </Card>
   )
 }

@@ -4,6 +4,7 @@ import { Languages } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useLanguage } from "./language-provider"
+import { analytics } from "@/lib/analytics"
 
 const languages = [
   { code: "en" as const, name: "English", flag: "🇺🇸" },
@@ -16,6 +17,11 @@ export default function LanguageSelector() {
 
   const currentLanguage = languages.find((lang) => lang.code === language)
 
+  const handleLanguageChange = (newLanguage: typeof language) => {
+    analytics.trackLanguageChange(language, newLanguage)
+    setLanguage(newLanguage)
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -27,7 +33,7 @@ export default function LanguageSelector() {
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
-            onClick={() => setLanguage(lang.code)}
+            onClick={() => handleLanguageChange(lang.code)}
             className={`flex items-center gap-2 ${language === lang.code ? "bg-accent" : ""}`}
           >
             <span className="text-lg">{lang.flag}</span>

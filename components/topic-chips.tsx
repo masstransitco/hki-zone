@@ -1,44 +1,53 @@
 "use client"
 
-import { useState } from "react"
-import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { useLanguage } from "./language-provider"
+import { analytics } from "@/lib/analytics"
 
-const topicKeys = [
-  "topics.all",
-  "topics.technology",
-  "topics.finance",
-  "topics.health",
-  "topics.politics",
-  "topics.science",
-  "topics.sports",
-  "topics.entertainment",
-  "topics.business",
-  "topics.world",
-]
+const topics = [
+  "all",
+  "technology",
+  "finance",
+  "health",
+  "politics",
+  "science",
+  "sports",
+  "entertainment",
+  "business",
+  "world",
+] as const
 
-export default function TopicChips() {
-  const [selectedTopic, setSelectedTopic] = useState("topics.all")
+type Topic = (typeof topics)[number]
+
+interface TopicChipsProps {
+  selectedTopic: string
+  onTopicSelect: (topic: string) => void
+}
+
+export default function TopicChips({ selectedTopic, onTopicSelect }: TopicChipsProps) {
   const { t } = useLanguage()
 
+  const handleTopicClick = (topic: string) => {
+    analytics.trackTopicSelect(topic)
+    onTopicSelect(topic)
+  }
+
   return (
-    <div className="px-4 py-3">
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide">
-        {topicKeys.map((topicKey) => (
-          <button
-            key={topicKey}
-            onClick={() => setSelectedTopic(topicKey)}
-            className={cn(
-              "px-4 py-2 rounded-full text-subhead whitespace-nowrap transition-all apple-focus",
-              selectedTopic === topicKey
-                ? "bg-[rgb(var(--apple-blue))] text-white shadow-sm"
-                : "bg-[rgb(var(--apple-gray-6))] dark:bg-[rgb(var(--apple-gray-5))] text-[rgb(var(--apple-gray-1))] hover:bg-[rgb(var(--apple-gray-5))] dark:hover:bg-[rgb(var(--apple-gray-4))] hover:text-foreground",
-            )}
-          >
-            {t(topicKey)}
-          </button>
-        ))}
-      </div>
+    <div className="flex flex-wrap gap-2 p-4">
+      {topics.map((topic) => (
+        <Badge
+          key={topic}
+          variant={selectedTopic === topic ? "default" : "secondary"}
+          className={`cursor-pointer transition-all duration-200 ${
+            selectedTopic === topic
+              ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
+          }`}
+          onClick={() => handleTopicClick(topic)}
+        >
+          {t(`topics.${topic}`)}
+        </Badge>
+      ))}
     </div>
   )
 }

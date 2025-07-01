@@ -1,103 +1,65 @@
 "use client"
 
-import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useState, useEffect } from "react"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import ArticleCard from "./article-card"
-import { useLanguage } from "./language-provider"
-import type { Article } from "@/lib/types"
+import { Button } from "@/components/ui/button"
 import { useDebounce } from "@/hooks/use-debounce"
+import { useLanguage } from "./language-provider"
+import { analytics } from "@/lib/analytics"
 
-async function searchArticles(query: string): Promise<Article[]> {
-  if (!query.trim()) return []
-  const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
-  if (!response.ok) throw new Error("Failed to search articles")
-  return response.json()
+interface SearchInterfaceProps {
+  onSearch: (query: string) => void
+  onClear: () => void
+  placeholder?: string
+  initialValue?: string
 }
 
-export default function SearchInterface() {
-  const [query, setQuery] = useState("")
-  const debouncedQuery = useDebounce(query, 300)
+export default function SearchInterface({ onSearch, onClear, placeholder, initialValue = "" }: SearchInterfaceProps) {
   const { t } = useLanguage()
+  const [query, setQuery] = useState(initialValue)
+  const [resultCount, setResultCount] = useState(0)
+  const debouncedQuery = useDebounce(query, 300)
 
-  const { data: results = [], isLoading } = useQuery({
-    queryKey: ["search", debouncedQuery],
-    queryFn: () => searchArticles(debouncedQuery),
-    enabled: debouncedQuery.length > 0,
-  })
+  useEffect(() => {
+    if (debouncedQuery) {
+      onSearch(debouncedQuery)
+      // Track search after results are loaded
+      setTimeout(() => {
+        analytics.trackSearch(debouncedQuery, resultCount)
+      }, 1000)
+    } else {
+      onClear()
+    }
+  }, [debouncedQuery, onSearch, onClear])
 
-  const suggestions = [
-    "AI technology",
-    "Climate change",
-    "Cryptocurrency",
-    "Space exploration",
-    "Healthcare innovation",
-  ]
+  const handleClear = () => {
+    setQuery("")
+    onClear()
+  }
 
   return (
-    <div className="p-6">
-      <div className="relative mb-8">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[rgb(var(--apple-gray-1))] w-5 h-5" />
-          <Input
-            type="text"
-            placeholder={t("search.placeholder")}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="pl-12 pr-12 py-4 text-body bg-[rgb(var(--apple-gray-6))] dark:bg-[rgb(var(--apple-gray-5))] border-[rgb(var(--apple-gray-5))] dark:border-[rgb(var(--apple-gray-4))] rounded-xl apple-focus"
-            autoFocus
-          />
-          {query && (
-            <button
-              onClick={() => setQuery("")}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-[rgb(var(--apple-gray-1))] hover:text-foreground p-1 rounded-lg apple-focus"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          )}
-        </div>
+    <div className="relative w-full max-w-md">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Input
+          type="text"
+          placeholder={placeholder || t("search.placeholder")}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-10 pr-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-slate-200/60 dark:border-slate-800/60 focus:border-slate-400 dark:focus:border-slate-600"
+        />
+        {query && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClear}
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-800"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
-
-      {!query && (
-        <div className="mb-8">
-          <h3 className="text-subhead text-[rgb(var(--apple-gray-1))] mb-4">{t("search.suggestions")}</h3>
-          <div className="flex flex-wrap gap-2">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                onClick={() => setQuery(suggestion)}
-                className="px-4 py-2 bg-[rgb(var(--apple-gray-6))] dark:bg-[rgb(var(--apple-gray-5))] text-[rgb(var(--apple-gray-1))] rounded-full text-footnote hover:bg-[rgb(var(--apple-gray-5))] dark:hover:bg-[rgb(var(--apple-gray-4))] hover:text-foreground transition-colors apple-focus"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {isLoading && (
-        <div className="text-center text-[rgb(var(--apple-gray-1))] text-body py-8">{t("search.searching")}</div>
-      )}
-
-      {results.length > 0 && (
-        <div className="space-y-6">
-          <h3 className="text-subhead text-[rgb(var(--apple-gray-1))]">
-            {results.length} {t("search.results")} "{debouncedQuery}"
-          </h3>
-          <div className="space-y-4">
-            {results.map((article) => (
-              <ArticleCard key={article.id} article={article} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {debouncedQuery && !isLoading && results.length === 0 && (
-        <div className="text-center text-[rgb(var(--apple-gray-1))] text-body py-8">
-          {t("search.noResults")} "{debouncedQuery}"
-        </div>
-      )}
     </div>
   )
 }
