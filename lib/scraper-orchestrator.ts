@@ -7,12 +7,14 @@ const { scrapeHKFPWithContent } = require("./scrapers/hkfp")
 const { scrapeSingTaoWithContent } = require("./scrapers/singtao")
 const { scrapeHK01WithContent } = require("./scrapers/hk01")
 const { withContent: scrapeOnccWithContent } = require("./scrapers/oncc")
+const { withContent: scrapeRTHKWithContent } = require("./scrapers/rthk")
 
 const OUTLET_SCRAPERS = {
   hkfp: scrapeHKFPWithContent,
   singtao: scrapeSingTaoWithContent,
   hk01: scrapeHK01WithContent,
   oncc: scrapeOnccWithContent,
+  rthk: scrapeRTHKWithContent,
 }
 
 const OUTLET_NAMES = {
@@ -20,6 +22,7 @@ const OUTLET_NAMES = {
   singtao: "SingTao", 
   hk01: "HK01",
   oncc: "ONCC",
+  rthk: "RTHK",
 }
 
 // Individual scraper function with progress tracking
@@ -331,6 +334,7 @@ export async function runAllScrapers(withProgress = false) {
         SingTao: allArticles.filter((a) => a.source === "SingTao").length,
         HK01: allArticles.filter((a) => a.source === "HK01").length,
         ONCC: allArticles.filter((a) => a.source === "ONCC").length,
+        RTHK: allArticles.filter((a) => a.source === "RTHK").length,
       },
       database: {
         before: initialStats,
@@ -361,6 +365,8 @@ function getCategoryFromSource(source: string): string {
       return "Local"
     case "oncc":
       return "Local"
+    case "rthk":
+      return "News"
     default:
       return "General"
   }
