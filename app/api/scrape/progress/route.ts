@@ -26,6 +26,7 @@ let currentProgress: {
     singtao: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
     hk01: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
     oncc: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
+    rthk: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
   },
   overall: {
     progress: 0,

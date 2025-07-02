@@ -6,6 +6,7 @@ const OUTLET_NAMES = {
   singtao: "SingTao",
   hk01: "HK01",
   oncc: "ONCC",
+  rthk: "RTHK",
 }
 
 export async function POST(
