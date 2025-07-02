@@ -102,6 +102,9 @@ export async function GET(request: NextRequest) {
       imageUrl: article.image_url || "/placeholder.svg?height=200&width=300",
       category: article.category || "General",
       readTime: Math.ceil((article.content?.length || 0) / 200) || 3,
+      isAiEnhanced: article.is_ai_enhanced || false,
+      originalArticleId: article.original_article_id,
+      enhancementMetadata: article.enhancement_metadata
     }))
 
     console.log("Returning real articles from database")
