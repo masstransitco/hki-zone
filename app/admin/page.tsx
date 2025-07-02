@@ -2,7 +2,7 @@
 
 import AdminPanel from "@/components/admin-panel"
 
-export default function AdminPage() {
+export default function AdminDashboard() {
   const handleManualScrape = async () => {
     const response = await fetch("/api/manual-scrape", {
       method: "POST",
@@ -30,7 +30,12 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="flex flex-1 flex-col gap-4">
+      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+        <div className="aspect-video rounded-xl bg-muted/50" />
+        <div className="aspect-video rounded-xl bg-muted/50" />
+        <div className="aspect-video rounded-xl bg-muted/50" />
+      </div>
       <AdminPanel 
         onManualScrape={handleManualScrape}
         onDatabaseSetup={handleDatabaseSetup}
