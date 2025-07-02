@@ -33,15 +33,15 @@ export default function TopicChips({ selectedTopic, onTopicSelect }: TopicChipsP
   }
 
   return (
-    <div className="flex flex-wrap gap-2 p-4">
+    <div className="flex flex-wrap gap-2 p-3 md:p-4">
       {topics.map((topic) => (
         <Badge
           key={topic}
           variant={selectedTopic === topic ? "default" : "secondary"}
           className={`cursor-pointer transition-all duration-200 ${
             selectedTopic === topic
-              ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200"
-              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700"
+              ? "bg-interactive-primary text-text-inverse hover:bg-interactive-hover"
+              : "bg-surface text-text-secondary hover:bg-surface-hover border-border"
           }`}
           onClick={() => handleTopicClick(topic)}
         >

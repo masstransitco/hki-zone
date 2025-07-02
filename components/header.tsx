@@ -15,7 +15,7 @@ export default function Header({ showSearch = true }: HeaderProps) {
   const { t } = useLanguage()
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 apple-blur border-b border-[rgb(var(--apple-gray-5))]">
+    <header className="sticky top-0 z-50 bg-background/90 backdrop-minimal border-b border-border">
       <div className="flex items-center justify-between px-4 py-3">
         <Logo />
 
@@ -23,10 +23,10 @@ export default function Header({ showSearch = true }: HeaderProps) {
           {showSearch && (
             <Link
               href="/search"
-              className="p-2 hover:bg-[rgb(var(--apple-gray-6))] dark:hover:bg-[rgb(var(--apple-gray-5))] rounded-lg transition-colors apple-focus"
+              className="p-2 hover:bg-surface-hover rounded-lg transition-colors focus-ring"
               aria-label={t("nav.search")}
             >
-              <Search className="w-5 h-5 text-[rgb(var(--apple-gray-1))]" />
+              <Search className="w-5 h-5 text-muted" />
             </Link>
           )}
           <LanguageSelector />

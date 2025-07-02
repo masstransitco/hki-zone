@@ -41,20 +41,20 @@ export default function SearchInterface({ onSearch, onClear, placeholder, initia
   return (
     <div className="relative w-full max-w-md">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-text-muted" />
         <Input
           type="text"
           placeholder={placeholder || t("search.placeholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="pl-10 pr-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-slate-200/60 dark:border-slate-800/60 focus:border-slate-400 dark:focus:border-slate-600"
+          className="pl-10 pr-10 bg-card/90 backdrop-blur-sm border-border/60 focus:border-interactive-primary focus-ring"
         />
         {query && (
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClear}
-            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-slate-100 dark:hover:bg-slate-800"
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-surface-hover text-text-muted hover:text-text-primary"
           >
             <X className="h-4 w-4" />
           </Button>

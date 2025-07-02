@@ -32,15 +32,18 @@ export default function NewsFeed() {
   }, [inView, hasNextPage, fetchNextPage])
 
   if (isLoading) return <LoadingSkeleton />
-  if (error) return <div className="p-4 text-center text-red-500">{t("error.failedToLoad")} articles</div>
+  if (error) return <div className="p-4 text-center text-destructive">{t("error.failedToLoad")} articles</div>
 
   const articles = data?.pages.flatMap((page) => page.articles) ?? []
 
   return (
-    <div className="space-y-4 px-4">
-      {articles.map((article) => (
-        <ArticleCard key={article.id} article={article} />
-      ))}
+    <div className="space-y-2 md:space-y-4 px-3 md:px-4">
+      {/* Grid layout on larger screens, single column on mobile */}
+      <div className="space-y-2 md:space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+        {articles.map((article) => (
+          <ArticleCard key={article.id} article={article} />
+        ))}
+      </div>
 
       <div ref={ref} className="h-10">
         {isFetchingNextPage && <LoadingSkeleton />}
