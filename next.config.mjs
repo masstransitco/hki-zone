@@ -14,7 +14,10 @@ const nextConfig = {
       'www.hk01.com',
       'images.unsplash.com',
       'cdn.hk01.com',
-      'static.stheadline.com'
+      'static.stheadline.com',
+      'rthk.hk',
+      'news.rthk.hk',
+      'www.rthk.hk'
     ],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
