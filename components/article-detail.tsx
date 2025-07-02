@@ -1,6 +1,6 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Clock, ExternalLink } from "lucide-react"
@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns"
 import { useLanguage } from "./language-provider"
 import type { Article } from "@/lib/types"
 import LoadingSkeleton from "./loading-skeleton"
+import PublicSources from "./public-sources"
 
 interface ArticleDetailProps {
   articleId: string
@@ -21,14 +22,39 @@ async function fetchArticle(id: string): Promise<Article> {
 
 export default function ArticleDetail({ articleId }: ArticleDetailProps) {
   const { t } = useLanguage()
-  const {
-    data: article,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["article", articleId],
-    queryFn: () => fetchArticle(articleId),
-  })
+  const [article, setArticle] = useState<Article | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+
+  // Fallback to regular fetch if QueryClient is not available
+  useEffect(() => {
+    let mounted = true
+
+    const loadArticle = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const data = await fetchArticle(articleId)
+        if (mounted) {
+          setArticle(data)
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err : new Error("Failed to fetch article"))
+        }
+      } finally {
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadArticle()
+
+    return () => {
+      mounted = false
+    }
+  }, [articleId])
 
   if (isLoading) return <LoadingSkeleton />
   if (error) return <div className="p-6 text-center text-destructive text-body">{t("error.failedToLoad")} article</div>
@@ -55,7 +81,21 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
         <h1 className="text-title-1 text-foreground mb-4 leading-tight">{article.title}</h1>
 
         <div className="flex items-center gap-4 text-footnote text-[rgb(var(--apple-gray-1))] mb-6">
-          <span className="text-subhead text-[rgb(var(--apple-blue))] font-medium">{article.source}</span>
+          {article.isAiEnhanced && article.enhancementMetadata?.sources?.length ? (
+            <PublicSources 
+              sources={article.enhancementMetadata.sources}
+              trigger={
+                <span className="text-subhead text-[rgb(var(--apple-blue))] font-medium hover:underline cursor-pointer">
+                  {article.enhancementMetadata.sources.length} sources
+                </span>
+              }
+            />
+          ) : (
+            <span className="text-subhead text-[rgb(var(--apple-blue))] font-medium">
+              {article.source.replace(' (AI Enhanced)', '')}
+              {article.isAiEnhanced && ' + AI Enhanced'}
+            </span>
+          )}
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
             <span>{formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>
@@ -73,6 +113,46 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
           <div className="space-y-4">
             <h3 className="text-title-3 text-foreground">{t("article.fullArticle")}</h3>
             <div className="text-body text-foreground leading-relaxed whitespace-pre-wrap">{article.content}</div>
+          </div>
+        )}
+
+        {/* Sources section for AI enhanced articles */}
+        {article.isAiEnhanced && article.enhancementMetadata?.sources && article.enhancementMetadata.sources.length > 0 && (
+          <div className="space-y-4 mt-8 pt-6 border-t border-[rgb(var(--apple-gray-5))]">
+            <h3 className="text-title-3 text-foreground">Sources</h3>
+            <div className="space-y-3">
+              {article.enhancementMetadata.sources.map((source, index) => (
+                <div key={index} className="flex items-start gap-3 p-3 bg-[rgb(var(--apple-gray-6))] rounded-lg">
+                  <span className="flex-shrink-0 w-6 h-6 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center text-xs font-semibold text-blue-700 dark:text-blue-300">
+                    {index + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    {source.url ? (
+                      <a 
+                        href={source.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-body font-medium text-[rgb(var(--apple-blue))] hover:underline line-clamp-2"
+                      >
+                        {source.title}
+                      </a>
+                    ) : (
+                      <h4 className="text-body font-medium text-foreground line-clamp-2">
+                        {source.title}
+                      </h4>
+                    )}
+                    <p className="text-caption text-[rgb(var(--apple-gray-1))] mt-1">
+                      {source.domain}
+                    </p>
+                    {source.snippet && (
+                      <blockquote className="text-caption text-[rgb(var(--apple-gray-1))] mt-2 italic line-clamp-2">
+                        "{source.snippet}"
+                      </blockquote>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

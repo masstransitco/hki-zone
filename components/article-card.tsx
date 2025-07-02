@@ -7,6 +7,7 @@ import { formatDistanceToNow } from "date-fns"
 import Link from "next/link"
 import { useLanguage } from "./language-provider"
 import { analytics } from "@/lib/analytics"
+import { InlineSourcesBadge } from "./public-sources"
 import type { Article } from "@/lib/types"
 
 interface ArticleCardProps {
@@ -41,12 +42,19 @@ export default function ArticleCard({ article }: ArticleCardProps) {
           <div className="flex-1 min-w-0 space-y-2">
             {/* Header with source and time */}
             <div className="flex items-center justify-between text-xs text-muted">
-              <Badge
-                variant="secondary"
-                className="bg-surface text-text-secondary border-border text-xs px-2 py-0.5"
-              >
-                {article.source}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {article.isAiEnhanced && article.enhancementMetadata?.sources?.length ? (
+                  <InlineSourcesBadge sources={article.enhancementMetadata.sources} />
+                ) : (
+                  <Badge
+                    variant="secondary"
+                    className="bg-surface text-text-secondary border-border text-xs px-2 py-0.5"
+                  >
+                    {article.source.replace(' (AI Enhanced)', '')}
+                    {article.isAiEnhanced && ' + AI'}
+                  </Badge>
+                )}
+              </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <Clock className="h-3 w-3" />
                 <span className="truncate">
@@ -67,16 +75,18 @@ export default function ArticleCard({ article }: ArticleCardProps) {
               </p>
             )}
 
-            {/* Footer with topic and read more */}
+            {/* Footer with topic, enhancement info, and read more */}
             <div className="flex items-center justify-between gap-2">
-              {article.topic && (
-                <Badge
-                  variant="outline"
-                  className="text-xs border-border text-text-muted px-2 py-0.5 flex-shrink-0"
-                >
-                  {t(`topics.${article.topic.toLowerCase()}`)}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {article.category && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs border-border text-text-muted px-2 py-0.5 flex-shrink-0"
+                  >
+                    {article.category}
+                  </Badge>
+                )}
+              </div>
               <Link
                 href={`/article/${article.id}`}
                 onClick={handleArticleClick}

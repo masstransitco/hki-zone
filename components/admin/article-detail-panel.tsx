@@ -1,11 +1,15 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { toast } from "sonner"
+import SourceCitations from "./source-citations"
+import ImageGallery from "./image-gallery"
 import { 
   ExternalLink, 
   Calendar, 
@@ -16,7 +20,9 @@ import {
   Brain,
   Copy,
   Trash2,
-  RefreshCw
+  RefreshCw,
+  Sparkles,
+  Loader2
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { Article } from "@/lib/types"
@@ -26,6 +32,9 @@ interface ArticleDetailPanelProps {
 }
 
 export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps) {
+  const [isEnhancing, setIsEnhancing] = useState(false)
+  const [enhancementStatus, setEnhancementStatus] = useState<string>('')
+
   if (!article) {
     return (
       <Card className="h-fit">
@@ -52,19 +61,102 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
     window.open(article.url, '_blank')
   }
 
+  const handleCloneWithAI = async () => {
+    if (!article) return
+    
+    setIsEnhancing(true)
+    setEnhancementStatus('Initializing AI enhancement...')
+    
+    try {
+      // Check API configuration first
+      setEnhancementStatus('Checking Perplexity API configuration...')
+      const configResponse = await fetch('/api/admin/articles/clone-with-ai')
+      const configData = await configResponse.json()
+      
+      if (!configData.configured) {
+        toast.error('Perplexity API not configured', {
+          description: 'Please add PERPLEXITY_API_KEY to environment variables'
+        })
+        return
+      }
+
+      // Perform enhancement
+      setEnhancementStatus('Searching for additional context...')
+      const response = await fetch('/api/admin/articles/clone-with-ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articleId: article.id,
+          options: {
+            searchDepth: 'medium',
+            recencyFilter: 'month',
+            maxTokens: 2000
+          }
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Enhancement failed')
+      }
+
+      setEnhancementStatus('Enhancement completed successfully!')
+      
+      toast.success('Article enhanced with AI!', {
+        description: `Created enhanced version with ${data.enhancementStats.sources} sources and ${data.enhancementStats.searchQueries} research queries`
+      })
+
+      // Optionally refresh the page or update parent component
+      setTimeout(() => {
+        window.location.reload()
+      }, 2000)
+
+    } catch (error) {
+      console.error('Enhancement error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      
+      toast.error('Enhancement failed', {
+        description: errorMessage
+      })
+      
+      setEnhancementStatus('Enhancement failed')
+    } finally {
+      setTimeout(() => {
+        setIsEnhancing(false)
+        setEnhancementStatus('')
+      }, 2000)
+    }
+  }
+
   return (
     <Card className="lg:sticky lg:top-4">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg leading-tight line-clamp-3">
-              {article.title}
-            </CardTitle>
+            <div className="flex items-start gap-2">
+              <CardTitle className="text-lg leading-tight line-clamp-3 flex-1">
+                {article.title}
+              </CardTitle>
+              {article.isAiEnhanced && (
+                <Sparkles className="h-5 w-5 text-purple-600 flex-shrink-0 mt-1" />
+              )}
+            </div>
             <CardDescription className="mt-2">
-              Article details and content review
+              {article.isAiEnhanced ? 'AI-Enhanced Article Details' : 'Article details and content review'}
             </CardDescription>
           </div>
-          <Badge variant="secondary">{article.source}</Badge>
+          <div className="flex flex-col gap-2">
+            <Badge variant="secondary">{article.source}</Badge>
+            {article.isAiEnhanced && (
+              <Badge variant="outline" className="text-xs bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+                <Sparkles className="h-3 w-3 mr-1" />
+                Enhanced
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
 
@@ -202,7 +294,82 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
               <span className="hidden sm:inline">Delete</span>
             </Button>
           </div>
+          
+          {/* AI Enhancement Section */}
+          {!article.isAiEnhanced && (
+            <>
+              <Separator className="my-2" />
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleCloneWithAI}
+                disabled={isEnhancing}
+                className="w-full text-xs bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+              >
+                {isEnhancing ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 mr-2" />
+                )}
+                <span>{isEnhancing ? 'Enhancing...' : 'CLONE WITH AI'}</span>
+              </Button>
+              
+              {enhancementStatus && (
+                <p className="text-xs text-muted-foreground text-center mt-1">
+                  {enhancementStatus}
+                </p>
+              )}
+            </>
+          )}
+          
+          {/* Enhanced Article Indicator */}
+          {article.isAiEnhanced && (
+            <>
+              <Separator className="my-2" />
+              <div className="flex items-center justify-center gap-2 p-2 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 rounded-lg">
+                <Sparkles className="h-4 w-4 text-purple-600" />
+                <span className="text-xs text-purple-700 dark:text-purple-300 font-medium">
+                  AI Enhanced Article
+                </span>
+              </div>
+              
+              {article.enhancementMetadata && (
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div>Sources: {article.enhancementMetadata.sources.length}</div>
+                  <div>Research queries: {article.enhancementMetadata.searchQueries.length}</div>
+                  {article.enhancementMetadata.extractedImages && (
+                    <div>Images: {article.enhancementMetadata.extractedImages.length}</div>
+                  )}
+                  <div>Enhanced: {new Date(article.enhancementMetadata.enhancedAt).toLocaleDateString()}</div>
+                  {article.enhancementMetadata.enhancementCost && (
+                    <div>Est. cost: {article.enhancementMetadata.enhancementCost}</div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
         </div>
+        
+        {/* Enhanced Article Sources and Images */}
+        {article.isAiEnhanced && article.enhancementMetadata && (
+          <>
+            <Separator className="my-4" />
+            
+            {/* Source Citations */}
+            {article.enhancementMetadata.sources && article.enhancementMetadata.sources.length > 0 && (
+              <div className="mb-4">
+                <SourceCitations sources={article.enhancementMetadata.sources} />
+              </div>
+            )}
+            
+            {/* Image Gallery */}
+            {article.enhancementMetadata.extractedImages && article.enhancementMetadata.extractedImages.length > 0 && (
+              <div className="mb-4">
+                <ImageGallery images={article.enhancementMetadata.extractedImages} />
+              </div>
+            )}
+          </>
+        )}
       </CardContent>
     </Card>
   )

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Clock, ExternalLink, Eye, Image as ImageIcon } from "lucide-react"
+import { Clock, ExternalLink, Eye, Image as ImageIcon, Sparkles } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { Article } from "@/lib/types"
 
@@ -121,17 +121,39 @@ function ArticleReviewCard({ article, isSelected, onClick }: ArticleReviewCardPr
           <div className={`flex h-full w-full items-center justify-center ${hasImage ? 'hidden' : ''}`}>
             <ImageIcon className="h-8 w-8 text-muted-foreground" />
           </div>
+          
+          {/* AI Enhanced Indicator */}
+          {article.isAiEnhanced && (
+            <div className="absolute top-1 right-1">
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-full p-1">
+                <Sparkles className="h-3 w-3 text-white" />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Article Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-medium line-clamp-2 text-sm leading-tight">
-              {article.title}
-            </h3>
-            <Badge variant="secondary" className="flex-shrink-0 text-xs">
-              {article.source}
-            </Badge>
+            <div className="flex items-start gap-1 flex-1">
+              <h3 className="font-medium line-clamp-2 text-sm leading-tight flex-1">
+                {article.title}
+              </h3>
+              {article.isAiEnhanced && (
+                <Sparkles className="h-4 w-4 text-purple-600 flex-shrink-0 mt-0.5" />
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <Badge variant="secondary" className="flex-shrink-0 text-xs">
+                {article.source}
+              </Badge>
+              {article.isAiEnhanced && (
+                <Badge variant="outline" className="text-xs bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+                  <Sparkles className="h-2.5 w-2.5 mr-1" />
+                  AI
+                </Badge>
+              )}
+            </div>
           </div>
           
           <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
@@ -160,9 +182,12 @@ function ArticleReviewCard({ article, isSelected, onClick }: ArticleReviewCardPr
       
       {/* Quality Indicators */}
       <div className="mt-3 flex gap-2">
-        <div className={`h-1 w-1/3 rounded ${article.content && article.content.length > 200 ? 'bg-green-500' : 'bg-yellow-500'}`} />
-        <div className={`h-1 w-1/3 rounded ${hasImage ? 'bg-green-500' : 'bg-red-500'}`} />
-        <div className={`h-1 w-1/3 rounded ${article.summary && article.summary.length > 50 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+        <div className={`h-1 rounded ${article.isAiEnhanced ? 'w-1/4' : 'w-1/3'} ${article.content && article.content.length > 200 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+        <div className={`h-1 rounded ${article.isAiEnhanced ? 'w-1/4' : 'w-1/3'} ${hasImage ? 'bg-green-500' : 'bg-red-500'}`} />
+        <div className={`h-1 rounded ${article.isAiEnhanced ? 'w-1/4' : 'w-1/3'} ${article.summary && article.summary.length > 50 ? 'bg-green-500' : 'bg-yellow-500'}`} />
+        {article.isAiEnhanced && (
+          <div className="h-1 w-1/4 rounded bg-gradient-to-r from-purple-500 to-blue-500" />
+        )}
       </div>
     </div>
   )
