@@ -1,14 +1,156 @@
 import { summarizeArticles } from "./ai-summarizer"
 import { saveArticle, getArticleStats } from "./supabase"
+import { updateProgress, startScraping } from "../app/api/scrape/progress/route"
 
 // Import the enhanced scrapers
 const { scrapeHKFPWithContent } = require("./scrapers/hkfp")
 const { scrapeSingTaoWithContent } = require("./scrapers/singtao")
 const { scrapeHK01WithContent } = require("./scrapers/hk01")
+const { withContent: scrapeOnccWithContent } = require("./scrapers/oncc")
 
-export async function runAllScrapers() {
+const OUTLET_SCRAPERS = {
+  hkfp: scrapeHKFPWithContent,
+  singtao: scrapeSingTaoWithContent,
+  hk01: scrapeHK01WithContent,
+  oncc: scrapeOnccWithContent,
+}
+
+const OUTLET_NAMES = {
+  hkfp: "HKFP",
+  singtao: "SingTao", 
+  hk01: "HK01",
+  oncc: "ONCC",
+}
+
+// Individual scraper function with progress tracking
+export async function runSingleScraper(outletKey: string, withProgress = false) {
+  const scraper = OUTLET_SCRAPERS[outletKey]
+  const outletName = OUTLET_NAMES[outletKey]
+  
+  if (!scraper) {
+    throw new Error(`Unknown outlet: ${outletKey}`)
+  }
+
+  if (withProgress) {
+    updateProgress(outletKey, {
+      status: 'running',
+      progress: 10,
+      message: `Starting ${outletName} scraper...`,
+      startTime: Date.now()
+    })
+  }
+
+  try {
+    console.log(`🚀 Starting ${outletName} scraper...`)
+    
+    if (withProgress) {
+      updateProgress(outletKey, {
+        progress: 30,
+        message: `Fetching ${outletName} articles...`
+      })
+    }
+
+    const articles = await scraper()
+    
+    if (!articles || articles.length === 0) {
+      console.log(`⚠️ ${outletName}: No articles found`)
+      if (withProgress) {
+        updateProgress(outletKey, {
+          status: 'completed',
+          progress: 100,
+          message: 'No articles found',
+          endTime: Date.now()
+        })
+      }
+      return { outlet: outletName, articlesFound: 0, articlesSaved: 0 }
+    }
+
+    console.log(`📰 ${outletName}: Found ${articles.length} articles`)
+    
+    if (withProgress) {
+      updateProgress(outletKey, {
+        progress: 60,
+        articlesFound: articles.length,
+        message: `Processing ${articles.length} articles...`
+      })
+    }
+
+    // Process articles that need AI summarization
+    const articlesNeedingSummary = articles.filter(
+      article => !article.content || article.content.length < 100
+    )
+
+    if (articlesNeedingSummary.length > 0) {
+      console.log(`🤖 ${outletName}: Summarizing ${articlesNeedingSummary.length} articles...`)
+      if (withProgress) {
+        updateProgress(outletKey, {
+          progress: 70,
+          message: `AI summarizing ${articlesNeedingSummary.length} articles...`
+        })
+      }
+      await summarizeArticles(articlesNeedingSummary)
+    }
+
+    // Save articles to database
+    if (withProgress) {
+      updateProgress(outletKey, {
+        progress: 80,
+        message: 'Saving articles to database...'
+      })
+    }
+
+    let savedCount = 0
+    for (const article of articles) {
+      try {
+        const saved = await saveArticle(article)
+        if (saved) savedCount++
+      } catch (error) {
+        console.error(`💥 Failed to save article: ${article.title}`, error)
+      }
+    }
+
+    console.log(`✅ ${outletName} completed: ${savedCount}/${articles.length} articles saved`)
+    
+    if (withProgress) {
+      updateProgress(outletKey, {
+        status: 'completed',
+        progress: 100,
+        message: `Completed: ${savedCount}/${articles.length} saved`,
+        endTime: Date.now()
+      })
+    }
+
+    return {
+      outlet: outletName,
+      articlesFound: articles.length,
+      articlesSaved: savedCount,
+      articles: articles
+    }
+
+  } catch (error) {
+    console.error(`💥 ${outletName} scraping failed:`, error)
+    
+    if (withProgress) {
+      updateProgress(outletKey, {
+        status: 'error',
+        progress: 0,
+        message: `Error: ${error.message}`,
+        error: error.message,
+        endTime: Date.now()
+      })
+    }
+    
+    throw error
+  }
+}
+
+export async function runAllScrapers(withProgress = false) {
   console.log("🚀 Starting enhanced news scraping process...")
   console.log("📅 Timestamp:", new Date().toISOString())
+
+  if (withProgress) {
+    startScraping()
+  }
 
   // Get current database stats
   const initialStats = await getArticleStats()
@@ -27,40 +169,36 @@ export async function runAllScrapers() {
   try {
     console.log("🔄 Using enhanced scrapers with content extraction...")
 
-    const [hkfpResult, singtaoResult, hk01Result] = await Promise.allSettled([
-      scrapeHKFPWithContent(),
-      scrapeSingTaoWithContent(),
-      scrapeHK01WithContent(),
-    ])
+    // Run scrapers with progress tracking if enabled
+    const outletKeys = Object.keys(OUTLET_SCRAPERS)
+    const results = await Promise.allSettled(
+      outletKeys.map(key => runSingleScraper(key, withProgress))
+    )
 
     let hasRealData = false
+    let totalArticlesFound = 0
+    let totalArticlesSaved = 0
 
-    // Process HKFP results
-    if (hkfpResult.status === "fulfilled" && hkfpResult.value.length > 0) {
-      console.log(`✅ HKFP: Got ${hkfpResult.value.length} articles with content`)
-      allArticles.push(...hkfpResult.value)
-      hasRealData = true
-    } else {
-      console.log(`❌ HKFP: ${hkfpResult.status === "rejected" ? hkfpResult.reason : "No articles found"}`)
-    }
-
-    // Process SingTao results
-    if (singtaoResult.status === "fulfilled" && singtaoResult.value.length > 0) {
-      console.log(`✅ SingTao: Got ${singtaoResult.value.length} articles with content`)
-      allArticles.push(...singtaoResult.value)
-      hasRealData = true
-    } else {
-      console.log(`❌ SingTao: ${singtaoResult.status === "rejected" ? singtaoResult.reason : "No articles found"}`)
-    }
-
-    // Process HK01 results
-    if (hk01Result.status === "fulfilled" && hk01Result.value.length > 0) {
-      console.log(`✅ HK01: Got ${hk01Result.value.length} articles with content`)
-      allArticles.push(...hk01Result.value)
-      hasRealData = true
-    } else {
-      console.log(`❌ HK01: ${hk01Result.status === "rejected" ? hk01Result.reason : "No articles found"}`)
-    }
+    // Process results
+    results.forEach((result, index) => {
+      const outletKey = outletKeys[index]
+      const outletName = OUTLET_NAMES[outletKey]
+      
+      if (result.status === "fulfilled") {
+        const { articlesFound, articlesSaved, articles } = result.value
+        console.log(`✅ ${outletName}: Got ${articlesFound} articles, saved ${articlesSaved}`)
+        
+        if (articles && articles.length > 0) {
+          allArticles.push(...articles)
+          hasRealData = true
+        }
+        
+        totalArticlesFound += articlesFound
+        totalArticlesSaved += articlesSaved
+      } else {
+        console.log(`❌ ${outletName}: ${result.reason}`)
+      }
+    })
 
     if (!hasRealData) {
       // Fallback to enhanced mock data
@@ -192,6 +330,7 @@ export async function runAllScrapers() {
         HKFP: allArticles.filter((a) => a.source === "HKFP").length,
         SingTao: allArticles.filter((a) => a.source === "SingTao").length,
         HK01: allArticles.filter((a) => a.source === "HK01").length,
+        ONCC: allArticles.filter((a) => a.source === "ONCC").length,
       },
       database: {
         before: initialStats,
@@ -219,6 +358,8 @@ function getCategoryFromSource(source: string): string {
     case "singtao":
       return "General"
     case "hk01":
+      return "Local"
+    case "oncc":
       return "Local"
     default:
       return "General"

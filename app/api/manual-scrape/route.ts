@@ -6,8 +6,8 @@ export async function POST() {
   try {
     console.log("🚀 Manual scrape triggered:", new Date().toISOString())
 
-    // Call the scraper orchestrator directly (not the cron endpoint)
-    const result = await runAllScrapers()
+    // Call the scraper orchestrator with progress tracking
+    const result = await runAllScrapers(true)
 
     console.log("📊 Manual scrape completed:", result)
 

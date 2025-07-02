@@ -4,68 +4,86 @@
 
 @layer base {
   :root {
-    /* Apple-inspired minimal color system */
-    --background: 255 255 255;
-    --foreground: 28 28 30; /* Apple's primary text */
-    --card: 255 255 255;
-    --card-foreground: 28 28 30;
+    /* Modern minimal news-focused color system */
+    --background: 255 255 255; /* Pure white */
+    --surface: 248 250 252; /* Cool gray-50 for elevated surfaces */
+    --surface-secondary: 241 245 249; /* Cool gray-100 for secondary surfaces */
+    --foreground: 28 25 23; /* Warm gray-900 for primary text */
+    --foreground-secondary: 87 83 78; /* Warm gray-600 for secondary text */
+    --foreground-muted: 168 162 158; /* Warm gray-400 for muted text */
+    
+    /* Semantic UI colors */
+    --card: 248 250 252; /* Surface color for cards */
+    --card-foreground: 28 25 23;
     --popover: 255 255 255;
-    --popover-foreground: 28 28 30;
-    --primary: 0 122 255; /* Apple's system blue */
+    --popover-foreground: 28 25 23;
+    --primary: 59 130 246; /* Refined blue */
     --primary-foreground: 255 255 255;
-    --secondary: 246 246 246; /* Apple's secondary background */
-    --secondary-foreground: 28 28 30;
-    --muted: 246 246 246;
-    --muted-foreground: 142 142 147; /* Apple's secondary text */
-    --accent: 246 246 246;
-    --accent-foreground: 28 28 30;
-    --destructive: 255 59 48; /* Apple's red */
+    --secondary: 248 250 252;
+    --secondary-foreground: 28 25 23;
+    --muted: 241 245 249;
+    --muted-foreground: 120 113 108; /* Warm gray-500 */
+    --accent: 59 130 246;
+    --accent-foreground: 255 255 255;
+    --destructive: 239 68 68; /* Red-500 */
     --destructive-foreground: 255 255 255;
-    --border: 229 229 234; /* Apple's separator */
-    --input: 246 246 246;
-    --ring: 0 122 255;
-    --radius: 0.75rem; /* 12px - Apple's standard radius */
+    --border: 226 232 240; /* Cool gray-200 */
+    --input: 248 250 252;
+    --ring: 59 130 246;
+    --radius: 0.5rem; /* 8px for modern minimal look */
 
-    /* Apple-specific colors */
-    --apple-blue: 0 122 255;
-    --apple-gray-1: 142 142 147;
-    --apple-gray-2: 174 174 178;
-    --apple-gray-3: 199 199 204;
-    --apple-gray-4: 209 209 214;
-    --apple-gray-5: 229 229 234;
-    --apple-gray-6: 242 242 247;
+    /* News-specific semantic colors */
+    --text-primary: 28 25 23;
+    --text-secondary: 87 83 78;
+    --text-muted: 168 162 158;
+    --text-inverse: 255 255 255;
+    --surface-elevated: 248 250 252;
+    --surface-hover: 241 245 249;
+    --surface-pressed: 226 232 240;
+    --interactive-primary: 59 130 246;
+    --interactive-hover: 37 99 235;
+    --interactive-pressed: 29 78 216;
   }
 
   .dark {
-    /* Apple's dark mode colors - fixed */
-    --background: 0 0 0;
-    --foreground: 255 255 255;
-    --card: 28 28 30; /* Apple's elevated background */
+    /* Dark mode minimal color system */
+    --background: 0 0 0; /* True black */
+    --surface: 28 25 23; /* Warm gray-900 for elevated surfaces */
+    --surface-secondary: 41 37 36; /* Warm gray-800 for secondary surfaces */
+    --foreground: 255 255 255; /* Pure white for primary text */
+    --foreground-secondary: 214 211 209; /* Warm gray-300 for secondary text */
+    --foreground-muted: 120 113 108; /* Warm gray-500 for muted text */
+    
+    /* Semantic UI colors - dark */
+    --card: 28 25 23;
     --card-foreground: 255 255 255;
-    --popover: 28 28 30;
+    --popover: 28 25 23;
     --popover-foreground: 255 255 255;
-    --primary: 10 132 255; /* Apple's blue in dark mode */
-    --primary-foreground: 255 255 255;
-    --secondary: 28 28 30;
+    --primary: 96 165 250; /* Lighter blue for dark mode */
+    --primary-foreground: 0 0 0;
+    --secondary: 41 37 36;
     --secondary-foreground: 255 255 255;
-    --muted: 28 28 30;
-    --muted-foreground: 142 142 147;
-    --accent: 44 44 46; /* Apple's tertiary background */
-    --accent-foreground: 255 255 255;
-    --destructive: 255 69 58; /* Apple's red in dark mode */
-    --destructive-foreground: 255 255 255;
-    --border: 44 44 46; /* Apple's separator in dark */
-    --input: 28 28 30;
-    --ring: 10 132 255;
+    --muted: 41 37 36;
+    --muted-foreground: 120 113 108;
+    --accent: 96 165 250;
+    --accent-foreground: 0 0 0;
+    --destructive: 248 113 113; /* Red-400 */
+    --destructive-foreground: 0 0 0;
+    --border: 41 37 36; /* Warm gray-800 */
+    --input: 28 25 23;
+    --ring: 96 165 250;
 
-    /* Apple-specific dark colors - fixed */
-    --apple-blue: 10 132 255;
-    --apple-gray-1: 142 142 147;
-    --apple-gray-2: 99 99 102;
-    --apple-gray-3: 72 72 74;
-    --apple-gray-4: 58 58 60;
-    --apple-gray-5: 44 44 46;
-    --apple-gray-6: 28 28 30;
+    /* News-specific semantic colors - dark */
+    --text-primary: 255 255 255;
+    --text-secondary: 214 211 209;
+    --text-muted: 120 113 108;
+    --text-inverse: 0 0 0;
+    --surface-elevated: 28 25 23;
+    --surface-hover: 41 37 36;
+    --surface-pressed: 57 53 52;
+    --interactive-primary: 96 165 250;
+    --interactive-hover: 129 140 248;
+    --interactive-pressed: 165 180 252;
   }
 }
 
@@ -82,10 +100,10 @@
   }
 }
 
-/* Custom scrollbar - minimal slate styling */
+/* Custom scrollbar - minimal styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -93,14 +111,14 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(142, 142, 147, 0.3);
-  border-radius: 4px;
-  border: 2px solid transparent;
+  background: rgb(var(--foreground-muted) / 0.3);
+  border-radius: 3px;
+  border: 1px solid transparent;
   background-clip: content-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(142, 142, 147, 0.5);
+  background: rgb(var(--foreground-muted) / 0.5);
   background-clip: content-box;
 }
 
@@ -132,31 +150,26 @@
 
 /* Minimal focus styles */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 dark:focus:ring-slate-500 dark:focus:ring-offset-slate-900;
+  @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
 }
 
-/* Apple-style focus rings */
-.apple-focus {
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-background;
+/* Modern minimal shadows */
+.shadow-minimal {
+  box-shadow: 0 1px 3px rgb(var(--foreground) / 0.05);
 }
 
-/* Apple-style shadows */
-.apple-shadow-sm {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.shadow-elevated {
+  box-shadow: 0 4px 12px rgb(var(--foreground) / 0.08);
 }
 
-.apple-shadow {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+.shadow-high {
+  box-shadow: 0 8px 24px rgb(var(--foreground) / 0.1);
 }
 
-.apple-shadow-lg {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-}
-
-/* Apple-style backdrop blur */
-.apple-blur {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+/* Minimal backdrop blur */
+.backdrop-minimal {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
 /* Typography hierarchy */

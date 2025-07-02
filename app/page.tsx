@@ -12,11 +12,11 @@ export default function HomePage() {
       <Header />
 
       <main className="flex-1 pb-20">
-        <div className="sticky top-16 z-10 bg-background/80 apple-blur border-b border-[rgb(var(--apple-gray-5))]">
+        <div className="sticky top-16 z-10 bg-background/90 backdrop-minimal border-b border-border">
           <TopicChips />
         </div>
 
-        <div className="p-4">
+        <div className="p-3 md:p-4">
           <Suspense fallback={null}>
             <DatabaseStatus />
           </Suspense>

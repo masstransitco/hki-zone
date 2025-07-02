@@ -49,7 +49,7 @@ export async function saveArticle(article: Article) {
           source: article.source,
           author: article.author,
           published_at: article.published_at,
-          image_url: article.image_url,
+          image_url: (article as any).imageUrl || article.image_url,
           category: article.category || "General",
         },
       ])
