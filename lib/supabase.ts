@@ -19,6 +19,15 @@ export interface Article {
   category?: string
   created_at?: string
   updated_at?: string
+  is_ai_enhanced?: boolean
+  original_article_id?: string
+  enhancement_metadata?: {
+    searchQueries: string[]
+    sources: string[]
+    relatedTopics: string[]
+    enhancedAt: string
+    enhancementCost?: string
+  }
 }
 
 export async function saveArticle(article: Article) {
@@ -51,6 +60,9 @@ export async function saveArticle(article: Article) {
           published_at: article.published_at,
           image_url: (article as any).imageUrl || article.image_url,
           category: article.category || "General",
+          is_ai_enhanced: article.is_ai_enhanced || false,
+          original_article_id: article.original_article_id,
+          enhancement_metadata: article.enhancement_metadata,
         },
       ])
       .select()
@@ -100,13 +112,76 @@ export async function getArticleStats() {
   }
 }
 
-export async function getArticles(page = 0, limit = 10) {
+// Balanced query function to ensure proportional representation from all sources
+export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean }) {
   try {
-    const { data, error } = await supabase
+    // If specific source filter is applied, use regular query
+    if (filters?.source) {
+      return getArticlesRegular(page, limit, filters)
+    }
+
+    // Define known sources and their desired proportions
+    const sources = ['HK01', 'on.cc', 'SingTao', 'RTHK', 'HKFP', 'ONCC']
+    const articlesPerSource = Math.max(1, Math.floor(limit / sources.length))
+    const extraArticles = limit % sources.length
+    
+    const allArticles = []
+    
+    // Get articles from each source proportionally
+    for (let i = 0; i < sources.length; i++) {
+      const source = sources[i]
+      const sourceLimit = articlesPerSource + (i < extraArticles ? 1 : 0)
+      
+      let query = supabase
+        .from("articles")
+        .select("*")
+        .in('source', [source, `${source} (AI Enhanced)`])
+        .order("created_at", { ascending: false })
+      
+      // Apply AI enhanced filter if specified
+      if (filters?.isAiEnhanced !== undefined) {
+        query = query.eq('is_ai_enhanced', filters.isAiEnhanced)
+      }
+      
+      const { data, error } = await query.limit(sourceLimit * (page + 1))
+      
+      if (!error && data) {
+        // Skip articles for previous pages and take only what we need for current page
+        const startIndex = sourceLimit * page
+        const sourceArticles = data.slice(startIndex, startIndex + sourceLimit)
+        allArticles.push(...sourceArticles)
+      }
+    }
+    
+    // Sort the mixed articles by creation date (newest first)
+    allArticles.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    
+    return allArticles.slice(0, limit)
+  } catch (error) {
+    console.error("Error fetching balanced articles:", error)
+    // Fallback to regular query
+    return getArticlesRegular(page, limit, filters)
+  }
+}
+
+// Original query function (renamed for clarity)
+export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean }) {
+  try {
+    let query = supabase
       .from("articles")
       .select("*")
       .order("created_at", { ascending: false })
-      .range(page * limit, (page + 1) * limit - 1)
+    
+    // Apply filters if provided
+    if (filters?.source) {
+      query = query.eq('source', filters.source)
+    }
+    
+    if (filters?.isAiEnhanced !== undefined) {
+      query = query.eq('is_ai_enhanced', filters.isAiEnhanced)
+    }
+    
+    const { data, error } = await query.range(page * limit, (page + 1) * limit - 1)
 
     if (error) {
       // If table doesn't exist, return empty array instead of throwing
@@ -121,6 +196,11 @@ export async function getArticles(page = 0, limit = 10) {
     console.error("Error fetching articles:", error)
     return []
   }
+}
+
+// Main export - use balanced query by default
+export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean }) {
+  return getBalancedArticles(page, limit, filters)
 }
 
 export async function searchArticles(query: string) {
@@ -162,6 +242,23 @@ export async function getArticleById(id: string) {
     return data
   } catch (error) {
     console.error("Error fetching article by ID:", error)
+    return null
+  }
+}
+
+// Function to get enhancement statistics
+export async function getEnhancementStats() {
+  try {
+    const { data, error } = await supabase.rpc('get_enhancement_stats')
+    
+    if (error) {
+      console.error('Error fetching enhancement stats:', error)
+      return null
+    }
+    
+    return data?.[0] || null
+  } catch (error) {
+    console.error('Error getting enhancement stats:', error)
     return null
   }
 }
