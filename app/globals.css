@@ -4,86 +4,86 @@
 
 @layer base {
   :root {
-    /* Modern minimal news-focused color system */
-    --background: 255 255 255; /* Pure white */
-    --surface: 248 250 252; /* Cool gray-50 for elevated surfaces */
-    --surface-secondary: 241 245 249; /* Cool gray-100 for secondary surfaces */
-    --foreground: 28 25 23; /* Warm gray-900 for primary text */
-    --foreground-secondary: 87 83 78; /* Warm gray-600 for secondary text */
-    --foreground-muted: 168 162 158; /* Warm gray-400 for muted text */
+    /* Sophisticated white and warm gray color system */
+    --background: 255 255 255; /* Pure white base */
+    --surface: 250 250 249; /* Stone-50: Warmest subtle off-white */
+    --surface-secondary: 245 245 244; /* Stone-100: Soft warm white */
+    --foreground: 41 37 36; /* Stone-700: Rich warm charcoal */
+    --foreground-secondary: 87 83 78; /* Stone-600: Medium warm gray */
+    --foreground-muted: 120 113 108; /* Stone-500: Warm muted gray */
     
-    /* Semantic UI colors */
-    --card: 248 250 252; /* Surface color for cards */
-    --card-foreground: 28 25 23;
-    --popover: 255 255 255;
-    --popover-foreground: 28 25 23;
-    --primary: 59 130 246; /* Refined blue */
+    /* Semantic UI colors - warm white spectrum */
+    --card: 250 250 249; /* Stone-50: Subtle warm card background */
+    --card-foreground: 41 37 36; /* Stone-700 for readability */
+    --popover: 255 255 255; /* Pure white for overlays */
+    --popover-foreground: 41 37 36;
+    --primary: 87 83 78; /* Stone-600: Sophisticated warm primary */
     --primary-foreground: 255 255 255;
-    --secondary: 248 250 252;
-    --secondary-foreground: 28 25 23;
-    --muted: 241 245 249;
-    --muted-foreground: 120 113 108; /* Warm gray-500 */
-    --accent: 59 130 246;
+    --secondary: 245 245 244; /* Stone-100: Elegant warm secondary */
+    --secondary-foreground: 68 64 60; /* Stone-600 for contrast */
+    --muted: 250 250 249; /* Stone-50: Subtle muted background */
+    --muted-foreground: 120 113 108; /* Stone-500: Readable muted text */
+    --accent: 168 162 158; /* Stone-400: Subtle warm accent */
     --accent-foreground: 255 255 255;
-    --destructive: 239 68 68; /* Red-500 */
+    --destructive: 220 38 38; /* Red-600: Refined error color */
     --destructive-foreground: 255 255 255;
-    --border: 226 232 240; /* Cool gray-200 */
-    --input: 248 250 252;
-    --ring: 59 130 246;
+    --border: 231 229 228; /* Stone-200: Warm subtle borders */
+    --input: 250 250 249; /* Stone-50: Warm input backgrounds */
+    --ring: 87 83 78; /* Stone-600: Warm focus rings */
     --radius: 0.5rem; /* 8px for modern minimal look */
 
-    /* News-specific semantic colors */
-    --text-primary: 28 25 23;
-    --text-secondary: 87 83 78;
-    --text-muted: 168 162 158;
-    --text-inverse: 255 255 255;
-    --surface-elevated: 248 250 252;
-    --surface-hover: 241 245 249;
-    --surface-pressed: 226 232 240;
-    --interactive-primary: 59 130 246;
-    --interactive-hover: 37 99 235;
-    --interactive-pressed: 29 78 216;
+    /* Enhanced news-specific semantic colors */
+    --text-primary: 41 37 36; /* Stone-700: Primary content */
+    --text-secondary: 87 83 78; /* Stone-600: Secondary content */
+    --text-muted: 120 113 108; /* Stone-500: Muted content */
+    --text-inverse: 255 255 255; /* Pure white for dark backgrounds */
+    --surface-elevated: 255 255 255; /* Pure white for highest elevation */
+    --surface-hover: 245 245 244; /* Stone-100: Gentle hover state */
+    --surface-pressed: 231 229 228; /* Stone-200: Pressed state */
+    --interactive-primary: 87 83 78; /* Stone-600: Warm interactive */
+    --interactive-hover: 68 64 60; /* Stone-600: Darker on hover */
+    --interactive-pressed: 57 53 52; /* Stone-700: Pressed interactive */
   }
 
   .dark {
-    /* Dark mode minimal color system */
-    --background: 0 0 0; /* True black */
-    --surface: 28 25 23; /* Warm gray-900 for elevated surfaces */
-    --surface-secondary: 41 37 36; /* Warm gray-800 for secondary surfaces */
-    --foreground: 255 255 255; /* Pure white for primary text */
-    --foreground-secondary: 214 211 209; /* Warm gray-300 for secondary text */
-    --foreground-muted: 120 113 108; /* Warm gray-500 for muted text */
+    /* Sophisticated dark mode with warm undertones */
+    --background: 12 10 9; /* Stone-950: Rich warm black */
+    --surface: 28 25 23; /* Stone-900: Primary surface */
+    --surface-secondary: 41 37 36; /* Stone-800: Secondary surface */
+    --foreground: 250 250 249; /* Stone-50: Warm white text */
+    --foreground-secondary: 214 211 209; /* Stone-300: Secondary text */
+    --foreground-muted: 168 162 158; /* Stone-400: Muted text */
     
-    /* Semantic UI colors - dark */
-    --card: 28 25 23;
-    --card-foreground: 255 255 255;
-    --popover: 28 25 23;
-    --popover-foreground: 255 255 255;
-    --primary: 96 165 250; /* Lighter blue for dark mode */
-    --primary-foreground: 0 0 0;
-    --secondary: 41 37 36;
-    --secondary-foreground: 255 255 255;
-    --muted: 41 37 36;
-    --muted-foreground: 120 113 108;
-    --accent: 96 165 250;
-    --accent-foreground: 0 0 0;
-    --destructive: 248 113 113; /* Red-400 */
-    --destructive-foreground: 0 0 0;
-    --border: 41 37 36; /* Warm gray-800 */
-    --input: 28 25 23;
-    --ring: 96 165 250;
+    /* Semantic UI colors - sophisticated dark */
+    --card: 28 25 23; /* Stone-900: Card backgrounds */
+    --card-foreground: 250 250 249; /* Stone-50: Card text */
+    --popover: 41 37 36; /* Stone-800: Elevated popovers */
+    --popover-foreground: 250 250 249;
+    --primary: 168 162 158; /* Stone-400: Visible warm primary */
+    --primary-foreground: 28 25 23; /* Dark contrast */
+    --secondary: 57 53 52; /* Stone-700: Subtle secondary */
+    --secondary-foreground: 231 229 228; /* Stone-200: Light contrast */
+    --muted: 41 37 36; /* Stone-800: Muted backgrounds */
+    --muted-foreground: 168 162 158; /* Stone-400: Muted text */
+    --accent: 214 211 209; /* Stone-300: Soft accent */
+    --accent-foreground: 28 25 23;
+    --destructive: 239 68 68; /* Red-500: Balanced error color */
+    --destructive-foreground: 255 255 255;
+    --border: 57 53 52; /* Stone-700: Subtle warm borders */
+    --input: 28 25 23; /* Stone-900: Input backgrounds */
+    --ring: 168 162 158; /* Stone-400: Warm focus rings */
 
-    /* News-specific semantic colors - dark */
-    --text-primary: 255 255 255;
-    --text-secondary: 214 211 209;
-    --text-muted: 120 113 108;
-    --text-inverse: 0 0 0;
-    --surface-elevated: 28 25 23;
-    --surface-hover: 41 37 36;
-    --surface-pressed: 57 53 52;
-    --interactive-primary: 96 165 250;
-    --interactive-hover: 129 140 248;
-    --interactive-pressed: 165 180 252;
+    /* Enhanced dark mode semantic colors */
+    --text-primary: 250 250 249; /* Stone-50: Primary content */
+    --text-secondary: 214 211 209; /* Stone-300: Secondary content */
+    --text-muted: 168 162 158; /* Stone-400: Muted content */
+    --text-inverse: 28 25 23; /* Dark text for light backgrounds */
+    --surface-elevated: 41 37 36; /* Stone-800: Highest elevation */
+    --surface-hover: 57 53 52; /* Stone-700: Gentle hover */
+    --surface-pressed: 68 64 60; /* Stone-600: Pressed state */
+    --interactive-primary: 168 162 158; /* Stone-400: Warm interactive */
+    --interactive-hover: 214 211 209; /* Stone-300: Lighter on hover */
+    --interactive-pressed: 231 229 228; /* Stone-200: Pressed interactive */
   }
 }
 
@@ -92,11 +92,25 @@
     @apply border-border;
   }
 
+  html {
+    /* Prevent pull-to-refresh and overscroll bounce */
+    overscroll-behavior-y: contain;
+    touch-action: pan-x pan-y;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    
+    /* Additional overscroll prevention */
+    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
+    
+    /* Prevent iOS Safari bounce scrolling */
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
   }
 }
 
