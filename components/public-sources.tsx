@@ -135,7 +135,7 @@ export function InlineSourcesBadge({ sources }: { sources: SourceCitation[] }) {
       trigger={
         <Badge
           variant="secondary"
-          className="bg-surface text-text-secondary border-border text-xs px-2 py-0.5 hover:bg-muted transition-colors cursor-pointer"
+          className="text-xs px-2 py-0.5 cursor-pointer"
         >
           {sources.length} sources
         </Badge>

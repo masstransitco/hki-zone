@@ -7,8 +7,8 @@ import { useTheme } from "next-themes"
 export default function Logo() {
   const { theme } = useTheme()
 
-  // Determine which logo to use based on theme
-  const logoSrc = theme === "dark" ? "/hki-logo-white.png" : "/hki-logo-black.png"
+  // Use SVG logos for better quality and smaller file size
+  const logoSrc = theme === "dark" ? "/hki-logo-white.svg" : "/hki-logo-black.svg"
 
   return (
     <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">

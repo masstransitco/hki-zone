@@ -2,9 +2,9 @@
 
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Clock, ExternalLink } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
-import Link from "next/link"
 import { useLanguage } from "./language-provider"
 import { analytics } from "@/lib/analytics"
 import { InlineSourcesBadge } from "./public-sources"
@@ -12,9 +12,10 @@ import type { Article } from "@/lib/types"
 
 interface ArticleCardProps {
   article: Article
+  onReadMore?: (articleId: string) => void
 }
 
-export default function ArticleCard({ article }: ArticleCardProps) {
+export default function ArticleCard({ article, onReadMore }: ArticleCardProps) {
   const { t } = useLanguage()
 
   const handleArticleClick = () => {
@@ -22,13 +23,19 @@ export default function ArticleCard({ article }: ArticleCardProps) {
   }
 
   return (
-    <Card className="group hover:shadow-elevated transition-all duration-200 border-border/60 bg-card/90 backdrop-blur-sm">
-      <CardContent className="p-3 md:p-4">
-        {/* Mobile: Horizontal layout, Tablet+: Vertical layout */}
-        <div className="flex gap-3 md:flex-col md:gap-3">
+    <Card 
+      className="group hover:shadow-lg hover:shadow-stone-200/30 dark:hover:shadow-neutral-900/40 transition-all duration-200 border-stone-200/60 dark:border-neutral-700/60 bg-stone-50/95 dark:bg-neutral-900/95 backdrop-blur-sm h-full cursor-pointer"
+      onClick={() => {
+        handleArticleClick()
+        onReadMore?.(article.id)
+      }}
+    >
+      <CardContent className="p-6 h-full">
+        {/* Consistent vertical layout for better readability */}
+        <div className="flex flex-col gap-4 h-full">
           {/* Article image */}
           {article.imageUrl && (
-            <div className="relative flex-shrink-0 w-20 h-20 md:w-full md:h-auto md:aspect-video overflow-hidden rounded-lg bg-surface">
+            <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-surface">
               <img
                 src={article.imageUrl || "/placeholder.svg"}
                 alt={article.title}
@@ -39,16 +46,16 @@ export default function ArticleCard({ article }: ArticleCardProps) {
           )}
 
           {/* Content area */}
-          <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex-1 min-w-0 space-y-3">
             {/* Header with source and time */}
-            <div className="flex items-center justify-between text-xs text-muted">
+            <div className="flex items-center justify-between text-xs text-stone-500 dark:text-neutral-400">
               <div className="flex items-center gap-2">
                 {article.isAiEnhanced && article.enhancementMetadata?.sources?.length ? (
                   <InlineSourcesBadge sources={article.enhancementMetadata.sources} />
                 ) : (
                   <Badge
                     variant="secondary"
-                    className="bg-surface text-text-secondary border-border text-xs px-2 py-0.5"
+                    className="text-xs px-2 py-1"
                   >
                     {article.source.replace(' (AI Enhanced)', '')}
                     {article.isAiEnhanced && ' + AI'}
@@ -64,38 +71,17 @@ export default function ArticleCard({ article }: ArticleCardProps) {
             </div>
 
             {/* Title */}
-            <h3 className="font-semibold text-text-primary line-clamp-2 text-sm md:text-base group-hover:text-text-secondary transition-colors">
+            <h3 className="font-semibold text-stone-900 dark:text-neutral-50 line-clamp-3 text-base leading-tight group-hover:text-stone-800 dark:group-hover:text-neutral-100 transition-colors">
               {article.title}
             </h3>
 
-            {/* Summary - hidden on mobile, visible on tablet+ */}
+            {/* Summary - always visible for better content preview */}
             {article.summary && (
-              <p className="hidden md:block text-sm text-text-secondary line-clamp-2">
+              <p className="text-sm text-stone-700 dark:text-neutral-300 line-clamp-2 leading-relaxed">
                 {article.summary}
               </p>
             )}
 
-            {/* Footer with topic, enhancement info, and read more */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                {article.category && (
-                  <Badge
-                    variant="outline"
-                    className="text-xs border-border text-text-muted px-2 py-0.5 flex-shrink-0"
-                  >
-                    {article.category}
-                  </Badge>
-                )}
-              </div>
-              <Link
-                href={`/article/${article.id}`}
-                onClick={handleArticleClick}
-                className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-interactive-primary transition-colors flex-shrink-0 ml-auto"
-              >
-                {t("article.readMore")}
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            </div>
           </div>
         </div>
       </CardContent>
