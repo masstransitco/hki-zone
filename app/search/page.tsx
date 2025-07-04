@@ -10,7 +10,10 @@ export default function SearchPage() {
 
       <main className="flex-1 pb-20">
         <Suspense>
-          <SearchInterface />
+          <SearchInterface 
+            onSearch={(query) => console.log('Search:', query)}
+            onClear={() => console.log('Clear search')}
+          />
         </Suspense>
       </main>
 

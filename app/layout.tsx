@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -10,7 +10,12 @@ import { Suspense } from "react"
 import { WebsiteStructuredData } from "@/components/structured-data"
 import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ 
+  subsets: ["latin"],
+  variable: "--font-inter",
+  fallback: ["system-ui", "arial"],
+  display: "swap"
+})
 
 export const metadata: Metadata = {
   title: "HKI 香港資訊 - Hong Kong Information Hub",
@@ -55,11 +60,6 @@ export const metadata: Metadata = {
     creator: '@hki_zone',
     images: ['/hki-logo-black.png'],
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5,
-  },
   robots: {
     index: true,
     follow: true,
@@ -80,6 +80,12 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
 }
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -87,7 +93,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.variable} font-sans`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <QueryProvider>

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Filter, RefreshCw } from "lucide-react"
 import ArticleReviewGrid from "@/components/admin/article-review-grid"
 import ArticleDetailPanel from "@/components/admin/article-detail-panel"
+import ArticleDetailSheet from "@/components/admin/article-detail-sheet"
 import { useLanguage } from "@/components/language-provider"
 import type { Article } from "@/lib/types"
 
@@ -16,6 +17,7 @@ export default function ArticlesPage() {
   const { t } = useLanguage()
   const [articles, setArticles] = useState<Article[]>([])
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
+  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [sourceFilter, setSourceFilter] = useState("all")
@@ -70,11 +72,16 @@ export default function ArticlesPage() {
   const handleRefresh = () => {
     setPage(0)
     setSelectedArticle(null)
+    setIsSheetOpen(false)
     loadArticles()
   }
 
   const handleArticleSelect = (article: Article) => {
     setSelectedArticle(article)
+  }
+
+  const handleExpandToFullScreen = () => {
+    setIsSheetOpen(true)
   }
 
   const handleLoadMore = () => {
@@ -179,7 +186,10 @@ export default function ArticlesPage() {
         
         {/* Desktop Detail Panel */}
         <div className="hidden lg:block lg:col-span-1">
-          <ArticleDetailPanel article={selectedArticle} />
+          <ArticleDetailPanel 
+            article={selectedArticle} 
+            onExpand={handleExpandToFullScreen}
+          />
         </div>
       </div>
 
@@ -199,6 +209,13 @@ export default function ArticlesPage() {
           </Card>
         </div>
       )}
+
+      {/* Full-Screen Article Detail Sheet */}
+      <ArticleDetailSheet
+        article={selectedArticle}
+        open={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+      />
     </div>
   )
 }

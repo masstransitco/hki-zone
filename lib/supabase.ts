@@ -268,8 +268,15 @@ export async function checkDatabaseSetup() {
   try {
     console.log("Checking database setup...")
 
-    // Try to select from articles table
-    const { data, error } = await supabase.from("articles").select("id").limit(1)
+    // Add timeout to prevent hanging requests
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error('Database check timeout')), 3000)
+    )
+
+    // Try to select from articles table with timeout
+    const dbPromise = supabase.from("articles").select("id").limit(1)
+    
+    const { data, error } = await Promise.race([dbPromise, timeoutPromise])
 
     console.log("Database check result:", { data, error })
 
@@ -284,6 +291,16 @@ export async function checkDatabaseSetup() {
       ) {
         return false
       }
+      // Check for RLS/permission errors (common after enabling Realtime)
+      if (
+        error.code === "42501" ||
+        error.message.includes("permission denied") ||
+        error.message.includes("RLS") ||
+        error.message.includes("policy")
+      ) {
+        console.warn("Database exists but RLS policies may be blocking access")
+        return false
+      }
       // For other errors, assume table exists but there might be permission issues
       return true
     }
@@ -292,6 +309,10 @@ export async function checkDatabaseSetup() {
     return true
   } catch (error) {
     console.error("Database setup check failed:", error)
+    // Handle timeout and other errors
+    if (error.message === 'Database check timeout') {
+      console.warn("Database check timed out - likely RLS policy issue")
+    }
     return false
   }
 }

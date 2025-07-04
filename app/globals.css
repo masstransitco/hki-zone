@@ -186,25 +186,33 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
-/* Typography hierarchy */
+/* Typography hierarchy - Enhanced for readability */
 .text-title-1 {
-  @apply text-3xl font-bold tracking-tight;
+  @apply text-4xl md:text-5xl font-bold tracking-tight;
 }
 
 .text-title-2 {
-  @apply text-2xl font-semibold tracking-tight;
+  @apply text-3xl md:text-4xl font-semibold tracking-tight;
 }
 
 .text-title-3 {
-  @apply text-xl font-semibold;
+  @apply text-2xl md:text-3xl font-semibold;
 }
 
 .text-headline {
-  @apply text-lg font-semibold;
+  @apply text-xl md:text-2xl font-semibold;
 }
 
 .text-body {
-  @apply text-base;
+  @apply text-lg md:text-xl leading-loose;
+}
+
+.text-body-large {
+  @apply text-xl md:text-2xl leading-loose;
+}
+
+.text-body-reading {
+  @apply text-lg md:text-xl leading-loose font-normal;
 }
 
 .text-callout {
@@ -225,4 +233,50 @@
 
 .text-caption-2 {
   @apply text-xs font-medium;
+}
+
+/* Chinese Typography Utilities */
+.font-chinese-tc {
+  font-family: var(--font-noto-sans-tc), "PingFang TC", "Hiragino Sans GB", "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+.font-chinese-sc {
+  font-family: var(--font-noto-sans-sc), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+.font-chinese-serif-tc {
+  font-family: var(--font-noto-serif-tc), "Songti TC", "STSong", serif;
+}
+
+.font-chinese-serif-sc {
+  font-family: var(--font-noto-serif-sc), "Songti SC", "STSong", serif;
+}
+
+.font-chinese {
+  font-family: var(--font-noto-sans-tc), var(--font-noto-sans-sc), "PingFang TC", "PingFang SC", "Hiragino Sans GB", "Microsoft JhengHei", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+/* Chinese Text Optimization */
+.chinese-text {
+  @apply font-chinese;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.chinese-text-tc {
+  @apply font-chinese-tc;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.chinese-text-sc {
+  @apply font-chinese-sc;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

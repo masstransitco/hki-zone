@@ -96,7 +96,11 @@ module.exports = {
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],
-        chinese: ["var(--font-noto-sans-tc)", "system-ui", "sans-serif"],
+        "chinese-tc": ["var(--font-noto-sans-tc)", "PingFang TC", "Hiragino Sans GB", "Microsoft JhengHei", "system-ui", "sans-serif"],
+        "chinese-sc": ["var(--font-noto-sans-sc)", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "system-ui", "sans-serif"],
+        "chinese-serif-tc": ["var(--font-noto-serif-tc)", "Songti TC", "STSong", "serif"],
+        "chinese-serif-sc": ["var(--font-noto-serif-sc)", "Songti SC", "STSong", "serif"],
+        chinese: ["var(--font-noto-sans-tc)", "var(--font-noto-sans-sc)", "PingFang TC", "PingFang SC", "Hiragino Sans GB", "Microsoft JhengHei", "Microsoft YaHei", "system-ui", "sans-serif"],
       },
     },
   },

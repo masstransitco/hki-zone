@@ -6,9 +6,10 @@ import type { Article } from '@/lib/types'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { articleId, options = {} } = body as {
+    const { articleId, options = {}, language = 'en' } = body as {
       articleId: string
       options?: EnhancementOptions
+      language?: 'en' | 'zh-TW' | 'zh-CN'
     }
 
     if (!articleId) {
@@ -59,10 +60,10 @@ export async function POST(request: NextRequest) {
         originalArticle.title,
         originalArticle.content || '',
         originalArticle.summary || originalArticle.ai_summary || '',
-        options
+        { ...options, language }
       )
 
-      // Create enhanced article data
+      // Create enhanced article data (excluding language field if it doesn't exist in database)
       const enhancedArticle = {
         title: enhancementResult.enhancedTitle || `${originalArticle.title} - Enhanced with AI Research`,
         content: enhancementResult.enhancedContent,
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
           enhancementCost: estimatedCost,
           extractedImages: enhancementResult.extractedImages,
           citationsText: enhancementResult.citationsText,
+          language: language, // Store language in metadata for now
           structuredContent: {
             enhancedTitle: enhancementResult.enhancedTitle,
             enhancedSummary: enhancementResult.enhancedSummary,
@@ -92,12 +94,25 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Save enhanced article to database
-      const { data: savedArticle, error: saveError } = await supabase
+      // Try to save enhanced article to database with language field
+      let { data: savedArticle, error: saveError } = await supabase
         .from('articles')
-        .insert([enhancedArticle])
+        .insert([{ ...enhancedArticle, language }])
         .select()
         .single()
+
+      // If language column doesn't exist, try without it
+      if (saveError?.code === '42703' || saveError?.message?.includes('language')) {
+        console.log('Language column not found, saving without language field...')
+        const { data: retryData, error: retryError } = await supabase
+          .from('articles')
+          .insert([enhancedArticle])
+          .select()
+          .single()
+        
+        savedArticle = retryData
+        saveError = retryError
+      }
 
       if (saveError) {
         console.error('Database save error:', saveError)
@@ -106,7 +121,8 @@ export async function POST(request: NextRequest) {
           { 
             error: 'Failed to save enhanced article to database',
             details: saveError.message,
-            code: saveError.code
+            code: saveError.code,
+            suggestion: 'Please run the database migration to add the language field: /api/admin/database/add-language-field'
           },
           { status: 500 }
         )
@@ -125,6 +141,7 @@ export async function POST(request: NextRequest) {
         category: savedArticle.category,
         isAiEnhanced: savedArticle.is_ai_enhanced,
         originalArticleId: savedArticle.original_article_id,
+        language: savedArticle.language || savedArticle.enhancement_metadata?.language || language,
         enhancementMetadata: savedArticle.enhancement_metadata
       }
 

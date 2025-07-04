@@ -9,6 +9,7 @@ import { useLanguage } from "./language-provider"
 import type { Article } from "@/lib/types"
 import ArticleDetailSkeleton from "./article-detail-skeleton"
 import PublicSources from "./public-sources"
+import AIEnhancedContent from "./ai-enhanced-content"
 
 interface ArticleDetailSheetProps {
   articleId: string
@@ -62,7 +63,7 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
   return (
     <article className="px-6 pt-4 pb-8">
       <header className="mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-6 leading-tight">{article.title}</h1>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">{article.title}</h1>
 
         <div className="flex items-center justify-between text-sm text-muted-foreground mb-6">
           <div>
@@ -106,9 +107,7 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
 
       <div className="space-y-8">
         {article.content && (
-          <div className="space-y-4">
-            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{article.content}</div>
-          </div>
+          <AIEnhancedContent content={article.content} isBottomSheet={true} />
         )}
 
         {/* Sources section for AI enhanced articles */}

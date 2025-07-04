@@ -44,6 +44,9 @@ const translations = {
     "article.readOriginal": "Read original article",
     "article.aiSummary": "AI Summary",
     "article.fullArticle": "Full Article",
+    "article.summary": "Summary",
+    "article.keyPoints": "Key Points",
+    "article.whyItMatters": "Why It Matters",
 
     // Search
     "search.placeholder": "Search articles...",
@@ -125,6 +128,9 @@ const translations = {
     "article.readOriginal": "阅读原文",
     "article.aiSummary": "AI 摘要",
     "article.fullArticle": "完整文章",
+    "article.summary": "摘要",
+    "article.keyPoints": "要点",
+    "article.whyItMatters": "为什么重要",
 
     // Search
     "search.placeholder": "搜索文章...",
@@ -206,6 +212,9 @@ const translations = {
     "article.readOriginal": "閱讀原文",
     "article.aiSummary": "AI 摘要",
     "article.fullArticle": "完整文章",
+    "article.summary": "摘要",
+    "article.keyPoints": "要點",
+    "article.whyItMatters": "為什麼重要",
 
     // Search
     "search.placeholder": "搜尋文章...",

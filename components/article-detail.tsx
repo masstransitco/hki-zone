@@ -9,6 +9,7 @@ import { useLanguage } from "./language-provider"
 import type { Article } from "@/lib/types"
 import ArticleDetailSkeleton from "./article-detail-skeleton"
 import PublicSources from "./public-sources"
+import AIEnhancedContent from "./ai-enhanced-content"
 
 interface ArticleDetailProps {
   articleId: string
@@ -63,7 +64,7 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
   return (
     <article className="max-w-2xl mx-auto p-6">
       <header className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">{article.title}</h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">{article.title}</h1>
 
         <div className="flex items-center justify-between text-footnote text-[rgb(var(--apple-gray-1))] mb-6">
           <div>
@@ -107,9 +108,7 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
 
       <div className="space-y-6">
         {article.content && (
-          <div className="space-y-4">
-            <div className="text-body text-foreground leading-relaxed whitespace-pre-wrap">{article.content}</div>
-          </div>
+          <AIEnhancedContent content={article.content} isBottomSheet={false} />
         )}
 
         {/* Sources section for AI enhanced articles */}
@@ -128,12 +127,12 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
                         href={source.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-body font-medium text-[rgb(var(--apple-blue))] hover:underline line-clamp-2"
+                        className="text-base font-medium text-[rgb(var(--apple-blue))] hover:underline line-clamp-2"
                       >
                         {source.title}
                       </a>
                     ) : (
-                      <h4 className="text-body font-medium text-foreground line-clamp-2">
+                      <h4 className="text-base font-medium text-foreground line-clamp-2">
                         {source.title}
                       </h4>
                     )}
@@ -161,7 +160,7 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
           className="inline-flex items-center gap-2 text-[rgb(var(--apple-blue))] hover:opacity-70 transition-opacity apple-focus rounded-lg p-1 -m-1"
         >
           <ExternalLink className="w-4 h-4" />
-          <span className="text-body font-medium">{t("article.readOriginal")}</span>
+          <span className="text-base font-medium">{t("article.readOriginal")}</span>
         </Link>
       </footer>
     </article>

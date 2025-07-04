@@ -58,6 +58,7 @@ interface EnhancementOptions {
   recencyFilter?: 'hour' | 'day' | 'week' | 'month'
   domainFilter?: string[]
   maxTokens?: number
+  language?: 'en' | 'zh-TW' | 'zh-CN'
 }
 
 class PerplexityEnhancerV2 {
@@ -91,15 +92,15 @@ class PerplexityEnhancerV2 {
     )
 
     return {
-      enhancedContent: enhancedContent.content,
+      enhancedContent: enhancedContent.enhancedContent,
       enhancedTitle: enhancedContent.enhancedTitle,
       enhancedSummary: enhancedContent.enhancedSummary,
       keyPoints: enhancedContent.keyPoints,
       whyItMatters: enhancedContent.whyItMatters,
       sources: enhancedContent.sources,
-      searchQueries,
+      searchQueries: enhancedContent.searchQueries,
       relatedTopics: enhancedContent.relatedTopics,
-      extractedImages: enhancedContent.images,
+      extractedImages: enhancedContent.extractedImages,
       citationsText: enhancedContent.citationsText
     }
   }
@@ -132,7 +133,7 @@ class PerplexityEnhancerV2 {
     summary: string,
     searchQueries: string[],
     options: EnhancementOptions
-  ): Promise<{content: string, sources: SourceCitation[], relatedTopics: string[], images: ExtractedImage[], citationsText: string}> {
+  ): Promise<EnhancementResult> {
     const searchResults: string[] = []
     const allSources: SourceCitation[] = []
     const allImages: ExtractedImage[] = []
@@ -159,7 +160,8 @@ class PerplexityEnhancerV2 {
       content,
       summary,
       searchResults,
-      allSources
+      allSources,
+      options.language
     )
 
     try {
@@ -169,21 +171,22 @@ class PerplexityEnhancerV2 {
       })
 
       // Parse the structured content
-      const structuredContent = this.parseStructuredContent(enhancedResult.content)
+      const structuredContent = this.parseStructuredContent(enhancedResult.content, title)
 
       // Generate citations text
       const citationsText = this.generateCitationsText(allSources)
 
       return {
-        content: structuredContent.cleanContent + '\n\n' + citationsText,
+        enhancedContent: structuredContent.cleanContent, // Remove citations from content
         enhancedTitle: structuredContent.title,
         enhancedSummary: structuredContent.summary,
         keyPoints: structuredContent.keyPoints,
         whyItMatters: structuredContent.whyItMatters,
         sources: allSources,
+        searchQueries: searchQueries,
         relatedTopics: this.extractRelatedTopics(enhancedResult.content),
-        images: allImages,
-        citationsText
+        extractedImages: allImages,
+        citationsText // Keep citations for metadata only
       }
     } catch (error) {
       console.error('Enhancement generation failed:', error)
@@ -204,7 +207,7 @@ class PerplexityEnhancerV2 {
       messages: [
         {
           role: 'system',
-          content: 'You are a professional news analyst. Provide accurate, well-sourced information with clear citations. Include image descriptions and visual content when available.'
+          content: this.getSystemPrompt(options.language)
         },
         {
           role: 'user',
@@ -291,13 +294,70 @@ class PerplexityEnhancerV2 {
     content: string,
     summary: string,
     searchResults: string[],
-    sources: SourceCitation[]
+    sources: SourceCitation[],
+    language: 'en' | 'zh-TW' | 'zh-CN' = 'en'
   ): string {
     const sourcesList = sources.map((source, index) => 
       `[${index + 1}] ${source.title} (${source.domain})`
     ).join('\n')
 
-    return `Please create a concise, bite-sized enhanced version of this Hong Kong news article based on the research provided:
+    const languageInstructions = {
+      'en': {
+        instruction: 'Please create a concise, bite-sized enhanced version of this Hong Kong news article based on the research provided. Write your response in English.',
+        structure: `# ENHANCED TITLE: [Create a compelling, clear title that captures the enhanced story]
+
+## SUMMARY
+[Write a 2-3 sentence executive summary of the key developments]
+
+## KEY POINTS
+• [Bullet point 1: Most important fact or development with context]
+• [Bullet point 2: Second key point with relevant background]
+• [Bullet point 3: Third significant point with implications]
+• [Bullet point 4: Fourth important detail with expert perspective]
+• [Bullet point 5: Fifth key point if relevant, otherwise omit]
+
+## WHY IT MATTERS
+[Write 2-3 sentences explaining the broader significance and impact on Hong Kong, including potential implications for residents, economy, or policy]`
+      },
+      'zh-TW': {
+        instruction: '請根據所提供的研究資料，為這篇香港新聞文章創建一個簡潔的增強版本。請用繁體中文回應。',
+        structure: `# 增強標題：[創建一個引人注目、清晰的標題，概括增強後的故事]
+
+## 摘要
+[寫一個2-3句的執行摘要，概述主要發展]
+
+## 重點
+• [重點1：最重要的事實或發展，附上背景]
+• [重點2：第二個關鍵點，附上相關背景]
+• [重點3：第三個重要點，附上影響分析]
+• [重點4：第四個重要細節，附上專家觀點]
+• [重點5：第五個關鍵點，如相關則包含，否則省略]
+
+## 重要性
+[寫2-3句話解釋對香港的廣泛意義和影響，包括對居民、經濟或政策的潛在影響]`
+      },
+      'zh-CN': {
+        instruction: '请根据所提供的研究资料，为这篇香港新闻文章创建一个简洁的增强版本。请用简体中文回应。',
+        structure: `# 增强标题：[创建一个引人注目、清晰的标题，概括增强后的故事]
+
+## 摘要
+[写一个2-3句的执行摘要，概述主要发展]
+
+## 重点
+• [重点1：最重要的事实或发展，附上背景]
+• [重点2：第二个关键点，附上相关背景]
+• [重点3：第三个重要点，附上影响分析]
+• [重点4：第四个重要细节，附上专家观点]
+• [重点5：第五个关键点，如相关则包含，否则省略]
+
+## 重要性
+[写2-3句话解释对香港的广泛意义和影响，包括对居民、经济或政策的潜在影响]`
+      }
+    }
+
+    const langConfig = languageInstructions[language]
+
+    return `${langConfig.instruction}
 
 ORIGINAL ARTICLE:
 Title: ${title}
@@ -312,20 +372,7 @@ ${sourcesList}
 
 Please rewrite this into a structured, concise format with the following EXACT structure:
 
-# ENHANCED TITLE: [Create a compelling, clear title that captures the enhanced story]
-
-## SUMMARY
-[Write a 2-3 sentence executive summary of the key developments]
-
-## KEY POINTS
-• [Bullet point 1: Most important fact or development with context]
-• [Bullet point 2: Second key point with relevant background]
-• [Bullet point 3: Third significant point with implications]
-• [Bullet point 4: Fourth important detail with expert perspective]
-• [Bullet point 5: Fifth key point if relevant, otherwise omit]
-
-## WHY IT MATTERS
-[Write 2-3 sentences explaining the broader significance and impact on Hong Kong, including potential implications for residents, economy, or policy]
+${langConfig.structure}
 
 Requirements:
 - Keep each bullet point to 1-2 sentences maximum
@@ -336,18 +383,33 @@ Requirements:
 - Integrate original reporting with additional research context`
   }
 
+  private getSystemPrompt(language: 'en' | 'zh-TW' | 'zh-CN' = 'en'): string {
+    const systemPrompts = {
+      'en': 'You are a professional news analyst. Provide accurate, well-sourced information with clear citations. Include image descriptions and visual content when available. Respond in English.',
+      'zh-TW': '您是一位專業的新聞分析師。提供準確、來源可靠的資訊，並清楚引用。如果有圖片描述和視覺內容，請包含在內。請用繁體中文回應。',
+      'zh-CN': '您是一位专业的新闻分析师。提供准确、来源可靠的信息，并清楚引用。如果有图片描述和视觉内容，请包含在内。请用简体中文回应。'
+    }
+    return systemPrompts[language]
+  }
+
   private cleanStructuredContentForDisplay(content: string): string {
     // Remove hashtags and structure markers, keep only the clean content
     return content
       .replace(/^# ENHANCED TITLE:\s*/gm, '')
+      .replace(/^# 增强标题：\s*/gm, '')
+      .replace(/^# 增強標題：\s*/gm, '')
       .replace(/^## SUMMARY$/gm, '**Summary**')
+      .replace(/^## 摘要$/gm, '**摘要**')
       .replace(/^## KEY POINTS$/gm, '**Key Points**')
+      .replace(/^## 重点$/gm, '**重点**')
+      .replace(/^## 重點$/gm, '**重點**')
       .replace(/^## WHY IT MATTERS$/gm, '**Why It Matters**')
+      .replace(/^## 重要性$/gm, '**重要性**')
       .replace(/^Requirements:[\s\S]*$/gm, '') // Remove requirements section if it appears
       .trim()
   }
 
-  private parseStructuredContent(content: string): {
+  private parseStructuredContent(content: string, originalTitle?: string): {
     title: string
     summary: string
     keyPoints: string[]
@@ -366,8 +428,16 @@ Requirements:
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       
-      if (line.startsWith('# ENHANCED TITLE:')) {
-        title = line.replace('# ENHANCED TITLE:', '').trim()
+      if (line.startsWith('# ENHANCED TITLE:') || line.startsWith('# 增强标题：') || line.startsWith('# 增強標題：')) {
+        // Extract title based on the language format
+        if (line.startsWith('# ENHANCED TITLE:')) {
+          title = line.replace('# ENHANCED TITLE:', '').trim()
+        } else if (line.startsWith('# 增强标题：')) {
+          title = line.replace('# 增强标题：', '').trim()
+        } else if (line.startsWith('# 增強標題：')) {
+          title = line.replace('# 增強標題：', '').trim()
+        }
+        
         // If title is empty or just whitespace, check the next line
         if ((!title || title.length === 0) && i + 1 < lines.length) {
           const nextLine = lines[i + 1]
@@ -376,11 +446,11 @@ Requirements:
           }
         }
         currentSection = 'title'
-      } else if (line.startsWith('## SUMMARY')) {
+      } else if (line.startsWith('## SUMMARY') || line.startsWith('## 摘要')) {
         currentSection = 'summary'
-      } else if (line.startsWith('## KEY POINTS')) {
+      } else if (line.startsWith('## KEY POINTS') || line.startsWith('## 重点') || line.startsWith('## 重點')) {
         currentSection = 'keypoints'
-      } else if (line.startsWith('## WHY IT MATTERS')) {
+      } else if (line.startsWith('## WHY IT MATTERS') || line.startsWith('## 重要性')) {
         currentSection = 'whyitmatters'
       } else if (line.startsWith('Requirements:') || line.startsWith('-')) {
         // Skip requirements section
@@ -398,7 +468,13 @@ Requirements:
     
     // Fallback if parsing fails - use original content
     if (!title || !summary) {
-      const fallbackTitle = content.match(/# ENHANCED TITLE: (.+)/)?.[1] || 'Enhanced Article'
+      // Try to extract title from various patterns
+      let fallbackTitle = content.match(/# ENHANCED TITLE: (.+)/)?.[1] || 
+                         content.match(/# 增强标题：(.+)/)?.[1] ||
+                         content.match(/# 增強標題：(.+)/)?.[1] ||
+                         originalTitle || 
+                         'Enhanced Article'
+      
       const fallbackSummary = content.substring(0, 200) + '...'
       
       return {
@@ -473,7 +549,7 @@ Requirements:
           try {
             sources.push({
               url: url,
-              title: title,
+              title: title || '',
               domain: new URL(url).hostname.replace('www.', ''),
               snippet: snippet,
               accessedAt: now

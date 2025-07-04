@@ -11,6 +11,7 @@ export interface Article {
   readTime?: number
   isAiEnhanced?: boolean
   originalArticleId?: string
+  language?: string // 'en' | 'zh-TW' | 'zh-CN'
   enhancementMetadata?: {
     searchQueries: string[]
     sources: {

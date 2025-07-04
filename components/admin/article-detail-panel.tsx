@@ -13,7 +13,6 @@ import ImageGallery from "./image-gallery"
 import { 
   ExternalLink, 
   Calendar, 
-  User, 
   Globe, 
   Image as ImageIcon,
   FileText,
@@ -22,17 +21,20 @@ import {
   Trash2,
   RefreshCw,
   Sparkles,
-  Loader2
+  Loader2,
+  Maximize2
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { Article } from "@/lib/types"
 
 interface ArticleDetailPanelProps {
   article: Article | null
+  onExpand?: () => void
 }
 
-export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps) {
+export default function ArticleDetailPanel({ article, onExpand }: ArticleDetailPanelProps) {
   const [isEnhancing, setIsEnhancing] = useState(false)
+  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh-TW' | 'zh-CN' | null>(null)
   const [enhancementStatus, setEnhancementStatus] = useState<string>('')
 
   if (!article) {
@@ -61,11 +63,23 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
     window.open(article.url, '_blank')
   }
 
-  const handleCloneWithAI = async () => {
+  const handleCloneWithAI = async (language: 'en' | 'zh-TW' | 'zh-CN' = 'en') => {
     if (!article) return
     
+    // Prevent multiple simultaneous enhancements
+    if (isEnhancing) {
+      console.log('Enhancement already in progress, ignoring click')
+      return
+    }
+    
     setIsEnhancing(true)
-    setEnhancementStatus('Initializing AI enhancement...')
+    setCurrentLanguage(language)
+    const languageLabels = {
+      'en': 'English',
+      'zh-TW': '繁體中文',
+      'zh-CN': '简体中文'
+    }
+    setEnhancementStatus(`Initializing AI enhancement in ${languageLabels[language]}...`)
     
     try {
       // Check API configuration first
@@ -81,7 +95,7 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
       }
 
       // Perform enhancement
-      setEnhancementStatus('Searching for additional context...')
+      setEnhancementStatus(`Searching for additional context in ${languageLabels[language]}...`)
       const response = await fetch('/api/admin/articles/clone-with-ai', {
         method: 'POST',
         headers: {
@@ -89,6 +103,7 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
         },
         body: JSON.stringify({
           articleId: article.id,
+          language: language,
           options: {
             searchDepth: 'medium',
             recencyFilter: 'month',
@@ -126,6 +141,7 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
     } finally {
       setTimeout(() => {
         setIsEnhancing(false)
+        setCurrentLanguage(null)
         setEnhancementStatus('')
       }, 2000)
     }
@@ -149,7 +165,20 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
             </CardDescription>
           </div>
           <div className="flex flex-col gap-2">
-            <Badge variant="secondary">{article.source}</Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">{article.source}</Badge>
+              {onExpand && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onExpand}
+                  className="h-6 w-6 p-0"
+                  title="Expand to full screen"
+                >
+                  <Maximize2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
             {article.isAiEnhanced && (
               <Badge variant="outline" className="text-xs bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
                 <Sparkles className="h-3 w-3 mr-1" />
@@ -169,13 +198,6 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
             <span>{formatDistanceToNow(publishedDate, { addSuffix: true })}</span>
           </div>
           
-          {article.author && (
-            <div className="flex items-center gap-2 text-sm">
-              <User className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">Author:</span>
-              <span>{article.author}</span>
-            </div>
-          )}
           
           {article.category && (
             <div className="flex items-center gap-2 text-sm">
@@ -299,20 +321,52 @@ export default function ArticleDetailPanel({ article }: ArticleDetailPanelProps)
           {!article.isAiEnhanced && (
             <>
               <Separator className="my-2" />
-              <Button 
-                variant="default" 
-                size="sm" 
-                onClick={handleCloneWithAI}
-                disabled={isEnhancing}
-                className="w-full text-xs bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                {isEnhancing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4 mr-2" />
-                )}
-                <span>{isEnhancing ? 'Enhancing...' : 'CLONE WITH AI'}</span>
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={() => handleCloneWithAI('en')}
+                  disabled={isEnhancing}
+                  className="w-full text-xs bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
+                >
+                  {isEnhancing && currentLanguage === 'en' ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  <span>{isEnhancing && currentLanguage === 'en' ? 'Enhancing...' : 'Clone (English)'}</span>
+                </Button>
+                
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={() => handleCloneWithAI('zh-TW')}
+                  disabled={isEnhancing}
+                  className="w-full text-xs bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
+                >
+                  {isEnhancing && currentLanguage === 'zh-TW' ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  <span>{isEnhancing && currentLanguage === 'zh-TW' ? 'Enhancing...' : 'Clone (繁體中文)'}</span>
+                </Button>
+                
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={() => handleCloneWithAI('zh-CN')}
+                  disabled={isEnhancing}
+                  className="w-full text-xs bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
+                >
+                  {isEnhancing && currentLanguage === 'zh-CN' ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-4 w-4 mr-2" />
+                  )}
+                  <span>{isEnhancing && currentLanguage === 'zh-CN' ? 'Enhancing...' : 'Clone (简体中文)'}</span>
+                </Button>
+              </div>
               
               {enhancementStatus && (
                 <p className="text-xs text-muted-foreground text-center mt-1">
