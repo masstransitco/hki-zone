@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getArticles, checkDatabaseSetup } from "@/lib/supabase"
 
+export const dynamic = 'force-dynamic'
+
 // Mock data as fallback
 const mockArticles = [
   {

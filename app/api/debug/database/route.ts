@@ -23,13 +23,14 @@ export async function GET() {
     // Test database setup function
     const setupCheck = await checkDatabaseSetup()
 
-    // Try to list tables (this might not work depending on permissions)
+    // Try to check if articles table exists using direct query
     let tablesCheck = null
     try {
-      const { data, error } = await supabase.rpc("exec", {
-        query: "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';",
-      })
-      tablesCheck = { success: !error, data, error: error?.message }
+      const { data, error } = await supabase
+        .from("articles")
+        .select("id")
+        .limit(1)
+      tablesCheck = { success: !error, data: error ? null : 'Articles table exists', error: error?.message }
     } catch (err) {
       tablesCheck = { success: false, error: err.message }
     }

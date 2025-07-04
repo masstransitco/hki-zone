@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { searchArticles, checkDatabaseSetup } from "@/lib/supabase"
 
+export const dynamic = 'force-dynamic'
+
 // Mock search results as fallback
 const mockSearchResults = [
   {
