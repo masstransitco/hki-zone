@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import ArticleDetailSheet from "./article-detail-sheet"
 import ShareButton from "./share-button"
-import { useSheetHeight } from "@/hooks/use-sheet-height"
 
 interface ArticleBottomSheetProps {
   articleId: string | null
@@ -27,8 +26,6 @@ export default function ArticleBottomSheet({
   open, 
   onOpenChange 
 }: ArticleBottomSheetProps) {
-  const sheetHeight = useSheetHeight()
-
   // Freeze body scrolling while drawer is open to prevent bounce
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden"
@@ -47,13 +44,16 @@ export default function ArticleBottomSheet({
     >
       <DrawerContent 
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[10px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[12px] border bg-background overflow-y-auto",
           "focus:outline-none [&>div:first-child]:mt-2"
         )}
         style={{
-          height: sheetHeight,
-          maxHeight: sheetHeight,
-          paddingBottom: "env(safe-area-inset-bottom, 0px)"
+          /* Always fit inside the current visual viewport */
+          maxHeight: "calc(100dvh - env(safe-area-inset-top, 0px) - 8px)",
+          /* Keep clear of the home-indicator */
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          /* Optional: small grab-handle gap */
+          marginTop: "8px"
         }}
       >
         {/* Header with close button and share button below drag handle */}
