@@ -34,7 +34,7 @@ export default function ArticleBottomSheet({
     >
       <DrawerContent 
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 flex h-[95vh] flex-col rounded-t-[10px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-50 flex h-[95dvh] flex-col rounded-t-[10px] border bg-background",
           "focus:outline-none [&>div:first-child]:mt-2"
         )}
       >
