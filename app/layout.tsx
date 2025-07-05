@@ -6,9 +6,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/components/language-provider"
 import { QueryProvider } from "@/components/query-provider"
 import { Analytics } from "@vercel/analytics/react"
-import { Suspense } from "react"
 import { WebsiteStructuredData } from "@/components/structured-data"
-import { ServiceWorkerRegister } from "@/components/service-worker-register"
+// import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -93,16 +92,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans`}>
+      <body className={`${inter.variable} font-sans`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <QueryProvider>
-              <Suspense fallback={null}>
-                <WebsiteStructuredData />
-                <ServiceWorkerRegister />
-                {children}
-                <Analytics />
-              </Suspense>
+              <WebsiteStructuredData />
+              {/* <ServiceWorkerRegister /> */}
+              {children}
+              <Analytics />
             </QueryProvider>
           </LanguageProvider>
         </ThemeProvider>
