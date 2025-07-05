@@ -38,8 +38,9 @@ export default function ArticleBottomSheet({
           "focus:outline-none [&>div:first-child]:mt-2"
         )}
         style={{
-          maxHeight: "calc(100dvh - 5dvh)",
-          height: "95dvh"
+          height: "90dvh",
+          maxHeight: "calc(100dvh - env(safe-area-inset-top, 20px) - 20px)",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)"
         }}
       >
         {/* Header with close button and share button below drag handle */}
