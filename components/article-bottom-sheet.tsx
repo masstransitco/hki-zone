@@ -34,9 +34,13 @@ export default function ArticleBottomSheet({
     >
       <DrawerContent 
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 flex h-[95dvh] flex-col rounded-t-[10px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[10px] border bg-background",
           "focus:outline-none [&>div:first-child]:mt-2"
         )}
+        style={{
+          maxHeight: "calc(100dvh - 5dvh)",
+          height: "95dvh"
+        }}
       >
         {/* Header with close button and share button below drag handle */}
         <div className="relative px-6 pt-4 pb-8 shrink-0">
