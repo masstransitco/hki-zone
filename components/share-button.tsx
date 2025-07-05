@@ -19,8 +19,13 @@ export default function ShareButton({ articleId, title, url, article, compact = 
   const { t } = useLanguage()
   const [copied, setCopied] = useState(false)
   const [articleData, setArticleData] = useState<Article | null>(article || null)
+  const [mounted, setMounted] = useState(false)
 
-  const shareUrl = url || `${typeof window !== 'undefined' ? window.location.origin : 'https://hki.zone'}/article/${articleId}`
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const shareUrl = url || `${mounted && typeof window !== 'undefined' ? window.location.origin : 'https://hki.zone'}/article/${articleId}`
   const shareTitle = title || articleData?.title || "HKI 香港資訊 Article"
   const shareDescription = articleData?.summary || articleData?.content?.substring(0, 200) || "Read the latest Hong Kong news"
 

@@ -47,7 +47,7 @@ export default function NewsFeed() {
   }, [inView, hasNextPage, fetchNextPage])
 
   if (isLoading) return <LoadingSkeleton />
-  if (error) return <div className="p-4 text-center text-destructive">{t("error.failedToLoad")} articles</div>
+  if (error) return <div className="p-4 text-center text-destructive" suppressHydrationWarning>{t("error.failedToLoad")} articles</div>
 
   const articles = data?.pages.flatMap((page) => page.articles) ?? []
 

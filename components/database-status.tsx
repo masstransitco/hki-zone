@@ -1,14 +1,18 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
+import { useState, useEffect } from "react"
 
 async function checkDatabaseStatus() {
-  const response = await fetch("/api/articles?page=0&_t=" + Date.now())
+  const response = await fetch("/api/articles?page=0")
   const data = await response.json()
   return data.usingMockData !== undefined ? data.usingMockData : false
 }
 
 export default function DatabaseStatus() {
+  const [mounted, setMounted] = useState(false)
+  const [currentTime, setCurrentTime] = useState<string>("")
+
   const {
     data: usingMockData,
     isLoading,
@@ -19,17 +23,33 @@ export default function DatabaseStatus() {
     refetchInterval: 60000, // Refetch every minute
   })
 
-  if (isLoading || usingMockData === undefined) return null
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      }))
+    }
+
+    updateTime()
+    const interval = setInterval(updateTime, 60000) // Update every minute
+
+    return () => clearInterval(interval)
+  }, [mounted])
+
+  if (isLoading || usingMockData === undefined || !mounted) return null
 
   const isConnected = !usingMockData
-  const currentTime = new Date().toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  })
 
   return (
     <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
@@ -39,7 +59,7 @@ export default function DatabaseStatus() {
           : 'bg-red-500 shadow-sm shadow-red-500/50'
       }`} />
       <span className="font-medium">
-        {isConnected ? `Live News ${currentTime}` : 'Disconnected'}
+        {isConnected ? (currentTime ? `Live News ${currentTime}` : 'Live News') : 'Disconnected'}
       </span>
     </div>
   )

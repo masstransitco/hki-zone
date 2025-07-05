@@ -270,10 +270,13 @@ const translations = {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
+  // Always start with English to ensure SSR consistency
   const [language, setLanguageState] = useState<Language>("en")
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    // Load language from localStorage on mount
+    setMounted(true)
+    // Only run on client side after hydration
     const savedLanguage = localStorage.getItem("panora-language") as Language
     if (savedLanguage && ["en", "zh-CN", "zh-TW"].includes(savedLanguage)) {
       setLanguageState(savedLanguage)
@@ -282,14 +285,22 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const setLanguage = (newLanguage: Language) => {
     setLanguageState(newLanguage)
-    localStorage.setItem("panora-language", newLanguage)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("panora-language", newLanguage)
+    }
   }
 
   const t = (key: string): string => {
-    return translations[language][key] || key
+    // During SSR and initial hydration, always use English to prevent mismatches
+    const effectiveLanguage = mounted ? language : "en"
+    return translations[effectiveLanguage][key] || key
   }
 
-  return <LanguageContext.Provider value={{ language, setLanguage, t }}>{children}</LanguageContext.Provider>
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  )
 }
 
 export function useLanguage() {

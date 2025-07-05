@@ -4,10 +4,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Clock, ExternalLink } from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
 import { useLanguage } from "./language-provider"
 import { analytics } from "@/lib/analytics"
 import { InlineSourcesBadge } from "./public-sources"
+import { useHydrationSafeDate } from "@/hooks/use-hydration-safe-date"
 import type { Article } from "@/lib/types"
 
 interface ArticleCardProps {
@@ -17,6 +17,7 @@ interface ArticleCardProps {
 
 export default function ArticleCard({ article, onReadMore }: ArticleCardProps) {
   const { t } = useLanguage()
+  const timeAgo = useHydrationSafeDate(article.publishedAt)
 
   const handleArticleClick = () => {
     analytics.trackArticleView(article.id, article.source, article.topic)
@@ -65,7 +66,7 @@ export default function ArticleCard({ article, onReadMore }: ArticleCardProps) {
               <div className="flex items-center gap-1 flex-shrink-0">
                 <Clock className="h-3 w-3" />
                 <span className="truncate">
-                  {formatDistanceToNow(new Date(article.publishedAt))} {t("time.ago")}
+                  {timeAgo && `${timeAgo} ${t("time.ago")}`}
                 </span>
               </div>
             </div>

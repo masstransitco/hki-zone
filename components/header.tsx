@@ -16,8 +16,15 @@ export default function Header({ showSearch = true }: HeaderProps) {
   const { t } = useLanguage()
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!mounted) return
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       
@@ -47,7 +54,7 @@ export default function Header({ showSearch = true }: HeaderProps) {
 
     window.addEventListener('scroll', throttledHandleScroll, { passive: true })
     return () => window.removeEventListener('scroll', throttledHandleScroll)
-  }, [lastScrollY])
+  }, [lastScrollY, mounted])
 
   return (
     <header 
@@ -63,7 +70,7 @@ export default function Header({ showSearch = true }: HeaderProps) {
             <Link
               href="/search"
               className="p-2 hover:bg-surface-hover rounded-lg transition-colors focus-ring"
-              aria-label={t("nav.search")}
+              aria-label="Search"
             >
               <Search className="w-5 h-5 text-muted" />
             </Link>

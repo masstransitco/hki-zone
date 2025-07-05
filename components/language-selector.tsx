@@ -25,7 +25,7 @@ export default function LanguageSelector() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="w-9 h-9 p-0" aria-label={t("profile.language")}>
+        <Button variant="ghost" size="sm" className="w-9 h-9 p-0" aria-label="Language">
           <Languages className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -35,6 +35,7 @@ export default function LanguageSelector() {
             key={lang.code}
             onClick={() => handleLanguageChange(lang.code)}
             className={`flex items-center gap-2 ${language === lang.code ? "bg-accent" : ""}`}
+            suppressHydrationWarning
           >
             <span className="text-lg">{lang.flag}</span>
             <span>{lang.name}</span>

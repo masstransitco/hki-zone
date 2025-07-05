@@ -4,8 +4,8 @@ import { useState, useEffect } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Clock, ExternalLink } from "lucide-react"
-import { formatDistanceToNow } from "date-fns"
 import { useLanguage } from "./language-provider"
+import { useHydrationSafeDate } from "@/hooks/use-hydration-safe-date"
 import type { Article } from "@/lib/types"
 import ArticleDetailSkeleton from "./article-detail-skeleton"
 import PublicSources from "./public-sources"
@@ -26,6 +26,7 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
   const [article, setArticle] = useState<Article | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const timeAgo = useHydrationSafeDate(article?.publishedAt || null)
 
   useEffect(() => {
     let mounted = true
@@ -85,7 +86,7 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
           </div>
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
-            <span>{formatDistanceToNow(new Date(article.publishedAt), { addSuffix: true })}</span>
+            <span>{timeAgo && `${timeAgo} ago`}</span>
           </div>
         </div>
       </header>

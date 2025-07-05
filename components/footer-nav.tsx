@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils"
 import { useLanguage } from "./language-provider"
 
 const navItems = [
-  { href: "/", icon: Home, labelKey: "nav.home" },
-  { href: "/topics", icon: Hash, labelKey: "nav.topics" },
-  { href: "/search", icon: Search, labelKey: "nav.search" },
-  { href: "/profile", icon: User, labelKey: "nav.profile" },
+  { href: "/", icon: Home, label: "Home", labelKey: "nav.home" },
+  { href: "/topics", icon: Hash, label: "Topics", labelKey: "nav.topics" },
+  { href: "/search", icon: Search, label: "Search", labelKey: "nav.search" },
+  { href: "/profile", icon: User, label: "Profile", labelKey: "nav.profile" },
 ]
 
 export default function FooterNav() {
@@ -20,9 +20,9 @@ export default function FooterNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe">
       <div className="flex items-center justify-around py-3 px-2">
-        {navItems.map(({ href, icon: Icon, labelKey }) => {
+        {navItems.map(({ href, icon: Icon, label, labelKey }) => {
           const isActive = pathname === href
-          const label = t(labelKey)
+          const translatedLabel = t(labelKey)
 
           return (
             <Link
@@ -40,11 +40,14 @@ export default function FooterNav() {
                 "w-5 h-5 transition-transform duration-200",
                 isActive ? "scale-110" : "group-hover:scale-105"
               )} />
-              <span className={cn(
-                "text-xs font-medium transition-colors duration-200",
-                isActive ? "text-stone-800 dark:text-stone-200" : "text-stone-500 dark:text-stone-400"
-              )}>
-                {label}
+              <span 
+                className={cn(
+                  "text-xs font-medium transition-colors duration-200",
+                  isActive ? "text-stone-800 dark:text-stone-200" : "text-stone-500 dark:text-stone-400"
+                )}
+                suppressHydrationWarning
+              >
+                {translatedLabel}
               </span>
             </Link>
           )

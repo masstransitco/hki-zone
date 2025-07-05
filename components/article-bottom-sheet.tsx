@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import ArticleDetailSheet from "./article-detail-sheet"
 import ShareButton from "./share-button"
+import { useVisualViewport } from "@/hooks/use-visual-viewport"
 
 interface ArticleBottomSheetProps {
   articleId: string | null
@@ -26,6 +27,19 @@ export default function ArticleBottomSheet({
   open, 
   onOpenChange 
 }: ArticleBottomSheetProps) {
+  const viewportHeight = useVisualViewport()
+  
+  // Calculate drawer height based on actual visual viewport
+  const drawerHeight = React.useMemo(() => {
+    if (viewportHeight) {
+      // Use 90% of the actual visible viewport height
+      // Subtract additional space for safety (40px for browser UI margins)
+      return `${Math.min(viewportHeight * 0.9, viewportHeight - 40)}px`
+    }
+    // Fallback to a conservative height
+    return "85vh"
+  }, [viewportHeight])
+
   return (
     <Drawer 
       open={open} 
@@ -38,8 +52,8 @@ export default function ArticleBottomSheet({
           "focus:outline-none [&>div:first-child]:mt-2"
         )}
         style={{
-          height: "90dvh",
-          maxHeight: "calc(100dvh - env(safe-area-inset-top, 20px) - 20px)",
+          height: drawerHeight,
+          maxHeight: drawerHeight,
           paddingBottom: "env(safe-area-inset-bottom, 0px)"
         }}
       >
