@@ -27,7 +27,14 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
     const title = article.title
     const description = article.summary || article.ai_summary || article.content?.substring(0, 160) || "Read the latest Hong Kong news and information."
-    const imageUrl = article.image_url || "/hki-logo-black.png"
+    
+    // Use optimized image from metadata if available, fallback to image_url
+    let imageUrl = article.image_url || "/hki-logo-black.png"
+    if (article.image_metadata && typeof article.image_metadata === 'object') {
+      // Prefer optimized version for general social media
+      imageUrl = article.image_metadata.optimized || article.image_metadata.original || imageUrl
+    }
+    
     const url = `https://hki.zone/article/${params.id}`
     
     return {
@@ -73,6 +80,17 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
         images: [imageUrl],
         creator: article.author ? `@${article.author}` : "@hki_zone",
         site: "@hki_zone"
+      },
+      other: {
+        // WhatsApp specific tags
+        "og:image:width": "1200",
+        "og:image:height": "630",
+        "og:image:type": "image/jpeg",
+        // Additional WhatsApp optimization
+        "og:image:alt": title,
+        // Preload hint for faster image loading
+        "link:rel:preload": imageUrl,
+        "link:as": "image"
       },
       alternates: {
         canonical: url

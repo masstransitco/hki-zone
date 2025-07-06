@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Upload, Loader2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { compressImage } from "@/lib/image-compression"
 
 interface FileUploaderProps {
   articleId: string
@@ -36,6 +37,18 @@ export default function FileUploader({ articleId, onUpload, disabled }: FileUplo
     setIsUploading(true)
     
     try {
+      // Compress the image before upload
+      toast.info("Compressing image...")
+      const compressedFile = await compressImage(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1200,
+        fileType: "image/jpeg"
+      })
+      
+      const originalSize = (file.size / 1024 / 1024).toFixed(2)
+      const compressedSize = (compressedFile.size / 1024 / 1024).toFixed(2)
+      console.log(`Image compressed from ${originalSize}MB to ${compressedSize}MB`)
+      
       // Get upload URL from API
       const response = await fetch(`/api/admin/articles/${articleId}/upload-image`, {
         method: "POST",
@@ -46,14 +59,14 @@ export default function FileUploader({ articleId, onUpload, disabled }: FileUplo
         throw new Error(error.error || "Failed to get upload URL")
       }
       
-      const { uploadUrl, publicUrl } = await response.json()
+      const { uploadUrl, publicUrl, needsProcessing } = await response.json()
       
-      // Upload file directly to Supabase Storage
+      // Upload compressed file directly to Supabase Storage
       const uploadResponse = await fetch(uploadUrl, {
         method: "PUT",
-        body: file,
+        body: compressedFile,
         headers: {
-          "Content-Type": file.type,
+          "Content-Type": compressedFile.type,
           "x-upsert": "true",
         },
       })
@@ -62,9 +75,32 @@ export default function FileUploader({ articleId, onUpload, disabled }: FileUplo
         throw new Error("Failed to upload file")
       }
       
-      // Call the onUpload callback with the public URL
-      onUpload(publicUrl)
-      toast.success("Image uploaded successfully")
+      // Process the image for social media optimization
+      if (needsProcessing) {
+        toast.info("Optimizing image for social media...")
+        const processResponse = await fetch(`/api/admin/articles/${articleId}/process-image`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ imageUrl: publicUrl }),
+        })
+        
+        if (processResponse.ok) {
+          const { images } = await processResponse.json()
+          // Use the optimized URL
+          onUpload(images.optimized)
+          toast.success("Image uploaded and optimized successfully")
+        } else {
+          // Fallback to original URL if processing fails
+          onUpload(publicUrl)
+          toast.warning("Image uploaded but optimization failed")
+        }
+      } else {
+        // Call the onUpload callback with the public URL
+        onUpload(publicUrl)
+        toast.success("Image uploaded successfully")
+      }
       
       // Reset file input
       if (fileInputRef.current) {

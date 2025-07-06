@@ -38,6 +38,7 @@ export async function GET() {
       'author',
       'published_at',
       'image_url',
+      'image_metadata',
       'category',
       'created_at',
       'updated_at',
@@ -112,6 +113,11 @@ export async function GET() {
         name: 'deleted-at-field',
         required: missingColumns.includes('deleted_at'),
         applied: !missingColumns.includes('deleted_at')
+      },
+      {
+        name: 'image-metadata-field',
+        required: missingColumns.includes('image_metadata'),
+        applied: !missingColumns.includes('image_metadata')
       }
     ]
     
@@ -142,6 +148,8 @@ export async function GET() {
               return { name: m.name, method: 'POST', endpoint: '/api/admin/database/add-language-field' }
             case 'deleted-at-field':
               return { name: m.name, method: 'POST', endpoint: '/api/admin/database/add-deleted-at-field' }
+            case 'image-metadata-field':
+              return { name: m.name, method: 'POST', endpoint: '/api/admin/database/add-image-metadata' }
             default:
               return { name: m.name, method: 'UNKNOWN', endpoint: 'UNKNOWN' }
           }

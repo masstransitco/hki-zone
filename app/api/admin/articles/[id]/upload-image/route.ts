@@ -78,6 +78,7 @@ export async function POST(
       path: uploadData.path,
       publicUrl,
       maxFileSize: MAX_FILE_SIZE,
+      needsProcessing: true,
       instructions: {
         method: "PUT",
         headers: {
