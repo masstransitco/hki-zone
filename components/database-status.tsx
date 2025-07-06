@@ -6,7 +6,11 @@ import { useState, useEffect } from "react"
 async function checkDatabaseStatus() {
   const response = await fetch("/api/articles?page=0")
   const data = await response.json()
-  return data.usingMockData !== undefined ? data.usingMockData : false
+  return {
+    usingMockData: data.usingMockData !== undefined ? data.usingMockData : false,
+    debug: data.debug,
+    error: data.error
+  }
 }
 
 export default function DatabaseStatus() {
@@ -14,7 +18,7 @@ export default function DatabaseStatus() {
   const [currentTime, setCurrentTime] = useState<string>("")
 
   const {
-    data: usingMockData,
+    data: status,
     isLoading,
   } = useQuery({
     queryKey: ["databaseStatus"],
@@ -47,19 +51,34 @@ export default function DatabaseStatus() {
     return () => clearInterval(interval)
   }, [mounted])
 
-  if (isLoading || usingMockData === undefined || !mounted) return null
+  if (isLoading || !status || !mounted) return null
 
-  const isConnected = !usingMockData
+  const isConnected = !status.usingMockData
+  
+  // Determine the status message
+  let statusMessage = 'Disconnected'
+  if (isConnected) {
+    statusMessage = currentTime ? `Live News ${currentTime}` : 'Live News'
+  } else if (status.debug) {
+    // Provide more specific error messages
+    if (status.debug.includes('Database not set up')) {
+      statusMessage = 'Database not configured'
+    } else if (status.debug.includes('No articles found')) {
+      statusMessage = 'No articles in database'
+    } else if (status.error) {
+      statusMessage = 'Connection error'
+    }
+  }
 
   return (
     <div className="flex items-center gap-2 text-xs text-stone-500 dark:text-stone-400">
       <div className={`w-2 h-2 rounded-full ${
         isConnected 
           ? 'bg-green-500 shadow-sm shadow-green-500/50' 
-          : 'bg-red-500 shadow-sm shadow-red-500/50'
+          : 'bg-orange-500 shadow-sm shadow-orange-500/50'
       }`} />
-      <span className="font-medium">
-        {isConnected ? (currentTime ? `Live News ${currentTime}` : 'Live News') : 'Disconnected'}
+      <span className="font-medium" title={status.debug || status.error || ''}>
+        {statusMessage}
       </span>
     </div>
   )

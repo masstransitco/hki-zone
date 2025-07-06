@@ -12,6 +12,7 @@ export interface Article {
   isAiEnhanced?: boolean
   originalArticleId?: string
   language?: string // 'en' | 'zh-TW' | 'zh-CN'
+  deletedAt?: string | null
   enhancementMetadata?: {
     searchQueries: string[]
     sources: {
