@@ -11,8 +11,10 @@ export async function GET(request: NextRequest) {
     const source = searchParams.get("source")
     const search = searchParams.get("search")
     const category = searchParams.get("category")
+    const language = searchParams.get("language")
+    const aiEnhanced = searchParams.get("aiEnhanced")
 
-    console.log("Admin articles API called with params:", { page, limit, source, search, category })
+    console.log("Admin articles API called with params:", { page, limit, source, search, category, language, aiEnhanced })
 
     // Check if database is set up
     const isDatabaseReady = await checkDatabaseSetup()
@@ -38,6 +40,18 @@ export async function GET(request: NextRequest) {
       if (category && category !== "all") {
         articles = articles.filter(article => article.category === category)
       }
+      if (language && language !== "all") {
+        articles = articles.filter(article => {
+          const articleLang = article.enhancement_metadata?.language || 'en'
+          return articleLang === language
+        })
+      }
+      if (aiEnhanced && aiEnhanced !== "all") {
+        articles = articles.filter(article => {
+          const isEnhanced = article.is_ai_enhanced || false
+          return aiEnhanced === "true" ? isEnhanced : !isEnhanced
+        })
+      }
     } else {
       // Get articles with pagination
       const offset = page * limit
@@ -45,7 +59,9 @@ export async function GET(request: NextRequest) {
         offset, 
         limit: limit + 1, // Get one extra to check if there are more
         source: source !== "all" ? source : undefined,
-        category: category !== "all" ? category : undefined
+        category: category !== "all" ? category : undefined,
+        language: language !== "all" ? language : undefined,
+        aiEnhanced: aiEnhanced !== "all" ? aiEnhanced : undefined
       })
     }
 
@@ -68,6 +84,9 @@ export async function GET(request: NextRequest) {
       imageUrl: article.image_url || "/placeholder.svg?height=200&width=300",
       category: article.category || "General",
       readTime: Math.ceil((article.content?.length || 0) / 200) || 3,
+      isAiEnhanced: article.is_ai_enhanced || false,
+      language: article.enhancement_metadata?.language || 'en',
+      enhancementMetadata: article.enhancement_metadata,
     }))
 
     return NextResponse.json({
@@ -97,12 +116,16 @@ async function getArticlesWithFilters({
   offset = 0,
   limit = 20,
   source,
-  category
+  category,
+  language,
+  aiEnhanced
 }: {
   offset?: number
   limit?: number
   source?: string
   category?: string
+  language?: string
+  aiEnhanced?: string
 }) {
   try {
     const { supabase } = await import("@/lib/supabase")
@@ -119,6 +142,20 @@ async function getArticlesWithFilters({
     
     if (category) {
       query = query.eq("category", category)
+    }
+    
+    if (language) {
+      // Use metadata-based language filtering (same logic as Topics API)
+      if (language !== "en") {
+        query = query.eq('enhancement_metadata->>language', language)
+      } else {
+        query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null`)
+      }
+    }
+    
+    if (aiEnhanced) {
+      const isEnhanced = aiEnhanced === "true"
+      query = query.eq("is_ai_enhanced", isEnhanced)
     }
 
     const { data, error } = await query

@@ -1,7 +1,7 @@
 import { Suspense } from "react"
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
-import TopicsDiscovery from "@/components/topics-discovery"
+import TopicsFeed from "@/components/topics-feed"
 import LoadingSkeleton from "@/components/loading-skeleton"
 
 export default function TopicsPage() {
@@ -11,7 +11,7 @@ export default function TopicsPage() {
 
       <main className="flex-1 pb-20">
         <Suspense fallback={<LoadingSkeleton />}>
-          <TopicsDiscovery />
+          <TopicsFeed />
         </Suspense>
       </main>
 

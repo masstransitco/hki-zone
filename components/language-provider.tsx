@@ -60,6 +60,12 @@ const translations = {
     "discovery.recommended": "Recommended for You",
     "discovery.recent": "Recently Added",
 
+    // Topics Feed
+    "topics.aiEnhancedFeed": "AI-Enhanced Articles",
+    "topics.aiEnhancedDescription": "Articles enhanced with AI analysis and additional research",
+    "topics.noAiArticles": "No AI-enhanced articles available",
+    "topics.noAiArticlesDescription": "AI-enhanced articles in your selected language are not available yet. Please check back later.",
+
     // Profile
     "profile.saved": "Saved",
     "profile.history": "History",
@@ -144,6 +150,12 @@ const translations = {
     "discovery.recommended": "为您推荐",
     "discovery.recent": "最新添加",
 
+    // Topics Feed
+    "topics.aiEnhancedFeed": "AI 增强文章",
+    "topics.aiEnhancedDescription": "通过 AI 分析和额外研究增强的文章",
+    "topics.noAiArticles": "暂无 AI 增强文章",
+    "topics.noAiArticlesDescription": "您选择的语言暂时没有 AI 增强文章。请稍后再试。",
+
     // Profile
     "profile.saved": "收藏",
     "profile.history": "历史",
@@ -227,6 +239,12 @@ const translations = {
     "discovery.trending": "熱門話題",
     "discovery.recommended": "為您推薦",
     "discovery.recent": "最新添加",
+
+    // Topics Feed
+    "topics.aiEnhancedFeed": "AI 增強文章",
+    "topics.aiEnhancedDescription": "通過 AI 分析和額外研究增強的文章",
+    "topics.noAiArticles": "暫無 AI 增強文章",
+    "topics.noAiArticlesDescription": "您選擇的語言暫時沒有 AI 增強文章。請稍後再試。",
 
     // Profile
     "profile.saved": "收藏",

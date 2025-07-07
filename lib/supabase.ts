@@ -118,7 +118,7 @@ export async function getArticleStats() {
 }
 
 // Balanced query function to ensure proportional representation from all sources
-export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean }) {
+export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string }) {
   try {
     // If specific source filter is applied, use regular query
     if (filters?.source) {
@@ -148,6 +148,17 @@ export async function getBalancedArticles(page = 0, limit = 10, filters?: { sour
         query = query.eq('is_ai_enhanced', filters.isAiEnhanced)
       }
       
+      // Apply language filter if specified - use only metadata (language column doesn't exist)
+      if (filters?.language) {
+        if (filters.language !== "en") {
+          // For non-English languages, check metadata language
+          query = query.eq('enhancement_metadata->>language', filters.language)
+        } else {
+          // For English, include articles where metadata shows 'en' OR metadata language is null/missing
+          query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null`)
+        }
+      }
+      
       const { data, error } = await query.limit(sourceLimit * (page + 1))
       
       if (!error && data) {
@@ -170,7 +181,7 @@ export async function getBalancedArticles(page = 0, limit = 10, filters?: { sour
 }
 
 // Original query function (renamed for clarity)
-export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean }) {
+export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string }) {
   try {
     let query = supabase
       .from("articles")
@@ -184,6 +195,17 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
     
     if (filters?.isAiEnhanced !== undefined) {
       query = query.eq('is_ai_enhanced', filters.isAiEnhanced)
+    }
+    
+    // Apply language filter if specified - use only metadata (language column doesn't exist)
+    if (filters?.language) {
+      if (filters.language !== "en") {
+        // For non-English languages, check metadata language
+        query = query.eq('enhancement_metadata->>language', filters.language)
+      } else {
+        // For English, include articles where metadata shows 'en' OR metadata language is null/missing
+        query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null`)
+      }
     }
     
     const { data, error } = await query.range(page * limit, (page + 1) * limit - 1)
@@ -204,7 +226,7 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
 }
 
 // Main export - use balanced query by default
-export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean }) {
+export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string }) {
   return getBalancedArticles(page, limit, filters)
 }
 

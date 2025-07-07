@@ -21,12 +21,14 @@ export default function ArticlesPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [sourceFilter, setSourceFilter] = useState("all")
+  const [languageFilter, setLanguageFilter] = useState("all")
+  const [aiEnhancedFilter, setAiEnhancedFilter] = useState("all")
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
 
   useEffect(() => {
     loadArticles()
-  }, [page, sourceFilter])
+  }, [page, sourceFilter, languageFilter, aiEnhancedFilter])
 
   const loadArticles = async () => {
     try {
@@ -38,6 +40,14 @@ export default function ArticlesPage() {
       
       if (sourceFilter !== "all") {
         params.set("source", sourceFilter)
+      }
+      
+      if (languageFilter !== "all") {
+        params.set("language", languageFilter)
+      }
+      
+      if (aiEnhancedFilter !== "all") {
+        params.set("aiEnhanced", aiEnhancedFilter)
       }
       
       if (searchQuery) {
@@ -134,8 +144,9 @@ export default function ArticlesPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col gap-4 md:flex-row md:items-center">
-            <form onSubmit={handleSearch} className="flex flex-1 gap-2">
+          <div className="flex flex-col gap-4">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="flex gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -150,23 +161,50 @@ export default function ArticlesPage() {
               </Button>
             </form>
             
-            <Select value={sourceFilter} onValueChange={setSourceFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sources</SelectItem>
-                <SelectItem value="HKFP">HKFP</SelectItem>
-                <SelectItem value="SingTao">SingTao</SelectItem>
-                <SelectItem value="HK01">HK01</SelectItem>
-                <SelectItem value="ONCC">ONCC</SelectItem>
-                <SelectItem value="RTHK">RTHK</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Button onClick={handleRefresh} variant="outline" size="icon">
-              <RefreshCw className="h-4 w-4" />
-            </Button>
+            {/* Filters Row */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  <SelectItem value="HKFP">HKFP</SelectItem>
+                  <SelectItem value="SingTao">SingTao</SelectItem>
+                  <SelectItem value="HK01">HK01</SelectItem>
+                  <SelectItem value="ONCC">ONCC</SelectItem>
+                  <SelectItem value="RTHK">RTHK</SelectItem>
+                  <SelectItem value="on.cc">on.cc</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={languageFilter} onValueChange={setLanguageFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Languages</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="zh-TW">繁體中文</SelectItem>
+                  <SelectItem value="zh-CN">简体中文</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={aiEnhancedFilter} onValueChange={setAiEnhancedFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Articles</SelectItem>
+                  <SelectItem value="true">AI Enhanced Only</SelectItem>
+                  <SelectItem value="false">Regular Articles Only</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button onClick={handleRefresh} variant="outline" size="icon" className="sm:ml-auto">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
