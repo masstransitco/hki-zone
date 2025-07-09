@@ -21,10 +21,39 @@ interface GoogleCSEResponse {
   }>
 }
 
+interface UnsplashImageResponse {
+  results: Array<{
+    id: string
+    urls: {
+      raw: string
+      full: string
+      regular: string
+      small: string
+      thumb: string
+    }
+    user: {
+      name: string
+      username: string
+      links: {
+        html: string
+      }
+    }
+    description?: string
+    alt_description?: string
+    links: {
+      html: string
+    }
+    width: number
+    height: number
+  }>
+  total: number
+  total_pages: number
+}
+
 interface ImageResult {
   url: string
   license: string
-  source: 'perplexity' | 'google' | 'fallback'
+  source: 'unsplash' | 'perplexity' | 'google' | 'fallback'
   alt?: string
   attribution?: string
 }
@@ -33,24 +62,152 @@ class PerplexityImageSearch {
   private perplexityApiKey: string
   private googleApiKey: string
   private googleCSEId: string
+  private unsplashAccessKey: string
   private baseUrl = 'https://api.perplexity.ai/chat/completions'
+  private unsplashBaseUrl = 'https://api.unsplash.com'
 
   constructor() {
     this.perplexityApiKey = process.env.PERPLEXITY_API_KEY || ''
     this.googleApiKey = process.env.GOOGLE_API_KEY || ''
     this.googleCSEId = process.env.GOOGLE_CSE_ID || ''
+    this.unsplashAccessKey = process.env.UNSPLASH_ACCESS_KEY || ''
 
     console.log('🔧 Image Search Configuration:')
+    console.log('  - Unsplash API:', this.unsplashAccessKey ? `${this.unsplashAccessKey.substring(0, 10)}...` : 'MISSING')
     console.log('  - Perplexity API:', this.perplexityApiKey ? `${this.perplexityApiKey.substring(0, 10)}...` : 'MISSING')
     console.log('  - Google API Key:', this.googleApiKey ? `${this.googleApiKey.substring(0, 10)}...` : 'MISSING')
     console.log('  - Google CSE ID:', this.googleCSEId || 'MISSING')
 
+    if (!this.unsplashAccessKey) {
+      console.warn('UNSPLASH_ACCESS_KEY not configured - will fallback to Google and Perplexity')
+    }
     if (!this.perplexityApiKey) {
       console.warn('PERPLEXITY_API_KEY not configured - image search will use fallbacks only')
     }
     if (!this.googleApiKey || !this.googleCSEId) {
       console.warn('Google Custom Search not configured - image search will be limited')
     }
+  }
+
+  private async searchUnsplashImages(query: string, category: string = 'business'): Promise<ImageResult | null> {
+    if (!this.unsplashAccessKey) {
+      return null
+    }
+
+    try {
+      console.log(`🔍 Searching Unsplash for image: ${query} (category: ${category})`)
+
+      const optimizedQuery = this.generateUnsplashSearchQuery(query, category)
+      console.log(`🎯 Optimized Unsplash query: ${optimizedQuery}`)
+
+      const searchUrl = new URL(`${this.unsplashBaseUrl}/search/photos`)
+      searchUrl.searchParams.set('query', optimizedQuery)
+      searchUrl.searchParams.set('per_page', '10')
+      searchUrl.searchParams.set('orientation', 'landscape')
+      searchUrl.searchParams.set('content_filter', 'high')
+
+      const response = await fetch(searchUrl.toString(), {
+        headers: {
+          'Authorization': `Client-ID ${this.unsplashAccessKey}`,
+          'Accept-Version': 'v1'
+        }
+      })
+
+      if (!response.ok) {
+        console.error(`❌ Unsplash API error: ${response.status} ${response.statusText}`)
+        return null
+      }
+
+      const data: UnsplashImageResponse = await response.json()
+      
+      if (data.results && data.results.length > 0) {
+        const bestImage = this.selectBestUnsplashImage(data.results, category)
+        
+        if (bestImage) {
+          console.log(`✅ Found Unsplash image: ${bestImage.urls.regular}`)
+          return {
+            url: bestImage.urls.regular,
+            license: "Unsplash License",
+            source: 'unsplash',
+            alt: bestImage.alt_description || bestImage.description || query,
+            attribution: `Photo by ${bestImage.user.name} on Unsplash`
+          }
+        }
+      }
+
+      console.log(`⚠️ No suitable Unsplash images found for query: ${optimizedQuery}`)
+      return null
+    } catch (error) {
+      console.error("❌ Unsplash image search failed:", error)
+      return null
+    }
+  }
+
+  private generateUnsplashSearchQuery(query: string, category: string): string {
+    const visualKeywords = this.extractVisualKeywords(query)
+    const locationKeywords = this.extractLocationKeywords(query)
+    
+    const categoryKeywords = {
+      politics: ['government', 'building', 'architecture', 'official', 'meeting'],
+      business: ['office', 'building', 'finance', 'urban', 'corporate'],
+      tech: ['technology', 'innovation', 'modern', 'digital', 'science'],
+      health: ['medical', 'hospital', 'healthcare', 'wellness', 'health'],
+      lifestyle: ['city', 'culture', 'life', 'people', 'community'],
+      entertainment: ['performance', 'culture', 'arts', 'entertainment', 'event']
+    }
+
+    const baseCityKeywords = ['hong kong', 'city', 'urban', 'skyline', 'modern']
+    const categorySpecificKeywords = categoryKeywords[category as keyof typeof categoryKeywords] || categoryKeywords.business
+
+    if (visualKeywords.length > 0) {
+      return `${visualKeywords.slice(0, 2).join(' ')} ${categorySpecificKeywords[0]} ${baseCityKeywords[0]}`
+    } else if (locationKeywords.length > 0) {
+      return `${locationKeywords[0]} ${categorySpecificKeywords[0]} building`
+    } else {
+      return `${categorySpecificKeywords[0]} ${baseCityKeywords[0]} ${categorySpecificKeywords[1]}`
+    }
+  }
+
+  private selectBestUnsplashImage(images: any[], category: string): any | null {
+    if (!images || images.length === 0) return null
+
+    const scoredImages = images.map(image => {
+      let score = 0
+      const description = (image.description || '').toLowerCase()
+      const altDescription = (image.alt_description || '').toLowerCase()
+      const combinedDescription = `${description} ${altDescription}`
+
+      if (image.width >= 1200 && image.height >= 800) score += 3
+      if (image.width / image.height >= 1.3 && image.width / image.height <= 2.0) score += 2
+
+      const categoryKeywords = {
+        politics: ['government', 'building', 'architecture', 'official', 'meeting', 'office'],
+        business: ['office', 'building', 'finance', 'urban', 'corporate', 'business'],
+        tech: ['technology', 'innovation', 'modern', 'digital', 'science', 'tech'],
+        health: ['medical', 'hospital', 'healthcare', 'wellness', 'health', 'care'],
+        lifestyle: ['city', 'culture', 'life', 'people', 'community', 'lifestyle'],
+        entertainment: ['performance', 'culture', 'arts', 'entertainment', 'event', 'show']
+      }
+
+      const relevantKeywords = categoryKeywords[category as keyof typeof categoryKeywords] || categoryKeywords.business
+      relevantKeywords.forEach(keyword => {
+        if (combinedDescription.includes(keyword)) score += 1
+      })
+
+      if (combinedDescription.includes('hong kong') || combinedDescription.includes('china') || combinedDescription.includes('asia')) score += 2
+      if (combinedDescription.includes('city') || combinedDescription.includes('urban') || combinedDescription.includes('skyline')) score += 1
+
+      return { image, score }
+    })
+
+    scoredImages.sort((a, b) => b.score - a.score)
+    
+    console.log(`📊 Unsplash image scoring results:`)
+    scoredImages.forEach((scored, i) => {
+      console.log(`   ${i + 1}. Score: ${scored.score} - ${scored.image.alt_description || scored.image.description || 'No description'}`)
+    })
+
+    return scoredImages[0]?.image || null
   }
 
   private async searchPerplexityImages(query: string): Promise<ImageResult | null> {
@@ -497,7 +654,15 @@ class PerplexityImageSearch {
     console.log(`🖼️ Searching for image: ${query} (category: ${category})`)
 
     try {
-      // Strategy 1: Try Google Custom Search if available (more reliable than Perplexity for images)
+      // Strategy 1: Try Unsplash first (highest quality, best licensing)
+      if (this.unsplashAccessKey) {
+        const unsplashResult = await this.searchUnsplashImages(query, category)
+        if (unsplashResult) {
+          return unsplashResult
+        }
+      }
+
+      // Strategy 2: Try Google Custom Search as fallback
       if (this.googleApiKey && this.googleCSEId) {
         const googleResult = await this.searchGoogleImages(query, category)
         if (googleResult) {
@@ -505,7 +670,7 @@ class PerplexityImageSearch {
         }
       }
 
-      // Strategy 2: Try Perplexity as fallback
+      // Strategy 3: Try Perplexity as second fallback
       if (this.perplexityApiKey) {
         const perplexityResult = await this.searchPerplexityImages(query)
         if (perplexityResult) {
@@ -513,7 +678,7 @@ class PerplexityImageSearch {
         }
       }
 
-      // Strategy 3: Use category-appropriate fallback
+      // Strategy 4: Use category-appropriate fallback
       console.log(`⚠️ No images found via API, using Hong Kong-specific fallback for category: ${category}`)
       return this.getHongKongFallbackImage(category, query)
 
@@ -537,14 +702,32 @@ class PerplexityImageSearch {
       // Generate smart search queries using the enriched metadata
       const smartQueries = this.generateSmartSearchQueries(enrichedData, category)
       
-      // Strategy 1: Try Google Custom Search with metadata-based queries
+      // Strategy 1: Try Unsplash first with metadata-based queries
+      if (this.unsplashAccessKey) {
+        for (const [index, query] of smartQueries.entries()) {
+          console.log(`🔍 Trying Unsplash smart query ${index + 1}: ${query}`)
+          
+          const unsplashResult = await this.searchUnsplashImages(query, category)
+          if (unsplashResult) {
+            console.log(`✅ Found relevant Unsplash image using smart query ${index + 1}`)
+            return unsplashResult
+          }
+          
+          // Brief pause between queries
+          if (index < smartQueries.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300))
+          }
+        }
+      }
+      
+      // Strategy 2: Try Google Custom Search with metadata-based queries
       if (this.googleApiKey && this.googleCSEId) {
         for (const [index, query] of smartQueries.entries()) {
-          console.log(`🔍 Trying smart query ${index + 1}: ${query}`)
+          console.log(`🔍 Trying Google smart query ${index + 1}: ${query}`)
           
           const googleResult = await this.searchSingleGoogleQuery(query, category)
           if (googleResult) {
-            console.log(`✅ Found relevant image using smart query ${index + 1}`)
+            console.log(`✅ Found relevant Google image using smart query ${index + 1}`)
             return googleResult
           }
           
@@ -555,7 +738,7 @@ class PerplexityImageSearch {
         }
       }
 
-      // Strategy 2: Try Perplexity as fallback with image prompt
+      // Strategy 3: Try Perplexity as fallback with image prompt
       if (this.perplexityApiKey && enrichedData.imagePrompt) {
         const perplexityResult = await this.searchPerplexityImages(enrichedData.imagePrompt)
         if (perplexityResult) {
@@ -563,7 +746,7 @@ class PerplexityImageSearch {
         }
       }
 
-      // Strategy 3: Use contextual fallback based on metadata
+      // Strategy 4: Use contextual fallback based on metadata
       console.log(`⚠️ No images found via API, using contextual fallback`)
       return this.getContextualFallbackImage(enrichedData, category)
 
@@ -732,9 +915,9 @@ class PerplexityImageSearch {
     return results
   }
 
-  // Test the enhanced Hong Kong image search functionality
+  // Test the enhanced Hong Kong image search functionality with Unsplash priority
   async testImageSearch(): Promise<void> {
-    console.log("🧪 Testing enhanced Hong Kong image search functionality...")
+    console.log("🧪 Testing enhanced Hong Kong image search functionality with Unsplash priority...")
 
     const testQueries = [
       { query: "Hong Kong Legislative Council passes new housing policy", category: "politics" },
@@ -750,8 +933,13 @@ class PerplexityImageSearch {
       console.log(`   Category: ${test.category}`)
       
       // Show the generated queries for this test
+      if (this.unsplashAccessKey) {
+        const unsplashQuery = this.generateUnsplashSearchQuery(test.query, test.category)
+        console.log(`   Unsplash query: ${unsplashQuery}`)
+      }
+      
       const queries = this.generateHongKongSearchQueries(test.query, test.category)
-      console.log(`   Generated queries: ${queries.length}`)
+      console.log(`   Google queries: ${queries.length}`)
       queries.forEach((q, i) => console.log(`     ${i + 1}. ${q}`))
       
       const result = await this.findImage(test.query, test.category)
@@ -762,7 +950,7 @@ class PerplexityImageSearch {
       console.log(`     Attribution: ${result.attribution}`)
     }
 
-    console.log("\n✅ Enhanced Hong Kong image search test completed")
+    console.log("\n✅ Enhanced Hong Kong image search test with Unsplash priority completed")
   }
 }
 
