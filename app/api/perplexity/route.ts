@@ -162,7 +162,7 @@ export async function GET(request: NextRequest) {
       .from("perplexity_news")
       .select("*")
       .eq("article_status", "ready")
-      .order("inserted_at", { ascending: false })
+      .order("published_at", { ascending: false })
       .order("id", { ascending: false }) // Secondary sort by ID for stability
       .range(page * limit, (page + 1) * limit - 1)
 
@@ -200,7 +200,7 @@ export async function GET(request: NextRequest) {
       .from("perplexity_news")
       .select("id")
       .eq("article_status", "ready")
-      .order("inserted_at", { ascending: false })
+      .order("published_at", { ascending: false })
       .order("id", { ascending: false }) // Same ordering as main query
       .range((page + 1) * limit, (page + 1) * limit)
 

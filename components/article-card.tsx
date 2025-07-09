@@ -8,7 +8,29 @@ import { useLanguage } from "./language-provider"
 import { analytics } from "@/lib/analytics"
 import { InlineSourcesBadge } from "./public-sources"
 import { useHydrationSafeDate } from "@/hooks/use-hydration-safe-date"
+import { useState, useEffect } from "react"
 import type { Article } from "@/lib/types"
+
+// Custom time formatting for Perplexity articles (shows minutes instead of hours)
+function formatPerplexityTime(publishedAt: string): string {
+  const now = new Date()
+  const published = new Date(publishedAt)
+  const diffInMs = now.getTime() - published.getTime()
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
+  
+  if (diffInMinutes < 1) {
+    return "just now"
+  } else if (diffInMinutes < 60) {
+    return `${diffInMinutes}m`
+  } else if (diffInMinutes < 1440) { // Less than 24 hours
+    const hours = Math.floor(diffInMinutes / 60)
+    const remainingMinutes = diffInMinutes % 60
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`
+  } else {
+    const days = Math.floor(diffInMinutes / 1440)
+    return `${days}d`
+  }
+}
 
 interface ArticleCardProps {
   article: Article
@@ -18,6 +40,29 @@ interface ArticleCardProps {
 export default function ArticleCard({ article, onReadMore }: ArticleCardProps) {
   const { t } = useLanguage()
   const timeAgo = useHydrationSafeDate(article.publishedAt)
+  const [perplexityTime, setPerplexityTime] = useState("")
+  
+  // Use custom time formatting for Perplexity articles
+  const isPerplexityArticle = article.source === "Perplexity AI"
+  
+  // Update Perplexity time every minute
+  useEffect(() => {
+    if (!isPerplexityArticle) return
+    
+    const updateTime = () => {
+      setPerplexityTime(formatPerplexityTime(article.publishedAt))
+    }
+    
+    // Initial update
+    updateTime()
+    
+    // Update every minute
+    const interval = setInterval(updateTime, 60000)
+    
+    return () => clearInterval(interval)
+  }, [isPerplexityArticle, article.publishedAt])
+  
+  const displayTime = isPerplexityArticle ? perplexityTime : timeAgo
 
   const handleArticleClick = () => {
     analytics.trackArticleView(article.id, article.source, article.topic)
@@ -66,7 +111,7 @@ export default function ArticleCard({ article, onReadMore }: ArticleCardProps) {
               <div className="flex items-center gap-1 flex-shrink-0">
                 <Clock className="h-3 w-3" />
                 <span className="truncate">
-                  {timeAgo && `${timeAgo} ${t("time.ago")}`}
+                  {displayTime && (isPerplexityArticle ? displayTime : `${displayTime} ${t("time.ago")}`)}
                 </span>
               </div>
             </div>

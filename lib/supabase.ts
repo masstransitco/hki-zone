@@ -535,7 +535,7 @@ export async function getPerplexityNews(category?: string, limit = 20) {
       .from("perplexity_news")
       .select("*")
       .eq("article_status", "ready")
-      .order("inserted_at", { ascending: false })
+      .order("published_at", { ascending: false })
 
     if (category) {
       query = query.eq("category", category)
@@ -564,7 +564,7 @@ export async function getPerplexityNewsByCategory() {
       .from("perplexity_news")
       .select("*")
       .eq("article_status", "ready")
-      .order("inserted_at", { ascending: false })
+      .order("published_at", { ascending: false })
 
     if (error) {
       if (error.code === "42P01" || error.message.includes("does not exist")) {
