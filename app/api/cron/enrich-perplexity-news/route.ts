@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { perplexityHKNews } from "@/lib/perplexity-hk-news"
 import { perplexityImageSearch } from "@/lib/perplexity-image-search"
-import { getPendingPerplexityNews, updatePerplexityArticle } from "@/lib/supabase-server"
+import { getPendingPerplexityNews, updatePerplexityArticle, supabaseAdmin } from "@/lib/supabase-server"
 
 export async function GET(request: NextRequest) {
   // Verify the request is from Vercel Cron
@@ -94,16 +94,40 @@ export async function GET(request: NextRequest) {
         }
 
         // Step 2: Process image (if image is pending or failed)
-        // Use the article data we already have to avoid unnecessary DB calls
-        const currentArticle = article
-
-        if (currentArticle.image_status === 'pending' || currentArticle.image_status === 'failed') {
-          // Use article title for more relevant image search
-          const imageQuery = currentArticle.title
+        // We need to fetch the updated article data to access enriched metadata
+        if (article.image_status === 'pending' || article.image_status === 'failed') {
           try {
-            const imageResult = await perplexityImageSearch.findImage(
-              imageQuery,
-              currentArticle.category
+            // Fetch the updated article data after enrichment to access the enriched metadata
+            const { data: updatedArticle, error: fetchError } = await supabaseAdmin
+              .from('perplexity_news')
+              .select('*')
+              .eq('id', article.id!)
+              .single()
+            
+            if (fetchError) {
+              console.error(`❌ Failed to fetch updated article data: ${fetchError.message}`)
+              throw fetchError
+            }
+            
+            // Get the enriched metadata from the updated article
+            const enrichedData = {
+              title: updatedArticle.enhanced_title || updatedArticle.title,
+              imagePrompt: updatedArticle.image_prompt,
+              summary: updatedArticle.summary,
+              keyPoints: updatedArticle.key_points,
+              sources: updatedArticle.structured_sources?.sources || [],
+              citations: updatedArticle.structured_sources?.citations || updatedArticle.citations || []
+            }
+            
+            console.log(`🎯 Using enriched metadata for image search:`)
+            console.log(`   Enhanced title: ${enrichedData.title}`)
+            console.log(`   Image prompt: ${enrichedData.imagePrompt}`)
+            console.log(`   Sources: ${enrichedData.sources.length}`)
+            console.log(`   Citations: ${enrichedData.citations.length}`)
+            
+            const imageResult = await perplexityImageSearch.findImageWithMetadata(
+              enrichedData,
+              updatedArticle.category
             )
 
             await updatePerplexityArticle(article.id!, {
@@ -124,7 +148,7 @@ export async function GET(request: NextRequest) {
               image_status: 'failed'
             })
           }
-        } else if (currentArticle.article_status === 'enriched') {
+        } else if (article.article_status === 'enriched') {
           // Mark as ready if no image needed
           await updatePerplexityArticle(article.id!, {
             article_status: 'ready'

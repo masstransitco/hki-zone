@@ -240,9 +240,10 @@ Format: [{"category":"politics","title":"headline text","url":"https://hongkongf
           }
           publishedAt = testDate.toISOString()
         } catch {
-          // Generate a recent timestamp (within last 6 hours)
-          const hoursAgo = Math.floor(Math.random() * 6) + 1
-          publishedAt = new Date(Date.now() - hoursAgo * 60 * 60 * 1000).toISOString()
+          // Use current time for genuinely new articles
+          // This ensures articles are sorted correctly by when they were actually discovered
+          publishedAt = new Date().toISOString()
+          console.log(`⚠️ Invalid timestamp for headline "${headline.title}", using current time`)
         }
         
         // Make URL unique to avoid duplicates
@@ -568,12 +569,18 @@ Requirements:
 
   // Generate fallback headlines when API is unavailable
   generateFallbackHeadlines(): PerplexityNews[] {
+    // Generate staggered timestamps over the last 6 hours to simulate realistic article flow
+    const now = Date.now()
+    const getStaggeredTimestamp = (hoursAgo: number) => {
+      return new Date(now - (hoursAgo * 60 * 60 * 1000)).toISOString()
+    }
+    
     const fallbackHeadlines: PerplexityNews[] = [
       {
         category: "politics",
         title: "Hong Kong Government Announces New Policy Framework for 2024",
         url: "https://hongkongfp.com/government-policy-framework-2024",
-        published_at: new Date().toISOString(),
+        published_at: getStaggeredTimestamp(1), // 1 hour ago
         article_status: 'ready',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
@@ -585,7 +592,7 @@ Requirements:
         category: "business",
         title: "Hong Kong Property Market Shows Signs of Stabilization",
         url: "https://hk01.com/property-market-stabilization-2024",
-        published_at: new Date().toISOString(),
+        published_at: getStaggeredTimestamp(3), // 3 hours ago
         article_status: 'ready',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
@@ -597,7 +604,7 @@ Requirements:
         category: "tech",
         title: "Hong Kong Launches New Smart City Initiative for Digital Transformation",
         url: "https://rthk.hk/smart-city-initiative-2024",
-        published_at: new Date().toISOString(),
+        published_at: getStaggeredTimestamp(5), // 5 hours ago
         article_status: 'ready',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',

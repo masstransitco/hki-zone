@@ -158,11 +158,12 @@ export async function GET(request: NextRequest) {
     console.log("Fetching Perplexity news from database...")
 
     // Use proper offset-based pagination with stable ordering
+    // Sort by updated_at to show most recently enriched articles first
     const { data: articles, error } = await supabaseAdmin
       .from("perplexity_news")
       .select("*")
       .eq("article_status", "ready")
-      .order("published_at", { ascending: false })
+      .order("updated_at", { ascending: false })
       .order("id", { ascending: false }) // Secondary sort by ID for stability
       .range(page * limit, (page + 1) * limit - 1)
 
@@ -200,7 +201,7 @@ export async function GET(request: NextRequest) {
       .from("perplexity_news")
       .select("id")
       .eq("article_status", "ready")
-      .order("published_at", { ascending: false })
+      .order("updated_at", { ascending: false })
       .order("id", { ascending: false }) // Same ordering as main query
       .range((page + 1) * limit, (page + 1) * limit)
 

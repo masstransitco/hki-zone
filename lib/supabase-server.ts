@@ -172,7 +172,7 @@ export async function getPerplexityNews(category?: string, limit = 20) {
       .from("perplexity_news")
       .select("*")
       .in("article_status", ["ready", "pending", "enriched"]) // Include all statuses for now
-      .order("published_at", { ascending: false })
+      .order("updated_at", { ascending: false })
 
     if (category) {
       query = query.eq("category", category)
@@ -232,7 +232,7 @@ export async function getPerplexityNewsByCategory(limitPerCategory: number = 10)
       .select("*")
       .in("article_status", ["ready", "pending", "enriched"]) // Include all statuses for now
       .neq("source", "Perplexity AI (Fallback)") // Exclude fallback articles
-      .order("published_at", { ascending: false })
+      .order("updated_at", { ascending: false })
 
     if (error) {
       if (error.code === "42P01" || error.message.includes("does not exist")) {
