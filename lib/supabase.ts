@@ -1,7 +1,16 @@
 import { createClient } from "@supabase/supabase-js"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Use service role key for server-side operations, anon key for client-side
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+if (!supabaseUrl) {
+  throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
+}
+
+if (!supabaseKey) {
+  throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable')
+}
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -340,6 +349,266 @@ export async function checkDatabaseSetup() {
     if (error.message === 'Database check timeout') {
       console.warn("Database check timed out - likely RLS policy issue")
     }
+    return false
+  }
+}
+
+export interface Headline {
+  id?: string
+  category: string
+  title: string
+  url: string
+  source: string
+  published_at: string
+  created_at?: string
+  image_url?: string
+  author?: string
+}
+
+export async function saveHeadlines(headlines: Headline[]) {
+  try {
+    const { data, error } = await supabase
+      .from("headlines")
+      .insert(headlines)
+      .select()
+
+    if (error) {
+      console.error("Error saving headlines:", error)
+      throw error
+    }
+
+    console.log(`✅ Saved ${headlines.length} headlines`)
+    return data
+  } catch (error) {
+    console.error("Error in saveHeadlines:", error)
+    throw error
+  }
+}
+
+export async function getHeadlines(category?: string) {
+  try {
+    let query = supabase
+      .from("headlines")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (category) {
+      query = query.eq("category", category)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
+        console.warn("Headlines table does not exist. Please run the database setup.")
+        return []
+      }
+      throw error
+    }
+
+    return data || []
+  } catch (error) {
+    console.error("Error fetching headlines:", error)
+    return []
+  }
+}
+
+export async function getHeadlinesByCategory() {
+  try {
+    const { data, error } = await supabase
+      .from("headlines")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
+        console.warn("Headlines table does not exist. Please run the database setup.")
+        return {}
+      }
+      throw error
+    }
+
+    // Group headlines by category (max 10 per category)
+    const groupedHeadlines = (data || []).reduce((acc, headline) => {
+      if (!acc[headline.category]) {
+        acc[headline.category] = []
+      }
+      if (acc[headline.category].length < 10) {
+        acc[headline.category].push(headline)
+      }
+      return acc
+    }, {} as Record<string, Headline[]>)
+
+    return groupedHeadlines
+  } catch (error) {
+    console.error("Error fetching headlines by category:", error)
+    return {}
+  }
+}
+
+export async function cleanupOldHeadlines() {
+  try {
+    const { error } = await supabase
+      .from("headlines")
+      .delete()
+      .lt("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+
+    if (error) {
+      console.error("Error cleaning up old headlines:", error)
+      throw error
+    }
+
+    console.log("✅ Cleaned up old headlines")
+  } catch (error) {
+    console.error("Error in cleanupOldHeadlines:", error)
+    throw error
+  }
+}
+
+export async function checkHeadlinesTableSetup() {
+  try {
+    const { data, error } = await supabase
+      .from("headlines")
+      .select("id")
+      .limit(1)
+
+    if (error) {
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
+        return false
+      }
+      throw error
+    }
+
+    return true
+  } catch (error) {
+    console.error("Headlines table setup check failed:", error)
+    return false
+  }
+}
+
+export interface PerplexityNews {
+  id?: string
+  category: string
+  title: string
+  url: string
+  published_at: string
+  inserted_at?: string
+  url_hash?: string
+  article_status: 'pending' | 'enriched' | 'ready'
+  article_html?: string
+  lede?: string
+  image_prompt?: string
+  image_status: 'pending' | 'ready' | 'failed'
+  image_url?: string
+  image_license?: string
+  
+  // Enhanced structured content fields
+  enhanced_title?: string
+  summary?: string
+  key_points?: string[]
+  why_it_matters?: string
+  structured_sources?: {
+    citations: string[]
+    sources: Array<{
+      title: string
+      url: string
+      description?: string
+      domain?: string
+    }>
+    generated_at: string
+  }
+  
+  source?: string
+  author?: string
+  perplexity_model?: string
+  generation_cost?: number
+  search_queries?: string[]
+  citations?: any
+  created_at?: string
+  updated_at?: string
+}
+
+
+export async function getPerplexityNews(category?: string, limit = 20) {
+  try {
+    let query = supabase
+      .from("perplexity_news")
+      .select("*")
+      .eq("article_status", "ready")
+      .order("inserted_at", { ascending: false })
+
+    if (category) {
+      query = query.eq("category", category)
+    }
+
+    const { data, error } = await query.limit(limit)
+
+    if (error) {
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
+        console.warn("Perplexity news table does not exist. Please run the database setup.")
+        return []
+      }
+      throw error
+    }
+
+    return data || []
+  } catch (error) {
+    console.error("Error fetching Perplexity news:", error)
+    return []
+  }
+}
+
+export async function getPerplexityNewsByCategory() {
+  try {
+    const { data, error } = await supabase
+      .from("perplexity_news")
+      .select("*")
+      .eq("article_status", "ready")
+      .order("inserted_at", { ascending: false })
+
+    if (error) {
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
+        console.warn("Perplexity news table does not exist. Please run the database setup.")
+        return {}
+      }
+      throw error
+    }
+
+    // Group by category (max 10 per category)
+    const groupedNews = (data || []).reduce((acc, article) => {
+      if (!acc[article.category]) {
+        acc[article.category] = []
+      }
+      if (acc[article.category].length < 10) {
+        acc[article.category].push(article)
+      }
+      return acc
+    }, {} as Record<string, PerplexityNews[]>)
+
+    return groupedNews
+  } catch (error) {
+    console.error("Error fetching Perplexity news by category:", error)
+    return {}
+  }
+}
+
+export async function checkPerplexityNewsTableSetup() {
+  try {
+    const { data, error } = await supabase
+      .from("perplexity_news")
+      .select("id")
+      .limit(1)
+
+    if (error) {
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
+        return false
+      }
+      throw error
+    }
+
+    return true
+  } catch (error) {
+    console.error("Perplexity news table setup check failed:", error)
     return false
   }
 }

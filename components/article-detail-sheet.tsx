@@ -16,9 +16,32 @@ interface ArticleDetailSheetProps {
 }
 
 async function fetchArticle(id: string): Promise<Article> {
-  const response = await fetch(`/api/articles/${id}`)
-  if (!response.ok) throw new Error("Failed to fetch article")
-  return response.json()
+  console.log(`🔍 ArticleDetailSheet: Fetching article with ID: ${id}`)
+  
+  // Try perplexity API first, then fall back to regular articles API
+  let response = await fetch(`/api/perplexity/${id}`)
+  let isPerplexityArticle = true
+  
+  if (!response.ok) {
+    console.log(`❌ Perplexity API failed for ${id}, trying regular articles API`)
+    response = await fetch(`/api/articles/${id}`)
+    isPerplexityArticle = false
+  }
+  
+  if (!response.ok) {
+    throw new Error("Failed to fetch article from both APIs")
+  }
+  
+  const article = await response.json()
+  console.log(`✅ Article fetched successfully:`, {
+    id: article.id,
+    title: article.title,
+    source: article.source,
+    isPerplexityArticle,
+    usingMockData: article.usingMockData
+  })
+  
+  return article
 }
 
 export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProps) {

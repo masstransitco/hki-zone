@@ -10,6 +10,7 @@ import {
   Settings,
   Activity,
   Shield,
+  Brain,
 } from "lucide-react"
 
 import {
@@ -36,6 +37,12 @@ const navigationItems = [
     url: "/admin/articles",
     icon: FileText,
     description: "Review scraped articles and content",
+  },
+  {
+    title: "Perplexity News",
+    url: "/admin/perplexity",
+    icon: Brain,
+    description: "Manage AI-generated news articles",
   },
   {
     title: "Database",
