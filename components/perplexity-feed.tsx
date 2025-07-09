@@ -53,8 +53,9 @@ export default function PerplexityFeed() {
       return lastPage.nextPage
     },
     initialPageParam: 0,
-    staleTime: 2 * 60 * 1000, // 2 minutes (refresh more frequently for AI-generated content)
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes - longer stale time to prevent unnecessary refetches
+    refetchInterval: false, // Disable automatic refetch to prevent pagination reset
+    refetchOnWindowFocus: false, // Prevent refetch on window focus
   })
 
   useEffect(() => {
@@ -67,9 +68,15 @@ export default function PerplexityFeed() {
   if (error) return <div className="p-4 text-center text-destructive" suppressHydrationWarning>{t("error.failedToLoad")} AI news</div>
 
   const perplexityArticles = data?.pages.flatMap((page) => page.articles) ?? []
-  const articles: Article[] = perplexityArticles.map(transformPerplexityToArticle)
   
-  console.log(`📊 PerplexityFeed: Loaded ${articles.length} articles, first article:`, articles[0]?.id, articles[0]?.title)
+  // Deduplicate articles by ID to prevent duplicates from pagination issues
+  const uniquePerplexityArticles = perplexityArticles.filter((article, index, self) => 
+    index === self.findIndex(a => a.id === article.id)
+  )
+  
+  const articles: Article[] = uniquePerplexityArticles.map(transformPerplexityToArticle)
+  
+  console.log(`📊 PerplexityFeed: Loaded ${articles.length} unique articles (${perplexityArticles.length - uniquePerplexityArticles.length} duplicates removed), first article:`, articles[0]?.id, articles[0]?.title)
 
   if (articles.length === 0) {
     return (

@@ -157,12 +157,13 @@ export async function GET(request: NextRequest) {
 
     console.log("Fetching Perplexity news from database...")
 
-    // Use proper offset-based pagination directly in the database query
+    // Use proper offset-based pagination with stable ordering
     const { data: articles, error } = await supabaseAdmin
       .from("perplexity_news")
       .select("*")
       .eq("article_status", "ready")
       .order("inserted_at", { ascending: false })
+      .order("id", { ascending: false }) // Secondary sort by ID for stability
       .range(page * limit, (page + 1) * limit - 1)
 
     if (error) {
@@ -170,7 +171,14 @@ export async function GET(request: NextRequest) {
       throw error
     }
 
-    console.log(`Fetched ${articles?.length || 0} articles from database for page ${page}`)
+    console.log(`📊 Pagination Summary:`)
+    console.log(`   Page: ${page}, Limit: ${limit}`)
+    console.log(`   Range: ${page * limit} to ${(page + 1) * limit - 1}`)
+    console.log(`   Fetched: ${articles?.length || 0} articles`)
+    if (articles && articles.length > 0) {
+      console.log(`   First article: ${articles[0].title} (${articles[0].id})`)
+      console.log(`   Last article: ${articles[articles.length - 1].title} (${articles[articles.length - 1].id})`)
+    }
 
     // If no articles in database, fall back to mock data
     if (!articles || articles.length === 0) {
@@ -193,6 +201,7 @@ export async function GET(request: NextRequest) {
       .select("id")
       .eq("article_status", "ready")
       .order("inserted_at", { ascending: false })
+      .order("id", { ascending: false }) // Same ordering as main query
       .range((page + 1) * limit, (page + 1) * limit)
 
     const hasNextPage = nextPageCheck && nextPageCheck.length > 0
