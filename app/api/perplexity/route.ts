@@ -177,8 +177,9 @@ export async function GET(request: NextRequest) {
     console.log(`   Range: ${page * limit} to ${(page + 1) * limit - 1}`)
     console.log(`   Fetched: ${articles?.length || 0} articles`)
     if (articles && articles.length > 0) {
-      console.log(`   First article: ${articles[0].title} (${articles[0].id})`)
-      console.log(`   Last article: ${articles[articles.length - 1].title} (${articles[articles.length - 1].id})`)
+      console.log(`   Latest article: "${articles[0].title}" (ID: ${articles[0].id}, updated: ${articles[0].updated_at})`)
+      console.log(`   Oldest article: "${articles[articles.length - 1].title}" (ID: ${articles[articles.length - 1].id}, updated: ${articles[articles.length - 1].updated_at})`)
+      console.log(`   🔄 Articles properly ordered by updated_at DESC - most recently updated first`)
     }
 
     // If no articles in database, fall back to mock data
@@ -196,7 +197,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Check if there are more pages by fetching one more article
+    // Check if there are more pages by fetching one more article at the next page start
     const { data: nextPageCheck } = await supabaseAdmin
       .from("perplexity_news")
       .select("id")
@@ -206,6 +207,7 @@ export async function GET(request: NextRequest) {
       .range((page + 1) * limit, (page + 1) * limit)
 
     const hasNextPage = nextPageCheck && nextPageCheck.length > 0
+    console.log(`📄 Pagination check: hasNextPage = ${hasNextPage} (checked offset ${(page + 1) * limit})`)
 
     return NextResponse.json({
       articles: articles,
