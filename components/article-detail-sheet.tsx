@@ -18,26 +18,34 @@ interface ArticleDetailSheetProps {
 async function fetchArticle(id: string): Promise<Article> {
   console.log(`🔍 ArticleDetailSheet: Fetching article with ID: ${id}`)
   
-  // Try perplexity API first, then fall back to regular articles API
+  // Check if this is likely a perplexity article by trying perplexity API first
+  // but only if it doesn't respond with a mock article
   let response = await fetch(`/api/perplexity/${id}`)
-  let isPerplexityArticle = true
   
-  if (!response.ok) {
+  if (response.ok) {
+    const article = await response.json()
+    // If we get a real perplexity article (not mock data), use it
+    if (!article.usingMockData) {
+      console.log(`✅ Found real perplexity article: ${article.title}`)
+      return article
+    }
+    console.log(`🔄 Perplexity API returned mock data for ${id}, trying regular articles API`)
+  } else {
     console.log(`❌ Perplexity API failed for ${id}, trying regular articles API`)
-    response = await fetch(`/api/articles/${id}`)
-    isPerplexityArticle = false
   }
+  
+  // Fall back to regular articles API
+  response = await fetch(`/api/articles/${id}`)
   
   if (!response.ok) {
     throw new Error("Failed to fetch article from both APIs")
   }
   
   const article = await response.json()
-  console.log(`✅ Article fetched successfully:`, {
+  console.log(`✅ Article fetched from regular API:`, {
     id: article.id,
     title: article.title,
     source: article.source,
-    isPerplexityArticle,
     usingMockData: article.usingMockData
   })
   
