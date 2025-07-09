@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import AIEnhancedContent from "@/components/ai-enhanced-content"
 import { 
   CheckCircle, 
   AlertCircle, 
@@ -45,6 +46,22 @@ interface PerplexityArticle {
   generation_cost?: number
   citations?: string[]
   perplexity_model?: string
+  
+  // Enhanced structured content fields
+  enhanced_title?: string
+  summary?: string
+  key_points?: string[]
+  why_it_matters?: string
+  structured_sources?: {
+    citations: string[]
+    sources: Array<{
+      title: string
+      url: string
+      description?: string
+      domain?: string
+    }>
+    generated_at: string
+  }
 }
 
 interface PerplexityArticleDetailProps {
@@ -64,6 +81,40 @@ const CATEGORIES = [
   "lifestyle",
   "entertainment"
 ]
+
+// Helper function to format enhanced content for AIEnhancedContent component
+function formatEnhancedContent(article: PerplexityArticle): string {
+  if (!article.enhanced_title && !article.summary && !article.key_points && !article.why_it_matters) {
+    // No enhanced content, return regular content
+    return article.article_html || article.lede || ""
+  }
+
+  // Format content in the expected structure
+  let content = ""
+  
+  if (article.summary) {
+    content += `**Summary**\n${article.summary}\n\n`
+  }
+  
+  if (article.key_points && article.key_points.length > 0) {
+    content += `**Key Points**\n`
+    article.key_points.forEach(point => {
+      content += `• ${point}\n`
+    })
+    content += `\n`
+  }
+  
+  if (article.why_it_matters) {
+    content += `**Why It Matters**\n${article.why_it_matters}\n\n`
+  }
+  
+  // Add main content if available
+  if (article.article_html && article.article_html !== `<p>${article.lede}</p>`) {
+    content += article.article_html
+  }
+  
+  return content
+}
 
 export default function PerplexityArticleDetail({
   article,
@@ -296,24 +347,70 @@ export default function PerplexityArticleDetail({
           </div>
         )}
         
-        {/* Content */}
-        {currentArticle.article_html && (
-          <div>
-            <Label className="text-sm font-semibold mb-2 block">Article Content</Label>
-            <div className="prose prose-sm max-w-none text-sm border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-              {isEditing ? (
-                <Textarea
-                  value={editedArticle?.article_html || ""}
-                  onChange={(e) => setEditedArticle(prev => prev ? { ...prev, article_html: e.target.value } : null)}
-                  rows={10}
-                  className="resize-none font-mono text-xs"
-                />
-              ) : (
-                <div dangerouslySetInnerHTML={{ __html: currentArticle.article_html }} />
-              )}
-            </div>
+        {/* Enhanced Content */}
+        <div>
+          <Label className="text-sm font-semibold mb-2 block">Article Content</Label>
+          <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs font-medium mb-1 block">Enhanced Title</Label>
+                  <Input
+                    value={editedArticle?.enhanced_title || ""}
+                    onChange={(e) => setEditedArticle(prev => prev ? { ...prev, enhanced_title: e.target.value } : null)}
+                    placeholder="Enhanced title..."
+                    className="text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-xs font-medium mb-1 block">Summary</Label>
+                  <Textarea
+                    value={editedArticle?.summary || ""}
+                    onChange={(e) => setEditedArticle(prev => prev ? { ...prev, summary: e.target.value } : null)}
+                    placeholder="Article summary..."
+                    rows={2}
+                    className="resize-none text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-xs font-medium mb-1 block">Key Points (one per line)</Label>
+                  <Textarea
+                    value={editedArticle?.key_points?.join('\n') || ""}
+                    onChange={(e) => setEditedArticle(prev => prev ? { ...prev, key_points: e.target.value.split('\n').filter(p => p.trim()) } : null)}
+                    placeholder="Key point 1&#10;Key point 2&#10;Key point 3..."
+                    rows={4}
+                    className="resize-none text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-xs font-medium mb-1 block">Why It Matters</Label>
+                  <Textarea
+                    value={editedArticle?.why_it_matters || ""}
+                    onChange={(e) => setEditedArticle(prev => prev ? { ...prev, why_it_matters: e.target.value } : null)}
+                    placeholder="Why this matters..."
+                    rows={2}
+                    className="resize-none text-sm"
+                  />
+                </div>
+                
+                <div>
+                  <Label className="text-xs font-medium mb-1 block">HTML Content</Label>
+                  <Textarea
+                    value={editedArticle?.article_html || ""}
+                    onChange={(e) => setEditedArticle(prev => prev ? { ...prev, article_html: e.target.value } : null)}
+                    rows={6}
+                    className="resize-none font-mono text-xs"
+                  />
+                </div>
+              </div>
+            ) : (
+              <AIEnhancedContent content={formatEnhancedContent(currentArticle)} isBottomSheet={false} />
+            )}
           </div>
-        )}
+        </div>
         
         {/* URL */}
         <div>

@@ -74,10 +74,84 @@ async function checkDatabaseColumns() {
   return missingColumns;
 }
 
+async function checkPerplexityColumns() {
+  console.log('\n=== Checking Perplexity News Columns ===');
+  
+  const baseColumns = [
+    'id', 'title', 'category', 'url', 'url_hash', 'article_status', 'image_status',
+    'article_html', 'lede', 'image_url', 'image_prompt', 'image_license',
+    'source', 'author', 'published_at', 'inserted_at', 'created_at', 'updated_at',
+    'perplexity_model', 'generation_cost', 'search_queries', 'citations'
+  ];
+  
+  const enhancedColumns = [
+    'enhanced_title', 'summary', 'key_points', 'why_it_matters', 'structured_sources'
+  ];
+  
+  const missingBaseColumns = [];
+  const missingEnhancedColumns = [];
+  
+  // Check base columns
+  for (const column of baseColumns) {
+    const { error } = await supabase
+      .from('perplexity_news')
+      .select(column)
+      .limit(1);
+    
+    if (error && error.message.includes(`column "${column}"`)) {
+      missingBaseColumns.push(column);
+      console.log(`  ✗ Missing base: ${column}`);
+    } else {
+      console.log(`  ✓ Base exists: ${column}`);
+    }
+  }
+  
+  // Check enhanced columns (these are the ones we need for AI enhancement)
+  for (const column of enhancedColumns) {
+    const { error } = await supabase
+      .from('perplexity_news')
+      .select(column)
+      .limit(1);
+    
+    if (error && error.message.includes(`column "${column}"`)) {
+      missingEnhancedColumns.push(column);
+      console.log(`  ✗ Missing enhanced: ${column}`);
+    } else {
+      console.log(`  ✓ Enhanced exists: ${column}`);
+    }
+  }
+  
+  if (missingBaseColumns.length > 0) {
+    console.log(`\n⚠️  Missing base perplexity columns: ${missingBaseColumns.join(', ')}`);
+    console.log('   Run: scripts/add-perplexity-news-table.sql');
+  }
+  
+  if (missingEnhancedColumns.length > 0) {
+    console.log(`\n🚨 Missing enhanced perplexity columns: ${missingEnhancedColumns.join(', ')}`);
+    console.log('   This is why you\'re getting the PGRST204 error!');
+    console.log('\n   To fix, run ONE of these SQL migrations:');
+    console.log('   • scripts/add-enhanced-perplexity-fields.sql');
+    console.log('   • scripts/quick-add-enhanced-fields.sql');
+    console.log('\n   Or copy-paste this into Supabase SQL Editor:');
+    console.log('   ALTER TABLE perplexity_news ADD COLUMN IF NOT EXISTS enhanced_title TEXT;');
+    console.log('   ALTER TABLE perplexity_news ADD COLUMN IF NOT EXISTS summary TEXT;');
+    console.log('   ALTER TABLE perplexity_news ADD COLUMN IF NOT EXISTS key_points TEXT[];');
+    console.log('   ALTER TABLE perplexity_news ADD COLUMN IF NOT EXISTS why_it_matters TEXT;');
+    console.log('   ALTER TABLE perplexity_news ADD COLUMN IF NOT EXISTS structured_sources JSONB;');
+  } else {
+    console.log('\n✅ All enhanced perplexity columns exist!');
+  }
+  
+  return { missingBaseColumns, missingEnhancedColumns };
+}
+
 async function checkDatabase() {
   try {
     // First check columns
     const missingColumns = await checkDatabaseColumns();
+    
+    // Check perplexity columns
+    const { missingBaseColumns, missingEnhancedColumns } = await checkPerplexityColumns();
     
     console.log('\n=== Checking Database Articles ===');
     

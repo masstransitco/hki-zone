@@ -126,6 +126,35 @@ export async function updatePerplexityArticle(id: string, updates: Partial<Perpl
       .single()
 
     if (error) {
+      // Check if the error is about missing enhanced fields
+      if (error.code === 'PGRST204' && error.message.includes('enhanced_title')) {
+        console.warn("⚠️  Enhanced fields not available in schema, using legacy fields only")
+        
+        // Filter out enhanced fields and retry with legacy fields only
+        const legacyUpdates = Object.fromEntries(
+          Object.entries(updates).filter(([key]) => 
+            !['enhanced_title', 'summary', 'key_points', 'why_it_matters', 'structured_sources'].includes(key)
+          )
+        )
+        
+        if (Object.keys(legacyUpdates).length > 0) {
+          console.log("🔄 Retrying with legacy fields only:", Object.keys(legacyUpdates))
+          const { data: legacyData, error: legacyError } = await supabaseAdmin
+            .from("perplexity_news")
+            .update(legacyUpdates)
+            .eq("id", id)
+            .select()
+            .single()
+          
+          if (legacyError) {
+            console.error("Error updating with legacy fields:", legacyError)
+            throw legacyError
+          }
+          
+          return legacyData
+        }
+      }
+      
       console.error("Error updating Perplexity article:", error)
       throw error
     }

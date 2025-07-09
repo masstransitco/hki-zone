@@ -48,12 +48,38 @@ export async function POST(request: NextRequest) {
           const enrichment = await perplexityHKNews.enrichArticle(article)
           
           console.log(`   💾 Updating article with enriched content...`)
-          await updatePerplexityArticle(article.id!, {
+          
+          // Prepare update object with legacy fields
+          const updateData = {
             article_status: 'enriched',
             lede: enrichment.lede,
             article_html: `<p>${enrichment.lede}</p>${enrichment.body_html}`,
             image_prompt: enrichment.image_prompt
-          })
+          }
+
+          // Try to update with enhanced fields if available in schema
+          try {
+            await updatePerplexityArticle(article.id!, {
+              ...updateData,
+              // Enhanced fields (if schema is migrated)
+              enhanced_title: enrichment.enhanced_title,
+              summary: enrichment.summary,
+              key_points: enrichment.key_points,
+              why_it_matters: enrichment.why_it_matters,
+              structured_sources: {
+                citations: enrichment.citations,
+                sources: enrichment.sources,
+                generated_at: new Date().toISOString()
+              }
+            })
+          } catch (schemaError) {
+            if (schemaError.code === 'PGRST204') {
+              console.log(`   ⚠️  Enhanced fields not available in schema, using legacy fields only`)
+              await updatePerplexityArticle(article.id!, updateData)
+            } else {
+              throw schemaError
+            }
+          }
 
           console.log(`✅ Article enriched: ${article.title}`)
           totalCost += enrichment.cost || 0

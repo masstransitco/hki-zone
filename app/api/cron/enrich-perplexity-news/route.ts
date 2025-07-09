@@ -57,19 +57,34 @@ export async function GET(request: NextRequest) {
             generated_at: new Date().toISOString()
           }
           
-          await updatePerplexityArticle(article.id!, {
+          // Prepare update object with only legacy fields first
+          const updateData = {
             article_status: 'enriched',
             // Legacy fields for backward compatibility
             lede: enrichment.lede,
             article_html: `<p>${enrichment.lede}</p>${enrichment.body_html}`,
-            image_prompt: enrichment.image_prompt,
-            // New enhanced fields
-            enhanced_title: enrichment.enhanced_title,
-            summary: enrichment.summary,
-            key_points: enrichment.key_points,
-            why_it_matters: enrichment.why_it_matters,
-            structured_sources: structuredSources
-          })
+            image_prompt: enrichment.image_prompt
+          }
+
+          // Try to update with enhanced fields, fall back to legacy fields if schema not migrated
+          try {
+            await updatePerplexityArticle(article.id!, {
+              ...updateData,
+              // New enhanced fields
+              enhanced_title: enrichment.enhanced_title,
+              summary: enrichment.summary,
+              key_points: enrichment.key_points,
+              why_it_matters: enrichment.why_it_matters,
+              structured_sources: structuredSources
+            })
+          } catch (schemaError) {
+            if (schemaError.code === 'PGRST204') {
+              console.log(`⚠️  Enhanced fields not available in schema, using legacy fields only`)
+              await updatePerplexityArticle(article.id!, updateData)
+            } else {
+              throw schemaError
+            }
+          }
 
           console.log(`✅ Article enriched with enhanced structure: ${enrichment.enhanced_title}`)
           console.log(`   📋 Key points: ${enrichment.key_points.length} items`)

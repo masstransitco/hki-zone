@@ -319,13 +319,13 @@ Format: [{"category":"politics","title":"headline text","url":"https://hongkongf
       }
     }
     
-    // Extract sections using regex patterns
-    const enhancedTitleMatch = content.match(/# Enhanced Title:\s*(.+)/i)
-    const summaryMatch = content.match(/## Summary\s*\n([\s\S]*?)(?=\n## |$)/i)
-    const keyPointsMatch = content.match(/## Key Points\s*\n([\s\S]*?)(?=\n## |$)/i)
-    const whyItMattersMatch = content.match(/## Why It Matters\s*\n([\s\S]*?)(?=\n## |$)/i)
-    const fullArticleMatch = content.match(/## Full Article\s*\n([\s\S]*?)(?=\n## |$)/i)
-    const imageSearchMatch = content.match(/## Image Search\s*\n([\s\S]*?)(?=\n## |$)/i)
+    // Extract sections using regex patterns (match the exact AI enhancement format)
+    const enhancedTitleMatch = content.match(/# ENHANCED TITLE:\s*(.+)/i)
+    const summaryMatch = content.match(/## SUMMARY\s*\n([\s\S]*?)(?=\n## |$)/i)
+    const keyPointsMatch = content.match(/## KEY POINTS\s*\n([\s\S]*?)(?=\n## |$)/i)
+    const whyItMattersMatch = content.match(/## WHY IT MATTERS\s*\n([\s\S]*?)(?=\n## |$)/i)
+    const fullArticleMatch = content.match(/## FULL ARTICLE\s*\n([\s\S]*?)(?=\n## |$)/i)
+    const imageSearchMatch = content.match(/## IMAGE SEARCH\s*\n([\s\S]*?)(?=\n## |$)/i)
     
     // Extract and clean enhanced title
     const enhancedTitle = enhancedTitleMatch 
@@ -337,12 +337,12 @@ Format: [{"category":"politics","title":"headline text","url":"https://hongkongf
       ? summaryMatch[1].trim().replace(/^\[|\]$/g, '')
       : `Breaking news in Hong Kong's ${headline.category} sector with significant implications for the city.`
     
-    // Extract key points
+    // Extract key points (handle both • and - bullet formats)
     const keyPointsText = keyPointsMatch ? keyPointsMatch[1].trim() : ''
     const keyPoints = keyPointsText
       .split('\n')
-      .filter(line => line.trim().startsWith('-'))
-      .map(line => line.trim().replace(/^-\s*/, '').replace(/^\[|\]$/g, ''))
+      .filter(line => line.trim().startsWith('•') || line.trim().startsWith('-'))
+      .map(line => line.trim().replace(/^[•-]\s*/, '').replace(/^\[|\]$/g, ''))
       .filter(point => point.length > 0)
     
     // Ensure we have at least 3 key points
@@ -407,36 +407,38 @@ Format: [{"category":"politics","title":"headline text","url":"https://hongkongf
             role: "user",
             content: `Create an enhanced Hong Kong news article with this exact structure:
 
-# Enhanced Title: [Create an improved, engaging headline that's more compelling than the original while maintaining accuracy]
+# ENHANCED TITLE: [Create a compelling, clear title that captures the enhanced story]
 
-## Summary
-[Write a compelling 2-3 sentence executive summary that captures the essence of the story]
+## SUMMARY
+[Write a 2-3 sentence executive summary of the key developments]
 
-## Key Points
-- [Main fact or development 1]
-- [Main fact or development 2] 
-- [Main fact or development 3]
-- [Additional key point if relevant]
+## KEY POINTS
+• [Bullet point 1: Most important fact or development with context]
+• [Bullet point 2: Second key point with relevant background]
+• [Bullet point 3: Third significant point with implications]
+• [Bullet point 4: Fourth important detail with expert perspective]
+• [Bullet point 5: Fifth key point if relevant, otherwise omit]
 
-## Why It Matters
-[Write 2-3 sentences analyzing the broader significance, impact on Hong Kong, or implications for the future]
+## WHY IT MATTERS
+[Write 2-3 sentences explaining the broader significance and impact on Hong Kong, including potential implications for residents, economy, or policy]
 
-## Full Article
+## FULL ARTICLE
 [Write detailed article content in paragraph form, expanding on the key points with context and analysis]
 
-## Image Search
+## IMAGE SEARCH
 [Suggest a descriptive prompt for finding a relevant, professional photo for this story]
 
 Based on this Hong Kong headline: "${headline.title}"
 Category: ${headline.category}
 
 Requirements:
-- Search for current information about this topic
-- Include relevant source citations in your response
+- Search for current information about this topic from Hong Kong sources
+- Include relevant source citations using [1], [2], etc. format
 - Ensure all content is factually accurate and current
 - Maintain professional journalism standards
 - Focus on Hong Kong context and implications
-- Keep the enhanced title engaging but accurate`
+- Keep each bullet point to 1-2 sentences maximum
+- Make it digestible and easy to scan`
           }
         ],
       }
@@ -520,12 +522,22 @@ Requirements:
           // Enrich the article
           const enrichment = await this.enrichArticle(article)
           
-          // Update the article with enriched content
+          // Update the article with enriched content including structured fields
           await updatePerplexityArticle(article.id!, {
             article_status: 'enriched',
             lede: enrichment.lede,
             article_html: `<p>${enrichment.lede}</p>${enrichment.body_html}`,
-            image_prompt: enrichment.image_prompt
+            image_prompt: enrichment.image_prompt,
+            // Enhanced structured content fields
+            enhanced_title: enrichment.enhanced_title,
+            summary: enrichment.summary,
+            key_points: enrichment.key_points,
+            why_it_matters: enrichment.why_it_matters,
+            structured_sources: {
+              citations: enrichment.citations,
+              sources: enrichment.sources,
+              generated_at: new Date().toISOString()
+            }
           })
 
           processed++
