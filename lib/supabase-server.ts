@@ -41,9 +41,12 @@ export async function savePerplexityHeadlines(headlines: Omit<PerplexityNews, 'i
     
     for (const headline of headlines) {
       try {
+        // Remove published_at field if present (using only created_at/updated_at pattern)
+        const { published_at, ...headlineData } = headline as any
+        
         const { data, error } = await supabaseAdmin
           .from("perplexity_news")
-          .insert(headline)
+          .insert(headlineData)
           .select()
           .single()
 
@@ -91,7 +94,7 @@ export async function getPendingPerplexityNews(limit = 10) {
       .from("perplexity_news")
       .select("*")
       .or("article_status.eq.pending,image_status.eq.failed,image_status.eq.pending")
-      .order("inserted_at", { ascending: true })
+      .order("created_at", { ascending: true })
       .limit(limit)
 
     if (error) {
@@ -205,8 +208,8 @@ export async function getRecentPerplexityTitles(days = 7) {
     const { data, error } = await supabaseAdmin
       .from("perplexity_news")
       .select("title, category")
-      .gte("inserted_at", cutoffDate.toISOString())
-      .order("inserted_at", { ascending: false })
+      .gte("created_at", cutoffDate.toISOString())
+      .order("created_at", { ascending: false })
     
     if (error) {
       if (error.code === "42P01" || error.message.includes("does not exist")) {
@@ -290,6 +293,131 @@ export async function checkPerplexityNewsTableSetup() {
     return true
   } catch (error) {
     console.error("Perplexity news table setup check failed:", error)
+    return false
+  }
+}
+
+// Image history tracking functions
+export async function trackImageUsage(imageUrl: string, articleId: string, category: string, source: string, searchQuery?: string) {
+  try {
+    console.log(`📸 Tracking image usage: ${imageUrl} for article ${articleId}`)
+    
+    const { data, error } = await supabaseAdmin
+      .from("perplexity_image_history")
+      .insert({
+        image_url: imageUrl,
+        article_id: articleId,
+        category,
+        image_source: source,
+        search_query: searchQuery
+      })
+      .select()
+      .single()
+
+    if (error) {
+      // If it's a unique constraint violation, that's ok - image is already tracked
+      if (error.code === '23505') {
+        console.log(`ℹ️ Image already tracked for this article`)
+        return null
+      }
+      console.error("Error tracking image usage:", error)
+      throw error
+    }
+
+    return data
+  } catch (error) {
+    console.error("Error in trackImageUsage:", error)
+    // Don't throw - image tracking shouldn't break the enrichment process
+    return null
+  }
+}
+
+export async function getRecentlyUsedImages(days = 30, category?: string) {
+  try {
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - days)
+    
+    let query = supabaseAdmin
+      .from("perplexity_image_history")
+      .select("image_url, image_source, category, used_at")
+      .gte("used_at", cutoffDate.toISOString())
+      .order("used_at", { ascending: false })
+    
+    if (category) {
+      query = query.eq("category", category)
+    }
+    
+    const { data, error } = await query
+
+    if (error) {
+      // If table doesn't exist yet, return empty array
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
+        console.log("Image history table not yet created")
+        return []
+      }
+      throw error
+    }
+
+    // Create a map of unique images with their usage count
+    const imageMap = new Map<string, { source: string, count: number, lastUsed: Date }>()
+    
+    data?.forEach(record => {
+      const key = record.image_url
+      if (imageMap.has(key)) {
+        const existing = imageMap.get(key)!
+        existing.count++
+        if (new Date(record.used_at) > existing.lastUsed) {
+          existing.lastUsed = new Date(record.used_at)
+        }
+      } else {
+        imageMap.set(key, {
+          source: record.image_source,
+          count: 1,
+          lastUsed: new Date(record.used_at)
+        })
+      }
+    })
+
+    // Convert to array and sort by usage count and recency
+    const recentImages = Array.from(imageMap.entries()).map(([url, info]) => ({
+      image_url: url,
+      image_source: info.source,
+      used_count: info.count,
+      last_used: info.lastUsed
+    }))
+    
+    console.log(`📊 Found ${recentImages.length} unique images used in last ${days} days${category ? ` for category ${category}` : ''}`)
+    
+    return recentImages
+  } catch (error) {
+    console.error("Error fetching recently used images:", error)
+    return []
+  }
+}
+
+export async function isImageRecentlyUsed(imageUrl: string, days = 7): Promise<boolean> {
+  try {
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - days)
+    
+    const { data, error } = await supabaseAdmin
+      .from("perplexity_image_history")
+      .select("id")
+      .eq("image_url", imageUrl)
+      .gte("used_at", cutoffDate.toISOString())
+      .limit(1)
+
+    if (error) {
+      // If table doesn't exist, return false
+      if (error.code === "42P01" || error.message.includes("does not exist")) {
+        return false
+      }
+      throw error
+    }
+
+    return (data?.length || 0) > 0
+  } catch (error) {
+    console.error("Error checking if image recently used:", error)
     return false
   }
 }

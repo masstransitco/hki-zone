@@ -51,7 +51,7 @@ export function transformPerplexityToArticle(perplexityArticle: PerplexityArticl
     content: formatPerplexityContentForAI(perplexityArticle),
     url: perplexityArticle.url,
     source: perplexityArticle.source,
-    publishedAt: perplexityArticle.published_at,
+    publishedAt: perplexityArticle.created_at,
     imageUrl: perplexityArticle.image_url,
     category: perplexityArticle.category,
     readTime: Math.ceil((perplexityArticle.article_html?.length || 0) / 200) || 3,

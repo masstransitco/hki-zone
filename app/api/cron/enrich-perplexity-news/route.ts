@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { perplexityHKNews } from "@/lib/perplexity-hk-news"
 import { perplexityImageSearch } from "@/lib/perplexity-image-search"
-import { getPendingPerplexityNews, updatePerplexityArticle, supabaseAdmin } from "@/lib/supabase-server"
+import { getPendingPerplexityNews, updatePerplexityArticle, supabaseAdmin, trackImageUsage } from "@/lib/supabase-server"
 
 export async function GET(request: NextRequest) {
   // Verify the request is from Vercel Cron
@@ -45,8 +45,11 @@ export async function GET(request: NextRequest) {
 
         // Step 1: Enrich article content (if not already enriched)
         if (article.article_status === 'pending') {
-          console.log(`   🔄 Enriching article content...`)
-          const enrichment = await perplexityHKNews.enrichArticle(article)
+          console.log(`   🔄 Enriching article content with contextual data...`)
+          // Use the new contextual enrichment method
+          const contextualEnrichment = await perplexityHKNews.enrichArticleWithContext(article)
+          // Convert to standard format for backward compatibility
+          const enrichment = perplexityHKNews.contextualToArticleEnrichment(contextualEnrichment)
           
           console.log(`   💾 Updating article with enhanced structured content...`)
           
@@ -55,6 +58,14 @@ export async function GET(request: NextRequest) {
             citations: enrichment.citations,
             sources: enrichment.sources,
             generated_at: new Date().toISOString()
+          }
+          
+          // Prepare contextual data for storage
+          const contextualData = {
+            contextual_bullets: contextualEnrichment.contextual_bullets,
+            data_points: contextualEnrichment.data_points,
+            historical_references: contextualEnrichment.historical_references,
+            enrichment_version: 'contextual_v1'
           }
           
           // Prepare update object with only legacy fields first
@@ -75,7 +86,8 @@ export async function GET(request: NextRequest) {
               summary: enrichment.summary,
               key_points: enrichment.key_points,
               why_it_matters: enrichment.why_it_matters,
-              structured_sources: structuredSources
+              structured_sources: structuredSources,
+              contextual_data: contextualData
             })
           } catch (schemaError) {
             if (schemaError.code === 'PGRST204') {
@@ -136,6 +148,15 @@ export async function GET(request: NextRequest) {
               image_url: imageResult.url,
               image_license: `${imageResult.license} - ${imageResult.attribution}`
             })
+
+            // Track the image usage
+            await trackImageUsage(
+              imageResult.url, 
+              article.id!, 
+              updatedArticle.category,
+              imageResult.source,
+              enrichedData.title // Use the title as search query for tracking
+            )
 
             imageProcessed++
             console.log(`🖼️ Image added: ${imageResult.source} - ${imageResult.url}`)

@@ -18,7 +18,7 @@ import {
   XCircle,
   AlertCircle
 } from "lucide-react"
-import PerplexityArticleGrid from "@/components/admin/perplexity-article-grid"
+import PerplexityArticleList from "@/components/admin/perplexity-article-list"
 import PerplexityArticleDetail from "@/components/admin/perplexity-article-detail"
 import PerplexityBulkOperations from "@/components/admin/perplexity-bulk-operations"
 import PerplexityManualTriggers from "@/components/admin/perplexity-manual-triggers"
@@ -61,6 +61,7 @@ export default function PerplexityPage() {
   const [articleLimit, setArticleLimit] = useState("100")
   const [usingMockData, setUsingMockData] = useState(false)
   const [showManualTriggers, setShowManualTriggers] = useState(false)
+  const [totalArticleCount, setTotalArticleCount] = useState(0)
 
   useEffect(() => {
     loadArticles()
@@ -74,7 +75,19 @@ export default function PerplexityPage() {
     try {
       setLoading(true)
       
-      // Build query parameters
+      // First, fetch total count with no limit
+      const countParams = new URLSearchParams()
+      if (categoryFilter !== "all") countParams.set("category", categoryFilter)
+      if (statusFilter !== "all") countParams.set("status", statusFilter)
+      countParams.set("limit", "all")
+      
+      const countResponse = await fetch(`/api/admin/perplexity?${countParams.toString()}`)
+      if (countResponse.ok) {
+        const countData = await countResponse.json()
+        setTotalArticleCount(countData.articles?.length || 0)
+      }
+      
+      // Then fetch paginated articles
       const params = new URLSearchParams()
       if (categoryFilter !== "all") params.set("category", categoryFilter)
       if (statusFilter !== "all") params.set("status", statusFilter)
@@ -129,10 +142,6 @@ export default function PerplexityPage() {
     setFilteredArticles(filtered)
   }
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    filterArticles()
-  }
 
   const handleRefresh = () => {
     setSelectedArticle(null)
@@ -160,7 +169,8 @@ export default function PerplexityPage() {
     // TODO: Implement bulk export functionality
   }
 
-  const totalArticles = filteredArticles.length
+  // Use totalArticleCount for overall stats, filtered for displayed stats
+  const displayedArticles = filteredArticles.length
   const totalCost = filteredArticles.reduce((sum, article) => sum + (article.generation_cost || 0), 0)
   const statusCounts = filteredArticles.reduce((acc, article) => {
     acc[article.article_status] = (acc[article.article_status] || 0) + 1
@@ -197,9 +207,9 @@ export default function PerplexityPage() {
             <Brain className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalArticles}</div>
+            <div className="text-2xl font-bold">{totalArticleCount}</div>
             <p className="text-xs text-muted-foreground">
-              AI-generated articles
+              {displayedArticles < totalArticleCount ? `Showing ${displayedArticles}` : 'All articles'}
             </p>
           </CardContent>
         </Card>
@@ -257,80 +267,71 @@ export default function PerplexityPage() {
         </Card>
       </div>
 
-      {/* Filters and Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Article Management</CardTitle>
-          <CardDescription>
-            Browse and manage AI-generated news articles from Perplexity
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search articles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Button type="submit" variant="outline" size="icon">
-                <Search className="h-4 w-4" />
-              </Button>
-            </form>
-            
-            {/* Filters Row */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(category => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map(status => (
-                    <SelectItem key={status.value} value={status.value}>
-                      {status.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={articleLimit} onValueChange={setArticleLimit}>
-                <SelectTrigger className="w-full sm:w-[200px]">
-                  <SelectValue placeholder="Articles to show" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ARTICLE_LIMITS.map(limit => (
-                    <SelectItem key={limit.value} value={limit.value}>
-                      {limit.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Button onClick={handleRefresh} variant="outline" size="icon" className="sm:ml-auto">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
+      {/* Top Controls */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-1 items-center gap-3">
+          {/* Search Bar */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search articles by title or content..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                filterArticles()
+              }}
+              className="pl-9"
+            />
           </div>
-        </CardContent>
-      </Card>
+          
+          {/* Category Filter */}
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {CATEGORIES.map(category => (
+                <SelectItem key={category.value} value={category.value}>
+                  {category.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map(status => (
+                <SelectItem key={status.value} value={status.value}>
+                  {status.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          {/* Limit */}
+          <Select value={articleLimit} onValueChange={setArticleLimit}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="Show" />
+            </SelectTrigger>
+            <SelectContent>
+              {ARTICLE_LIMITS.map(limit => (
+                <SelectItem key={limit.value} value={limit.value}>
+                  {limit.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        
+        <Button onClick={handleRefresh} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      </div>
 
       {/* Manual Triggers */}
       {showManualTriggers && (
@@ -350,16 +351,30 @@ export default function PerplexityPage() {
         />
       )}
 
-      {/* Article Grid and Detail Layout */}
+      {/* Article List and Detail Layout */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <PerplexityArticleGrid
+          <PerplexityArticleList
             articles={filteredArticles}
             loading={loading}
             selectedArticles={selectedArticles}
             onArticleSelect={setSelectedArticle}
             onSelectionChange={setSelectedArticles}
             onRefresh={handleRefresh}
+            onDelete={async (article) => {
+              if (confirm(`Delete article "${article.title}"?`)) {
+                try {
+                  const response = await fetch(`/api/admin/perplexity/${article.id}`, {
+                    method: 'DELETE'
+                  })
+                  if (response.ok) {
+                    handleRefresh()
+                  }
+                } catch (error) {
+                  console.error('Error deleting article:', error)
+                }
+              }
+            }}
           />
         </div>
         

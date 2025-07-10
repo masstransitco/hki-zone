@@ -1,3 +1,5 @@
+import { getRecentlyUsedImages, isImageRecentlyUsed } from './supabase-server'
+
 interface PerplexityImageResponse {
   choices: Array<{
     message: {
@@ -65,6 +67,7 @@ class PerplexityImageSearch {
   private unsplashAccessKey: string
   private baseUrl = 'https://api.perplexity.ai/chat/completions'
   private unsplashBaseUrl = 'https://api.unsplash.com'
+  private recentlyUsedImages: Set<string> = new Set()
 
   constructor() {
     this.perplexityApiKey = process.env.PERPLEXITY_API_KEY || ''
@@ -102,9 +105,12 @@ class PerplexityImageSearch {
 
       const searchUrl = new URL(`${this.unsplashBaseUrl}/search/photos`)
       searchUrl.searchParams.set('query', optimizedQuery)
-      searchUrl.searchParams.set('per_page', '10')
+      searchUrl.searchParams.set('per_page', '30') // Increased from 10 to get more variety
       searchUrl.searchParams.set('orientation', 'landscape')
       searchUrl.searchParams.set('content_filter', 'high')
+      // Add randomization by changing the page number
+      const randomPage = Math.floor(Math.random() * 3) + 1 // Random page 1-3
+      searchUrl.searchParams.set('page', randomPage.toString())
 
       const response = await fetch(searchUrl.toString(), {
         headers: {
@@ -121,7 +127,7 @@ class PerplexityImageSearch {
       const data: UnsplashImageResponse = await response.json()
       
       if (data.results && data.results.length > 0) {
-        const bestImage = this.selectBestUnsplashImage(data.results, category)
+        const bestImage = await this.selectBestUnsplashImage(data.results, category)
         
         if (bestImage) {
           console.log(`✅ Found Unsplash image: ${bestImage.urls.regular}`)
@@ -168,10 +174,24 @@ class PerplexityImageSearch {
     }
   }
 
-  private selectBestUnsplashImage(images: any[], category: string): any | null {
+  private async selectBestUnsplashImage(images: any[], category: string): Promise<any | null> {
     if (!images || images.length === 0) return null
 
-    const scoredImages = images.map(image => {
+    // Filter out recently used images first
+    const availableImages = []
+    for (const image of images) {
+      const isRecent = await isImageRecentlyUsed(image.urls.regular, 7) // Check last 7 days
+      if (!isRecent && !this.recentlyUsedImages.has(image.urls.regular)) {
+        availableImages.push(image)
+      }
+    }
+
+    console.log(`🔍 Filtered ${images.length} images to ${availableImages.length} unused images`)
+    
+    // If all images were recently used, use the original set but with lower scores
+    const imagesToScore = availableImages.length > 0 ? availableImages : images
+
+    const scoredImages = imagesToScore.map(image => {
       let score = 0
       const description = (image.description || '').toLowerCase()
       const altDescription = (image.alt_description || '').toLowerCase()
@@ -207,7 +227,17 @@ class PerplexityImageSearch {
       console.log(`   ${i + 1}. Score: ${scored.score} - ${scored.image.alt_description || scored.image.description || 'No description'}`)
     })
 
-    return scoredImages[0]?.image || null
+    // Add randomization among top scored images
+    const topScores = scoredImages.filter(img => img.score >= scoredImages[0].score - 1)
+    const randomIndex = Math.floor(Math.random() * Math.min(topScores.length, 3))
+    const selectedImage = topScores[randomIndex]?.image || scoredImages[0]?.image
+    
+    if (selectedImage) {
+      // Track this image as used
+      this.recentlyUsedImages.add(selectedImage.urls.regular)
+    }
+    
+    return selectedImage
   }
 
   private async searchPerplexityImages(query: string): Promise<ImageResult | null> {
@@ -377,9 +407,12 @@ class PerplexityImageSearch {
         searchUrl.searchParams.set('key', this.googleApiKey)
         searchUrl.searchParams.set('searchType', 'image')
         searchUrl.searchParams.set('q', searchQuery)
-        searchUrl.searchParams.set('num', '3') // Get more results to choose from
+        searchUrl.searchParams.set('num', '10') // Increased from 3 to get more variety
         searchUrl.searchParams.set('safe', 'active')
-        searchUrl.searchParams.set('imgSize', 'medium')
+        searchUrl.searchParams.set('imgSize', 'large') // Changed from medium to large for better quality
+        // Add some randomization to start parameter
+        const randomStart = Math.floor(Math.random() * 20) + 1
+        searchUrl.searchParams.set('start', randomStart.toString())
         searchUrl.searchParams.set('rights', 'cc_publicdomain,cc_attribute,cc_sharealike,cc_noncommercial') // Prefer Creative Commons
         searchUrl.searchParams.set('fileType', 'jpg,png,jpeg') // Prefer common image formats
         searchUrl.searchParams.set('imgType', 'photo') // Prefer actual photos over graphics
@@ -406,7 +439,7 @@ class PerplexityImageSearch {
         console.log(`📈 Google search results: ${data.items?.length || 0} items found`)
         
         // Look for the best image from the results
-        const bestImage = this.selectBestGoogleImage(data.items || [], category)
+        const bestImage = await this.selectBestGoogleImage(data.items || [], category)
         
         if (bestImage) {
           console.log(`✅ Found Google CSE image (query ${index + 1}): ${bestImage.link}`)
@@ -443,11 +476,23 @@ class PerplexityImageSearch {
     return null
   }
 
-  private selectBestGoogleImage(items: any[], category: string): any | null {
+  private async selectBestGoogleImage(items: any[], category: string): Promise<any | null> {
     if (!items || items.length === 0) return null
     
+    // Filter out recently used images
+    const availableItems = []
+    for (const item of items) {
+      const isRecent = await isImageRecentlyUsed(item.link, 7)
+      if (!isRecent && !this.recentlyUsedImages.has(item.link)) {
+        availableItems.push(item)
+      }
+    }
+    
+    console.log(`🔍 Filtered ${items.length} Google images to ${availableItems.length} unused images`)
+    const itemsToScore = availableItems.length > 0 ? availableItems : items
+    
     // Score images based on relevance criteria
-    const scoredItems = items.map(item => {
+    const scoredItems = itemsToScore.map(item => {
       let score = 0
       const title = (item.title || '').toLowerCase()
       const snippet = (item.snippet || '').toLowerCase()
@@ -494,10 +539,18 @@ class PerplexityImageSearch {
       console.log(`   ${i + 1}. Score: ${scored.score} - ${scored.item.title}`)
     })
     
-    // Only return images with positive scores
-    const bestItem = scoredItems[0]
-    if (bestItem && bestItem.score > 0) {
-      return bestItem.item
+    // Add randomization among top scored items
+    const positiveItems = scoredItems.filter(item => item.score > 0)
+    if (positiveItems.length > 0) {
+      // Select randomly from top 3 positive scores
+      const topItems = positiveItems.slice(0, 3)
+      const randomIndex = Math.floor(Math.random() * topItems.length)
+      const selectedItem = topItems[randomIndex].item
+      
+      // Track this image as used
+      this.recentlyUsedImages.add(selectedItem.link)
+      
+      return selectedItem
     }
     
     // If all scores are negative or zero, return null to trigger fallback
@@ -505,7 +558,7 @@ class PerplexityImageSearch {
     return null
   }
 
-  private getHongKongFallbackImage(category: string, query: string = ''): ImageResult {
+  private async getHongKongFallbackImage(category: string, query: string = ''): Promise<ImageResult> {
     // Enhanced Hong Kong-specific fallback images based on category and content
     const hongKongFallbacks = {
       politics: [
@@ -641,6 +694,20 @@ class PerplexityImageSearch {
       }
     }
 
+    // Check if this fallback was recently used and try another one if so
+    const isRecent = await isImageRecentlyUsed(selectedFallback.url, 7)
+    if (isRecent && categoryFallbacks.length > 1) {
+      // Find an unused fallback
+      for (const fallback of categoryFallbacks) {
+        const fallbackRecent = await isImageRecentlyUsed(fallback.url, 7)
+        if (!fallbackRecent) {
+          selectedFallback = fallback
+          console.log(`🔄 Switched to unused fallback: ${fallback.alt}`)
+          break
+        }
+      }
+    }
+
     return {
       url: selectedFallback.url,
       license: "Unsplash License",
@@ -652,6 +719,11 @@ class PerplexityImageSearch {
 
   async findImage(query: string, category: string = 'business'): Promise<ImageResult> {
     console.log(`🖼️ Searching for image: ${query} (category: ${category})`)
+
+    // Load recently used images for this category
+    const recentImages = await getRecentlyUsedImages(30, category)
+    recentImages.forEach(img => this.recentlyUsedImages.add(img.image_url))
+    console.log(`📊 Loaded ${this.recentlyUsedImages.size} recently used images to avoid`)
 
     try {
       // Strategy 1: Try Unsplash first (highest quality, best licensing)
@@ -680,11 +752,11 @@ class PerplexityImageSearch {
 
       // Strategy 4: Use category-appropriate fallback
       console.log(`⚠️ No images found via API, using Hong Kong-specific fallback for category: ${category}`)
-      return this.getHongKongFallbackImage(category, query)
+      return await this.getHongKongFallbackImage(category, query)
 
     } catch (error) {
       console.error("💥 Image search failed completely:", error)
-      return this.getHongKongFallbackImage(category, query)
+      return await this.getHongKongFallbackImage(category, query)
     }
   }
 
@@ -748,11 +820,11 @@ class PerplexityImageSearch {
 
       // Strategy 4: Use contextual fallback based on metadata
       console.log(`⚠️ No images found via API, using contextual fallback`)
-      return this.getContextualFallbackImage(enrichedData, category)
+      return await this.getContextualFallbackImage(enrichedData, category)
 
     } catch (error) {
       console.error("💥 Metadata-based image search failed:", error)
-      return this.getHongKongFallbackImage(category, enrichedData.title)
+      return await this.getHongKongFallbackImage(category, enrichedData.title)
     }
   }
 
@@ -872,7 +944,7 @@ class PerplexityImageSearch {
     }
   }
 
-  private getContextualFallbackImage(enrichedData: {
+  private async getContextualFallbackImage(enrichedData: {
     title: string
     imagePrompt?: string
     summary?: string
@@ -888,7 +960,7 @@ class PerplexityImageSearch {
       contextQuery += ' ' + enrichedData.keyPoints[0]
     }
     
-    return this.getHongKongFallbackImage(category, contextQuery)
+    return await this.getHongKongFallbackImage(category, contextQuery)
   }
 
   // Batch process images for multiple articles
@@ -908,7 +980,7 @@ class PerplexityImageSearch {
         }
       } catch (error) {
         console.error(`❌ Failed to find image for ${prompt.id}:`, error)
-        results.set(prompt.id, this.getHongKongFallbackImage(prompt.category, prompt.query))
+        results.set(prompt.id, await this.getHongKongFallbackImage(prompt.category, prompt.query))
       }
     }
 

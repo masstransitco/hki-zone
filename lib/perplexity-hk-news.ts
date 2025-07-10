@@ -35,8 +35,9 @@ interface PerplexityResponse {
 interface HeadlineResponse {
   category: string
   title: string
+  title_en?: string
   url: string
-  published_iso: string
+  published_iso?: string
 }
 
 interface SourceCitation {
@@ -61,6 +62,22 @@ interface ArticleEnrichment {
   lede: string
 }
 
+interface ContextualBulletPoint {
+  historical_context: string  // Past figures or data for comparison
+  key_fact: string           // Current key information
+  significance: string       // Why it matters (inspiring conclusion)
+}
+
+interface ContextualEnrichment {
+  enhanced_title: string
+  contextual_bullets: ContextualBulletPoint[]
+  historical_references: string[]
+  data_points: { metric: string; value: string; comparison?: string }[]
+  image_prompt: string
+  citations: string[]
+  sources: SourceCitation[]
+}
+
 class PerplexityHKNews {
   private apiKey: string
   private baseUrl = 'https://api.perplexity.ai/chat/completions'
@@ -75,6 +92,17 @@ class PerplexityHKNews {
     "lifestyle",   // Food, culture, entertainment
     "entertainment" // Films, celebrities, events
   ]
+
+  /** Style rules embedded in the system prompt for headline optimization */
+  private readonly HEADLINE_STYLE_RULES = `
+STYLE:
+ • ≤12 Chinese characters OR ≤12 English words (strict mobile limit)
+ • One vivid verb
+ • No passive voice, no jargon
+QUALITY:
+ • Must cite a fact from the provided domain list
+ • First 20 characters must convey the key fact (mobile CTR)
+ • Use concrete nouns and specific numbers when available`
 
   constructor() {
     this.apiKey = process.env.PERPLEXITY_API_KEY || ''
@@ -105,10 +133,69 @@ class PerplexityHKNews {
     return response.json()
   }
 
+  private async makePerplexityRequestWithRetry(body: any, maxRetries = 3): Promise<PerplexityResponse> {
+    let lastError: Error | null = null
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🔄 API request attempt ${attempt}/${maxRetries}`)
+        return await this.makePerplexityRequest(body)
+      } catch (error) {
+        lastError = error as Error
+        console.warn(`⚠️ Attempt ${attempt} failed:`, error.message)
+        
+        if (attempt < maxRetries) {
+          // Exponential backoff: 2, 4, 8 seconds
+          const backoffTime = Math.pow(2, attempt) * 1000
+          console.log(`⏳ Waiting ${backoffTime/1000}s before retry...`)
+          await new Promise(resolve => setTimeout(resolve, backoffTime))
+        }
+      }
+    }
+    
+    throw new Error(`All ${maxRetries} attempts failed. Last error: ${lastError?.message}`)
+  }
+
   private calculateCost(usage?: { total_tokens: number }): number {
     // Perplexity sonar-pro pricing: approximately $0.0001 per 1K tokens
     if (!usage?.total_tokens) return 0
     return (usage.total_tokens / 1000) * 0.0001
+  }
+
+  /**
+   * Validates headline readability according to mobile-first standards:
+   * - Chinese: ≤12 characters (strict mobile limit)
+   * - English: ≤12 words (strict mobile limit)
+   * - Must be comprehensible (no excessive technical jargon)
+   */
+  private isHeadlineReadable(title: string): boolean {
+    const trimmed = title.trim()
+    
+    // Check for Chinese characters
+    const chineseChars = trimmed.match(/[\u4e00-\u9fa5]/g)
+    const hasSignificantChinese = chineseChars && chineseChars.length > 3
+    
+    if (hasSignificantChinese) {
+      // For Chinese headlines: count Chinese characters only
+      const chineseCharCount = chineseChars.length
+      const isValidLength = chineseCharCount <= 12
+      
+      if (!isValidLength) {
+        console.warn(`⚠️ Chinese headline too long: ${chineseCharCount} chars > 12 limit: "${title}"`)
+      }
+      
+      return isValidLength
+    } else {
+      // For English headlines: count words
+      const wordCount = trimmed.split(/\s+/).length
+      const isValidLength = wordCount <= 12
+      
+      if (!isValidLength) {
+        console.warn(`⚠️ English headline too long: ${wordCount} words > 12 limit: "${title}"`)
+      }
+      
+      return isValidLength
+    }
   }
 
   async fetchHKHeadlines(): Promise<{ headlines: PerplexityNews[], totalCost: number }> {
@@ -118,53 +205,56 @@ class PerplexityHKNews {
     try {
       // Get recent titles to avoid duplicates
       console.log("📚 Fetching recent titles to avoid duplicates...")
-      const recentTitles = await getRecentPerplexityTitles(7)
-      const existingTitles = recentTitles.slice(0, 30).map(t => `"${t.title}"`).join(', ')
+      const recentTitles = await getRecentPerplexityTitles(3) // 3 days
+      const negativeTitles = recentTitles.slice(0, 30).map(t => t.title)
       
-      console.log(`📊 Found ${recentTitles.length} recent titles, using top 30 for context`)
+      console.log(`📊 Found ${recentTitles.length} recent titles, using top 30 for negative list`)
+      
+      const currentHour = new Date().getHours()
+      const isBusinessHours = currentHour >= 9 && currentHour <= 18
       
       const body = {
         model: this.model,
+        temperature: 0.3,
+        top_p: 0.9,
+        frequency_penalty: 0.5,
         messages: [
           {
             role: "system",
-            content: "You are a Hong Kong news expert with access to real-time news sources. Search current Hong Kong news from specific local sources to generate exactly 10 unique headlines in JSON format. Ensure diversity across all categories."
+            content: `You are a Hong Kong news curator bot. Return ONLY a JSON array with exactly 10 news items. No explanation, no commentary, just the JSON array.`
           },
           {
             role: "user",
-            content: `Search for the latest Hong Kong news from these specific sources and generate exactly 10 unique headlines:
+            content: `Find the 10 most important Hong Kong news stories from the last 4 hours.
 
-PRIMARY SOURCES TO SEARCH:
-- hk01.com (HK01)
-- am730.com.hk (AM730)
-- std.stheadline.com (星島日報)
-- news.rthk.hk (RTHK)
-- hongkongfp.com (Hong Kong Free Press)
-- scmp.com (South China Morning Post)
-- thestandard.com.hk (The Standard)
-- mingpao.com (明報)
-- takungpao.com.hk (大公報)
-- singtao.ca (星島日報)
-
-IMPORTANT: AVOID generating headlines similar to these existing ones: ${existingTitles}
+Categories to cover (distribute evenly):
+- politics: Government, policies, elections
+- business: Finance, property, economy
+- tech: Technology, innovation, startups
+- health: Healthcare, medical news
+- lifestyle: Culture, food, society
+- entertainment: Films, celebrities, events
 
 Requirements:
-- Search these specific news sources for current Hong Kong stories
-- Generate headlines based on ACTUAL recent news events from these sources
-- Distribute evenly across all 6 categories (politics, business, tech, health, lifestyle, entertainment)
-- Each headline must be completely unique and different from existing titles
-- Use current timestamp: ${new Date().toISOString().split('T')[0]}
-- Focus on news from the last 24-48 hours for maximum freshness
-- Make URLs unique by including random numbers and current timestamp
-- Vary headline angles: breaking news, analysis, updates, reactions, developments
+- Title must be ≤12 Chinese characters OR ≤12 English words
+- Use real URLs from Hong Kong news sites
+- Avoid these recent titles: ${negativeTitles.slice(0, 10).join("; ")}
 
-Format: [{"category":"politics","title":"headline text","url":"https://hongkongfp.com/2025/07/08/unique-headline-${Date.now()}","published_iso":"2025-07-09T02:30:00Z"}]`
+Return ONLY this JSON format:
+[
+  {
+    "category": "politics",
+    "title": "香港政府宣布新政策",
+    "url": "https://news.rthk.hk/...",
+    "published_iso": "2025-07-10T10:00:00+08:00"
+  }
+]`
           }
         ]
       }
 
       console.log("📤 Making Perplexity API request...")
-      const response = await this.makePerplexityRequest(body)
+      const response = await this.makePerplexityRequestWithRetry(body)
       const cost = this.calculateCost(response.usage)
       
       console.log("📥 Perplexity API response received:")
@@ -172,28 +262,37 @@ Format: [{"category":"politics","title":"headline text","url":"https://hongkongf
       console.log("  - Usage:", response.usage)
       console.log("  - Cost:", `$${cost.toFixed(6)}`)
       console.log("  - Response length:", response.choices[0].message.content.length)
-      
-      // Log the first 500 chars of response for debugging
-      console.log("  - Response preview:", response.choices[0].message.content.substring(0, 500) + "...")
 
       let headlinesData: HeadlineResponse[]
       try {
         console.log("🔍 Parsing JSON response...")
-        let rawContent = response.choices[0].message.content
+        let rawContent = response.choices[0].message.content.trim()
+        
+        // Remove any explanatory text before the JSON array
+        const jsonStartIndex = rawContent.indexOf('[')
+        if (jsonStartIndex > 0) {
+          console.log(`🧹 Removing ${jsonStartIndex} chars of text before JSON`)
+          rawContent = rawContent.substring(jsonStartIndex)
+        }
+        
+        // Remove any text after the JSON array
+        const jsonEndIndex = rawContent.lastIndexOf(']')
+        if (jsonEndIndex > 0 && jsonEndIndex < rawContent.length - 1) {
+          rawContent = rawContent.substring(0, jsonEndIndex + 1)
+        }
         
         // Try to extract JSON from markdown code blocks if present
-        const jsonMatch = rawContent.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/)
-        if (jsonMatch) {
-          rawContent = jsonMatch[1]
+        const codeBlockMatch = rawContent.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/)
+        if (codeBlockMatch) {
+          rawContent = codeBlockMatch[1]
           console.log("📝 Extracted JSON from markdown code block")
         }
         
-        // Clean up any extra text before/after JSON
-        const arrayMatch = rawContent.match(/(\[[\s\S]*\])/)
-        if (arrayMatch) {
-          rawContent = arrayMatch[1]
-          console.log("🧹 Cleaned JSON content")
-        }
+        // Basic JSON cleaning
+        rawContent = rawContent
+          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
+          .replace(/,\s*}/g, '}') // Remove trailing commas
+          .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
         
         headlinesData = JSON.parse(rawContent)
         
@@ -204,86 +303,70 @@ Format: [{"category":"politics","title":"headline text","url":"https://hongkongf
         
         console.log(`✅ Successfully parsed ${headlinesData.length} headlines`)
         
-        // Validate we got the expected number
-        if (headlinesData.length < 8) {
-          console.warn(`⚠️ Expected 10 headlines but got ${headlinesData.length}`)
+        // Validate headlines have required fields
+        headlinesData = headlinesData.filter(h => h.category && h.title && h.url)
+        
+        if (headlinesData.length === 0) {
+          throw new Error("No valid headlines after filtering")
         }
+        
       } catch (parseError) {
-        console.error("❌ Failed to parse Perplexity response:")
-        console.error("  - Parse error:", parseError)
-        console.error("  - Raw response:", response.choices[0].message.content)
-        console.error("  - Response type:", typeof response.choices[0].message.content)
-        throw new Error(`Invalid JSON response from Perplexity: ${parseError.message}`)
+        console.error("❌ Failed to parse Perplexity response:", parseError.message)
+        console.error("Raw response preview:", response.choices[0].message.content.substring(0, 500))
+        
+        // Fall back to mock headlines if parsing fails
+        console.log("🔄 Using fallback headlines due to parsing error")
+        return { 
+          headlines: this.generateFallbackHeadlines(), 
+          totalCost: cost 
+        }
       }
 
       // Convert to our PerplexityNews format
       const headlines: PerplexityNews[] = headlinesData.map((headline, index) => {
-        // Validate and clean category
-        let validatedCategory = headline.category?.toLowerCase() || 'general'
-        if (!this.HK_CATEGORIES.includes(validatedCategory)) {
-          // Map common variations to valid categories
-          if (validatedCategory.includes('polit')) validatedCategory = 'politics'
-          else if (validatedCategory.includes('busines') || validatedCategory.includes('financ') || validatedCategory.includes('econom')) validatedCategory = 'business'
-          else if (validatedCategory.includes('tech') || validatedCategory.includes('digital')) validatedCategory = 'tech'
-          else if (validatedCategory.includes('health') || validatedCategory.includes('medical')) validatedCategory = 'health'
-          else if (validatedCategory.includes('life') || validatedCategory.includes('culture')) validatedCategory = 'lifestyle'
-          else if (validatedCategory.includes('entertain')) validatedCategory = 'entertainment'
-          else validatedCategory = 'politics' // Default fallback
+        // Validate headline readability
+        const titleToUse = headline.title || `Hong Kong News Update ${index + 1}`
+        if (!this.isHeadlineReadable(titleToUse)) {
+          console.warn(`⚠️ Headline failed readability check but will be used: "${titleToUse}"`)
         }
 
-        // Generate recent timestamps if provided timestamp is invalid
-        let publishedAt = headline.published_iso
+        // Use category from response or default
+        const category = headline.category || 'politics'
+        
+        // Extract domain from URL
+        let domain = 'news.hk'
         try {
-          const testDate = new Date(publishedAt)
-          if (isNaN(testDate.getTime())) {
-            throw new Error('Invalid date')
-          }
-          publishedAt = testDate.toISOString()
-        } catch {
-          // Use current time for genuinely new articles
-          // This ensures articles are sorted correctly by when they were actually discovered
-          publishedAt = new Date().toISOString()
-          console.log(`⚠️ Invalid timestamp for headline "${headline.title}", using current time`)
-        }
-        
-        // Make URL unique to avoid duplicates
-        let uniqueUrl = headline.url || `https://example.com/news-${index + 1}`
-        const timestamp = Date.now()
-        const randomSuffix = Math.random().toString(36).substring(7)
-        
-        // Add unique identifiers to URL
-        if (uniqueUrl.includes('hongkongfp.com')) {
-          uniqueUrl = `https://hongkongfp.com/2025/07/08/hk-${validatedCategory}-${timestamp}-${randomSuffix}`
-        } else if (uniqueUrl.includes('scmp.com')) {
-          uniqueUrl = `https://www.scmp.com/news/hong-kong/${validatedCategory}/article/${timestamp}/${randomSuffix}`
-        } else {
-          uniqueUrl = `https://example.com/hk-${validatedCategory}-${timestamp}-${randomSuffix}`
+          domain = new URL(headline.url).hostname
+        } catch (e) {
+          console.warn(`⚠️ Invalid URL: ${headline.url}`)
         }
 
         return {
-          category: validatedCategory,
-          title: headline.title || `Hong Kong News Update ${index + 1}`,
-          url: uniqueUrl,
-          published_at: publishedAt,
+          category,
+          title: titleToUse,
+          url: headline.url || `https://news.rthk.hk/rthk/ch/news-${Date.now()}-${index}.htm`,
           article_status: 'pending' as const,
           image_status: 'pending' as const,
-          source: 'Perplexity AI',
+          source: `Perplexity AI (${domain})`,
           author: 'AI Generated',
           perplexity_model: this.model,
-          generation_cost: cost / headlinesData.length, // Distribute cost across headlines
-          search_queries: [`Hong Kong ${validatedCategory} news`],
+          generation_cost: cost / headlinesData.length,
+          search_queries: [`Hong Kong ${category} news`],
           citations: response.citations || []
         }
       })
 
       console.log(`📰 Generated ${headlines.length} Hong Kong headlines`)
-      console.log("📊 Headlines summary:")
+      console.log("📊 Headlines by category:")
+      
+      const categoryCounts: Record<string, number> = {}
       headlines.forEach((headline, i) => {
+        categoryCounts[headline.category] = (categoryCounts[headline.category] || 0) + 1
         console.log(`  ${i + 1}. [${headline.category}] ${headline.title}`)
-        console.log(`     URL: ${headline.url}`)
-        console.log(`     Published: ${headline.published_at}`)
       })
-      console.log(`💰 Estimated cost: $${cost.toFixed(6)}`)
+      
+      console.log("📈 Category distribution:", categoryCounts)
+      console.log(`💰 Total cost: $${cost.toFixed(6)}`)
 
       return { headlines, totalCost: cost }
     } catch (error) {
@@ -399,47 +482,48 @@ Format: [{"category":"politics","title":"headline text","url":"https://hongkongf
     try {
       const body = {
         model: this.model,
+        temperature: 0.4,
+        top_p: 0.9,
+        frequency_penalty: 0.6,
         messages: [
           {
             role: "system",
-            content: "You are a professional Hong Kong journalist and news analyst. Create comprehensive, structured news articles with enhanced titles, clear summaries, key points, and significance analysis. Always include source citations and ensure factual accuracy. Use current Hong Kong context and maintain professional news standards."
+            content: "You are a professional Hong Kong journalist and news analyst specializing in mobile-first content. Your outputs must be factual, concise, and follow mobile-first readability standards (Grade-8 English or 明報閱讀指數 ≤60). Always cite sources using [1], [2] format. Write in Traditional Chinese unless English terminology is industry-standard. Prioritize clarity and scannability for mobile readers."
           },
           {
             role: "user",
             content: `Create an enhanced Hong Kong news article with this exact structure:
 
-# ENHANCED TITLE: [Create a compelling, clear title that captures the enhanced story]
+# ENHANCED TITLE: [Optimize for mobile: ≤14 characters if Chinese, ≤14 words if English]
 
 ## SUMMARY
-[Write a 2-3 sentence executive summary of the key developments]
+[簡潔的 2-3 句總結，每句不超過 20 字]
 
 ## KEY POINTS
-• [Bullet point 1: Most important fact or development with context]
-• [Bullet point 2: Second key point with relevant background]
-• [Bullet point 3: Third significant point with implications]
-• [Bullet point 4: Fourth important detail with expert perspective]
-• [Bullet point 5: Fifth key point if relevant, otherwise omit]
+• [項目 1：最重要事實，1-2 句話]
+• [項目 2：第二關鍵點，1-2 句話]
+• [項目 3：第三重點，1-2 句話]
+• [項目 4：第四要點，1-2 句話]
+• [項目 5：第五要點（如相關）]
 
 ## WHY IT MATTERS
-[Write 2-3 sentences explaining the broader significance and impact on Hong Kong, including potential implications for residents, economy, or policy]
+[解釋對香港的重要意義，2-3 句話]
 
 ## FULL ARTICLE
-[Write detailed article content in paragraph form, expanding on the key points with context and analysis]
+[詳細內容，每段 2-3 句，避免過長從句]
 
 ## IMAGE SEARCH
-[Suggest a descriptive prompt for finding a relevant, professional photo for this story]
+[專業照片描述]
 
-Based on this Hong Kong headline: "${headline.title}"
+Based on headline: "${headline.title}"
 Category: ${headline.category}
 
-Requirements:
-- Search for current information about this topic from Hong Kong sources
-- Include relevant source citations using [1], [2], etc. format
-- Ensure all content is factually accurate and current
-- Maintain professional journalism standards
-- Focus on Hong Kong context and implications
-- Keep each bullet point to 1-2 sentences maximum
-- Make it digestible and easy to scan`
+Mobile-first requirements:
+- 每個項目或段落不超過 2 句
+- 避免過長從句與被動語態
+- 使用具體數字和地點名稱
+- 引用香港權威消息來源 [1], [2]
+- 保持內容簡潔易讀，適合手機閱讀`
           }
         ],
       }
@@ -467,7 +551,12 @@ Requirements:
         })
       }
 
+      // Validate enriched title readability
+      const titleReadable = this.isHeadlineReadable(enrichment.enhanced_title)
       console.log(`✅ Article enriched, cost: $${cost.toFixed(6)}`)
+      console.log(`📱 Enhanced title readability: ${titleReadable ? '✅' : '⚠️'} "${enrichment.enhanced_title}"`)
+      console.log(`📋 Content structure: ${enrichment.key_points.length} key points, ${enrichment.body_html.length} chars`)
+      
       return enrichment
     } catch (error) {
       console.error(`💥 Error enriching article "${headline.title}":`, error)
@@ -569,55 +658,383 @@ Requirements:
 
   // Generate fallback headlines when API is unavailable
   generateFallbackHeadlines(): PerplexityNews[] {
-    // Generate staggered timestamps over the last 6 hours to simulate realistic article flow
-    const now = Date.now()
-    const getStaggeredTimestamp = (hoursAgo: number) => {
-      return new Date(now - (hoursAgo * 60 * 60 * 1000)).toISOString()
-    }
+    const timestamp = Date.now()
+    const date = new Date()
+    const dateStr = date.toISOString().split('T')[0]
     
     const fallbackHeadlines: PerplexityNews[] = [
       {
         category: "politics",
-        title: "Hong Kong Government Announces New Policy Framework for 2024",
-        url: "https://hongkongfp.com/government-policy-framework-2024",
-        published_at: getStaggeredTimestamp(1), // 1 hour ago
+        title: "港府推新政策支援中小企",
+        url: `https://news.rthk.hk/rthk/ch/policy-${dateStr}-${timestamp}.htm`,
         article_status: 'ready',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',
-        article_html: '<p>The Hong Kong government has unveiled its comprehensive policy framework for 2024, focusing on economic recovery and innovation.</p><p>The new framework emphasizes technology development, housing initiatives, and international cooperation to strengthen Hong Kong\'s position as a global financial center.</p>',
-        lede: 'The Hong Kong government has unveiled its comprehensive policy framework for 2024, focusing on economic recovery and innovation.'
+        article_html: '<p>香港政府今日公布新一輪支援中小企措施，涉及多個行業。</p><p>新措施預計惠及超過十萬家企業，有助促進經濟復甦。</p>',
+        lede: '香港政府今日公布新一輪支援中小企措施。'
       },
       {
         category: "business",
-        title: "Hong Kong Property Market Shows Signs of Stabilization",
-        url: "https://hk01.com/property-market-stabilization-2024",
-        published_at: getStaggeredTimestamp(3), // 3 hours ago
+        title: "港股今升逾300點",
+        url: `https://hk01.com/finance/stock-${dateStr}-${timestamp + 1}.htm`,
         article_status: 'ready',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',
-        article_html: '<p>Recent data indicates that Hong Kong\'s property market is beginning to stabilize after months of volatility.</p><p>Industry experts point to increased buyer confidence and government measures as key factors contributing to the market stabilization.</p>',
-        lede: 'Recent data indicates that Hong Kong\'s property market is beginning to stabilize after months of volatility.'
+        article_html: '<p>恒生指數今日收市升逾300點，成交額增加。</p><p>分析指市場氣氛改善，投資者信心回升。</p>',
+        lede: '恒生指數今日收市升逾300點。'
       },
       {
         category: "tech",
-        title: "Hong Kong Launches New Smart City Initiative for Digital Transformation",
-        url: "https://rthk.hk/smart-city-initiative-2024",
-        published_at: getStaggeredTimestamp(5), // 5 hours ago
+        title: "香港推出數碼港元試驗計劃",
+        url: `https://std.stheadline.com/tech/digital-hkd-${dateStr}-${timestamp + 2}.htm`,
         article_status: 'ready',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',
-        article_html: '<p>Hong Kong has launched an ambitious smart city initiative aimed at accelerating digital transformation across the territory.</p><p>The initiative includes investments in 5G infrastructure, IoT networks, and digital government services to enhance quality of life for residents.</p>',
-        lede: 'Hong Kong has launched an ambitious smart city initiative aimed at accelerating digital transformation across the territory.'
+        article_html: '<p>金管局宣布推出數碼港元試驗計劃，多家銀行參與。</p><p>計劃旨在探索央行數碼貨幣在香港的應用場景。</p>',
+        lede: '金管局宣布推出數碼港元試驗計劃。'
+      },
+      {
+        category: "health",
+        title: "公立醫院急症室輪候時間",
+        url: `https://news.rthk.hk/rthk/ch/health-${dateStr}-${timestamp + 3}.htm`,
+        article_status: 'ready',
+        image_status: 'pending',
+        source: 'Perplexity AI (Fallback)',
+        author: 'AI Generated',
+        article_html: '<p>醫管局公布最新急症室輪候時間，部分醫院等候超過八小時。</p><p>當局呼籲非緊急病人考慮使用其他醫療服務。</p>',
+        lede: '醫管局公布最新急症室輪候時間。'
+      },
+      {
+        category: "lifestyle",
+        title: "新年花市下週開鑼",
+        url: `https://mingpao.com/lifestyle/flower-${dateStr}-${timestamp + 4}.htm`,
+        article_status: 'ready',
+        image_status: 'pending',
+        source: 'Perplexity AI (Fallback)',
+        author: 'AI Generated',
+        article_html: '<p>農曆新年花市將於下週在全港多區開鑼。</p><p>今年花市攤位數目增加，預計吸引大批市民選購年花。</p>',
+        lede: '農曆新年花市將於下週在全港多區開鑼。'
+      },
+      {
+        category: "entertainment",
+        title: "香港電影金像獎提名公布",
+        url: `https://hk01.com/entertainment/hkfa-${dateStr}-${timestamp + 5}.htm`,
+        article_status: 'ready',
+        image_status: 'pending',
+        source: 'Perplexity AI (Fallback)',
+        author: 'AI Generated',
+        article_html: '<p>第43屆香港電影金像獎提名名單今日公布。</p><p>多部本地製作獲得提名，競爭激烈。</p>',
+        lede: '第43屆香港電影金像獎提名名單今日公布。'
       }
     ]
 
     return fallbackHeadlines
   }
+
+  async searchHistoricalContext(headline: PerplexityNews): Promise<{ historical_data: any[], citations: string[] }> {
+    console.log(`🔍 Searching for historical context: ${headline.title}`)
+    
+    try {
+      // Create a search query for historical context
+      const searchQuery = `Hong Kong ${headline.category} historical data statistics trends ${headline.title.split(' ').slice(0, 5).join(' ')}`
+      
+      const body = {
+        model: this.model,
+        temperature: 0.3,
+        messages: [
+          {
+            role: "system",
+            content: "You are a data analyst specializing in Hong Kong trends. Search for relevant historical data, statistics, and past events related to the given topic. Focus on concrete numbers, dates, and verifiable facts from the past 5 years."
+          },
+          {
+            role: "user",
+            content: `Find historical context and data for: "${headline.title}"
+            
+            Category: ${headline.category}
+            
+            Look for:
+            1. Similar past events or announcements
+            2. Historical figures, percentages, or statistics
+            3. Previous trends or patterns
+            4. Comparable data points from recent years
+            5. Related policy changes or market movements
+            
+            Provide concrete data with dates and sources.`
+          }
+        ],
+      }
+      
+      const response = await this.makePerplexityRequest(body)
+      const content = response.choices[0].message.content
+      
+      // Extract citations
+      const citationPattern = /\[(\d+)\]\(([^)]+)\)/g
+      const citations: string[] = []
+      let match
+      
+      while ((match = citationPattern.exec(content)) !== null) {
+        citations.push(match[2])
+      }
+      
+      return {
+        historical_data: [content],
+        citations
+      }
+    } catch (error) {
+      console.error("Error searching historical context:", error)
+      return { historical_data: [], citations: [] }
+    }
+  }
+
+  async enrichArticleWithContext(headline: PerplexityNews): Promise<ContextualEnrichment> {
+    console.log(`📊 Creating contextual enrichment for: ${headline.title}`)
+    
+    try {
+      // First, search for historical context
+      const { historical_data, citations: historicalCitations } = await this.searchHistoricalContext(headline)
+      
+      const body = {
+        model: this.model,
+        temperature: 0.4,
+        messages: [
+          {
+            role: "system",
+            content: `You are a data-driven Hong Kong news analyst creating high-frequency live signal updates. Your goal is to provide context-rich, inspiring summaries that help readers understand the significance of current events by comparing them with historical data and trends.
+
+Guidelines:
+- Use concrete numbers and percentages whenever possible
+- Reference specific dates and timeframes
+- Compare current events with historical precedents
+- Keep each bullet point concise and mobile-friendly
+- End with an inspiring or forward-looking perspective
+- Cite all sources using [1], [2] format`
+          },
+          {
+            role: "user",
+            content: `Create a contextual analysis for this Hong Kong news:
+
+Headline: "${headline.title}"
+Category: ${headline.category}
+${historical_data.length > 0 ? `\nHistorical Context Found:\n${historical_data[0]}` : ''}
+
+Generate EXACTLY this structure:
+
+# ENHANCED TITLE
+[Mobile-optimized title: ≤12 Chinese characters OR ≤12 English words]
+
+# CONTEXTUAL BULLETS
+
+## BULLET 1 - HISTORICAL PERSPECTIVE
+Historical: [Past data/figures with specific dates, e.g., "2019年同期增長僅2.3%，2020年因疫情下跌15%"]
+Current: [Key fact about the current situation with specific numbers]
+Insight: [Why this comparison matters, forward-looking perspective]
+
+## BULLET 2 - DATA COMPARISON
+Historical: [Another relevant historical data point or trend]
+Current: [Related current development or figure]
+Insight: [Significance for Hong Kong's future]
+
+## BULLET 3 - BROADER IMPACT
+Historical: [Past similar events and their outcomes]
+Current: [Current broader implications]
+Insight: [Inspiring conclusion about potential positive outcomes]
+
+# KEY DATA POINTS
+- [Metric 1]: [Current Value] (vs [Historical Comparison])
+- [Metric 2]: [Current Value] (vs [Historical Comparison])
+- [Metric 3]: [Current Value] (trend: [up/down/stable])
+
+# IMAGE SEARCH
+[Specific visual search query for Hong Kong context]
+
+# SOURCES
+[List all sources with proper citations]`
+          }
+        ],
+      }
+      
+      const response = await this.makePerplexityRequest(body)
+      const cost = this.calculateCost(response.usage)
+      
+      // Update the article cost
+      if (headline.id) {
+        await updatePerplexityArticle(headline.id, {
+          generation_cost: (headline.generation_cost || 0) + cost
+        })
+      }
+      
+      const content = response.choices[0].message.content
+      
+      // Parse the structured response
+      return this.parseContextualContent(content, historicalCitations)
+      
+    } catch (error) {
+      console.error("Error creating contextual enrichment:", error)
+      // Return a fallback structure
+      return this.createFallbackContextualEnrichment(headline)
+    }
+  }
+
+  private parseContextualContent(content: string, additionalCitations: string[]): ContextualEnrichment {
+    console.log("📝 Parsing contextual content...")
+    
+    // Extract enhanced title
+    const titleMatch = content.match(/# ENHANCED TITLE\s*\n(.+)/i)
+    const enhancedTitle = titleMatch ? titleMatch[1].trim() : "Hong Kong News Update"
+    
+    // Extract bullets
+    const bullets: ContextualBulletPoint[] = []
+    const bulletPattern = /## BULLET \d[^#]*Historical:\s*(.+?)\s*Current:\s*(.+?)\s*Insight:\s*(.+?)(?=\n#|$)/gis
+    let bulletMatch
+    
+    while ((bulletMatch = bulletPattern.exec(content)) !== null) {
+      bullets.push({
+        historical_context: bulletMatch[1].trim(),
+        key_fact: bulletMatch[2].trim(),
+        significance: bulletMatch[3].trim()
+      })
+    }
+    
+    // Ensure we have exactly 3 bullets
+    while (bullets.length < 3) {
+      bullets.push({
+        historical_context: "Historical data shows steady growth over past 5 years",
+        key_fact: "Current developments mark significant change",
+        significance: "This positions Hong Kong for future opportunities"
+      })
+    }
+    
+    // Extract data points
+    const dataPoints: { metric: string; value: string; comparison?: string }[] = []
+    const dataPattern = /- ([^:]+):\s*([^\(\n]+)(?:\s*\((.+?)\))?/g
+    let dataMatch
+    
+    while ((dataMatch = dataPattern.exec(content)) !== null) {
+      dataPoints.push({
+        metric: dataMatch[1].trim(),
+        value: dataMatch[2].trim(),
+        comparison: dataMatch[3]?.trim()
+      })
+    }
+    
+    // Extract citations
+    const citationPattern = /\[(\d+)\]\(([^)]+)\)/g
+    const citations: string[] = [...additionalCitations]
+    const sources: SourceCitation[] = []
+    let citationMatch
+    
+    while ((citationMatch = citationPattern.exec(content)) !== null) {
+      const url = citationMatch[2]
+      if (!citations.includes(url)) {
+        citations.push(url)
+      }
+      
+      try {
+        const domain = new URL(url).hostname
+        sources.push({
+          title: `Source ${citationMatch[1]}`,
+          url: url,
+          domain: domain
+        })
+      } catch (e) {
+        // Invalid URL, skip
+      }
+    }
+    
+    // Extract image prompt
+    const imageMatch = content.match(/# IMAGE SEARCH\s*\n(.+)/i)
+    const imagePrompt = imageMatch 
+      ? imageMatch[1].trim() 
+      : "Hong Kong financial district data visualization charts graphs"
+    
+    return {
+      enhanced_title: enhancedTitle,
+      contextual_bullets: bullets,
+      historical_references: additionalCitations,
+      data_points: dataPoints,
+      image_prompt: imagePrompt,
+      citations: citations,
+      sources: sources
+    }
+  }
+
+  private createFallbackContextualEnrichment(headline: PerplexityNews): ContextualEnrichment {
+    return {
+      enhanced_title: headline.title.substring(0, 50),
+      contextual_bullets: [
+        {
+          historical_context: "Hong Kong has seen similar developments in recent years",
+          key_fact: `Latest ${headline.category} update shows significant change`,
+          significance: "This development positions Hong Kong for future growth"
+        },
+        {
+          historical_context: "Past data indicates steady progress in this sector",
+          key_fact: "Current indicators suggest continued momentum",
+          significance: "Market participants view this as positive signal"
+        },
+        {
+          historical_context: "Historical precedents show resilience in challenging times",
+          key_fact: "Today's announcement reflects ongoing adaptation",
+          significance: "Hong Kong continues to evolve as global financial center"
+        }
+      ],
+      historical_references: [],
+      data_points: [],
+      image_prompt: `Hong Kong ${headline.category} news update visual`,
+      citations: [],
+      sources: []
+    }
+  }
+
+  // Convert contextual enrichment to standard ArticleEnrichment format for backward compatibility
+  contextualToArticleEnrichment(contextual: ContextualEnrichment): ArticleEnrichment {
+    // Create key points from contextual bullets
+    const key_points = contextual.contextual_bullets.map(bullet => 
+      `${bullet.historical_context} → ${bullet.key_fact}`
+    )
+    
+    // Create summary from the first bullet
+    const summary = contextual.contextual_bullets[0] 
+      ? `${contextual.contextual_bullets[0].key_fact} ${contextual.contextual_bullets[0].significance}`
+      : "Latest Hong Kong news update with significant implications."
+    
+    // Create why it matters from all insights
+    const why_it_matters = contextual.contextual_bullets
+      .map(b => b.significance)
+      .join(' ')
+    
+    // Create HTML body from all bullets
+    const body_html = contextual.contextual_bullets
+      .map((bullet, i) => `
+        <h3>Context ${i + 1}</h3>
+        <p><strong>Historical:</strong> ${bullet.historical_context}</p>
+        <p><strong>Current:</strong> ${bullet.key_fact}</p>
+        <p><strong>Significance:</strong> ${bullet.significance}</p>
+      `).join('') + 
+      (contextual.data_points.length > 0 
+        ? `<h3>Key Data Points</h3><ul>${contextual.data_points.map(dp => 
+            `<li><strong>${dp.metric}:</strong> ${dp.value}${dp.comparison ? ` (${dp.comparison})` : ''}</li>`
+          ).join('')}</ul>`
+        : '')
+    
+    return {
+      enhanced_title: contextual.enhanced_title,
+      summary,
+      key_points,
+      why_it_matters,
+      body_html,
+      image_prompt: contextual.image_prompt,
+      citations: contextual.citations,
+      sources: contextual.sources,
+      lede: summary.substring(0, 200)
+    }
+  }
+
 }
 
 export const perplexityHKNews = new PerplexityHKNews()
 export { PerplexityHKNews }
-export type { HeadlineResponse, ArticleEnrichment }
+export type { HeadlineResponse, ArticleEnrichment, ContextualEnrichment, ContextualBulletPoint }

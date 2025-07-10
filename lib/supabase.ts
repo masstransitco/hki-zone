@@ -71,7 +71,6 @@ export async function saveArticle(article: Article) {
           url: article.url,
           source: article.source,
           author: article.author,
-          published_at: article.published_at,
           image_url: (article as any).imageUrl || article.image_url,
           category: article.category || "General",
           is_ai_enhanced: article.is_ai_enhanced || false,
@@ -490,8 +489,8 @@ export interface PerplexityNews {
   id?: string
   category: string
   title: string
+  title_en?: string
   url: string
-  published_at: string
   inserted_at?: string
   url_hash?: string
   article_status: 'pending' | 'enriched' | 'ready'
@@ -535,7 +534,7 @@ export async function getPerplexityNews(category?: string, limit = 20) {
       .from("perplexity_news")
       .select("*")
       .eq("article_status", "ready")
-      .order("published_at", { ascending: false })
+      .order("updated_at", { ascending: false })
 
     if (category) {
       query = query.eq("category", category)
@@ -564,7 +563,7 @@ export async function getPerplexityNewsByCategory() {
       .from("perplexity_news")
       .select("*")
       .eq("article_status", "ready")
-      .order("published_at", { ascending: false })
+      .order("updated_at", { ascending: false })
 
     if (error) {
       if (error.code === "42P01" || error.message.includes("does not exist")) {
