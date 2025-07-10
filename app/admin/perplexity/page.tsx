@@ -22,7 +22,7 @@ import PerplexityArticleList from "@/components/admin/perplexity-article-list"
 import PerplexityArticleDetail from "@/components/admin/perplexity-article-detail"
 import PerplexityBulkOperations from "@/components/admin/perplexity-bulk-operations"
 import PerplexityManualTriggers from "@/components/admin/perplexity-manual-triggers"
-import type { PerplexityArticle, PerplexityNewsResponse } from "@/lib/types"
+import type { PerplexityArticle } from "@/lib/types"
 
 const CATEGORIES = [
   { value: "all", label: "All Categories" },
@@ -41,139 +41,130 @@ const STATUSES = [
   { value: "ready", label: "Ready" },
 ]
 
-const ARTICLE_LIMITS = [
-  { value: "20", label: "20 articles" },
-  { value: "50", label: "50 articles" },
-  { value: "100", label: "100 articles" },
-  { value: "200", label: "200 articles" },
-  { value: "all", label: "All articles" },
-]
 
 export default function PerplexityPage() {
   const [articles, setArticles] = useState<PerplexityArticle[]>([])
-  const [filteredArticles, setFilteredArticles] = useState<PerplexityArticle[]>([])
   const [selectedArticle, setSelectedArticle] = useState<PerplexityArticle | null>(null)
   const [selectedArticles, setSelectedArticles] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [articleLimit, setArticleLimit] = useState("100")
-  const [usingMockData, setUsingMockData] = useState(false)
+  const [page, setPage] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
   const [showManualTriggers, setShowManualTriggers] = useState(false)
-  const [totalArticleCount, setTotalArticleCount] = useState(0)
+  const [totalStats, setTotalStats] = useState({
+    total: 0,
+    byStatus: {} as Record<string, number>,
+    byCategory: {} as Record<string, number>,
+    totalCost: 0
+  })
 
   useEffect(() => {
-    loadArticles()
-  }, [categoryFilter, statusFilter, articleLimit])
+    setPage(0)
+    setArticles([])
+    loadArticles(0)
+  }, [categoryFilter, statusFilter, searchQuery])
 
   useEffect(() => {
-    filterArticles()
-  }, [articles, searchQuery])
+    if (page > 0) {
+      loadArticles(page)
+    }
+  }, [page])
 
-  const loadArticles = async () => {
+  useEffect(() => {
+    loadTotalStats()
+  }, [])
+
+  const loadArticles = async (pageNum: number) => {
     try {
-      setLoading(true)
+      if (pageNum === 0) setLoading(true)
       
-      // First, fetch total count with no limit
-      const countParams = new URLSearchParams()
-      if (categoryFilter !== "all") countParams.set("category", categoryFilter)
-      if (statusFilter !== "all") countParams.set("status", statusFilter)
-      countParams.set("limit", "all")
+      const params = new URLSearchParams({
+        page: pageNum.toString(),
+        limit: "20"
+      })
       
-      const countResponse = await fetch(`/api/admin/perplexity?${countParams.toString()}`)
-      if (countResponse.ok) {
-        const countData = await countResponse.json()
-        setTotalArticleCount(countData.articles?.length || 0)
-      }
-      
-      // Then fetch paginated articles
-      const params = new URLSearchParams()
       if (categoryFilter !== "all") params.set("category", categoryFilter)
       if (statusFilter !== "all") params.set("status", statusFilter)
-      if (articleLimit !== "all") params.set("limit", articleLimit)
+      if (searchQuery) params.set("search", searchQuery)
       
       const response = await fetch(`/api/admin/perplexity?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch articles')
       
       const data = await response.json()
-      setUsingMockData(false) // Admin API doesn't use mock data
       
-      // Set articles from admin API response
-      setArticles(data.articles || [])
+      if (pageNum === 0) {
+        setArticles(data.articles || [])
+      } else {
+        setArticles(prev => [...prev, ...(data.articles || [])])
+      }
+      
+      setHasMore(data.hasMore || false)
     } catch (error) {
       console.error('Error loading articles:', error)
-      // Fallback to public API if admin API fails
-      try {
-        const response = await fetch('/api/perplexity-news')
-        if (!response.ok) throw new Error('Failed to fetch articles')
-        
-        const data: PerplexityNewsResponse = await response.json()
-        setUsingMockData(data.usingMockData)
-        
-        // Flatten the categorized data into a single array
-        let allArticles: PerplexityArticle[] = []
-        if (Array.isArray(data.news)) {
-          allArticles = data.news
-        } else {
-          allArticles = Object.values(data.news).flat()
-        }
-        
-        setArticles(allArticles)
-      } catch (fallbackError) {
-        console.error('Fallback API also failed:', fallbackError)
-      }
     } finally {
       setLoading(false)
     }
   }
 
-  const filterArticles = () => {
-    let filtered = articles
-
-    // Only apply search filter here since category and status are handled by API
-    if (searchQuery) {
-      filtered = filtered.filter(article => 
-        article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        article.lede?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+  const loadTotalStats = async () => {
+    try {
+      const response = await fetch('/api/admin/perplexity/stats')
+      if (!response.ok) return
+      
+      const stats = await response.json()
+      setTotalStats(stats)
+    } catch (error) {
+      console.error('Error loading stats:', error)
     }
+  }
 
-    setFilteredArticles(filtered)
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    setPage(0)
+    setArticles([])
+    loadArticles(0)
   }
 
 
   const handleRefresh = () => {
+    setPage(0)
     setSelectedArticle(null)
     setSelectedArticles([])
-    loadArticles()
+    setArticles([])
+    loadArticles(0)
+    loadTotalStats()
   }
 
-  const handleBulkDelete = async (articleIds: string[]) => {
-    console.log('Bulk delete:', articleIds)
-    // TODO: Implement bulk delete API call
+  const handleLoadMore = () => {
+    setPage(prev => prev + 1)
   }
 
-  const handleBulkRegenerate = async (articleIds: string[]) => {
-    console.log('Bulk regenerate:', articleIds)
-    // TODO: Implement bulk regenerate API call
+  const handleBulkOperations = async (operation: string, data?: any) => {
+    try {
+      const response = await fetch('/api/admin/perplexity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: operation,
+          articleIds: selectedArticles,
+          data
+        })
+      })
+      
+      if (response.ok) {
+        handleRefresh()
+        setSelectedArticles([])
+      }
+    } catch (error) {
+      console.error('Bulk operation error:', error)
+    }
   }
 
-  const handleBulkCategoryUpdate = async (articleIds: string[], category: string) => {
-    console.log('Bulk category update:', articleIds, category)
-    // TODO: Implement bulk category update API call
-  }
-
-  const handleBulkExport = async (articleIds: string[]) => {
-    console.log('Bulk export:', articleIds)
-    // TODO: Implement bulk export functionality
-  }
-
-  // Use totalArticleCount for overall stats, filtered for displayed stats
-  const displayedArticles = filteredArticles.length
-  const totalCost = filteredArticles.reduce((sum, article) => sum + (article.generation_cost || 0), 0)
-  const statusCounts = filteredArticles.reduce((acc, article) => {
-    acc[article.article_status] = (acc[article.article_status] || 0) + 1
+  // Calculate stats from loaded articles for display
+  const categoryStats = articles.reduce((acc, article) => {
+    acc[article.category] = (acc[article.category] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
@@ -185,11 +176,6 @@ export default function PerplexityPage() {
           <Brain className="h-6 w-6" />
           <h1 className="text-2xl font-bold">Perplexity News Management</h1>
         </div>
-        {usingMockData && (
-          <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
-            Using Mock Data
-          </Badge>
-        )}
         <Button
           variant="outline"
           onClick={() => setShowManualTriggers(!showManualTriggers)}
@@ -207,9 +193,9 @@ export default function PerplexityPage() {
             <Brain className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalArticleCount}</div>
+            <div className="text-2xl font-bold">{totalStats.total}</div>
             <p className="text-xs text-muted-foreground">
-              {displayedArticles < totalArticleCount ? `Showing ${displayedArticles}` : 'All articles'}
+              {articles.length < totalStats.total ? `Showing ${articles.length}` : 'All articles'}
             </p>
           </CardContent>
         </Card>
@@ -220,7 +206,7 @@ export default function PerplexityPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalCost.toFixed(4)}</div>
+            <div className="text-2xl font-bold">${totalStats.totalCost.toFixed(4)}</div>
             <p className="text-xs text-muted-foreground">
               Generation cost
             </p>
@@ -233,7 +219,7 @@ export default function PerplexityPage() {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts.ready || 0}</div>
+            <div className="text-2xl font-bold">{totalStats.byStatus.ready || 0}</div>
             <p className="text-xs text-muted-foreground">
               Complete articles
             </p>
@@ -246,7 +232,7 @@ export default function PerplexityPage() {
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts.enriched || 0}</div>
+            <div className="text-2xl font-bold">{totalStats.byStatus.enriched || 0}</div>
             <p className="text-xs text-muted-foreground">
               Content ready
             </p>
@@ -259,7 +245,7 @@ export default function PerplexityPage() {
             <AlertCircle className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{statusCounts.pending || 0}</div>
+            <div className="text-2xl font-bold">{totalStats.byStatus.pending || 0}</div>
             <p className="text-xs text-muted-foreground">
               Processing
             </p>
@@ -267,71 +253,67 @@ export default function PerplexityPage() {
         </Card>
       </div>
 
-      {/* Top Controls */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-1 items-center gap-3">
-          {/* Search Bar */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search articles by title or content..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value)
-                filterArticles()
-              }}
-              className="pl-9"
-            />
+      {/* Filters and Search */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Perplexity Articles</CardTitle>
+          <CardDescription>
+            Manage AI-generated articles from Perplexity
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search articles..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <Button type="submit" variant="outline" size="icon">
+                <Search className="h-4 w-4" />
+              </Button>
+            </form>
+            
+            {/* Filters Row */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(category => (
+                    <SelectItem key={category.value} value={category.value}>
+                      {category.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map(status => (
+                    <SelectItem key={status.value} value={status.value}>
+                      {status.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
+              <Button onClick={handleRefresh} variant="outline" size="icon" className="sm:ml-auto">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          
-          {/* Category Filter */}
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {CATEGORIES.map(category => (
-                <SelectItem key={category.value} value={category.value}>
-                  {category.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {/* Status Filter */}
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUSES.map(status => (
-                <SelectItem key={status.value} value={status.value}>
-                  {status.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {/* Limit */}
-          <Select value={articleLimit} onValueChange={setArticleLimit}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Show" />
-            </SelectTrigger>
-            <SelectContent>
-              {ARTICLE_LIMITS.map(limit => (
-                <SelectItem key={limit.value} value={limit.value}>
-                  {limit.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <Button onClick={handleRefresh} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Manual Triggers */}
       {showManualTriggers && (
@@ -342,12 +324,12 @@ export default function PerplexityPage() {
       {selectedArticles.length > 0 && (
         <PerplexityBulkOperations
           selectedArticles={selectedArticles}
-          articles={filteredArticles}
+          articles={articles}
           onClearSelection={() => setSelectedArticles([])}
-          onBulkDelete={handleBulkDelete}
-          onBulkRegenerate={handleBulkRegenerate}
-          onBulkCategoryUpdate={handleBulkCategoryUpdate}
-          onBulkExport={handleBulkExport}
+          onBulkDelete={(ids) => handleBulkOperations('delete')}
+          onBulkRegenerate={(ids) => handleBulkOperations('regenerate')}
+          onBulkCategoryUpdate={(ids, cat) => handleBulkOperations('update', { category: cat })}
+          onBulkExport={(ids) => handleBulkOperations('export')}
         />
       )}
 
@@ -355,12 +337,14 @@ export default function PerplexityPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <PerplexityArticleList
-            articles={filteredArticles}
+            articles={articles}
             loading={loading}
             selectedArticles={selectedArticles}
             onArticleSelect={setSelectedArticle}
             onSelectionChange={setSelectedArticles}
             onRefresh={handleRefresh}
+            onLoadMore={handleLoadMore}
+            hasMore={hasMore}
             onDelete={async (article) => {
               if (confirm(`Delete article "${article.title}"?`)) {
                 try {

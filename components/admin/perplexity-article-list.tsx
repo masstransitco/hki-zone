@@ -48,6 +48,8 @@ interface PerplexityArticleListProps {
   onSelectionChange: (articleIds: string[]) => void
   onRefresh: () => void
   onDelete?: (article: PerplexityArticle) => void
+  onLoadMore?: () => void
+  hasMore?: boolean
 }
 
 type SortField = 'created_at' | 'updated_at' | 'title' | 'category' | 'status'
@@ -60,7 +62,9 @@ export default function PerplexityArticleList({
   onArticleSelect,
   onSelectionChange,
   onRefresh,
-  onDelete
+  onDelete,
+  onLoadMore,
+  hasMore
 }: PerplexityArticleListProps) {
   const [sortField, setSortField] = useState<SortField>('created_at')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
@@ -156,11 +160,11 @@ export default function PerplexityArticleList({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'ready':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
       case 'enriched':
-        return <Clock className="h-4 w-4 text-blue-500" />
+        return <Clock className="h-4 w-4 text-blue-500 dark:text-blue-400" />
       case 'pending':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />
+        return <AlertCircle className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />
       default:
         return null
     }
@@ -168,14 +172,14 @@ export default function PerplexityArticleList({
 
   const getCategoryColor = (category: string) => {
     const colors = {
-      politics: "bg-red-100 text-red-800",
-      business: "bg-blue-100 text-blue-800",
-      tech: "bg-purple-100 text-purple-800",
-      health: "bg-green-100 text-green-800",
-      lifestyle: "bg-yellow-100 text-yellow-800",
-      entertainment: "bg-pink-100 text-pink-800"
+      politics: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+      business: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+      tech: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+      health: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+      lifestyle: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+      entertainment: "bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400"
     }
-    return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800"
+    return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
   }
 
   const formatDate = (dateString: string) => {
@@ -256,8 +260,8 @@ export default function PerplexityArticleList({
       <CardContent>
         {/* Date Filters */}
         {showFilters && (
-          <div className="mb-4 p-4 bg-gray-50 rounded-lg space-y-3">
-            <h3 className="text-sm font-medium flex items-center gap-2">
+          <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg space-y-3 border border-gray-200 dark:border-gray-800">
+            <h3 className="text-sm font-medium flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <Calendar className="h-4 w-4" />
               Date Range Filter
             </h3>
@@ -337,9 +341,9 @@ export default function PerplexityArticleList({
         )}
 
         {/* List Header */}
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
               <tr>
                 <th className="w-10 p-3">
                   <Checkbox
@@ -349,7 +353,7 @@ export default function PerplexityArticleList({
                 </th>
                 <th className="text-left p-3">
                   <button
-                    className="flex items-center gap-1 font-medium text-sm hover:text-gray-700"
+                    className="flex items-center gap-1 font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                     onClick={() => handleSort('title')}
                   >
                     Title
@@ -358,7 +362,7 @@ export default function PerplexityArticleList({
                 </th>
                 <th className="text-left p-3">
                   <button
-                    className="flex items-center gap-1 font-medium text-sm hover:text-gray-700"
+                    className="flex items-center gap-1 font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                     onClick={() => handleSort('category')}
                   >
                     Category
@@ -367,7 +371,7 @@ export default function PerplexityArticleList({
                 </th>
                 <th className="text-left p-3">
                   <button
-                    className="flex items-center gap-1 font-medium text-sm hover:text-gray-700"
+                    className="flex items-center gap-1 font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                     onClick={() => handleSort('status')}
                   >
                     Status
@@ -376,7 +380,7 @@ export default function PerplexityArticleList({
                 </th>
                 <th className="text-left p-3">
                   <button
-                    className="flex items-center gap-1 font-medium text-sm hover:text-gray-700"
+                    className="flex items-center gap-1 font-medium text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
                     onClick={() => handleSort('created_at')}
                   >
                     Created
@@ -386,7 +390,7 @@ export default function PerplexityArticleList({
                 <th className="text-left p-3">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {processedArticles.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-muted-foreground">
@@ -397,7 +401,7 @@ export default function PerplexityArticleList({
                 processedArticles.map((article) => (
                   <tr
                     key={article.id}
-                    className="hover:bg-gray-50 cursor-pointer"
+                    className="hover:bg-gray-50 dark:hover:bg-gray-900/50 cursor-pointer transition-colors"
                     onClick={() => onArticleSelect(article)}
                   >
                     <td className="p-3" onClick={(e) => e.stopPropagation()}>
@@ -408,7 +412,7 @@ export default function PerplexityArticleList({
                     </td>
                     <td className="p-3">
                       <div className="max-w-md">
-                        <p className="font-medium truncate">{article.title}</p>
+                        <p className="font-medium truncate text-gray-900 dark:text-gray-100">{article.title}</p>
                         {article.lede && (
                           <p className="text-sm text-muted-foreground truncate mt-1">
                             {article.lede}
@@ -424,12 +428,12 @@ export default function PerplexityArticleList({
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         {getStatusIcon(article.article_status)}
-                        <span className="text-sm capitalize">{article.article_status}</span>
+                        <span className="text-sm capitalize text-gray-700 dark:text-gray-300">{article.article_status}</span>
                       </div>
                     </td>
                     <td className="p-3">
                       <div className="text-sm">
-                        <div>{formatDate(article.created_at)}</div>
+                        <div className="text-gray-700 dark:text-gray-300">{formatDate(article.created_at)}</div>
                         {article.updated_at && article.updated_at !== article.created_at && (
                           <div className="text-xs text-muted-foreground">
                             Updated: {formatDate(article.updated_at)}
@@ -463,6 +467,19 @@ export default function PerplexityArticleList({
             </tbody>
           </table>
         </div>
+        
+        {/* Load More Button */}
+        {hasMore && onLoadMore && (
+          <div className="mt-4 flex justify-center">
+            <Button
+              onClick={onLoadMore}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              Load More Articles
+            </Button>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

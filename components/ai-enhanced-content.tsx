@@ -10,8 +10,7 @@ interface AIEnhancedContentProps {
 
 export default function AIEnhancedContent({ content, isBottomSheet = false }: AIEnhancedContentProps) {
   const { t } = useLanguage()
-  const parsed = parseAIEnhancedContent(content)
-
+  
   const textSizeClass = isBottomSheet 
     ? "text-base md:text-lg" 
     : "text-lg md:text-xl"
@@ -19,6 +18,21 @@ export default function AIEnhancedContent({ content, isBottomSheet = false }: AI
   const headingSizeClass = isBottomSheet 
     ? "text-lg font-semibold" 
     : "text-xl font-semibold"
+
+  // Check if content is HTML
+  const isHTML = content.includes('<p>') || content.includes('<div>') || content.includes('<h')
+  
+  if (isHTML) {
+    // Render HTML content directly
+    return (
+      <div 
+        className={`${textSizeClass} text-foreground leading-loose font-normal prose prose-neutral dark:prose-invert max-w-none`}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    )
+  }
+  
+  const parsed = parseAIEnhancedContent(content)
 
   if (!parsed.hasStructuredContent) {
     // Render regular content for non-AI enhanced articles
@@ -31,13 +45,6 @@ export default function AIEnhancedContent({ content, isBottomSheet = false }: AI
 
   return (
     <div className="space-y-8">
-      {/* Main Content */}
-      {parsed.mainContent && (
-        <div className={`${textSizeClass} text-foreground leading-loose whitespace-pre-wrap font-normal`}>
-          {parsed.mainContent}
-        </div>
-      )}
-
       {/* Summary Section */}
       {parsed.summary && (
         <div className="space-y-4">
@@ -80,6 +87,13 @@ export default function AIEnhancedContent({ content, isBottomSheet = false }: AI
           <div className={`${textSizeClass} text-foreground leading-loose font-normal`}>
             {parsed.whyItMatters}
           </div>
+        </div>
+      )}
+
+      {/* Main Content - shown after structured sections */}
+      {parsed.mainContent && (
+        <div className={`${textSizeClass} text-foreground leading-loose whitespace-pre-wrap font-normal`}>
+          {parsed.mainContent}
         </div>
       )}
     </div>

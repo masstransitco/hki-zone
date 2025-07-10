@@ -18,7 +18,19 @@ interface ArticleDetailSheetProps {
 async function fetchArticle(id: string): Promise<Article> {
   console.log(`🔍 ArticleDetailSheet: Fetching article with ID: ${id}`)
   
-  // Check if this is likely a perplexity article by trying perplexity API first
+  // Try the unified API first (preferred for new system)
+  try {
+    const unifiedResponse = await fetch(`/api/unified/articles/${id}`)
+    if (unifiedResponse.ok) {
+      const article = await unifiedResponse.json()
+      console.log(`✅ Found article in unified API: ${article.title}`)
+      return article
+    }
+  } catch (error) {
+    console.log(`⚠️ Unified API failed for ${id}, trying legacy APIs`)
+  }
+  
+  // Check if this is likely a perplexity article by trying perplexity API
   // but only if it doesn't respond with a mock article
   let response = await fetch(`/api/perplexity/${id}`)
   
@@ -38,7 +50,7 @@ async function fetchArticle(id: string): Promise<Article> {
   response = await fetch(`/api/articles/${id}`)
   
   if (!response.ok) {
-    throw new Error("Failed to fetch article from both APIs")
+    throw new Error("Failed to fetch article from all APIs")
   }
   
   const article = await response.json()
@@ -138,8 +150,26 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
       )}
 
       <div className="space-y-8">
-        {article.content && (
+        {article.content ? (
           <AIEnhancedContent content={article.content} isBottomSheet={true} />
+        ) : (
+          <div className="text-muted-foreground text-center py-8">
+            <p>No article content available</p>
+            {/* Debug info */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mt-4 text-xs text-left">
+                <pre className="bg-muted p-2 rounded overflow-auto">
+                  {JSON.stringify({
+                    hasContent: !!article.content,
+                    contentLength: article.content?.length || 0,
+                    summary: article.summary,
+                    isAiEnhanced: article.isAiEnhanced,
+                    source: article.source
+                  }, null, 2)}
+                </pre>
+              </div>
+            )}
+          </div>
         )}
 
         {/* Sources section for AI enhanced articles */}

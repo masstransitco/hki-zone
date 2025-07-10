@@ -34,8 +34,16 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
     // Remove citation lists that start with numbers
     .replace(/\n\n?(?:\d+\.\s+.*\n?){2,}$/i, '')
 
+  // Debug logging for development
+  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+    console.log('🔍 Parsing content:', { 
+      length: cleanedContent.length,
+      preview: cleanedContent.substring(0, 200) + '...'
+    })
+  }
+
   // Check if content has structured format (English or Chinese)
-  const hasStructuredSections = /\*\*(Summary|Key Points?|Why It Matters?|摘要|重点|重點|重要性)\*\*/i.test(cleanedContent)
+  const hasStructuredSections = /\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*/i.test(cleanedContent)
   
   if (!hasStructuredSections) {
     return {
@@ -49,11 +57,29 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
   let whyItMatters: string | undefined
   let mainContent = ''
 
+  // Check if this is a Perplexity-style article where structured content comes first
+  const firstSectionMatch = cleanedContent.match(/^\*\*(Summary|摘要)\*\*/i)
+  const isPerplexityFormat = firstSectionMatch !== null
+
+  if (isPerplexityFormat) {
+    // For Perplexity format, extract structured sections first, then get main content
+    const structuredEndMatch = cleanedContent.match(/\*\*(Why It Matters?|重要性)\*\*[\s\S]*?\n\n/i)
+    if (structuredEndMatch) {
+      const structuredEndIndex = structuredEndMatch.index! + structuredEndMatch[0].length
+      mainContent = cleanedContent.substring(structuredEndIndex).trim()
+      
+      // Remove the duplicate summary that sometimes appears at the start of main content
+      if (summary && mainContent.startsWith(summary)) {
+        mainContent = mainContent.substring(summary.length).trim()
+      }
+    }
+  }
+
   // Split content by structured sections (English or Chinese)
-  const sections = cleanedContent.split(/\*\*(Summary|Key Points?|Why It Matters?|摘要|重点|重點|重要性)\*\*/i)
+  const sections = cleanedContent.split(/\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*/i)
   
-  // First section is usually main content before structured sections
-  if (sections[0]) {
+  // If not Perplexity format, first section is main content
+  if (!isPerplexityFormat && sections[0]) {
     mainContent = sections[0].trim()
   }
 
@@ -64,6 +90,11 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
 
     if (!sectionContent) continue
 
+    // Debug logging
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.log('📑 Section found:', { title: sectionTitle, contentLength: sectionContent.length })
+    }
+
     switch (sectionTitle) {
       case 'summary':
       case '摘要':
@@ -71,6 +102,7 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
         break
       case 'key points':
       case 'key point':
+      case 'key context':
       case '重点':
       case '重點':
         // Parse bullet points or numbered lists

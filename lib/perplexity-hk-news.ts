@@ -215,40 +215,36 @@ QUALITY:
       
       const body = {
         model: this.model,
-        temperature: 0.3,
+        temperature: 0.2, // Lower temperature for more consistent formatting
         top_p: 0.9,
-        frequency_penalty: 0.5,
+        frequency_penalty: 0.8, // Higher penalty to avoid repetition
         messages: [
           {
             role: "system",
-            content: `You are a Hong Kong news curator bot. Return ONLY a JSON array with exactly 10 news items. No explanation, no commentary, just the JSON array.`
+            content: `You are a JSON API that returns Hong Kong news headlines. You must respond with ONLY a valid JSON array - no text before or after. Do not include any explanation, greeting, or commentary. Return raw JSON only.`
           },
           {
             role: "user",
-            content: `Find the 10 most important Hong Kong news stories from the last 4 hours.
+            content: `Generate 6 unique Hong Kong news headlines from today.
 
-Categories to cover (distribute evenly):
-- politics: Government, policies, elections
-- business: Finance, property, economy
-- tech: Technology, innovation, startups
-- health: Healthcare, medical news
-- lifestyle: Culture, food, society
-- entertainment: Films, celebrities, events
+CRITICAL: Your response must start with [ and end with ]
+No text before the opening bracket or after the closing bracket.
 
-Requirements:
-- Title must be ≤12 Chinese characters OR ≤12 English words
-- Use real URLs from Hong Kong news sites
-- Avoid these recent titles: ${negativeTitles.slice(0, 10).join("; ")}
+Categories (one headline each):
+- politics
+- business
+- tech
+- health
+- lifestyle
+- entertainment
 
-Return ONLY this JSON format:
-[
-  {
-    "category": "politics",
-    "title": "香港政府宣布新政策",
-    "url": "https://news.rthk.hk/...",
-    "published_iso": "2025-07-10T10:00:00+08:00"
-  }
-]`
+Avoid these titles:
+${negativeTitles.slice(0, 15).map(t => `- ${t}`).join('\n')}
+
+Required JSON structure:
+[{"category":"politics","title":"標題最多15字","url":"https://news.rthk.hk/rthk/ch/component/k2/123456-20250710.htm"},{"category":"business","title":"另一個標題","url":"https://hk01.com/article/123456"}]
+
+Remember: Return ONLY the JSON array, nothing else.`
           }
         ]
       }
@@ -266,59 +262,122 @@ Return ONLY this JSON format:
       let headlinesData: HeadlineResponse[]
       try {
         console.log("🔍 Parsing JSON response...")
-        let rawContent = response.choices[0].message.content.trim()
+        const fullContent = response.choices[0].message.content.trim()
+        console.log("📄 Full response length:", fullContent.length)
         
-        // Remove any explanatory text before the JSON array
-        const jsonStartIndex = rawContent.indexOf('[')
-        if (jsonStartIndex > 0) {
-          console.log(`🧹 Removing ${jsonStartIndex} chars of text before JSON`)
-          rawContent = rawContent.substring(jsonStartIndex)
+        let jsonArray: string | null = null
+        
+        // Method 1: Try to extract from code blocks first
+        const codeBlockMatches = fullContent.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/g)
+        if (codeBlockMatches) {
+          console.log(`📝 Found ${codeBlockMatches.length} code blocks`)
+          for (const match of codeBlockMatches) {
+            const extracted = match.replace(/```(?:json)?\s*/g, '').replace(/\s*```/g, '')
+            try {
+              const parsed = JSON.parse(extracted)
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                jsonArray = extracted
+                console.log("✅ Extracted valid JSON from code block")
+                break
+              }
+            } catch (e) {
+              continue
+            }
+          }
         }
         
-        // Remove any text after the JSON array
-        const jsonEndIndex = rawContent.lastIndexOf(']')
-        if (jsonEndIndex > 0 && jsonEndIndex < rawContent.length - 1) {
-          rawContent = rawContent.substring(0, jsonEndIndex + 1)
+        // Method 2: Find all potential JSON arrays in the content
+        if (!jsonArray) {
+          const arrayMatches = fullContent.match(/\[[\s\S]*?\]/g)
+          if (arrayMatches) {
+            console.log(`🔍 Found ${arrayMatches.length} potential JSON arrays`)
+            // Sort by length descending (longer arrays more likely to be the main response)
+            arrayMatches.sort((a, b) => b.length - a.length)
+            
+            for (const match of arrayMatches) {
+              try {
+                const cleaned = match
+                  .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control chars
+                  .replace(/,\s*}/g, '}') // Remove trailing commas in objects
+                  .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+                
+                const parsed = JSON.parse(cleaned)
+                if (Array.isArray(parsed) && parsed.length > 0 && 
+                    parsed[0].category && parsed[0].title && parsed[0].url) {
+                  jsonArray = cleaned
+                  console.log("✅ Found valid headline array")
+                  break
+                }
+              } catch (e) {
+                continue
+              }
+            }
+          }
         }
         
-        // Try to extract JSON from markdown code blocks if present
-        const codeBlockMatch = rawContent.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/)
-        if (codeBlockMatch) {
-          rawContent = codeBlockMatch[1]
-          console.log("📝 Extracted JSON from markdown code block")
+        // Method 3: Extract between first [ and last ] as last resort
+        if (!jsonArray) {
+          const firstBracket = fullContent.indexOf('[')
+          const lastBracket = fullContent.lastIndexOf(']')
+          if (firstBracket >= 0 && lastBracket > firstBracket) {
+            jsonArray = fullContent.substring(firstBracket, lastBracket + 1)
+              .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
+              .replace(/,\s*}/g, '}')
+              .replace(/,\s*]/g, ']')
+            console.log("📋 Extracted content between first [ and last ]")
+          }
         }
         
-        // Basic JSON cleaning
-        rawContent = rawContent
-          .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Remove control characters
-          .replace(/,\s*}/g, '}') // Remove trailing commas
-          .replace(/,\s*]/g, ']') // Remove trailing commas in arrays
+        if (!jsonArray) {
+          throw new Error("No JSON array found in response after trying all extraction methods")
+        }
         
-        headlinesData = JSON.parse(rawContent)
+        // Parse the extracted JSON
+        headlinesData = JSON.parse(jsonArray)
         
         if (!Array.isArray(headlinesData)) {
-          console.error("❌ Response is not an array:", typeof headlinesData)
-          throw new Error("Response is not an array")
+          console.error("❌ Parsed data is not an array:", typeof headlinesData)
+          throw new Error("Parsed data is not an array")
         }
         
         console.log(`✅ Successfully parsed ${headlinesData.length} headlines`)
         
-        // Validate headlines have required fields
-        headlinesData = headlinesData.filter(h => h.category && h.title && h.url)
+        // Validate and clean headlines
+        const validHeadlines = headlinesData.filter(h => {
+          const isValid = h && 
+            typeof h === 'object' &&
+            h.category && 
+            h.title && 
+            h.url &&
+            typeof h.category === 'string' &&
+            typeof h.title === 'string' &&
+            typeof h.url === 'string'
+          
+          if (!isValid) {
+            console.warn("⚠️ Invalid headline structure:", h)
+          }
+          return isValid
+        })
         
-        if (headlinesData.length === 0) {
-          throw new Error("No valid headlines after filtering")
+        console.log(`📊 ${validHeadlines.length} headlines passed validation`)
+        
+        if (validHeadlines.length === 0) {
+          throw new Error("No valid headlines after validation")
         }
+        
+        headlinesData = validHeadlines
         
       } catch (parseError) {
         console.error("❌ Failed to parse Perplexity response:", parseError.message)
-        console.error("Raw response preview:", response.choices[0].message.content.substring(0, 500))
+        console.error("Raw response (first 1000 chars):", response.choices[0].message.content.substring(0, 1000))
+        console.error("Raw response (last 500 chars):", response.choices[0].message.content.slice(-500))
         
-        // Fall back to mock headlines if parsing fails
-        console.log("🔄 Using fallback headlines due to parsing error")
+        // Instead of fallback, return empty result
+        console.log("⚠️ Returning empty result instead of fallback headlines")
         return { 
-          headlines: this.generateFallbackHeadlines(), 
-          totalCost: cost 
+          headlines: [], 
+          totalCost: cost,
+          error: parseError.message
         }
       }
 
@@ -575,9 +634,29 @@ Mobile-first requirements:
         return { saved: 0, totalCost }
       }
 
-      console.log(`💾 Saving ${headlines.length} headlines to database...`)
+      // Add deduplication check
+      console.log("🔍 Checking for duplicate headlines...")
+      const recentTitles = await getRecentPerplexityTitles(24) // Get titles from last 24 hours
+      const recentTitleSet = new Set(recentTitles.map(t => t.title.toLowerCase()))
+      
+      // Filter out duplicates
+      const uniqueHeadlines = headlines.filter(h => {
+        const titleLower = h.title.toLowerCase()
+        const isDuplicate = recentTitleSet.has(titleLower)
+        if (isDuplicate) {
+          console.log(`⚠️ Skipping duplicate: "${h.title}"`)
+        }
+        return !isDuplicate
+      })
+      
+      if (uniqueHeadlines.length === 0) {
+        console.log("⚠️ All headlines were duplicates")
+        return { saved: 0, totalCost }
+      }
+      
+      console.log(`💾 Saving ${uniqueHeadlines.length} unique headlines (filtered ${headlines.length - uniqueHeadlines.length} duplicates)`)
       // Save headlines to database
-      const { count } = await savePerplexityHeadlines(headlines)
+      const { count } = await savePerplexityHeadlines(uniqueHeadlines)
       
       console.log(`✅ Processing complete: ${count} saved, cost: $${totalCost.toFixed(6)}`)
       return { saved: count, totalCost }
@@ -641,7 +720,7 @@ Mobile-first requirements:
           console.error(`❌ Failed to enrich article "${article.title}":`, error)
           // Mark as failed but continue with others
           await updatePerplexityArticle(article.id!, {
-            article_status: 'ready', // Mark as ready even if enrichment failed
+            article_status: 'pending', // Mark as ready even if enrichment failed
             article_html: `<p>${article.title}</p><p>Content generation failed. Please check the original source.</p>`
           })
         }
@@ -667,7 +746,7 @@ Mobile-first requirements:
         category: "politics",
         title: "港府推新政策支援中小企",
         url: `https://news.rthk.hk/rthk/ch/policy-${dateStr}-${timestamp}.htm`,
-        article_status: 'ready',
+        article_status: 'pending',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',
@@ -678,7 +757,7 @@ Mobile-first requirements:
         category: "business",
         title: "港股今升逾300點",
         url: `https://hk01.com/finance/stock-${dateStr}-${timestamp + 1}.htm`,
-        article_status: 'ready',
+        article_status: 'pending',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',
@@ -689,7 +768,7 @@ Mobile-first requirements:
         category: "tech",
         title: "香港推出數碼港元試驗計劃",
         url: `https://std.stheadline.com/tech/digital-hkd-${dateStr}-${timestamp + 2}.htm`,
-        article_status: 'ready',
+        article_status: 'pending',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',
@@ -700,7 +779,7 @@ Mobile-first requirements:
         category: "health",
         title: "公立醫院急症室輪候時間",
         url: `https://news.rthk.hk/rthk/ch/health-${dateStr}-${timestamp + 3}.htm`,
-        article_status: 'ready',
+        article_status: 'pending',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',
@@ -711,7 +790,7 @@ Mobile-first requirements:
         category: "lifestyle",
         title: "新年花市下週開鑼",
         url: `https://mingpao.com/lifestyle/flower-${dateStr}-${timestamp + 4}.htm`,
-        article_status: 'ready',
+        article_status: 'pending',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',
@@ -722,7 +801,7 @@ Mobile-first requirements:
         category: "entertainment",
         title: "香港電影金像獎提名公布",
         url: `https://hk01.com/entertainment/hkfa-${dateStr}-${timestamp + 5}.htm`,
-        article_status: 'ready',
+        article_status: 'pending',
         image_status: 'pending',
         source: 'Perplexity AI (Fallback)',
         author: 'AI Generated',

@@ -1,6 +1,6 @@
 "use client"
 
-import { useInfiniteQuery } from "@tanstack/react-query"
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { useInView } from "react-intersection-observer"
 import { RefreshCw } from "lucide-react"
@@ -27,6 +27,7 @@ async function fetchPerplexityArticles({ pageParam = 0 }): Promise<PerplexityFee
 export default function PerplexityFeed() {
   const { ref, inView } = useInView()
   const { t } = useLanguage()
+  const queryClient = useQueryClient()
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -47,6 +48,8 @@ export default function PerplexityFeed() {
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
+      // Reset the query to clear cache and start fresh
+      await queryClient.resetQueries({ queryKey: ["perplexity-articles"] })
       await refetch()
     } finally {
       setIsRefreshing(false)
@@ -64,10 +67,12 @@ export default function PerplexityFeed() {
       return lastPage.nextPage
     },
     initialPageParam: 0,
-    staleTime: 2 * 60 * 1000, // 2 minutes - shorter stale time for more frequent updates
-    refetchInterval: 5 * 60 * 1000, // Auto-refetch every 5 minutes to get newly enriched articles
+    staleTime: 30 * 1000, // 30 seconds - very short stale time to ensure fresh data
+    gcTime: 60 * 1000, // 1 minute garbage collection time (formerly cacheTime)
+    refetchInterval: 2 * 60 * 1000, // Auto-refetch every 2 minutes to get newly created articles
     refetchOnWindowFocus: true, // Refetch when user returns to tab
     refetchOnReconnect: true, // Refetch when network reconnects
+    refetchIntervalInBackground: false, // Don't refetch in background to save resources
   })
 
   useEffect(() => {
@@ -90,9 +95,15 @@ export default function PerplexityFeed() {
   
   console.log(`📊 PerplexityFeed: Loaded ${articles.length} unique articles (${perplexityArticles.length - uniquePerplexityArticles.length} duplicates removed)`)
   if (articles.length > 0) {
-    console.log(`   Latest article: "${articles[0]?.title}" (ID: ${articles[0]?.id}, updated: ${articles[0]?.updated_at})`)
+    console.log(`   Latest article: "${articles[0]?.title}" (ID: ${articles[0]?.id}, published: ${articles[0]?.publishedAt})`)
     if (articles.length > 1) {
-      console.log(`   Second article: "${articles[1]?.title}" (ID: ${articles[1]?.id}, updated: ${articles[1]?.updated_at})`)
+      console.log(`   Second article: "${articles[1]?.title}" (ID: ${articles[1]?.id}, published: ${articles[1]?.publishedAt})`)
+    }
+    // Check for ordering issues
+    const dates = articles.slice(0, 10).map(a => new Date(a.publishedAt))
+    const isProperlyOrdered = dates.every((date, i) => i === 0 || date <= dates[i - 1])
+    if (!isProperlyOrdered) {
+      console.warn(`⚠️  Articles are not properly ordered by date!`)
     }
   }
 

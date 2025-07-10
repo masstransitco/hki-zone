@@ -16,22 +16,14 @@ export async function GET(request: NextRequest) {
 
     // Check if Perplexity API is configured
     if (!process.env.PERPLEXITY_API_KEY) {
-      console.warn("⚠️ PERPLEXITY_API_KEY not configured, using fallback headlines")
-      
-      // Save fallback headlines
-      const fallbackHeadlines = perplexityHKNews.generateFallbackHeadlines()
-      const { count } = await savePerplexityHeadlines(fallbackHeadlines)
+      console.error("❌ PERPLEXITY_API_KEY not configured")
       
       return NextResponse.json({
-        success: true,
+        success: false,
         timestamp: new Date().toISOString(),
-        result: {
-          method: 'fallback',
-          saved: count,
-          totalCost: 0,
-          message: 'Used fallback headlines due to missing API key'
-        },
-      })
+        error: 'PERPLEXITY_API_KEY not configured',
+        message: 'Cannot generate headlines without API key'
+      }, { status: 500 })
     }
 
     // Fetch fresh headlines from Perplexity
@@ -53,27 +45,12 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("💥 Perplexity headlines fetcher cron job failed:", error)
 
-    // Try to save fallback headlines as emergency backup
-    try {
-      const fallbackHeadlines = perplexityHKNews.generateFallbackHeadlines()
-      const { count } = await savePerplexityHeadlines(fallbackHeadlines)
-      
-      return NextResponse.json({
-        success: false,
-        timestamp: new Date().toISOString(),
-        error: error.message,
-        fallback: {
-          saved: count,
-          message: 'Saved fallback headlines due to API failure'
-        }
-      }, { status: 500 })
-    } catch (fallbackError) {
-      return NextResponse.json({
-        success: false,
-        timestamp: new Date().toISOString(),
-        error: error.message,
-        fallbackError: fallbackError.message,
-      }, { status: 500 })
-    }
+    // Don't save fallback headlines - just return the error
+    return NextResponse.json({
+      success: false,
+      timestamp: new Date().toISOString(),
+      error: error.message,
+      message: 'Failed to generate headlines. No fallback headlines were saved.'
+    }, { status: 500 })
   }
 }

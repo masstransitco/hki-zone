@@ -10,8 +10,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status")
     const search = searchParams.get("search")
     const page = parseInt(searchParams.get("page") || "0")
-    const limitParam = searchParams.get("limit") || "20"
-    const limit = limitParam === "all" ? 0 : parseInt(limitParam)
+    const limit = parseInt(searchParams.get("limit") || "20")
 
     console.log("Admin Perplexity API called with params:", {
       category,
@@ -21,25 +20,17 @@ export async function GET(request: NextRequest) {
       limit
     })
 
-    let articles = []
-    
+    // Fetch all articles for filtering
+    let allArticles = []
     if (category && category !== "all") {
-      // Get articles for specific category with proper limit
-      const effectiveLimit = limit === 0 ? 1000 : limit * (page + 1) // 0 means all articles
-      articles = await getPerplexityNews(category, effectiveLimit)
+      allArticles = await getPerplexityNews(category, 1000)
     } else {
-      // Get all articles grouped by category (admin version with no per-category limit)
       const newsGrouped = await getPerplexityNewsByCategoryAdmin()
-      articles = Object.values(newsGrouped).flat()
-      
-      // If no limit specified (all articles), don't limit the results
-      if (limit > 0) {
-        articles = articles.slice(0, limit * (page + 1))
-      }
+      allArticles = Object.values(newsGrouped).flat()
     }
 
     // Apply filters
-    let filteredArticles = articles
+    let filteredArticles = allArticles
 
     if (status && status !== "all") {
       filteredArticles = filteredArticles.filter(article => article.article_status === status)
@@ -58,16 +49,18 @@ export async function GET(request: NextRequest) {
 
     // Apply pagination
     const startIndex = page * limit
-    const endIndex = startIndex + limit
-    const paginatedArticles = filteredArticles.slice(startIndex, endIndex)
+    const articles = filteredArticles.slice(startIndex, startIndex + limit + 1)
+    
+    // Check if there are more articles
+    const hasMore = articles.length > limit
+    const paginatedArticles = hasMore ? articles.slice(0, limit) : articles
 
     return NextResponse.json({
       articles: paginatedArticles,
       total: filteredArticles.length,
       page,
       limit,
-      hasMore: endIndex < filteredArticles.length,
-      debug: `Found ${filteredArticles.length} articles, returning ${paginatedArticles.length}`,
+      hasMore,
     })
   } catch (error) {
     console.error("Error in admin perplexity API:", error)

@@ -13,7 +13,7 @@
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/cron/enrich-perplexity-news",
+      "path": "/api/cron/enrich-unified-articles",
       "schedule": "5 * * * *"
     }
   ]
