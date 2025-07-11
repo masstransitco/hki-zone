@@ -94,6 +94,7 @@ export default function CarBottomSheet({
   const parseEnrichmentData = (aiSummary: string) => {
     if (!aiSummary) return null
     
+    console.log('Parsing AI Summary:', aiSummary)
     const data: any = {}
     
     // Parse estimated year
@@ -101,22 +102,33 @@ export default function CarBottomSheet({
     if (yearMatch) data.estimatedYear = parseInt(yearMatch[1])
     
     // Parse vehicle type
-    const typeMatch = aiSummary.match(/\*\*Vehicle Type:\*\* (.+)/)
-    if (typeMatch) data.isElectric = typeMatch[1].includes('Electric')
+    const typeMatch = aiSummary.match(/\*\*Vehicle Type:\*\* (.+?)(?=\*\*|$)/s)
+    if (typeMatch) data.isElectric = typeMatch[1].trim().includes('Electric')
     
     // Parse fuel consumption
-    const fuelMatch = aiSummary.match(/\*\*Fuel Consumption:\*\* (.+)/)
-    if (fuelMatch) data.fuelConsumption = fuelMatch[1]
+    const fuelMatch = aiSummary.match(/\*\*Fuel Consumption:\*\* (.+?)(?=\*\*|$)/s)
+    if (fuelMatch) data.fuelConsumption = fuelMatch[1].trim()
     
     // Parse fuel cost
-    const costMatch = aiSummary.match(/\*\*Estimated Monthly Fuel Cost:\*\* (.+)/)
-    if (costMatch) data.fuelCost = costMatch[1]
+    const costMatch = aiSummary.match(/\*\*Estimated Monthly Fuel Cost:\*\* (.+?)(?=\*\*|$)/s)
+    if (costMatch) data.fuelCost = costMatch[1].trim()
     
-    // Parse faults
-    const faultsMatch = aiSummary.match(/\*\*Things to Look Out For:\*\*\n((?:• .+\n?)+)/)
+    // Parse faults - improved to handle the actual format
+    const faultsMatch = aiSummary.match(/\*\*Things to Look Out For:\*\*\s*((?:• .+?(?=•|$))+)/s)
     if (faultsMatch) {
-      data.faults = faultsMatch[1].split('\n').filter(line => line.trim()).map(line => line.replace('• ', ''))
+      const faultsText = faultsMatch[1]
+      // Split by bullet points and clean up
+      const faultLines = faultsText.split('•').filter(line => line.trim())
+      data.faults = faultLines.map(line => {
+        // Remove markdown formatting and clean up
+        return line.replace(/\*\*(.+?)\*\*/g, '$1')
+          .replace(/\[\d+\]/g, '') // Remove citation numbers
+          .replace(/\s+/g, ' ') // Normalize whitespace
+          .trim()
+      }).filter(line => line.length > 0)
     }
+    
+    console.log('Parsed enrichment data:', data)
     
     return data
   }
