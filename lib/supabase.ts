@@ -126,7 +126,7 @@ export async function getArticleStats() {
 }
 
 // Balanced query function to ensure proportional representation from all sources
-export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string }) {
+export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean }) {
   try {
     // If specific source or category filter is applied, use regular query
     if (filters?.source || filters?.category) {
@@ -189,7 +189,7 @@ export async function getBalancedArticles(page = 0, limit = 10, filters?: { sour
 }
 
 // Original query function (renamed for clarity)
-export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string }) {
+export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean }) {
   try {
     let query = supabase
       .from("articles")
@@ -220,6 +220,14 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
       }
     }
     
+    if (filters?.hasEnrichment !== undefined) {
+      if (filters.hasEnrichment) {
+        query = query.not('ai_summary', 'is', null)
+      } else {
+        query = query.is('ai_summary', null)
+      }
+    }
+    
     const { data, error } = await query.range(page * limit, (page + 1) * limit - 1)
 
     if (error) {
@@ -238,7 +246,7 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
 }
 
 // Main export - use balanced query by default
-export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string }) {
+export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean }) {
   return getBalancedArticles(page, limit, filters)
 }
 

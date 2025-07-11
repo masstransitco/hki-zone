@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, RefreshCw, Car, Play, Clock, AlertCircle, CheckCircle, ExternalLink } from "lucide-react"
+import { Search, Filter, RefreshCw, Car, Play, Clock, AlertCircle, CheckCircle, ExternalLink, Brain, Zap } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useLanguage } from "@/components/language-provider"
 
@@ -19,6 +19,7 @@ interface CarListing {
   price?: string
   content?: string
   summary?: string
+  ai_summary?: string
   url: string
   source: string
   imageUrl?: string
@@ -47,6 +48,7 @@ export default function CarsManagementPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [sortBy, setSortBy] = useState("newest")
+  const [enrichmentFilter, setEnrichmentFilter] = useState("all")
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [selectedCar, setSelectedCar] = useState<CarListing | null>(null)
@@ -64,15 +66,25 @@ export default function CarsManagementPage() {
       over500k: 0
     }
   })
+  const [enrichmentStatus, setEnrichmentStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle')
+  const [enrichmentMessage, setEnrichmentMessage] = useState('')
+  const [enrichmentStats, setEnrichmentStats] = useState({
+    totalCars: 0,
+    enrichedCars: 0,
+    unenrichedCars: 0,
+    isConfigured: false
+  })
 
   useEffect(() => {
     loadCars()
     checkLastScraperRun()
     loadStats()
-  }, [page, sortBy])
+    loadEnrichmentStats()
+  }, [page, sortBy, enrichmentFilter])
 
   useEffect(() => {
     loadStats()
+    loadEnrichmentStats()
   }, [])
 
   const loadCars = async () => {
@@ -86,6 +98,13 @@ export default function CarsManagementPage() {
       
       if (searchQuery) {
         params.set("search", searchQuery)
+      }
+
+      // Add enrichment filter
+      if (enrichmentFilter === "enriched") {
+        params.set("enriched", "true")
+      } else if (enrichmentFilter === "not_enriched") {
+        params.set("enriched", "false")
       }
 
       const response = await fetch(`/api/articles?${params}`)
@@ -131,6 +150,18 @@ export default function CarsManagementPage() {
     }
   }
 
+  const loadEnrichmentStats = async () => {
+    try {
+      const response = await fetch('/api/admin/cars/enrich')
+      if (response.ok) {
+        const data = await response.json()
+        setEnrichmentStats(data)
+      }
+    } catch (error) {
+      console.error("Error loading enrichment stats:", error)
+    }
+  }
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setPage(0)
@@ -142,6 +173,7 @@ export default function CarsManagementPage() {
     setSelectedCar(null)
     loadCars()
     loadStats()
+    loadEnrichmentStats()
   }
 
   const handleLoadMore = () => {
@@ -185,6 +217,49 @@ export default function CarsManagementPage() {
       setScraperStatus('idle')
       setScraperMessage('')
     }, 5000)
+  }
+
+  const triggerEnrichment = async () => {
+    if (!enrichmentStats.isConfigured) {
+      setEnrichmentStatus('error')
+      setEnrichmentMessage('Perplexity API not configured. Please add PERPLEXITY_API_KEY to environment variables.')
+      return
+    }
+
+    setEnrichmentStatus('running')
+    setEnrichmentMessage('Starting car enrichment process...')
+    
+    try {
+      const response = await fetch('/api/admin/cars/enrich', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ enrichAll: true })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        setEnrichmentStatus('success')
+        setEnrichmentMessage(data.message || 'Car enrichment completed successfully')
+        setTimeout(() => {
+          handleRefresh()
+        }, 2000)
+      } else {
+        setEnrichmentStatus('error')
+        setEnrichmentMessage(data.error || 'Failed to enrich cars')
+      }
+    } catch (error) {
+      setEnrichmentStatus('error')
+      setEnrichmentMessage('Network error occurred')
+    }
+    
+    // Reset status after 8 seconds (enrichment takes longer)
+    setTimeout(() => {
+      setEnrichmentStatus('idle')
+      setEnrichmentMessage('')
+    }, 8000)
   }
 
   const parseCarSpecs = (content: string) => {
@@ -400,6 +475,82 @@ export default function CarsManagementPage() {
         </CardContent>
       </Card>
 
+      {/* Car Enrichment Control */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="h-5 w-5" />
+            Car Enrichment Control
+          </CardTitle>
+          <CardDescription>
+            Use AI to enrich car listings with estimated year, common faults, and fuel consumption data
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <div className="text-sm font-medium">Total Cars</div>
+                <div className="text-2xl font-bold">{enrichmentStats.totalCars}</div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                <div className="text-sm font-medium">Enriched</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{enrichmentStats.enrichedCars}</div>
+              </div>
+              <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
+                <div className="text-sm font-medium">Pending</div>
+                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{enrichmentStats.unenrichedCars}</div>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Enrichment Status</p>
+                <p className="text-sm text-muted-foreground">
+                  {enrichmentStats.isConfigured ? (
+                    enrichmentStats.unenrichedCars > 0 ? 
+                      `${enrichmentStats.unenrichedCars} cars need enrichment` : 
+                      'All cars are enriched'
+                  ) : (
+                    'API not configured'
+                  )}
+                </p>
+              </div>
+              <Button 
+                onClick={triggerEnrichment} 
+                disabled={enrichmentStatus === 'running' || !enrichmentStats.isConfigured || enrichmentStats.unenrichedCars === 0}
+                className="flex items-center gap-2"
+              >
+                {enrichmentStatus === 'running' ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Enriching...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4" />
+                    Enrich Cars
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            {enrichmentMessage && (
+              <Alert className={enrichmentStatus === 'error' ? 'border-red-200' : enrichmentStatus === 'success' ? 'border-green-200' : ''}>
+                {enrichmentStatus === 'error' ? (
+                  <AlertCircle className="h-4 w-4" />
+                ) : enrichmentStatus === 'success' ? (
+                  <CheckCircle className="h-4 w-4" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                <AlertDescription>{enrichmentMessage}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Search and Filters */}
       <Card>
         <CardHeader>
@@ -437,6 +588,17 @@ export default function CarsManagementPage() {
                   <SelectItem value="oldest">Oldest First</SelectItem>
                   <SelectItem value="price-low">Price: Low to High</SelectItem>
                   <SelectItem value="price-high">Price: High to Low</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Enrichment status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cars</SelectItem>
+                  <SelectItem value="enriched">Enriched Only</SelectItem>
+                  <SelectItem value="not_enriched">Not Enriched</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -505,6 +667,11 @@ export default function CarsManagementPage() {
                       {isOnSale && (
                         <Badge className="absolute top-2 left-2 bg-stone-600 text-white">
                           Price Reduced
+                        </Badge>
+                      )}
+                      {car.ai_summary && (
+                        <Badge className="absolute top-2 right-2 bg-green-600 text-white">
+                          AI Enriched
                         </Badge>
                       )}
                     </div>

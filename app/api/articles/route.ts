@@ -93,10 +93,14 @@ export async function GET(request: NextRequest) {
     const page = Number.parseInt(searchParams.get("page") || "0")
     const limit = 10
     const category = searchParams.get("category") || null
+    const enriched = searchParams.get("enriched") // "true", "false", or null
 
     console.log("Articles API called, checking database setup...")
     if (category) {
       console.log(`Category filter: ${category}`)
+    }
+    if (enriched !== null) {
+      console.log(`Enrichment filter: ${enriched}`)
     }
 
     // Check if database is set up with more detailed logging
@@ -113,6 +117,17 @@ export async function GET(request: NextRequest) {
         )
       }
       
+      // Apply enrichment filter to mock data
+      if (enriched === "true") {
+        filteredArticles = filteredArticles.filter(article => 
+          article.id === "car-1" // Mock: only car-1 is "enriched"
+        )
+      } else if (enriched === "false") {
+        filteredArticles = filteredArticles.filter(article => 
+          article.id !== "car-1" // Mock: car-1 is enriched, others are not
+        )
+      }
+      
       const startIndex = page * limit
       const endIndex = startIndex + limit
       const paginatedArticles = filteredArticles.slice(startIndex, endIndex)
@@ -126,7 +141,11 @@ export async function GET(request: NextRequest) {
     }
 
     console.log("Fetching articles from database...")
-    const filters = category ? { category } : undefined
+    const filters: any = {}
+    if (category) filters.category = category
+    if (enriched === "true") filters.hasEnrichment = true
+    if (enriched === "false") filters.hasEnrichment = false
+    
     const articles = await getArticles(page, limit, filters)
     console.log(`Fetched ${articles.length} articles from database`)
 

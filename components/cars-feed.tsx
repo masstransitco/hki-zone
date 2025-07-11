@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { useInView } from "react-intersection-observer"
 import { RefreshCw, Car, ExternalLink, Clock } from "lucide-react"
 import LoadingSkeleton from "./loading-skeleton"
+import CarBottomSheet from "./car-bottom-sheet"
 import { useLanguage } from "./language-provider"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
@@ -19,6 +20,7 @@ interface CarListing {
   price?: string
   content?: string
   summary?: string
+  ai_summary?: string
   url: string
   source: string
   imageUrl?: string
@@ -41,7 +43,7 @@ interface CarsResponse {
 }
 
 // Enhanced Car-specific card component with improved visual hierarchy
-function CarCard({ car }: { car: CarListing }) {
+function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarListing) => void }) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [imageError, setImageError] = useState(false)
   const images = car.images || (car.imageUrl ? [car.imageUrl] : [])
@@ -147,7 +149,10 @@ function CarCard({ car }: { car: CarListing }) {
   }
   
   return (
-    <Card className="group overflow-hidden hover:shadow-elevated dark:hover:shadow-neutral-900/40 transition-all duration-300 border-stone-200/60 dark:border-neutral-700/60 bg-white dark:bg-neutral-900 backdrop-blur-sm">
+    <Card 
+      className="group overflow-hidden hover:shadow-elevated dark:hover:shadow-neutral-900/40 transition-all duration-300 border-stone-200/60 dark:border-neutral-700/60 bg-white dark:bg-neutral-900 backdrop-blur-sm cursor-pointer"
+      onClick={() => onCarClick(car)}
+    >
       {/* Modernized Image Section */}
       <div className="relative">
         {images.length > 0 && !imageError ? (
@@ -168,7 +173,7 @@ function CarCard({ car }: { car: CarListing }) {
                     e.stopPropagation()
                     handleImageNavigation('prev')
                   }}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 active:bg-black/80 text-white p-1.5 sm:p-2 rounded-full opacity-0 group-hover:opacity-100 touch:opacity-100 transition-opacity duration-200"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 active:bg-black/80 text-white p-1.5 sm:p-2 rounded-full opacity-0 group-hover:opacity-100 touch:opacity-100 transition-opacity duration-200 z-10"
                   aria-label="Previous image"
                 >
                   <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +185,7 @@ function CarCard({ car }: { car: CarListing }) {
                     e.stopPropagation()
                     handleImageNavigation('next')
                   }}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 active:bg-black/80 text-white p-1.5 sm:p-2 rounded-full opacity-0 group-hover:opacity-100 touch:opacity-100 transition-opacity duration-200"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 active:bg-black/80 text-white p-1.5 sm:p-2 rounded-full opacity-0 group-hover:opacity-100 touch:opacity-100 transition-opacity duration-200 z-10"
                   aria-label="Next image"
                 >
                   <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +233,7 @@ function CarCard({ car }: { car: CarListing }) {
                   e.stopPropagation()
                   setSelectedImage(index)
                 }}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                className={`w-1.5 h-1.5 rounded-full transition-all duration-200 z-10 ${
                   index === selectedImage 
                     ? 'bg-stone-600 scale-125' 
                     : 'bg-stone-300 dark:bg-neutral-600 hover:bg-stone-400 dark:hover:bg-neutral-500'
@@ -319,7 +324,7 @@ function CarCard({ car }: { car: CarListing }) {
             className="flex items-center gap-1 text-xs hover:bg-stone-50 hover:text-stone-700 hover:border-stone-300 dark:hover:bg-neutral-800 dark:hover:text-neutral-300 transition-colors"
           >
             <ExternalLink className="w-3 h-3" />
-            View Details
+            View on 28car
           </Button>
         </div>
       </div>
@@ -380,6 +385,8 @@ export default function CarsFeed() {
   const queryClient = useQueryClient()
   const { language } = useLanguage()
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [selectedCar, setSelectedCar] = useState<CarListing | null>(null)
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   
   const {
     data,
@@ -412,6 +419,11 @@ export default function CarsFeed() {
     setIsRefreshing(true)
     await refetch()
     setIsRefreshing(false)
+  }
+
+  const handleCarClick = (car: CarListing) => {
+    setSelectedCar(car)
+    setIsBottomSheetOpen(true)
   }
   
   const cars = data?.pages.flatMap(page => page.articles) ?? []
@@ -478,7 +490,7 @@ export default function CarsFeed() {
       {!isLoading && cars.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 lg:gap-8">
           {cars.map((car) => (
-            <CarCard key={car.id} car={car} />
+            <CarCard key={car.id} car={car} onCarClick={handleCarClick} />
           ))}
         </div>
       )}
@@ -527,6 +539,13 @@ export default function CarsFeed() {
           </p>
         </div>
       )}
+
+      {/* Car Bottom Sheet */}
+      <CarBottomSheet
+        car={selectedCar}
+        open={isBottomSheetOpen}
+        onOpenChange={setIsBottomSheetOpen}
+      />
     </div>
   )
 }
