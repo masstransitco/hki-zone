@@ -28,6 +28,16 @@ const OUTLET_NAMES = {
   '28car': "28car",
 }
 
+// Separate news scrapers from car scrapers for runAllScrapers
+// Car scraping is handled by a dedicated cron job at /api/cron/scrape-cars
+const NEWS_OUTLET_SCRAPERS = {
+  hkfp: scrapeHKFPWithContent,
+  singtao: scrapeSingTaoWithContent,
+  hk01: scrapeHK01WithContent,
+  oncc: scrapeOnccWithContent,
+  rthk: scrapeRTHKWithContent,
+}
+
 // Individual scraper function with progress tracking
 export async function runSingleScraper(outletKey: string, withProgress = false) {
   const scraper = OUTLET_SCRAPERS[outletKey]
@@ -175,8 +185,8 @@ export async function runAllScrapers(withProgress = false) {
   try {
     console.log("🔄 Using enhanced scrapers with content extraction...")
 
-    // Run scrapers with progress tracking if enabled
-    const outletKeys = Object.keys(OUTLET_SCRAPERS)
+    // Run news scrapers only (excluding car scrapers)
+    const outletKeys = Object.keys(NEWS_OUTLET_SCRAPERS)
     const results = await Promise.allSettled(
       outletKeys.map(key => runSingleScraper(key, withProgress))
     )
@@ -338,7 +348,6 @@ export async function runAllScrapers(withProgress = false) {
         HK01: allArticles.filter((a) => a.source === "HK01").length,
         ONCC: allArticles.filter((a) => a.source === "ONCC").length,
         RTHK: allArticles.filter((a) => a.source === "RTHK").length,
-        '28car': allArticles.filter((a) => a.source === "28car").length,
       },
       database: {
         before: initialStats,
@@ -513,7 +522,7 @@ export async function collectDailyHeadlines() {
     }
 
     // Get all collected articles from the scraping result
-    const outletKeys = Object.keys(OUTLET_SCRAPERS)
+    const outletKeys = Object.keys(NEWS_OUTLET_SCRAPERS)
     const allArticles: any[] = []
 
     // Simulate getting articles from each scraper result

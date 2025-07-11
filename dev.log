@@ -1339,3 +1339,131 @@ Summarizing: 平治 S320 AMG FACELIFT...
  ✓ Compiled in 365ms (755 modules)
 <w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/markau/panora830/.next/cache/webpack/client-development/4.pack.gz_' -> '/Users/markau/panora830/.next/cache/webpack/client-development/4.pack.gz'
  ✓ Compiled in 1246ms (755 modules)
+ ✓ Compiled in 445ms (755 modules)
+ GET /admin/cars 200 in 171ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/markau/panora830/.next/cache/webpack/client-development/4.pack.gz_' -> '/Users/markau/panora830/.next/cache/webpack/client-development/4.pack.gz'
+ ○ Compiling /api/admin/cars/enrich ...
+ ✓ Compiled /api/admin/cars/enrich in 854ms (706 modules)
+ ✓ Compiled (713 modules)
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+ GET /api/admin/scraper-status?type=cars 200 in 3426ms
+ GET /api/admin/cars/enrich 200 in 3741ms
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 3801ms
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Price ranges calculated: {
+  under200k: 130,
+  range200to300k: 24,
+  range300to500k: 19,
+  over500k: 21
+}
+ GET /api/admin/cars/stats 200 in 4396ms
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 1126ms
+ GET /api/admin/scraper-status?type=cars 200 in 1559ms
+ GET /api/admin/cars/enrich 200 in 2412ms
+Price ranges calculated: {
+  under200k: 130,
+  range200to300k: 24,
+  range300to500k: 19,
+  over500k: 21
+}
+ GET /api/admin/cars/stats 200 in 2197ms
+ GET /api/admin/cars/enrich 200 in 1935ms
+Enriching car: 奧迪 AUDI A###NUMBER_0### 2.0T - Price: HKD$26,000 減價 [原價$50,000] - Year: 
+Price ranges calculated: {
+  under200k: 130,
+  range200to300k: 24,
+  range300to500k: 19,
+  over500k: 21
+}
+ GET /api/admin/cars/stats 200 in 3430ms
+ GET /api/admin/cars/enrich 200 in 2374ms
+Price ranges calculated: {
+  under200k: 130,
+  range200to300k: 24,
+  range300to500k: 19,
+  over500k: 21
+}
+ GET /api/admin/cars/stats 200 in 2998ms
+Successfully enriched car: 奧迪 A6 2.0T
+Enriching car: 平治 MERCEDES-BENZ V260 EXCLUSIVE LONG - Price: HKD$166,000 減價 [原價$200,000] - Year: 
+Successfully enriched car: 平治 V260 EXCLUSIVE LONG
+Enriching car: 保時捷 PORSCHE MACAN S - Price: HKD$115,000 減價 [原價$138,000] - Year: 
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/markau/panora830/.next/server/app/_not-found'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/_not-found/page' in /Users/markau/panora830/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/markau/panora830/.next/server/app/_not-found/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/_not-found/page' in '/Users/markau/panora830/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/_not-found/page (expected /Users/markau/panora830/.next/server/app/_not-found/page.js)
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+Successfully enriched car: 保時捷 MACAN S
+Enriching car: 寶馬 BMW 320D PEFORMANCE - Price: HKD$99,000 減價 [原價$100,000] - Year: 
+Successfully enriched car: 寶馬 320D PEFORMANCE
+Enriching car: 寶馬 BMW 335I M SPORT - Price: HKD$66,000 - Year: 
+Successfully enriched car: 寶馬 335I M SPORT
+Enriching car: 豐田 TOYOTA ALPHARD 2.4 - Price: HKD$48,000 - Year: 
+Successfully enriched car: 豐田 ALPHARD 2.4
+Enriching car: 保時捷 PORSCHE MACAN GTS - Price: HKD$358,000 減價 [原價$418,000] - Year: 
+Successfully enriched car: 保時捷 MACAN GTS
+Enriching car: 凌志 LEXUS GS250 - Price: HKD$68,000 - Year: 
+Successfully enriched car: 凌志 GS250
+Enriching car: 寶馬 BMW M240iA XDRIVE COUPE - Price: HKD$438,000 減價 [原價$488,000] - Year: 
+Successfully enriched car: 寶馬 M240iA XDRIVE COUPE
+Enriching car: 保時捷 PORSCHE CAYENNE COUPE - Price: HKD$928,001 減價 [原價$1,050,000] - Year: 
+Successfully enriched car: 保時捷 CAYENNE COUPE
+ POST /api/admin/cars/enrich 200 in 183923ms
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 1595ms
+ GET /api/admin/cars/enrich 200 in 1965ms
+Price ranges calculated: {
+  under200k: 130,
+  range200to300k: 24,
+  range300to500k: 19,
+  over500k: 21
+}
+ GET /api/admin/cars/stats 200 in 2207ms
+ ✓ Compiled in 2.6s (755 modules)
+ ✓ Compiled in 530ms (755 modules)
+ ✓ Compiled in 824ms (755 modules)
+ ✓ Compiled in 1157ms (755 modules)
+ ✓ Compiled in 632ms (755 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 473ms (755 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
