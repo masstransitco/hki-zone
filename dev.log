@@ -1336,3 +1336,6 @@ Summarizing: 平治 S320 AMG FACELIFT...
  ✓ Compiled in 1152ms (755 modules)
  ✓ Compiled in 623ms (755 modules)
  ✓ Compiled in 401ms (755 modules)
+ ✓ Compiled in 365ms (755 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/markau/panora830/.next/cache/webpack/client-development/4.pack.gz_' -> '/Users/markau/panora830/.next/cache/webpack/client-development/4.pack.gz'
+ ✓ Compiled in 1246ms (755 modules)
