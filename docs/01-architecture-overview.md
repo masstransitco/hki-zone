@@ -117,11 +117,14 @@ pending → enriched → ready → displayed
 5. **AI Enrichment**: Automated Perplexity API enhancement every 2 hours
 
 #### Car AI Enrichment Pipeline
-1. **Car Selection**: Identify unenriched cars for AI processing (5 cars per cron run)
-2. **Perplexity Analysis**: AI determines estimated year, common faults, electric status, fuel consumption
-3. **Enrichment Storage**: Enhanced data stored in ai_summary field as structured markdown
-4. **Bottom Sheet Display**: Enriched content rendered in car detail views with "Things to Look Out For"
-5. **Admin Management**: Manual enrichment triggers and filtering of enriched/unenriched cars
+1. **Automated Scheduling**: Cron job runs every 2 hours (`0 */2 * * *`)
+2. **Car Selection**: Query unenriched cars (`ai_summary` = null), newest first, limit 5 per run
+3. **Cost Control**: 3-second rate limiting between API calls, maximum 5 cars per batch
+4. **Perplexity Analysis**: AI determines estimated year, common faults, electric status, fuel consumption
+5. **Enrichment Storage**: Enhanced data stored in ai_summary field as structured markdown
+6. **Data Generated**: Vehicle type, fuel consumption, monthly costs, inspection points
+7. **Bottom Sheet Display**: Enriched content rendered in car detail views with "Things to Look Out For"
+8. **Admin Management**: Manual enrichment triggers and filtering of enriched/unenriched cars
 
 ### AI Enhancement Pipeline
 1. **Content Selection**: Identify articles for AI enhancement

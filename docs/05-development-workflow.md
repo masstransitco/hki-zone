@@ -503,7 +503,13 @@ The project includes a `vercel.json` configuration:
 }
 ```
 
-**Note**: Car scraper now runs every 15 minutes (updated from 30 minutes) and car enrichment runs every 2 hours.
+**Cron Schedule Summary**:
+- **News Scraping**: Every 30 minutes (all news sources)
+- **Car Scraping**: Every 15 minutes (28car.com listings with browser automation)
+- **Car Enrichment**: Every 2 hours (AI-powered with Perplexity API, 5 cars per run)
+- **Headlines Collection**: Daily at 8:00 AM
+- **Perplexity News**: Every hour
+- **Article Enrichment**: Every hour at 5 minutes past
 
 #### Deployment Steps
 1. **Connect to Vercel**

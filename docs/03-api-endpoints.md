@@ -531,11 +531,21 @@ GET /api/cron/collect-headlines
 #### Scrape Car Listings
 ```
 GET /api/cron/scrape-cars
+POST /api/cron/scrape-cars (manual trigger)
 ```
 
 **Purpose**: Automated scraping of car listings from 28car.com
 
-**Schedule**: Every 15 minutes (updated from 30 minutes)
+**Schedule**: Every 15 minutes (`*/15 * * * *`)
+
+**Implementation Details**:
+- Uses environment-aware browser automation (Puppeteer + @sparticuz/chromium)
+- Extracts up to 5 photos per car listing
+- Supports multi-comma price parsing (e.g., HK$2,450,000)
+- Includes comprehensive car specifications and metadata
+- Stores data in unified articles table with category='cars'
+
+**Authentication**: Vercel cron user-agent verification for GET requests
 
 **Response**: Car scraping results with listing counts
 
@@ -543,13 +553,14 @@ GET /api/cron/scrape-cars
 ```json
 {
   "success": true,
-  "message": "28car scraping completed: 19/19 cars saved",
+  "message": "28car scraping completed: 18/40 cars saved",
   "result": {
-    "outlet": "28car",
-    "articlesFound": 19,
-    "articlesSaved": 19
+    "outlet": "28car", 
+    "articlesFound": 18,
+    "articlesSaved": 18,
+    "articles": [...]
   },
-  "timestamp": "2025-07-11T07:55:24.827Z"
+  "timestamp": "2025-07-11T15:48:57.699Z"
 }
 ```
 
@@ -560,12 +571,30 @@ GET /api/cron/enrich-cars
 
 **Purpose**: Automated AI enrichment of car listings using Perplexity API
 
-**Schedule**: Every 2 hours
+**Schedule**: Every 2 hours (`0 */2 * * *`)
 
-**Processing**: 
-- Processes 5 cars per run with rate limiting
-- Determines estimated year, common faults, electric status, fuel consumption
-- Includes comprehensive logging and cost tracking
+**Implementation Details**:
+- Processes maximum 5 cars per run (cost control)
+- Only enriches cars with `ai_summary` = null (unenriched cars)
+- Processes newest cars first (`order('created_at', { ascending: false })`)
+- Includes 3-second rate limiting between API calls
+- Requires PERPLEXITY_API_KEY environment variable
+- Creates structured markdown summary with enrichment data
+
+**Processing Steps**:
+1. Query unenriched cars from database (limit 5)
+2. Parse car specifications from content
+3. Call Perplexity API for enrichment (year, faults, fuel data)
+4. Generate structured markdown summary
+5. Update car record with ai_summary field
+6. Log costs and processing results
+
+**Enrichment Data Generated**:
+- **Estimated Year**: Vehicle year estimation
+- **Vehicle Type**: Electric vs Conventional fuel classification
+- **Fuel Consumption**: MPG or L/100km estimates
+- **Monthly Fuel Cost**: HKD cost estimates
+- **Things to Look Out For**: Common faults and inspection points
 
 **Response**: Car enrichment results with processing statistics
 
@@ -573,10 +602,10 @@ GET /api/cron/enrich-cars
 ```json
 {
   "success": true,
-  "processed": 5,
-  "enriched": 4,
-  "errors": 1,
-  "totalCost": "$0.0240",
+  "message": "Successfully enriched 3 cars",
+  "enrichedCount": 3,
+  "totalProcessed": 5,
+  "errors": ["Failed to enrich car BMW X5: API timeout"],
   "timestamp": "2025-07-11T09:00:00.000Z"
 }
 ```
