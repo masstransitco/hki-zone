@@ -164,7 +164,8 @@ export async function GET(request: NextRequest) {
     const transformedArticles = articles.map((article) => ({
       id: article.id,
       title: article.title,
-      summary: article.ai_summary || article.summary,
+      summary: article.summary,
+      ai_summary: article.ai_summary, // Add this field for enriched content
       content: article.content,
       url: article.url,
       source: article.source,

@@ -48,7 +48,8 @@ export default function CarBottomSheet({
     let tempContent = content
     
     // Find all instances of numbers with commas
-    const numberWithCommasRegex = /(\d+,\d+)/g
+    // Updated regex to handle multi-comma numbers like 2,450,001
+    const numberWithCommasRegex = /(\d{1,3}(?:,\d{3})*)/g
     const numbersWithCommas = tempContent.match(numberWithCommasRegex) || []
     
     // Replace each number with commas with a placeholder
@@ -287,13 +288,7 @@ export default function CarBottomSheet({
             {/* Enriched Data */}
             {enrichmentData && (
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5" />
-                    AI Analysis
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="pt-6 space-y-4">
                   {/* Estimated Year */}
                   {enrichmentData.estimatedYear && (
                     <div className="flex items-center gap-2">
@@ -325,13 +320,13 @@ export default function CarBottomSheet({
                   {enrichmentData.faults && enrichmentData.faults.length > 0 && (
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-amber-500" />
+                        <span className="text-base">👀</span>
                         Things to Look Out For
                       </h4>
                       <ul className="space-y-1 text-sm text-muted-foreground">
                         {enrichmentData.faults.map((fault: string, index: number) => (
                           <li key={index} className="flex items-start gap-2">
-                            <span className="text-amber-500 mt-1 text-xs">•</span>
+                            <span className="text-muted-foreground mt-1 text-xs">•</span>
                             <span>{fault}</span>
                           </li>
                         ))}

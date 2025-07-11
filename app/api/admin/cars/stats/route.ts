@@ -110,10 +110,11 @@ export async function GET() {
         let price = specs.price || ''
         
         if (price) {
-          // Extract numeric value from price string (preserving commas)
+          // Extract numeric value from price string (removing commas for parsing)
           // Handle both HK$ and HKD$ formats
           const cleanPrice = price.replace(/HKD?\$/, '').replace(/減價.*$/, '').trim()
-          const priceNum = parseInt(cleanPrice.replace(/,/g, ''))
+          // Remove commas BEFORE parsing to handle prices like "1,200,000"
+          const priceNum = parseInt(cleanPrice.replace(/,/g, ''), 10)
           
           if (priceNum > 0) {
             if (priceNum < 200000) priceRanges.under200k++

@@ -291,7 +291,8 @@ class CarEnricher {
     let tempContent = content
     
     // Find all instances of numbers with commas
-    const numberWithCommasRegex = /(\d+,\d+)/g
+    // Updated regex to handle multi-comma numbers like 2,450,001
+    const numberWithCommasRegex = /(\d{1,3}(?:,\d{3})*)/g
     const numbersWithCommas = tempContent.match(numberWithCommasRegex) || []
     
     // Replace each number with commas with a placeholder
