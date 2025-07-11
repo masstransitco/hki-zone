@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     
     // Get the latest car from the database to determine when scraper last ran
     const { data: latestCar, error } = await supabase
-      .from('articles')
+      .from('articles_unified')
       .select('created_at')
       .eq('category', 'cars')
       .eq('source', '28car')
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     // Get count of cars added in the last 24 hours
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const { count: recentCount, error: countError } = await supabase
-      .from('articles')
+      .from('articles_unified')
       .select('*', { count: 'exact', head: true })
       .eq('category', 'cars')
       .eq('source', '28car')

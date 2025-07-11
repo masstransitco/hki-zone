@@ -46,6 +46,8 @@ interface CarsResponse {
 function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarListing) => void }) {
   const [selectedImage, setSelectedImage] = useState(0)
   const [imageError, setImageError] = useState(false)
+  const [touchStart, setTouchStart] = useState(0)
+  const [touchEnd, setTouchEnd] = useState(0)
   const images = car.images || (car.imageUrl ? [car.imageUrl] : [])
   
   const formatPrice = (price: string) => {
@@ -149,6 +151,30 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
     }
   }
   
+  // Touch handlers for swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.targetTouches[0].clientX)
+  }
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+  }
+  
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return
+    
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > 50
+    const isRightSwipe = distance < -50
+    
+    if (isLeftSwipe && images.length > 1) {
+      handleImageNavigation('next')
+    }
+    if (isRightSwipe && images.length > 1) {
+      handleImageNavigation('prev')
+    }
+  }
+  
   return (
     <Card 
       className="group overflow-hidden hover:shadow-elevated dark:hover:shadow-neutral-900/40 transition-all duration-300 border-stone-200/60 dark:border-neutral-700/60 bg-white dark:bg-neutral-900 backdrop-blur-sm cursor-pointer"
@@ -157,7 +183,12 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
       {/* Modernized Image Section */}
       <div className="relative">
         {images.length > 0 && !imageError ? (
-          <div className="aspect-[16/10] bg-surface relative overflow-hidden">
+          <div 
+            className="aspect-[16/10] bg-surface relative overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <img
               src={images[selectedImage]}
               alt={car.title}
@@ -335,7 +366,8 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
 
 async function fetchCars(page: number): Promise<CarsResponse> {
   try {
-    const response = await fetch(`/api/articles?page=${page}&category=cars`)
+    // Using the new cars API that handles both tables
+    const response = await fetch(`/api/cars?page=${page}`)
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`)

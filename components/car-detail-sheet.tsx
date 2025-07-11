@@ -1,15 +1,28 @@
 "use client"
 
-import { ExternalLink, Zap, Fuel, Calendar, DollarSign } from "lucide-react"
+import { useState } from "react"
+import { ExternalLink, Zap, Fuel, Calendar, DollarSign, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel"
+import { cn } from "@/lib/utils"
+import { useEffect } from "react"
 
 interface CarDetailSheetProps {
   car: any
 }
 
 export default function CarDetailSheet({ car }: CarDetailSheetProps) {
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>()
   // Parse car specifications from content
   const parseCarSpecs = (content: string) => {
     const specs: Record<string, string> = {}
@@ -117,18 +130,89 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
   const priceFromContent = carSpecs.price || car.price || ''
   const isOnSale = priceFromContent.includes('減價')
   const images = car.images || (car.imageUrl ? [car.imageUrl] : [])
+  
+  // Sync carousel with selected index
+  useEffect(() => {
+    if (!carouselApi) return
+    
+    carouselApi.on("select", () => {
+      setSelectedImageIndex(carouselApi.selectedScrollSnap())
+    })
+  }, [carouselApi])
 
   return (
     <article className="px-6 pt-4 pb-8">
       <div className="space-y-6">
-        {/* Car Image */}
+        {/* Car Image Gallery */}
         {images.length > 0 && (
-          <div className="aspect-[16/10] bg-surface rounded-lg overflow-hidden">
-            <img
-              src={images[0]}
-              alt={car.title}
-              className="w-full h-full object-cover"
-            />
+          <div className="relative">
+            {images.length === 1 ? (
+              // Single image
+              <div className="aspect-[16/10] bg-surface rounded-lg overflow-hidden">
+                <img
+                  src={images[0]}
+                  alt={car.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              // Multiple images - use carousel
+              <Carousel className="w-full" setApi={setCarouselApi}>
+                <CarouselContent data-carousel-content>
+                  {images.map((image, index) => (
+                    <CarouselItem key={index}>
+                      <div className="aspect-[16/10] bg-surface rounded-lg overflow-hidden">
+                        <img
+                          src={image}
+                          alt={`${car.title} - Image ${index + 1}`}
+                          className="w-full h-full object-cover"
+                          loading={index === 0 ? "eager" : "lazy"}
+                        />
+                      </div>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+                <CarouselPrevious className="left-2" />
+                <CarouselNext className="right-2" />
+              </Carousel>
+            )}
+            
+            {/* Image counter overlay */}
+            {images.length > 1 && (
+              <div className="absolute top-3 right-3 bg-black/60 text-white px-2 py-1 rounded-full text-xs font-medium pointer-events-none">
+                {images.length} photos
+              </div>
+            )}
+            
+            {/* Thumbnail strip for multiple images */}
+            {images.length > 1 && (
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                {images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setSelectedImageIndex(index)
+                      // Use carousel API to scroll to image
+                      if (carouselApi) {
+                        carouselApi.scrollTo(index)
+                      }
+                    }}
+                    className={cn(
+                      "relative flex-shrink-0 w-20 h-14 rounded-md overflow-hidden transition-all",
+                      selectedImageIndex === index
+                        ? "ring-2 ring-primary"
+                        : "opacity-70 hover:opacity-100"
+                    )}
+                  >
+                    <img
+                      src={image}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

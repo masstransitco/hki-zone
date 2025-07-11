@@ -1467,3 +1467,1450 @@ Price ranges calculated: {
 <w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
  ✓ Compiled in 473ms (755 modules)
 <w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 1744ms (755 modules)
+ ✓ Compiled in 749ms (755 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 2.4s (755 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 1464ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 1554ms (762 modules)
+ ✓ Compiled in 550ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 908ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 755ms (762 modules)
+ ✓ Compiled in 403ms (762 modules)
+ ✓ Compiled in 671ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 872ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 775ms (762 modules)
+ ✓ Compiled in 761ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 681ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid block type
+ ✓ Compiled in 429ms (762 modules)
+ ⨯ SyntaxError: Unexpected non-whitespace character after JSON at position 361 (line 19 column 2)
+    at JSON.parse (<anonymous>)
+    at loadManifest (/Users/markau/panora830/node_modules/next/dist/server/load-manifest.js:36:25)
+    at loadManifestWithRetries (/Users/markau/panora830/node_modules/next/dist/server/load-components.js:40:51)
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (/Users/markau/panora830/node_modules/next/dist/server/load-components.js:79:100)
+    at async DevServer.findPageComponentsImpl (/Users/markau/panora830/node_modules/next/dist/server/next-server.js:709:36)
+    at async DevServer.findPageComponents (/Users/markau/panora830/node_modules/next/dist/server/dev/next-dev-server.js:577:20)
+    at async DevServer.renderPageComponent (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:1894:24)
+    at async DevServer.renderToResponseImpl (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:1946:32)
+    at async DevServer.pipeImpl (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:921:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/markau/panora830/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:817:17)
+    at async /Users/markau/panora830/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/markau/panora830/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/markau/panora830/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/markau/panora830/node_modules/next/dist/server/lib/router-server.js:173:21)
+    at async handleRequest (/Users/markau/panora830/node_modules/next/dist/server/lib/router-server.js:350:24)
+    at async requestHandlerImpl (/Users/markau/panora830/node_modules/next/dist/server/lib/router-server.js:374:13)
+    at async Server.requestListener (/Users/markau/panora830/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  page: '/admin/cars'
+}
+ ✓ Compiled /_error in 424ms (1331 modules)
+ GET /admin/cars 200 in 267ms
+ ✓ Compiled /api/admin/cars/stats in 222ms (707 modules)
+ ✓ Compiled (714 modules)
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+ GET /api/admin/scraper-status?type=cars 200 in 2431ms
+ GET /api/admin/cars/enrich 200 in 2976ms
+ ○ Compiling /_not-found ...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 3011ms
+ ✓ Compiled /_not-found in 624ms (1466 modules)
+ ✓ Compiled in 0ms (715 modules)
+ ✓ Compiled in 165ms (1466 modules)
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+ GET /api/admin/scraper-status?type=cars 404 in 1019ms
+Price ranges calculated: {
+  under200k: 152,
+  range200to300k: 26,
+  range300to500k: 20,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 3651ms
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 1958ms
+Price ranges calculated: {
+  under200k: 152,
+  range200to300k: 26,
+  range300to500k: 20,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1827ms
+ GET /api/admin/cars/enrich 200 in 2600ms
+Price ranges calculated: {
+  under200k: 152,
+  range200to300k: 26,
+  range300to500k: 20,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1834ms
+ GET /api/admin/cars/enrich 200 in 1807ms
+ GET /api/admin/cars/enrich 200 in 2024ms
+ ✓ Compiled in 216ms (765 modules)
+Price ranges calculated: {
+  under200k: 152,
+  range200to300k: 26,
+  range300to500k: 20,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 2305ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/markau/panora830/.next/server/app/admin'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/admin/cars/page' in /Users/markau/panora830/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/markau/panora830/.next/server/app/admin/cars/page.js', but to 'Error: Can't resolve '../../../../.next/server/app/admin/cars/page' in '/Users/markau/panora830/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/admin/cars/page (expected /Users/markau/panora830/.next/server/app/admin/cars/page.js)
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/admin/cars/stats/route' in /Users/markau/panora830/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/markau/panora830/.next/server/app/api/admin/cars/stats/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/admin/cars/stats/route' in '/Users/markau/panora830/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/admin/cars/stats/route (expected /Users/markau/panora830/.next/server/app/api/admin/cars/stats/route.js)
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/admin/cars/enrich/route' in /Users/markau/panora830/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/markau/panora830/.next/server/app/api/admin/cars/enrich/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/admin/cars/enrich/route' in '/Users/markau/panora830/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/admin/cars/enrich/route (expected /Users/markau/panora830/.next/server/app/api/admin/cars/enrich/route.js)
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?category=cars&page=0 200 in 1662ms
+ ✓ Compiled in 1356ms (762 modules)
+ ✓ Compiled in 380ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/markau/panora830/.next/cache/webpack/client-development/6.pack.gz_' -> '/Users/markau/panora830/.next/cache/webpack/client-development/6.pack.gz'
+ ✓ Compiled in 494ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/markau/panora830/.next/cache/webpack/client-development/0.pack.gz_' -> '/Users/markau/panora830/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 641ms (762 modules)
+ ✓ Compiled in 310ms (762 modules)
+ ✓ Compiled in 1882ms (762 modules)
+ ✓ Compiled in 1441ms (1343 modules)
+ ✓ Compiled in 656ms (762 modules)
+ ✓ Compiled in 407ms (762 modules)
+ ✓ Compiled /api/articles in 466ms (706 modules)
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?category=cars&page=0 200 in 1637ms
+ ✓ Compiled in 473ms (762 modules)
+ ✓ Compiled in 831ms (762 modules)
+ ✓ Compiled in 1240ms (762 modules)
+ ✓ Compiled in 653ms (762 modules)
+ ✓ Compiled in 709ms (762 modules)
+ ⨯ TypeError: Cannot read properties of undefined (reading 'entryCSSFiles')
+    at rP (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:3772)
+    at J.ctx (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:6088)
+    at rU (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:6966)
+    at /Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:5234
+    at /Users/markau/panora830/node_modules/next/dist/server/lib/trace/tracer.js:140:36
+    at NoopContextManager.with (/Users/markau/panora830/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/Users/markau/panora830/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NoopTracer.startActiveSpan (/Users/markau/panora830/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18093)
+    at ProxyTracer.startActiveSpan (/Users/markau/panora830/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:18854)
+    at /Users/markau/panora830/node_modules/next/dist/server/lib/trace/tracer.js:122:103
+    at NoopContextManager.with (/Users/markau/panora830/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:7062)
+    at ContextAPI.with (/Users/markau/panora830/node_modules/next/dist/compiled/@opentelemetry/api/index.js:1:518)
+    at NextTracerImpl.trace (/Users/markau/panora830/node_modules/next/dist/server/lib/trace/tracer.js:122:28)
+    at rL (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:5165)
+    at rW (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:12701)
+    at r0 (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:16195)
+    at r3 (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:39:23704)
+    at /Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:42:726
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:36:17827)
+    at /Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:42:616
+    at AsyncLocalStorage.run (node:internal/async_local_storage/async_hooks:91:14)
+    at Object.wrap (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:36:16929)
+    at r8 (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:42:543)
+    at nh.render (/Users/markau/panora830/node_modules/next/dist/compiled/next-server/app-page.runtime.dev.js:42:4682)
+    at doRender (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:1413:44)
+    at cacheEntry.responseCache.get.routeKind (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:1574:34)
+    at ResponseCache.get (/Users/markau/panora830/node_modules/next/dist/server/response-cache/index.js:49:26)
+    at DevServer.renderToResponseWithComponentsImpl (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:1482:53)
+    at /Users/markau/panora830/node_modules/next/dist/server/base-server.js:1003:121
+    at NextTracerImpl.trace (/Users/markau/panora830/node_modules/next/dist/server/lib/trace/tracer.js:105:20)
+    at DevServer.renderToResponseWithComponents (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:1003:41)
+    at DevServer.renderPageComponent (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:1908:35)
+    at async DevServer.renderToResponseImpl (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:1946:32)
+    at async DevServer.pipeImpl (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:921:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/markau/panora830/node_modules/next/dist/server/next-server.js:272:17)
+    at async DevServer.handleRequestImpl (/Users/markau/panora830/node_modules/next/dist/server/base-server.js:817:17)
+    at async /Users/markau/panora830/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/markau/panora830/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/markau/panora830/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/markau/panora830/node_modules/next/dist/server/lib/router-server.js:173:21)
+    at async handleRequest (/Users/markau/panora830/node_modules/next/dist/server/lib/router-server.js:350:24)
+    at async requestHandlerImpl (/Users/markau/panora830/node_modules/next/dist/server/lib/router-server.js:374:13)
+    at async Server.requestListener (/Users/markau/panora830/node_modules/next/dist/server/lib/start-server.js:141:13) {
+  page: '/admin/cars'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1562ms (1331 modules)
+ GET /admin/cars 200 in 438ms
+ ✓ Compiled /api/admin/cars/enrich in 161ms (707 modules)
+ ✓ Compiled (714 modules)
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 1857ms
+ GET /api/admin/scraper-status?type=cars 200 in 1860ms
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+ GET /api/admin/cars/enrich 200 in 2220ms
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 725ms
+Price ranges calculated: {
+  under200k: 159,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 2778ms
+ GET /api/admin/scraper-status?type=cars 200 in 1019ms
+ GET /api/admin/cars/enrich 200 in 1438ms
+Price ranges calculated: {
+  under200k: 159,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1242ms
+ GET /api/admin/cars/enrich 200 in 1283ms
+Price ranges calculated: {
+  under200k: 159,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1596ms
+ GET /api/admin/cars/enrich 200 in 1320ms
+Price ranges calculated: {
+  under200k: 159,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1548ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/markau/panora830/.next/cache/webpack/client-development/0.pack.gz_' -> '/Users/markau/panora830/.next/cache/webpack/client-development/0.pack.gz'
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 3.1s (1457 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /_next/static/webpack/2017893b75e30040.webpack.hot-update.json 404 in 2082ms
+ GET /admin/cars 200 in 271ms
+ ✓ Compiled /api/admin/cars/enrich in 468ms (709 modules)
+ ✓ Compiled (714 modules)
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 2402ms
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+ GET /api/admin/scraper-status?type=cars 200 in 2699ms
+ GET /api/admin/cars/enrich 200 in 2679ms
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+ GET /api/admin/scraper-status?type=cars 200 in 611ms
+Price ranges calculated: {
+  under200k: 159,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 3313ms
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 950ms
+ GET /api/admin/cars/enrich 200 in 902ms
+Price ranges calculated: {
+  under200k: 159,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1225ms
+ GET /api/admin/cars/enrich 200 in 1329ms
+Price ranges calculated: {
+  under200k: 159,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1572ms
+ GET /api/admin/cars/enrich 200 in 1266ms
+Price ranges calculated: {
+  under200k: 159,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1569ms
+ ✓ Compiled in 1058ms (764 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid code lengths set
+ ✓ Compiled in 1279ms (764 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: invalid code lengths set
+ ✓ Compiled in 1427ms (762 modules)
+ ✓ Compiled /_not-found in 235ms (1332 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring failed for Compilation/modules|/Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?absolutePagePath=%2FUsers%2Fmarkau%2Fpanora830%2Fnode_modules%2Fnext%2Fdist%2Fpages%2F_error.js&page=%2F_error! from pack: Error: invalid code lengths set
+<w> [webpack.cache.PackFileCacheStrategy] Restoring failed for ResolverCachePlugin|normal|default|alias=[|server-only$=|next/dist/compiled/server-only/index|client-only$=|next/dist/compiled/client-only/index|next/dist/compiled/client-only$=|next/dist/compiled/client-only/index|next/dist/compiled/server-only=|next/dist/compiled/server-only/index|]|fallback=[|assert=|/Users/markau/panora830/node_modules/next/dist/compiled/assert/assert.js|buffer=|/Users/markau/panora830/node_modules/next/dist/compiled/buffer/index.js|constants=|/Users/markau/panora830/node_modules/next/dist/compiled/constants-browserify/constants.json|crypto=|/Users/markau/panora830/node_modules/next/dist/compiled/crypto-browserify/index.js|domain=|/Users/markau/panora830/node_modules/next/dist/compiled/domain-browser/index.js|http=|/Users/markau/panora830/node_modules/next/dist/compiled/stream-http/index.js|https=|/Users/markau/panora830/node_modules/next/dist/compiled/https-browserify/index.js|os=|/Users/markau/panora830/node_modules/next/dist/compiled/os-browserify/browser.js|path=|/Users/markau/panora830/node_modules/next/dist/compiled/path-browserify/index.js|punycode=|/Users/markau/panora830/node_modules/next/dist/compiled/punycode/punycode.js|process=|/Users/markau/panora830/node_modules/next/dist/build/polyfills/process.js|querystring=|/Users/markau/panora830/node_modules/next/dist/compiled/querystring-es3/index.js|stream=|/Users/markau/panora830/node_modules/next/dist/compiled/stream-browserify/index.js|string_decoder=|/Users/markau/panora830/node_modules/next/dist/compiled/string_decoder/string_decoder.js|sys=|/Users/markau/panora830/node_modules/next/dist/compiled/util/util.js|timers=|/Users/markau/panora830/node_modules/next/dist/compiled/timers-browserify/main.js|tty=|/Users/markau/panora830/node_modules/next/dist/compiled/tty-browserify/index.js|util=|/Users/markau/panora830/node_modules/next/dist/compiled/util/util.js|vm=|/Users/markau/panora830/node_modules/next/dist/compiled/vm-browserify/index.js|zlib=|/Users/markau/panora830/node_modules/next/dist/compiled/browserify-zlib/index.js|events=|/Users/markau/panora830/node_modules/next/dist/compiled/events/events.js|setImmediate=|/Users/markau/panora830/node_modules/next/dist/compiled/setimmediate/setImmediate.js|]|dependencyType=|commonjs|path=|/Users/markau/panora830|request=|./node_modules/next/dist/pages/_error.js from pack: Error: invalid code lengths set
+<w> [webpack.cache.PackFileCacheStrategy] Restoring failed for Compilation/codeGeneration|/Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-client-pages-loader.js?absolutePagePath=%2FUsers%2Fmarkau%2Fpanora830%2Fnode_modules%2Fnext%2Fdist%2Fpages%2F_error.js&page=%2F_error!|webpack from pack: Error: invalid code lengths set
+<w> [webpack.cache.PackFileCacheStrategy] Restoring failed for Compilation/assets|chunk/_error from pack: Error: invalid code lengths set
+ ✓ Compiled /_error in 428ms (1334 modules)
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 18ms
+ ✓ Compiled in 805ms (765 modules)
+ GET /admin/cars 404 in 526ms
+ GET /admin/cars 404 in 91ms
+ GET /admin/cars 404 in 76ms
+ GET /admin/cars 404 in 52ms
+ GET /admin/cars 404 in 65ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 78ms
+ GET /admin/cars 404 in 99ms
+ GET /admin/cars 404 in 56ms
+ GET /admin/cars 404 in 57ms
+ GET /admin/cars 404 in 35ms
+ ✓ Compiled in 843ms (765 modules)
+ GET /admin/cars 404 in 154ms
+ GET /admin/cars 404 in 75ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 58ms
+ GET /admin/cars 404 in 71ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 56ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 60ms
+ ✓ Compiled in 899ms (765 modules)
+ GET /admin/cars 404 in 75ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/markau/panora830/.next/server/app/api/admin'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/admin/scraper-status/route' in /Users/markau/panora830/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/markau/panora830/.next/server/app/api/admin/scraper-status/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/admin/scraper-status/route' in '/Users/markau/panora830/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/admin/scraper-status/route (expected /Users/markau/panora830/.next/server/app/api/admin/scraper-status/route.js)
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/admin/cars/enrich/route' in /Users/markau/panora830/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/markau/panora830/.next/server/app/api/admin/cars/enrich/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/admin/cars/enrich/route' in '/Users/markau/panora830/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/admin/cars/enrich/route (expected /Users/markau/panora830/.next/server/app/api/admin/cars/enrich/route.js)
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/markau/panora830/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 58ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 62ms
+ GET /admin/cars 404 in 71ms
+ GET /admin/cars 404 in 95ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 56ms
+ GET /admin/cars 404 in 119ms
+ ✓ Compiled in 1569ms (764 modules)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 547ms (1334 modules)
+ GET /admin/cars 404 in 629ms
+ GET /admin/cars 404 in 150ms
+ GET /admin/cars 404 in 89ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 52ms
+ ✓ Compiled in 712ms (765 modules)
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 128ms
+ GET /admin/cars 404 in 73ms
+ GET /admin/cars 404 in 79ms
+ ✓ Compiled in 550ms (765 modules)
+ GET /admin/cars 404 in 60ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 27ms
+ ✓ Compiled in 902ms (765 modules)
+ GET /admin/cars 404 in 268ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 46ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 48ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 10ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 121ms
+ GET /admin/cars 404 in 57ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 207ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 66ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 150ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 66ms
+ GET /admin/cars 404 in 83ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 72ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 63ms
+ GET /admin/cars 404 in 86ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 48ms
+ GET /admin/cars 404 in 67ms
+ GET /admin/cars 404 in 46ms
+ GET /admin/cars 404 in 51ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 46ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 82ms
+ GET /admin/cars 404 in 73ms
+ GET /admin/cars 404 in 78ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 51ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 46ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 49ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 81ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 62ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 57ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 60ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 52ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 51ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 14ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 14ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 14ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 16ms
+ ✓ Compiled in 1426ms (765 modules)
+ GET /admin/cars 404 in 194ms
+ GET /admin/cars 404 in 13ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 6ms
+ GET /admin/cars 404 in 15ms
+ ✓ Compiled in 311ms (765 modules)
+ GET /admin/cars 404 in 14ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 7ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 14ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 12ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 49ms
+ GET /admin/cars 404 in 14ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 46ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 60ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 101ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 17ms
+ ✓ Compiled in 686ms (765 modules)
+ GET /admin/cars 404 in 437ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 8ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 46ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 11ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 12ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 16ms
+ ✓ Compiled in 734ms (765 modules)
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 13ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 22ms
+ ✓ Compiled /api/cars in 441ms (707 modules)
+Cars API: Fetching page 0 from articles_unified
+ GET /admin/cars 404 in 82ms
+No cars in articles_unified, checking articles table...
+Found 10 cars in articles table
+Found 10 cars in database
+ GET /api/cars?page=0 200 in 1976ms
+ GET /admin/cars 404 in 57ms
+ GET /admin/cars 404 in 60ms
+ GET /admin/cars 404 in 67ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 49ms
+ ✓ Compiled in 1042ms (765 modules)
+ GET /admin/cars 404 in 588ms
+ GET /admin/cars 404 in 57ms
+ GET /admin/cars 404 in 123ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 48ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 28ms
+ ✓ Compiled in 741ms (1346 modules)
+ GET /admin/cars 404 in 489ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 73ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 29ms
+ ✓ Compiled in 534ms (764 modules)
+ GET /admin/cars 404 in 73ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 69ms
+ GET /admin/cars 404 in 54ms
+ ✓ Compiled in 624ms (764 modules)
+ GET /admin/cars 404 in 127ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/markau/panora830/.next/cache/webpack/client-development/0.pack.gz_' -> '/Users/markau/panora830/.next/cache/webpack/client-development/0.pack.gz'
+ GET /admin/cars 404 in 76ms
+ GET /admin/cars 404 in 94ms
+ GET /admin/cars 404 in 98ms
+ GET /admin/cars 404 in 76ms
+ GET /admin/cars 404 in 107ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 62ms
+ GET /admin/cars 404 in 62ms
+ GET /admin/cars 404 in 64ms
+ GET /admin/cars 404 in 64ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 127ms
+ GET /admin/cars 404 in 89ms
+ GET /admin/cars 404 in 70ms
+ GET /admin/cars 404 in 48ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 75ms
+ GET /admin/cars 404 in 76ms
+ GET /admin/cars 404 in 87ms
+ GET /admin/cars 404 in 87ms
+ GET /admin/cars 404 in 100ms
+ GET /admin/cars 404 in 129ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 64ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 41ms
+ ✓ Compiled in 724ms (764 modules)
+ GET /admin/cars 404 in 113ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 104ms
+ GET /admin/cars 404 in 78ms
+ GET /admin/cars 404 in 78ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 77ms
+ ✓ Compiled in 567ms (764 modules)
+ GET /admin/cars 404 in 539ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 60ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 65ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 67ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 45ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 909ms (1334 modules)
+ GET /admin/cars 404 in 985ms
+ GET /admin/cars 404 in 180ms
+ GET /admin/cars 404 in 111ms
+ GET /admin/cars 404 in 98ms
+ GET /admin/cars 404 in 77ms
+ GET /admin/cars 404 in 83ms
+ GET /admin/cars 404 in 186ms
+ GET /admin/cars 404 in 75ms
+ GET /admin/cars 404 in 90ms
+ GET /admin/cars 404 in 73ms
+ GET /admin/cars 404 in 68ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 77ms
+ GET /admin/cars 404 in 71ms
+ GET /admin/cars 404 in 92ms
+ GET /admin/cars 404 in 132ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 33ms
+ GET /admin/cars 404 in 74ms
+ GET /admin/cars 404 in 56ms
+ GET /admin/cars 404 in 86ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 53ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 87ms
+ GET /admin/cars 404 in 76ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 65ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 65ms
+ GET /admin/cars 404 in 64ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 64ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 67ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 67ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 49ms
+ GET /admin/cars 404 in 64ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 49ms
+ GET /admin/cars 404 in 83ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 86ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 64ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 53ms
+ GET /admin/cars 404 in 74ms
+ GET /admin/cars 404 in 52ms
+ GET /admin/cars 404 in 31ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 73ms
+ GET /admin/cars 404 in 59ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 101ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 96ms
+ GET /admin/cars 404 in 63ms
+ GET /admin/cars 404 in 53ms
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 58ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 11ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 99ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 35ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 13ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 12ms
+ ✓ Compiled in 1318ms (765 modules)
+ ✓ Compiled in 330ms (765 modules)
+ ✓ Compiled in 977ms (1334 modules)
+ GET /admin/cars 404 in 23ms
+ GET /admin/cars 404 in 30ms
+ GET /admin/cars 404 in 15ms
+ ✓ Compiled in 339ms (765 modules)
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 12ms
+ GET /admin/cars 404 in 11ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 21ms
+ ✓ Compiled in 711ms (765 modules)
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 57ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 53ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 57ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 64ms
+ ✓ Compiled in 644ms (765 modules)
+ GET /admin/cars 404 in 84ms
+ GET /admin/cars 404 in 68ms
+ GET /admin/cars 404 in 52ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 41ms
+ ✓ Compiled in 384ms (765 modules)
+ GET /admin/cars 404 in 77ms
+ GET /admin/cars 404 in 64ms
+ GET /admin/cars 404 in 54ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 67ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 61ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 60ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 36ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 27ms
+ GET /admin/cars 404 in 52ms
+ ✓ Compiled in 632ms (765 modules)
+ GET /admin/cars 404 in 91ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 70ms
+ GET /admin/cars 404 in 32ms
+ GET /admin/cars 404 in 21ms
+ GET /admin/cars 404 in 47ms
+ GET /admin/cars 404 in 50ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 55ms
+ ✓ Compiled in 1129ms (765 modules)
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 40ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 44ms
+ GET /admin/cars 404 in 52ms
+ GET /admin/cars 404 in 93ms
+ GET /admin/cars 404 in 77ms
+ GET /admin/cars 404 in 38ms
+ GET /admin/cars 404 in 42ms
+ GET /admin/cars 404 in 45ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 37ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 39ms
+ GET /admin/cars 404 in 34ms
+ ✓ Compiled in 733ms (765 modules)
+ GET /admin/cars 404 in 34ms
+ GET /admin/cars 404 in 43ms
+ GET /admin/cars 404 in 58ms
+ GET /admin/cars 404 in 28ms
+ GET /admin/cars 404 in 20ms
+ ✓ Compiled in 465ms (1334 modules)
+ GET /admin/cars 404 in 272ms
+ GET /admin/cars 404 in 22ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 20ms
+ GET /admin/cars 404 in 19ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 15ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 16ms
+ GET /admin/cars 404 in 17ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 18ms
+ GET /admin/cars 404 in 29ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 24ms
+ GET /admin/cars 404 in 26ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 25ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 41ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 404 in 55ms
+ GET /admin/cars 200 in 349ms
+ GET /admin/cars 200 in 54ms
+ ○ Compiling /api/admin/cars/enrich ...
+ ✓ Compiled /api/admin/cars/enrich in 803ms (708 modules)
+ ✓ Compiled (715 modules)
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+ GET /api/admin/scraper-status?type=cars 200 in 2562ms
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 2608ms
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 2947ms
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 615ms
+ GET /api/admin/scraper-status?type=cars 200 in 1000ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 3730ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 1342ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1632ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 1444ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 966ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 2311ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1641ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 1702ms (1332 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /_next/static/webpack/c5f47dadc73f2387.webpack.hot-update.json 404 in 754ms
+ GET /admin/cars 200 in 660ms
+ ✓ Compiled /api/admin/cars/stats in 211ms (707 modules)
+ ✓ Compiled (714 modules)
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+ GET /api/admin/scraper-status?type=cars 200 in 2121ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 2192ms
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 2530ms
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 567ms
+ GET /api/admin/scraper-status?type=cars 200 in 1015ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 3198ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 1283ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 969ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 2003ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 1296ms
+ ✓ Compiled in 952ms (1464 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /_next/static/webpack/32feea9bed8c84af.webpack.hot-update.json 404 in 322ms
+ GET /api/admin/cars/stats 200 in 1732ms
+ GET /admin/cars 200 in 107ms
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+ GET /api/admin/scraper-status?type=cars 200 in 836ms
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 1087ms
+Articles API called, checking database setup...
+Category filter: cars
+Checking database setup...
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 1167ms
+Database check result: {
+  data: [ { id: 'c92389a2-bb0f-4356-9167-543eef1d4965' } ],
+  error: null
+}
+Database setup check passed
+Database ready status: true
+Fetching articles from database...
+Fetched 10 articles from database
+Returning real articles from database
+ GET /api/articles?page=0&limit=20&category=cars 200 in 555ms
+ GET /api/admin/scraper-status?type=cars 200 in 1023ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 2208ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 1425ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1643ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 1358ms
+Error fetching enrichment status: { message: '' }
+ GET /api/admin/cars/enrich 500 in 955ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 2071ms
+Price ranges calculated: {
+  under200k: 162,
+  range200to300k: 27,
+  range300to500k: 22,
+  over500k: 22
+}
+ GET /api/admin/cars/stats 200 in 1670ms
+ ✓ Compiled in 1132ms (1478 modules)
+ ✓ Compiled in 965ms (1478 modules)
+ ✓ Compiled in 738ms (1478 modules)
+ ✓ Compiled in 1527ms (762 modules)
+ ✓ Compiled in 828ms (762 modules)
+ ✓ Compiled in 754ms (762 modules)
+ ✓ Compiled in 802ms (762 modules)
+ ✓ Compiled in 1481ms (762 modules)
+ ✓ Compiled in 361ms (762 modules)
+ ✓ Compiled in 1292ms (762 modules)

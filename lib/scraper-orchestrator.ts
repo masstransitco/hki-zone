@@ -1,5 +1,6 @@
 import { summarizeArticles } from "./ai-summarizer"
 import { saveArticle, getArticleStats, saveHeadlines, cleanupOldHeadlines, type Headline } from "./supabase"
+import { saveUnifiedArticle } from "./supabase-unified"
 import { updateProgress, startScraping } from "../app/api/scrape/progress/route"
 
 // Import the enhanced scrapers
@@ -118,8 +119,34 @@ export async function runSingleScraper(outletKey: string, withProgress = false) 
     let savedCount = 0
     for (const article of articles) {
       try {
-        const saved = await saveArticle(article)
-        if (saved) savedCount++
+        // For cars, save to unified table with images array
+        if (outletKey === '28car') {
+          const { article: saved, error } = await saveUnifiedArticle({
+            title: article.title,
+            content: article.content || "",
+            summary: article.summary || "",
+            lede: article.summary,
+            url: article.url,
+            source: article.source,
+            author: article.author || '28car',
+            published_at: article.publishDate || new Date().toISOString(),
+            image_url: article.imageUrl,
+            images: article.images, // Include images array
+            category: 'cars',
+            article_type: 'scraped',
+            status: 'published',
+            processing_status: 'ready',
+            features: {
+              has_image: !!(article.imageUrl || (article.images && article.images.length > 0)),
+              has_ai_content: false,
+              has_translation: false
+            }
+          })
+          if (!error && saved) savedCount++
+        } else {
+          const saved = await saveArticle(article)
+          if (saved) savedCount++
+        }
       } catch (error) {
         console.error(`💥 Failed to save article: ${article.title}`, error)
       }
@@ -304,6 +331,7 @@ export async function runAllScrapers(withProgress = false) {
           author: article.author,
           published_at: article.publishDate || new Date().toISOString(),
           image_url: article.imageUrl,
+          images: article.images, // Add images array for cars
           category: getCategoryFromSource(article.source),
         })
 

@@ -7,7 +7,7 @@ export async function GET() {
   try {
     // Get total count of cars
     const { count: totalCount, error: totalError } = await supabase
-      .from('articles')
+      .from('articles_unified')
       .select('*', { count: 'exact', head: true })
       .eq('category', 'cars')
       .eq('source', '28car')
@@ -23,7 +23,7 @@ export async function GET() {
     // Get count of cars added in the last 24 hours
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const { count: recentCount, error: recentError } = await supabase
-      .from('articles')
+      .from('articles_unified')
       .select('*', { count: 'exact', head: true })
       .eq('category', 'cars')
       .eq('source', '28car')
@@ -35,7 +35,7 @@ export async function GET() {
     
     // Get all cars with content to analyze price ranges
     const { data: allCars, error: carsError } = await supabase
-      .from('articles')
+      .from('articles_unified')
       .select('id, content')
       .eq('category', 'cars')
       .eq('source', '28car')

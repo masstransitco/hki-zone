@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (enrichAll) {
       // Enrich all cars that haven't been enriched yet
       const { data: cars, error } = await supabase
-        .from('articles')
+        .from('articles_unified')
         .select('id, title, content, ai_summary')
         .eq('category', 'cars')
         .eq('source', '28car')
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
           // Update car with enrichment data
           const { error: updateError } = await supabase
-            .from('articles')
+            .from('articles_unified')
             .update({
               ai_summary: enrichmentSummary,
               updated_at: new Date().toISOString()
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     } else if (carId) {
       // Enrich specific car
       const { data: car, error } = await supabase
-        .from('articles')
+        .from('articles_unified')
         .select('id, title, content, ai_summary')
         .eq('id', carId)
         .eq('category', 'cars')
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
         // Update car with enrichment data
         const { error: updateError } = await supabase
-          .from('articles')
+          .from('articles_unified')
           .update({
             ai_summary: enrichmentSummary,
             updated_at: new Date().toISOString()
@@ -195,13 +195,13 @@ function createEnrichmentSummary(enrichment: any): string {
 export async function GET() {
   try {
     const { count: totalCars, error: totalError } = await supabase
-      .from('articles')
+      .from('articles_unified')
       .select('*', { count: 'exact', head: true })
       .eq('category', 'cars')
       .eq('source', '28car')
     
     const { count: enrichedCars, error: enrichedError } = await supabase
-      .from('articles')
+      .from('articles_unified')
       .select('*', { count: 'exact', head: true })
       .eq('category', 'cars')
       .eq('source', '28car')

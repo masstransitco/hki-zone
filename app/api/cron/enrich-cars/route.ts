@@ -20,12 +20,12 @@ export async function GET() {
 
     // Get cars that haven't been enriched yet (limit to 5 per run to control costs)
     const { data: cars, error } = await supabase
-      .from('articles')
-      .select('id, title, content, ai_summary, created_at')
+      .from('articles_unified')
+      .select('id, title, content, ai_summary, published_at')
       .eq('category', 'cars')
       .eq('source', '28car')
       .is('ai_summary', null) // Only cars not yet enriched
-      .order('created_at', { ascending: false }) // Process newest first
+      .order('published_at', { ascending: false }) // Process newest first
       .limit(5)
 
     if (error) {
@@ -68,7 +68,7 @@ export async function GET() {
 
         // Update car with enrichment data
         const { error: updateError } = await supabase
-          .from('articles')
+          .from('articles_unified')
           .update({
             ai_summary: enrichmentSummary,
             updated_at: new Date().toISOString()

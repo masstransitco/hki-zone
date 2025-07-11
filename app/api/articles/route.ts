@@ -57,6 +57,12 @@ const mockArticles = [
     source: "28car",
     publishedAt: "2024-01-15T12:00:00Z",
     imageUrl: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=400&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1555626906-fcf10d6851b4?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=800&h=400&fit=crop"
+    ],
     category: "cars",
     readTime: 2,
   },
@@ -69,6 +75,11 @@ const mockArticles = [
     source: "28car",
     publishedAt: "2024-01-15T11:30:00Z",
     imageUrl: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1549521462-5c6b92d0ff9a?w=800&h=400&fit=crop"
+    ],
     category: "cars",
     readTime: 2,
   },
@@ -81,6 +92,13 @@ const mockArticles = [
     source: "28car",
     publishedAt: "2024-01-15T10:45:00Z",
     imageUrl: "https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&h=400&fit=crop",
+    images: [
+      "https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1567818735868-e71b99932e29?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1609521263047-f8f205293f24?w=800&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1606611013016-969c19ba0d15?w=800&h=400&fit=crop"
+    ],
     category: "cars",
     readTime: 2,
   },
