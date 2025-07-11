@@ -411,6 +411,7 @@ export interface CarListing {
   price?: string;
   content?: string;
   summary?: string;
+  ai_summary?: string;  // AI enrichment data in markdown format
   url: string;
   source: string;
   imageUrl?: string;
@@ -427,7 +428,7 @@ export interface CarSpecs {
   make: string;           // 車廠 (e.g., "豐田 TOYOTA")
   model: string;          // 型號 (e.g., "ALPHARD 2.5 Z")
   year?: string;          // 年份 (e.g., "2023")
-  price: string;          // 售價 (e.g., "HKD$588,000 減價 [原價$628,000]")
+  price: string;          // 售價 - now supports multi-comma parsing (e.g., "HKD$2,450,000")
   engine?: string;        // 引擎 (e.g., "2.5L Hybrid")
   transmission?: string;  // 波箱 (e.g., "CVT")
   fuel?: string;          // 燃料 (e.g., "Hybrid")
@@ -436,6 +437,23 @@ export interface CarSpecs {
   mileage?: string;       // 里程 (e.g., "8,000 km")
   contact?: string;       // 聯絡 (seller contact info)
   description?: string;   // 簡評 (seller description)
+}
+```
+
+### Car Enrichment Data Model
+```typescript
+export interface CarEnrichmentData {
+  estimatedYear?: number;    // AI-estimated manufacturing year
+  isElectric: boolean;       // Whether the vehicle is electric
+  fuelConsumption?: string;  // Fuel consumption (L/100km or kWh/100km)
+  fuelCostHKD?: string;      // Estimated monthly fuel cost in HKD
+  faults: string[];          // Common faults buyers should check
+  sources: string[];         // Sources used for enrichment
+}
+
+export interface EnrichedCarListing extends CarListing {
+  ai_summary?: string;          // Enriched data in markdown format
+  enrichmentData?: CarEnrichmentData;  // Parsed enrichment data
 }
 ```
 
@@ -459,10 +477,26 @@ export interface CarsResponse {
   nextPage: number | null;
   hasMore: boolean;
   totalCount?: number;
+  enrichmentStats?: {
+    totalCars: number;
+    enrichedCars: number;
+    unenrichedCars: number;
+  };
   debug?: {
     source: 'database' | 'mock';
     query?: any;
     error?: string;
+  };
+}
+
+export interface CarStatsResponse {
+  total: number;
+  recent24h: number;
+  priceRanges: {
+    under200k: number;
+    range200to300k: number;
+    range300to500k: number;
+    over500k: number;
   };
 }
 ```
@@ -470,12 +504,16 @@ export interface CarsResponse {
 ## Car Scraper Data Flow
 
 ### 28car Scraper Pipeline
-1. **Listing Discovery**: Parse mobile 28car.com listing page
-2. **Detail Extraction**: Navigate to individual car pages
-3. **Spec Parsing**: Extract structured car specifications
-4. **Image Collection**: Download up to 5 photos per car
-5. **Data Transformation**: Convert to unified article format
-6. **Database Storage**: Store with category='cars' in articles table
+1. **Browser Initialization**: Environment-aware browser setup
+   - **Development**: Uses Puppeteer with local Chrome/Chromium
+   - **Production**: Uses Puppeteer-core with @sparticuz/chromium for Vercel serverless
+2. **Listing Discovery**: Parse mobile 28car.com listing page
+3. **Detail Extraction**: Navigate to individual car pages using automated browser
+4. **Spec Parsing**: Extract structured car specifications with improved price parsing for multi-comma numbers (e.g., 2,450,001)
+5. **Image Collection**: Download up to 5 photos per car
+6. **Data Transformation**: Convert to unified article format
+7. **Database Storage**: Store with category='cars' in articles table
+8. **AI Enrichment**: Optional Perplexity API enhancement for year estimation, faults, and fuel data
 
 ### Car Data Storage
 Cars are stored in the unified articles table with these specific fields:
@@ -483,8 +521,16 @@ Cars are stored in the unified articles table with these specific fields:
 - `source`: '28car'
 - `title`: "{make} {model}" format
 - `content`: Structured specifications as text
+- `ai_summary`: AI enrichment data in markdown format (year, faults, electric status, fuel data)
 - `image_url`: Primary car photo
 - `images`: Array of all car photos (stored as JSONB)
 - `specs`: Raw specifications data (stored as JSONB)
+
+### Car Price Parsing
+The system now supports accurate parsing of multi-comma numbers using the regex pattern `/(\d{1,3}(?:,\d{3})*)/g`:
+- **Correct**: "HK$2,450,000" → "2,450,000"
+- **Correct**: "HK$1,888,888" → "1,888,888"  
+- **Previous Issue**: Multi-comma numbers like "2,450,001" were parsed as "2,450"
+- **Fix**: Updated regex handles any number of comma groups for accurate price display
 
 This data model provides a robust foundation for the AI-enhanced news aggregation platform, supporting both traditional content and automotive listings while maintaining performance and scalability.

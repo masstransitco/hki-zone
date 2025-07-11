@@ -38,6 +38,7 @@ GET /api/articles
 **Parameters**:
 - `page` (optional): Page number (default: 0)
 - `category` (optional): Filter by category (e.g., 'cars', 'Technology', 'Politics')
+- `enriched` (optional): Filter cars by enrichment status (true/false)
 
 **Response Format**:
 ```json
@@ -378,7 +379,73 @@ POST /api/admin/perplexity/trigger-enrichment
 
 **Response**: Processing results with cost tracking
 
-### 4. Database Management
+### 4. Car Management
+
+#### Get Car Statistics
+```
+GET /api/admin/cars/stats
+```
+
+**Purpose**: Car listing analytics with price range breakdown
+
+**Response**:
+```json
+{
+  "total": number,
+  "recent24h": number,
+  "priceRanges": {
+    "under200k": number,
+    "range200to300k": number,
+    "range300to500k": number,
+    "over500k": number
+  }
+}
+```
+
+#### Enrich Cars
+```
+POST /api/admin/cars/enrich
+```
+
+**Purpose**: AI-powered car listing enrichment using Perplexity API
+
+**Request Body**:
+```json
+{
+  "carId": "string",     // Optional: Enrich specific car
+  "enrichAll": boolean   // Optional: Enrich all unenriched cars
+}
+```
+
+**Response**:
+```json
+{
+  "message": "string",
+  "enrichedCount": number,
+  "errors": ["string"]
+}
+```
+
+**Authentication**: Requires PERPLEXITY_API_KEY environment variable
+
+#### Car Enrichment Status
+```
+GET /api/admin/cars/enrich
+```
+
+**Purpose**: Check enrichment statistics and API configuration
+
+**Response**:
+```json
+{
+  "totalCars": number,
+  "enrichedCars": number,
+  "unenrichedCars": number,
+  "isConfigured": boolean
+}
+```
+
+### 5. Database Management
 
 #### Database Status Check
 ```
@@ -468,6 +535,8 @@ GET /api/cron/scrape-cars
 
 **Purpose**: Automated scraping of car listings from 28car.com
 
+**Schedule**: Every 15 minutes (updated from 30 minutes)
+
 **Response**: Car scraping results with listing counts
 
 **Example Response**:
@@ -481,6 +550,34 @@ GET /api/cron/scrape-cars
     "articlesSaved": 19
   },
   "timestamp": "2025-07-11T07:55:24.827Z"
+}
+```
+
+#### Enrich Car Listings
+```
+GET /api/cron/enrich-cars
+```
+
+**Purpose**: Automated AI enrichment of car listings using Perplexity API
+
+**Schedule**: Every 2 hours
+
+**Processing**: 
+- Processes 5 cars per run with rate limiting
+- Determines estimated year, common faults, electric status, fuel consumption
+- Includes comprehensive logging and cost tracking
+
+**Response**: Car enrichment results with processing statistics
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "processed": 5,
+  "enriched": 4,
+  "errors": 1,
+  "totalCost": "$0.0240",
+  "timestamp": "2025-07-11T09:00:00.000Z"
 }
 ```
 
@@ -675,7 +772,7 @@ Common HTTP status codes:
 Required environment variables:
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL
 - `SUPABASE_SERVICE_ROLE_KEY`: Service role key
-- `PERPLEXITY_API_KEY`: Perplexity API key (optional)
+- `PERPLEXITY_API_KEY`: Perplexity API key (required for car enrichment)
 
 ## Database Schema
 

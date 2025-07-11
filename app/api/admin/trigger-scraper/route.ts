@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { runSingleScraper } from '@/lib/scraper-orchestrator'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,29 +14,16 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Trigger the car scraper by calling the existing cron endpoint
-    const scraperResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/cron/scrape-cars`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.CRON_SECRET || 'dev-secret'}`
-      }
-    })
+    console.log('🚗 Starting manual 28car scraping from admin trigger...')
     
-    if (!scraperResponse.ok) {
-      const errorText = await scraperResponse.text()
-      console.error('Scraper trigger failed:', errorText)
-      return NextResponse.json(
-        { error: 'Failed to trigger scraper', details: errorText },
-        { status: 500 }
-      )
-    }
+    // Directly call the scraper function instead of making HTTP request
+    const result = await runSingleScraper('28car', true) // with progress tracking
     
-    const result = await scraperResponse.json()
+    console.log('🚗 Manual 28car scraping completed:', result)
     
     return NextResponse.json({
       success: true,
-      message: 'Car scraper triggered successfully',
+      message: `28car scraping completed: ${result.articlesSaved}/${result.articlesFound} cars saved`,
       result: result
     })
     

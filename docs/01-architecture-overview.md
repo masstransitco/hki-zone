@@ -88,7 +88,9 @@ pending → enriched → ready → displayed
 - **Database**: Supabase (PostgreSQL)
 - **AI Integration**: Perplexity API, Anthropic Claude
 - **Image Processing**: Sharp for optimization
-- **Web Scraping**: Puppeteer with stealth plugins
+- **Web Scraping**: Puppeteer with serverless browser automation
+  - **Development**: Regular Puppeteer with local Chrome/Chromium
+  - **Production**: @sparticuz/chromium for Vercel serverless compatibility
 
 ### DevOps & Deployment
 - **Platform**: Vercel with edge functions
@@ -99,16 +101,27 @@ pending → enriched → ready → displayed
 ## Data Flow
 
 ### Content Ingestion
-1. **Scheduled Scraping**: Cron jobs trigger scrapers every 30 minutes
-2. **Content Extraction**: Puppeteer-based scrapers extract articles and car listings
+1. **Scheduled Scraping**: Cron jobs trigger scrapers every 15 minutes (updated from 30 minutes)
+2. **Content Extraction**: Serverless browser automation extracts articles and car listings
+   - **Environment Detection**: Automatically selects appropriate browser configuration
+   - **Development**: Uses local Chrome/Chromium installation via Puppeteer
+   - **Production**: Uses @sparticuz/chromium for Vercel serverless environment
 3. **Initial Processing**: Basic metadata extraction and categorization
 4. **Database Storage**: Raw content stored with appropriate category (news/cars)
 
 #### Car Listings Pipeline
-1. **28car Scraping**: Dedicated scraper for automotive listings
+1. **28car Scraping**: Dedicated scraper for automotive listings (every 15 minutes)
 2. **Photo Extraction**: Advanced image extraction (up to 5 photos per car)
-3. **Spec Parsing**: Price, make, model, year, and technical specifications
+3. **Spec Parsing**: Price, make, model, year, and technical specifications with improved multi-comma number support
 4. **Data Storage**: Stored in articles table with category='cars'
+5. **AI Enrichment**: Automated Perplexity API enhancement every 2 hours
+
+#### Car AI Enrichment Pipeline
+1. **Car Selection**: Identify unenriched cars for AI processing (5 cars per cron run)
+2. **Perplexity Analysis**: AI determines estimated year, common faults, electric status, fuel consumption
+3. **Enrichment Storage**: Enhanced data stored in ai_summary field as structured markdown
+4. **Bottom Sheet Display**: Enriched content rendered in car detail views with "Things to Look Out For"
+5. **Admin Management**: Manual enrichment triggers and filtering of enriched/unenriched cars
 
 ### AI Enhancement Pipeline
 1. **Content Selection**: Identify articles for AI enhancement
@@ -136,6 +149,10 @@ pending → enriched → ready → displayed
 - **Error Boundaries**: Graceful error handling in React components
 - **Rate Limiting**: Controlled API usage to prevent service overload
 - **Health Checks**: Automated monitoring of critical services
+- **Browser Automation Resilience**: 
+  - Automatic fallback between Puppeteer and @sparticuz/chromium
+  - Environment-specific browser configuration
+  - Graceful degradation when browser dependencies unavailable
 
 ### Security
 - **API Authentication**: Supabase Row Level Security
@@ -146,7 +163,7 @@ pending → enriched → ready → displayed
 ## Integration Points
 
 ### External APIs
-- **Perplexity API**: Content enhancement and contextual information
+- **Perplexity API**: Content enhancement, contextual information, and car enrichment (year estimation, faults, fuel data)
 - **Anthropic Claude**: Additional AI processing capabilities
 - **Google Images**: Image search and metadata extraction
 - **Unsplash**: High-quality fallback images

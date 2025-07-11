@@ -12,6 +12,7 @@ This document provides comprehensive guidance for developing, testing, and deplo
 - **npm**: Version 9+
 - **Git**: Version control
 - **Supabase CLI**: For database management (optional)
+- **Chrome/Chromium**: Required for car scraping in development
 
 ### Initial Setup
 
@@ -123,6 +124,36 @@ curl http://localhost:3000/api/cron/fetch-perplexity-news
 
 # Enrich existing articles
 curl http://localhost:3000/api/cron/enrich-perplexity-news
+
+# Enrich car listings with AI
+curl http://localhost:3000/api/cron/enrich-cars
+```
+
+#### Car Management Testing
+```bash
+# Test car statistics API
+curl http://localhost:3000/api/admin/cars/stats
+
+# Test manual car enrichment
+curl -X POST http://localhost:3000/api/admin/cars/enrich \
+  -H "Content-Type: application/json" \
+  -d '{"enrichAll": true}'
+
+# Test single car enrichment
+curl -X POST http://localhost:3000/api/admin/cars/enrich \
+  -H "Content-Type: application/json" \
+  -d '{"carId": "your-car-id"}'
+
+# Check enrichment status
+curl http://localhost:3000/api/admin/cars/enrich
+
+# Test manual car scraping
+curl -X POST http://localhost:3000/api/cron/scrape-cars
+
+# Test car scraper via admin trigger endpoint
+curl -X POST http://localhost:3000/api/admin/trigger-scraper \
+  -H "Content-Type: application/json" \
+  -d '{"type": "cars"}'
 ```
 
 ### 4. Testing API Endpoints
@@ -147,6 +178,12 @@ curl "http://localhost:3000/api/search?q=artificial+intelligence"
 
 # Test headlines
 curl "http://localhost:3000/api/headlines?category=Politics"
+
+# Test car listings with enrichment filter
+curl "http://localhost:3000/api/articles?category=cars&enriched=true"
+
+# Test car price parsing validation
+curl "http://localhost:3000/api/articles?category=cars" | grep -o "HK\$[0-9,]*"
 ```
 
 ## Code Organization
@@ -443,6 +480,14 @@ The project includes a `vercel.json` configuration:
       "schedule": "*/30 * * * *"
     },
     {
+      "path": "/api/cron/scrape-cars",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/enrich-cars",
+      "schedule": "0 */2 * * *"
+    },
+    {
       "path": "/api/cron/collect-headlines",
       "schedule": "0 8 * * *"
     },
@@ -457,6 +502,8 @@ The project includes a `vercel.json` configuration:
   ]
 }
 ```
+
+**Note**: Car scraper now runs every 15 minutes (updated from 30 minutes) and car enrichment runs every 2 hours.
 
 #### Deployment Steps
 1. **Connect to Vercel**
@@ -645,6 +692,88 @@ rm -rf .next
 # Reinstall dependencies
 rm -rf node_modules package-lock.json
 npm install
+```
+
+#### Browser Automation Issues
+
+##### Playwright vs Puppeteer Migration
+The project migrated from Playwright to Puppeteer + @sparticuz/chromium for serverless compatibility:
+
+**Development Environment:**
+- Uses regular Puppeteer with local Chrome/Chromium
+- Requires Chrome/Chromium to be installed locally
+- Browser automation works with full browser features
+
+**Production Environment (Vercel):**
+- Uses @sparticuz/chromium for serverless compatibility
+- Automatically detects production environment
+- Falls back gracefully if dependencies are missing
+
+##### Common Browser Automation Errors
+
+**Error: "browserType.launch: Executable doesn't exist"**
+```bash
+# Check if running in serverless environment
+# This error indicates Playwright binaries are missing in production
+
+# Solution: Code automatically uses @sparticuz/chromium in production
+# Verify dependencies are installed:
+npm install @sparticuz/chromium puppeteer puppeteer-core
+```
+
+**Error: "Cannot statically analyse 'require'"**
+```bash
+# Webpack static analysis issue with dynamic imports
+# Solution: Use conditional imports based on environment
+# Code now uses environment detection to avoid this issue
+```
+
+**Development Browser Issues:**
+```bash
+# Install Chrome/Chromium locally
+# macOS:
+brew install chromium
+
+# Ubuntu/Debian:
+sudo apt-get install chromium-browser
+
+# Test local browser availability
+puppeteer browsers install chrome
+```
+
+**Production Deployment Issues:**
+```bash
+# Check Vercel deployment logs
+vercel logs
+
+# Test serverless browser functionality
+curl -X POST https://your-app.vercel.app/api/cron/scrape-cars
+
+# Verify @sparticuz/chromium is included in deployment
+# Check package.json dependencies section
+```
+
+##### Browser Configuration Testing
+```bash
+# Test development browser setup
+curl -X POST http://localhost:3000/api/cron/scrape-cars
+
+# Check browser logs in development
+# Look for: "🚀 Using local Chrome for development"
+
+# Test production browser setup (after deployment)
+# Look for: "@sparticuz/chromium loaded successfully"
+```
+
+##### Memory and Performance Issues
+```bash
+# Monitor memory usage during scraping
+# Car scraper processes 40+ listings with image downloads
+
+# Optimize browser settings for serverless:
+# - Reduced viewport size
+# - Disabled images (optional)
+# - Mobile user agent for faster loading
 ```
 
 This comprehensive development workflow guide provides the foundation for efficient development, testing, and deployment of the HKI News App. Following these practices ensures code quality, performance, and maintainability.

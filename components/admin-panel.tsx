@@ -33,6 +33,7 @@ const OUTLET_NAMES = {
   hk01: "HK01",
   oncc: "ONCC",
   rthk: "RTHK",
+  '28car': "28car",
 }
 
 export default function AdminPanel({ onManualScrape, onDatabaseSetup }: AdminPanelProps) {

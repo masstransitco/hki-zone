@@ -129,7 +129,8 @@ export function ArticleCard({
 #### Cars Feed (`components/cars-feed.tsx`)
 - Specialized feed for automotive listings
 - Car-specific card layouts with image carousels
-- Price parsing and sale indicators
+- Price parsing with multi-comma number support (e.g., HK$2,450,000)
+- Bottom sheet integration with click handlers
 - Infinite scroll with category filtering
 - Error handling with fallback UI
 
@@ -137,16 +138,38 @@ export function ArticleCard({
 ```typescript
 interface CarCardProps {
   car: CarListing
+  onClick?: () => void  // Bottom sheet trigger
   className?: string
 }
 
-export function CarCard({ car, className }: CarCardProps) {
+export function CarCard({ car, onClick, className }: CarCardProps) {
   // Features:
   // - Image carousel with navigation dots
-  // - Price display with sale indicators
+  // - Price display with improved multi-comma parsing
   // - Car specifications display
-  // - External link to 28car.com
-  // - Responsive design
+  // - Bottom sheet click integration
+  // - Source overlay on hover (28car.com)
+  // - Responsive design with reduced height
+}
+```
+
+#### Car Bottom Sheet (`components/car-bottom-sheet.tsx`)
+```typescript
+interface CarBottomSheetProps {
+  car: CarListing | null
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function CarBottomSheet({ car, isOpen, onClose }: CarBottomSheetProps) {
+  // Features:
+  // - Drawer-based detail view for car listings
+  // - Car specifications parsing and display
+  // - AI enrichment data rendering with "Things to Look Out For"
+  // - Price parsing for multi-comma numbers (2,450,001)
+  // - Image display with fallback handling
+  // - External link integration to 28car.com
+  // - Markdown rendering for enriched content
 }
 ```
 
@@ -167,6 +190,26 @@ export function CarCard({ car, className }: CarCardProps) {
 - Filtering and search
 - Status management
 - Image upload and management
+
+#### Car Management (`app/admin/cars/page.tsx`)
+```typescript
+export default function CarManagementPage() {
+  // Features:
+  // - Car listing statistics dashboard with price range breakdown
+  // - Manual enrichment controls with individual and bulk triggers
+  // - Enrichment status filtering (enriched/non-enriched cars)
+  // - Car count analytics (total, recent 24h, price ranges)
+  // - Real-time enrichment progress tracking
+  // - Integration with Perplexity API for car data enhancement
+}
+```
+
+#### Car Enrichment Components
+- **Manual enrichment triggers**: Individual car and bulk processing buttons
+- **Enrichment status indicators**: Visual feedback for enriched vs non-enriched cars
+- **Price range statistics**: 4-tier breakdown (under 200k, 200k-300k, 300k-500k, 500k+)
+- **Filtering system**: Toggle between enriched and non-enriched car listings
+- **Progress tracking**: Real-time updates during enrichment operations
 
 ### 4. UI Components (Shadcn/ui)
 
@@ -532,6 +575,56 @@ function useMobile() {
   }, [])
   
   return isMobile
+}
+```
+
+### 4. Car Bottom Sheet Hook
+
+```typescript
+function useCarBottomSheet() {
+  const [selectedCar, setSelectedCar] = useState<CarListing | null>(null)
+  const [isOpen, setIsOpen] = useState(false)
+  
+  const openCarDetail = useCallback((car: CarListing) => {
+    setSelectedCar(car)
+    setIsOpen(true)
+  }, [])
+  
+  const closeCarDetail = useCallback(() => {
+    setIsOpen(false)
+    // Delay clearing selected car to allow for exit animation
+    setTimeout(() => setSelectedCar(null), 150)
+  }, [])
+  
+  return {
+    selectedCar,
+    isOpen,
+    openCarDetail,
+    closeCarDetail
+  }
+}
+```
+
+### 5. Car Price Parsing Hook
+
+```typescript
+function useCarPriceParsing() {
+  const parsePrice = useCallback((content: string): string | null => {
+    if (!content) return null
+    
+    // Handle multi-comma numbers correctly
+    const numberWithCommasRegex = /(\d{1,3}(?:,\d{3})*)/g
+    const matches = content.match(numberWithCommasRegex)
+    
+    if (matches && matches.length > 0) {
+      // Return the first (likely largest) price found
+      return `HK$${matches[0]}`
+    }
+    
+    return null
+  }, [])
+  
+  return { parsePrice }
 }
 ```
 

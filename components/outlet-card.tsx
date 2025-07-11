@@ -30,6 +30,7 @@ const OUTLET_LOGOS = {
   singtao: "⭐",
   hk01: "📰",
   oncc: "🔘",
+  '28car': "🚗",
 }
 
 const OUTLET_DESCRIPTIONS = {
@@ -37,6 +38,7 @@ const OUTLET_DESCRIPTIONS = {
   singtao: "星島日報 SingTao",
   hk01: "香港01 HK01",
   oncc: "東網 On.cc",
+  '28car': "28car 車網",
 }
 
 export default function OutletCard({ 
