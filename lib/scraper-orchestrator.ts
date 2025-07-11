@@ -8,6 +8,7 @@ const { scrapeSingTaoWithContent } = require("./scrapers/singtao")
 const { scrapeHK01WithContent } = require("./scrapers/hk01")
 const { withContent: scrapeOnccWithContent } = require("./scrapers/oncc")
 const { withContent: scrapeRTHKWithContent } = require("./scrapers/rthk")
+const { scrape28CarWithContent } = require("./scrapers/28car")
 
 const OUTLET_SCRAPERS = {
   hkfp: scrapeHKFPWithContent,
@@ -15,6 +16,7 @@ const OUTLET_SCRAPERS = {
   hk01: scrapeHK01WithContent,
   oncc: scrapeOnccWithContent,
   rthk: scrapeRTHKWithContent,
+  '28car': scrape28CarWithContent,
 }
 
 const OUTLET_NAMES = {
@@ -23,6 +25,7 @@ const OUTLET_NAMES = {
   hk01: "HK01",
   oncc: "ONCC",
   rthk: "RTHK",
+  '28car': "28car",
 }
 
 // Individual scraper function with progress tracking
@@ -335,6 +338,7 @@ export async function runAllScrapers(withProgress = false) {
         HK01: allArticles.filter((a) => a.source === "HK01").length,
         ONCC: allArticles.filter((a) => a.source === "ONCC").length,
         RTHK: allArticles.filter((a) => a.source === "RTHK").length,
+        '28car': allArticles.filter((a) => a.source === "28car").length,
       },
       database: {
         before: initialStats,
@@ -367,6 +371,8 @@ function getCategoryFromSource(source: string): string {
       return "Local"
     case "rthk":
       return "News"
+    case "28car":
+      return "cars"
     default:
       return "General"
   }

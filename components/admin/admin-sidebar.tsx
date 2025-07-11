@@ -11,6 +11,7 @@ import {
   Activity,
   Shield,
   Brain,
+  Car,
 } from "lucide-react"
 
 import {
@@ -37,6 +38,12 @@ const navigationItems = [
     url: "/admin/articles",
     icon: FileText,
     description: "Review scraped articles and content",
+  },
+  {
+    title: "Car Listings",
+    url: "/admin/cars",
+    icon: Car,
+    description: "Manage car listings and 28car scraper",
   },
   {
     title: "Perplexity News",

@@ -126,10 +126,10 @@ export async function getArticleStats() {
 }
 
 // Balanced query function to ensure proportional representation from all sources
-export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string }) {
+export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string }) {
   try {
-    // If specific source filter is applied, use regular query
-    if (filters?.source) {
+    // If specific source or category filter is applied, use regular query
+    if (filters?.source || filters?.category) {
       return getArticlesRegular(page, limit, filters)
     }
 
@@ -189,7 +189,7 @@ export async function getBalancedArticles(page = 0, limit = 10, filters?: { sour
 }
 
 // Original query function (renamed for clarity)
-export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string }) {
+export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string }) {
   try {
     let query = supabase
       .from("articles")
@@ -199,6 +199,10 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
     // Apply filters if provided
     if (filters?.source) {
       query = query.eq('source', filters.source)
+    }
+    
+    if (filters?.category) {
+      query = query.eq('category', filters.category)
     }
     
     if (filters?.isAiEnhanced !== undefined) {
@@ -234,7 +238,7 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
 }
 
 // Main export - use balanced query by default
-export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string }) {
+export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string }) {
   return getBalancedArticles(page, limit, filters)
 }
 

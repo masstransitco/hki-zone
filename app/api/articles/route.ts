@@ -47,6 +47,43 @@ const mockArticles = [
     category: "Finance",
     readTime: 3,
   },
+  // Mock car data
+  {
+    id: "car-1",
+    title: "BMW X5 xDrive40i",
+    summary: "Luxury SUV with excellent condition, full service history, and premium features.",
+    content: "Make: BMW, Model: X5 xDrive40i, Year: 2022, Price: HK$850,000, Engine: 3.0L Turbo, Transmission: Automatic, Fuel: Petrol, Doors: 5, Color: Black, Mileage: 15,000 km",
+    url: "https://m.28car.com/sell_dsp.php?h_vid=example1",
+    source: "28car",
+    publishedAt: "2024-01-15T12:00:00Z",
+    imageUrl: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=400&fit=crop",
+    category: "cars",
+    readTime: 2,
+  },
+  {
+    id: "car-2", 
+    title: "Toyota ALPHARD 2.5 Z",
+    summary: "Premium MPV with luxury interior and advanced safety features.",
+    content: "Make: Toyota, Model: ALPHARD 2.5 Z, Year: 2023, Price: HK$588,000 減價 [原價$628,000], Engine: 2.5L Hybrid, Transmission: CVT, Fuel: Hybrid, Doors: 4, Color: White, Mileage: 8,000 km",
+    url: "https://m.28car.com/sell_dsp.php?h_vid=example2",
+    source: "28car",
+    publishedAt: "2024-01-15T11:30:00Z",
+    imageUrl: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=400&fit=crop",
+    category: "cars",
+    readTime: 2,
+  },
+  {
+    id: "car-3",
+    title: "Mercedes-Benz G300 CDI",
+    summary: "Iconic G-Class with robust performance and luxurious appointments.",
+    content: "Make: Mercedes-Benz, Model: G300 CDI, Year: 2021, Price: HK$419,000 減價 [原價$458,000], Engine: 3.0L Diesel, Transmission: Automatic, Fuel: Diesel, Doors: 5, Color: Silver, Mileage: 25,000 km",
+    url: "https://m.28car.com/sell_dsp.php?h_vid=example3",
+    source: "28car",
+    publishedAt: "2024-01-15T10:45:00Z",
+    imageUrl: "https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&h=400&fit=crop",
+    category: "cars",
+    readTime: 2,
+  },
 ]
 
 // Add better logging and debugging for the articles API
@@ -55,8 +92,12 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const page = Number.parseInt(searchParams.get("page") || "0")
     const limit = 10
+    const category = searchParams.get("category") || null
 
     console.log("Articles API called, checking database setup...")
+    if (category) {
+      console.log(`Category filter: ${category}`)
+    }
 
     // Check if database is set up with more detailed logging
     const isDatabaseReady = await checkDatabaseSetup()
@@ -64,21 +105,29 @@ export async function GET(request: NextRequest) {
 
     if (!isDatabaseReady) {
       console.warn("Database not set up, using mock data")
-      // Return mock data with pagination
+      // Return mock data with pagination and category filtering
+      let filteredArticles = mockArticles
+      if (category) {
+        filteredArticles = mockArticles.filter(article => 
+          article.category.toLowerCase() === category.toLowerCase()
+        )
+      }
+      
       const startIndex = page * limit
       const endIndex = startIndex + limit
-      const paginatedArticles = mockArticles.slice(startIndex, endIndex)
+      const paginatedArticles = filteredArticles.slice(startIndex, endIndex)
 
       return NextResponse.json({
         articles: paginatedArticles,
-        nextPage: endIndex < mockArticles.length ? page + 1 : null,
+        nextPage: endIndex < filteredArticles.length ? page + 1 : null,
         usingMockData: true,
         debug: "Database setup check failed",
       })
     }
 
     console.log("Fetching articles from database...")
-    const articles = await getArticles(page, limit)
+    const filters = category ? { category } : undefined
+    const articles = await getArticles(page, limit, filters)
     console.log(`Fetched ${articles.length} articles from database`)
 
     // If no articles in database, fall back to mock data
