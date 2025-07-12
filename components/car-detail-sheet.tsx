@@ -28,16 +28,21 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
     const specs: Record<string, string> = {}
     if (!content) return specs
     
+    // Clean up any existing malformed placeholders first
     let tempContent = content
+      .replace(/###\d+_NUMBER###/g, '') // Remove malformed placeholders like ###5_NUMBER###
+      .replace(/###NUMBER_\d+###/g, '') // Remove any leftover placeholders
     
     // Find all instances of numbers with commas
-    // Updated regex to handle multi-comma numbers like 2,450,001
     const numberWithCommasRegex = /(\d{1,3}(?:,\d{3})*)/g
     const numbersWithCommas = tempContent.match(numberWithCommasRegex) || []
     
-    // Replace each number with commas with a placeholder
+    // Replace each number with commas with a placeholder using a more unique pattern
+    const placeholderMap = new Map<string, string>()
     numbersWithCommas.forEach((num, index) => {
-      tempContent = tempContent.replace(num, `###NUMBER_${index}###`)
+      const placeholder = `__PLACEHOLDER_${index}__`
+      placeholderMap.set(placeholder, num)
+      tempContent = tempContent.replace(num, placeholder)
     })
     
     // Split by comma
@@ -47,12 +52,13 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
       const colonIndex = pair.indexOf(':')
       if (colonIndex === -1) continue
       
-      const key = pair.substring(0, colonIndex).trim()
+      let key = pair.substring(0, colonIndex).trim()
       let value = pair.substring(colonIndex + 1).trim()
       
-      // Restore numbers with commas
-      numbersWithCommas.forEach((num, index) => {
-        value = value.replace(`###NUMBER_${index}###`, num)
+      // Restore numbers with commas using the map
+      placeholderMap.forEach((originalNum, placeholder) => {
+        key = key.replace(placeholder, originalNum)
+        value = value.replace(placeholder, originalNum)
       })
       
       if (key && value) {
@@ -68,6 +74,7 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
         else if (lowerKey === 'price') specs.price = value
         else if (lowerKey === 'doors') specs.doors = value
         else if (lowerKey === 'color') specs.color = value
+        else if (key === '規格') specs['規格'] = value
       }
     }
     
@@ -128,6 +135,12 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
   const carSpecs = parseCarSpecs(car.content || '')
   const enrichmentData = parseEnrichmentData(car.ai_summary || '')
   const priceFromContent = carSpecs.price || car.price || ''
+  
+  // Debug logging
+  console.log('Car Detail - car.specs:', car.specs)
+  console.log('Car Detail - parsed carSpecs:', carSpecs)
+  console.log('Car Detail - 規格 from specs:', car.specs?.['規格'])
+  console.log('Car Detail - 規格 from carSpecs:', carSpecs['規格'])
   const isOnSale = priceFromContent.includes('減價')
   const images = car.images || (car.imageUrl ? [car.imageUrl] : [])
   
@@ -238,6 +251,16 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
             )}
           </div>
         </header>
+
+        {/* 規格 (Specifications) - prominent display */}
+        {(car.specs?.['規格'] || carSpecs['規格']) && (
+          <div className="bg-muted/50 rounded-lg p-4 border">
+            <div className="text-sm font-medium text-muted-foreground mb-1">規格 (Specifications)</div>
+            <div className="text-base font-medium text-foreground">
+              {car.specs?.['規格'] || carSpecs['規格']}
+            </div>
+          </div>
+        )}
 
         {/* Car Specifications */}
         <Card>

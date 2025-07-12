@@ -119,7 +119,7 @@ export async function runSingleScraper(outletKey: string, withProgress = false) 
     let savedCount = 0
     for (const article of articles) {
       try {
-        // For cars, save to unified table with images array
+        // For cars, save to unified table with images array and specs
         if (outletKey === '28car') {
           const { article: saved, error } = await saveUnifiedArticle({
             title: article.title,
@@ -140,6 +140,13 @@ export async function runSingleScraper(outletKey: string, withProgress = false) 
               has_image: !!(article.imageUrl || (article.images && article.images.length > 0)),
               has_ai_content: false,
               has_translation: false
+            },
+            contextual_data: {
+              specs: article.specs, // Store car specifications
+              make: article.make,
+              model: article.model,
+              year: article.year,
+              price: article.price
             }
           })
           if (!error && saved) savedCount++

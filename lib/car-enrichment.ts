@@ -25,14 +25,23 @@ interface CarEnrichmentResult {
 }
 
 interface CarSpecs {
-  make?: string
-  model?: string
-  year?: string
-  price?: string
-  engine?: string
-  fuel?: string
-  mileage?: string
-  transmission?: string
+  make?: string          // 車廠
+  model?: string         // 型號
+  year?: string          // 年份
+  price?: string         // 售價
+  engine?: string        // 引擎
+  fuel?: string          // 燃料/燃炓
+  mileage?: string       // 里程
+  transmission?: string  // 波箱/傳動
+  listingId?: string     // 編號
+  vehicleType?: string   // 車類
+  seats?: string         // 座位
+  displacement?: string  // 容積
+  doors?: string         // 車門
+  color?: string         // 顏色
+  contact?: string       // 聯絡人資料
+  updateDate?: string    // 更新日期
+  description?: string   // 簡評
 }
 
 class CarEnricher {

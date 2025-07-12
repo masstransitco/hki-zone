@@ -18,6 +18,7 @@ const mockCars = [
   {
     id: "car-1",
     title: "BMW X5 xDrive40i",
+    price: "HK$850,000",
     summary: "Luxury SUV with excellent condition, full service history, and premium features.",
     content: "Make: BMW, Model: X5 xDrive40i, Year: 2022, Price: HK$850,000, Engine: 3.0L Turbo, Transmission: Automatic, Fuel: Petrol, Doors: 5, Color: Black, Mileage: 15,000 km",
     url: "https://m.28car.com/sell_dsp.php?h_vid=example1",
@@ -35,6 +36,7 @@ const mockCars = [
   {
     id: "car-2", 
     title: "Toyota ALPHARD 2.5 Z",
+    price: "HK$588,000 減價 [原價$628,000]",
     summary: "Premium MPV with luxury interior and advanced safety features.",
     content: "Make: Toyota, Model: ALPHARD 2.5 Z, Year: 2023, Price: HK$588,000 減價 [原價$628,000], Engine: 2.5L Hybrid, Transmission: CVT, Fuel: Hybrid, Doors: 4, Color: White, Mileage: 8,000 km",
     url: "https://m.28car.com/sell_dsp.php?h_vid=example2",
@@ -51,6 +53,7 @@ const mockCars = [
   {
     id: "car-3",
     title: "Mercedes-Benz G300 CDI",
+    price: "HK$419,000 減價 [原價$458,000]",
     summary: "Iconic G-Class with robust performance and luxurious appointments.",
     content: "Make: Mercedes-Benz, Model: G300 CDI, Year: 2021, Price: HK$419,000 減價 [原價$458,000], Engine: 3.0L Diesel, Transmission: Automatic, Fuel: Diesel, Doors: 5, Color: Silver, Mileage: 25,000 km",
     url: "https://m.28car.com/sell_dsp.php?h_vid=example3",
@@ -82,7 +85,7 @@ export async function GET(request: NextRequest) {
       // Get from articles_unified
       supabase
         .from("articles_unified")
-        .select("id, title, content, summary, url, source, author, image_url, images, category, published_at")
+        .select("id, title, content, summary, url, source, author, image_url, images, category, published_at, contextual_data")
         .eq("category", "cars")
         .order("published_at", { ascending: false }),
       
@@ -128,6 +131,11 @@ export async function GET(request: NextRequest) {
       images: car.images || (car.image_url ? [car.image_url] : []),
       category: car.category,
       publishedAt: car.published_at,
+      specs: car.contextual_data?.specs || {},
+      make: car.contextual_data?.make,
+      model: car.contextual_data?.model,
+      year: car.contextual_data?.year,
+      price: car.contextual_data?.price,
       _source: 'unified'
     }))
 

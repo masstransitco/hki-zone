@@ -2914,3 +2914,429 @@ Price ranges calculated: {
  ✓ Compiled in 1481ms (762 modules)
  ✓ Compiled in 361ms (762 modules)
  ✓ Compiled in 1292ms (762 modules)
+ ✓ Compiled in 3s (762 modules)
+ ✓ Compiled in 528ms (762 modules)
+ ✓ Compiled in 1245ms (762 modules)
+ ✓ Compiled in 400ms (762 modules)
+ ✓ Compiled in 1019ms (1343 modules)
+ ✓ Compiled in 364ms (762 modules)
+ ✓ Compiled in 334ms (762 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/markau/panora830/.next/cache/webpack/client-development/1.pack.gz_' -> '/Users/markau/panora830/.next/cache/webpack/client-development/1.pack.gz'
+ ✓ Compiled in 390ms (762 modules)
+ ✓ Compiled in 388ms (762 modules)
+ ✓ Compiled in 397ms (762 modules)
+ ✓ Compiled in 469ms (762 modules)
+ ○ Compiling /api/cars ...
+ ✓ Compiled /api/cars in 515ms (705 modules)
+Cars API: Fetching page 0 from both tables
+Found 439 cars in articles_unified
+Found 235 cars in articles table
+Total: 674 cars, returning 10 for page 0
+ GET /api/cars?page=0 200 in 2797ms
+ ○ Compiling /api/cron/scrape-cars ...
+ ✓ Compiled /api/cron/scrape-cars in 1161ms (1149 modules)
+🚗 Starting manual 28car scraping...
+🚀 Starting 28car scraper...
+🚗 Starting 28car scraper...
+🚀 Using local Chrome for development
+🚗 28car: Found 40 listings
+✅ 28car: 1/1 福士 TIGUAN2 380 4MOTION RLINE (+5 photos)
+✅ 28car: 2/2 豐田 NOAH HYBRID FACELIFT VOXY (+5 photos)
+✅ 28car: 3/3 寶馬 I4 EDRIVE35 (+5 photos)
+✅ 28car: 4/4 寶馬 X3 XDRIVE20iA XLINE (+5 photos)
+✅ 28car: 5/5 豐田 ALPHARD 2.4 Turbo (+5 photos)
+✅ 28car: 6/6 豐田 ALPHARD 2.5 FACELIFT VELLFIRE (+5 photos)
+✅ 28car: 7/7 奧迪 Q3 2.0T QUATTRO SLINE (+5 photos)
+✅ 28car: 8/8 迷你 MINI Cooper S E YOURS EDITION (+5 photos)
+✅ 28car: 9/9 富士 FORESTER 2.0 EYESIGHT AWD (+5 photos)
+✅ 28car: 10/10 豐田 NOAH (+5 photos)
+✅ 28car: 11/11 豐田 VOXY HYBRID ZS (+4 photos)
+✅ 28car: 12/12 豐田 VELLFIRE 2.5 ZG ALPHARD (+5 photos)
+✅ 28car: 13/13 富豪 V60 T5 (+5 photos)
+❌ 28car: VID 627738339 failed - Execution context was destroyed, most likely because of a navigation.
+⚠️ 28car: VID 627733928 has no price – skipped
+✅ 28car: 14/16 本田 FREED (+5 photos)
+✅ 28car: 15/17 豐田 VELLFIRE 2.4 Turbo (+5 photos)
+✅ 28car: 16/18 本田 FIT HYBRID GP5 S (+5 photos)
+✅ 28car: 17/19 寶馬 X6 35IA (+5 photos)
+✅ 28car: 18/20 本田 ODYSSEY (+5 photos)
+🚗 28car: Completed with 18 cars
+📰 28car: Found 18 articles
+⏭️  Article already exists: 福士 TIGUAN2 380 4MOTION RLINE
+⏭️  Article already exists: 豐田 NOAH HYBRID FACELIFT VOXY
+⏭️  Article already exists: 寶馬 I4 EDRIVE35
+⏭️  Article already exists: 寶馬 X3 XDRIVE20iA XLINE
+⏭️  Article already exists: 豐田 ALPHARD 2.4 Turbo
+⏭️  Article already exists: 豐田 ALPHARD 2.5 FACELIFT VELLFIRE
+⏭️  Article already exists: 奧迪 Q3 2.0T QUATTRO SLINE
+⏭️  Article already exists: 迷你 MINI Cooper S E YOURS EDITION
+⏭️  Article already exists: 富士 FORESTER 2.0 EYESIGHT AWD
+⏭️  Article already exists: 豐田 NOAH
+⏭️  Article already exists: 豐田 VOXY HYBRID ZS
+⏭️  Article already exists: 豐田 VELLFIRE 2.5 ZG ALPHARD
+⏭️  Article already exists: 富豪 V60 T5
+⏭️  Article already exists: 本田 FREED
+⏭️  Article already exists: 豐田 VELLFIRE 2.4 Turbo
+⏭️  Article already exists: 本田 FIT HYBRID GP5 S
+⏭️  Article already exists: 寶馬 X6 35IA
+⏭️  Article already exists: 本田 ODYSSEY
+✅ 28car completed: 18/18 articles saved
+🚗 Manual 28car scraping completed: {
+  outlet: '28car',
+  articlesFound: 18,
+  articlesSaved: 18,
+  articles: [
+    {
+      title: '福士 TIGUAN2 380 4MOTION RLINE',
+      make: '福士',
+      model: 'TIGUAN2 380 4MOTION RLINE',
+      year: '—',
+      price: 'HKD$92,000 減價 [原價$118,000]',
+      content: 'Listing ID: s2615565 私家車 0次瀏覽, Make: 福士 VOLKSWAGEN, Model: TIGUAN2 380 4MOTION RLINE, Price: HKD$92,000 減價 [原價$118,000], Contact: 13pt">, Updated: 2025-07-12 13:59:57, Description: 行貨0首頂版包圍21吋Ray、s鈴RS6pop迫力四出尾喉升級音響GPS220匹引擎R-LINE內飾座椅電尾門360泊車Carplay',
+      summary: '福士 TIGUAN2 380 4MOTION RLINE - HKD$92,000 減價 [原價$118,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=627742539&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:01.112Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2615000/2615565/a0817f08/2615565_m.jpg?20250712135957',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '豐田 NOAH HYBRID FACELIFT VOXY',
+      make: '豐田',
+      model: 'NOAH HYBRID FACELIFT VOXY',
+      year: '—',
+      price: 'HKD$118,000 減價 [原價$138,000]',
+      content: 'Listing ID: s2596719 私家車 2013次瀏覽, Make: 豐田 TOYOTA, Model: NOAH HYBRID FACELIFT VOXY, Price: HKD$118,000 減價 [原價$138,000], Contact: 13pt">, Updated: 2025-07-12 13:59:25, Description: 🌟✨頂級新款皮座、蒙羅麗莎包圍、雙電趟門、越線警報、防追撞、天花喇叭、暖座',
+      summary: '豐田 NOAH HYBRID FACELIFT VOXY - HKD$118,000 減價 [原價$138,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=623216373&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:04.585Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2596000/2596719/be2a0644/2596719_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '寶馬 I4 EDRIVE35',
+      make: '寶馬',
+      model: 'I4 EDRIVE35',
+      year: '—',
+      price: 'HKD$368,000',
+      content: 'Listing ID: s2604104 私家車 1255次瀏覽, Make: 寶馬 BMW, Model: I4 EDRIVE35, Price: HKD$368,000, Contact: 13pt">, Updated: 2025-07-12 13:59:12, Description: 0首、只1xxxx km、行貨(*4年原廠保養 連3次原廠保養服務)、Harman Kardon音響、360泊車、腳掃電尾冚',
+      summary: '寶馬 I4 EDRIVE35 - HKD$368,000',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=624992017&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:08.048Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2604000/2604104/52d4742d/2604104_m.jpg?20250613133906',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '寶馬 X3 XDRIVE20iA XLINE',
+      make: '寶馬',
+      model: 'X3 XDRIVE20iA XLINE',
+      year: '—',
+      price: 'HKD$99,000 減價 [原價$109,000]',
+      content: 'Listing ID: s2607616 私家車 432次瀏覽, Make: 寶馬 BMW, Model: X3 XDRIVE20iA XLINE, Price: HKD$99,000 減價 [原價$109,000], Contact: 13pt">, Updated: 2025-07-12 13:58:55, Description: 1字 新呔鈴 新電池 全車360鏡頭 全景天窗 keyless 電尾門 頂級版 Apple CarPlay 大面版 無線叉電 全齊',
+      summary: '寶馬 X3 XDRIVE20iA XLINE - HKD$99,000 減價 [原價$109,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=625826940&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:11.507Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2607000/2607616/2a3ef21d/2607616_m.jpg?20250622143446',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '豐田 ALPHARD 2.4 Turbo',
+      make: '豐田',
+      model: 'ALPHARD 2.4 Turbo',
+      year: '—',
+      price: 'HKD$858,800',
+      content: 'Listing ID: s2602823 私家車 740次瀏覽, Make: 豐田 TOYOTA, Model: ALPHARD 2.4 Turbo, Price: HKD$858,800, Contact: 13pt">, Updated: 2025-07-12 13:58:51, Description: 0首、行貨(*6年原廠保養)、2.4 Turbo引擎、三電門、OTTOMAN全電動真皮座 +*無線觸控面板 +*按摩椅、JBL音響',
+      summary: '豐田 ALPHARD 2.4 Turbo - HKD$858,800',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=624681095&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:14.965Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2602000/2602823/da116137/2602823_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '豐田 ALPHARD 2.5 FACELIFT VELLFIRE',
+      make: '豐田',
+      model: 'ALPHARD 2.5 FACELIFT VELLFIRE',
+      year: '—',
+      price: 'HKD$178,002',
+      content: 'Listing ID: s2609913 私家車 1482次瀏覽, Make: 豐田 TOYOTA, Model: ALPHARD 2.5 FACELIFT VELLFIRE, Price: HKD$178,002, Contact: 13pt">, Updated: 2025-07-12 13:58:36, Description: 未出牌多架、天窗、皮座、慳油引擎、七座位、防撞雷達、定速、原廠包圍、泊車鏡頭、泊車感應',
+      summary: '豐田 ALPHARD 2.5 FACELIFT VELLFIRE - HKD$178,002',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=626386740&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:18.461Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2609000/2609913/58f7a77a/2609913_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '奧迪 Q3 2.0T QUATTRO SLINE',
+      make: '奧迪',
+      model: 'Q3 2.0T QUATTRO SLINE',
+      year: '—',
+      price: 'HKD$53,000',
+      content: 'Listing ID: s2612006 私家車 167次瀏覽, Make: 奧迪 AUDI, Model: Q3 2.0T QUATTRO SLINE, Price: HKD$53,000, Contact: 13pt">, Updated: 2025-07-12 13:58:27, Description: 2015登記 頂級S-Line版 2首 只行43000km keyless 玻璃天幕頂 藍芽音響 電尾門 19吋呔鈴 牌費25年7月 包驗車',
+      summary: '奧迪 Q3 2.0T QUATTRO SLINE - HKD$53,000',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=626880906&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:21.926Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2612000/2612006/69cfd1a5/2612006_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '迷你 MINI Cooper S E YOURS EDITION',
+      make: '迷你',
+      model: 'MINI Cooper S E YOURS EDITION',
+      year: '—',
+      price: 'HKD$168,800',
+      content: 'Listing ID: s2610043 私家車 550次瀏覽, Make: 迷你 MINI, Model: MINI Cooper S E YOURS EDITION, Price: HKD$168,800, Contact: 13pt">, Updated: 2025-07-12 13:58:27, Description: 0首 行貨、*全電動車、*頂級Yours Edition、Harman Kardon音響、全皮座、雙色鈴、HUD、雙天窗、GPS、泊車鏡',
+      summary: '迷你 MINI Cooper S E YOURS EDITION - HKD$168,800',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=626411373&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:25.452Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2610000/2610043/f94c0a15/2610043_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '富士 FORESTER 2.0 EYESIGHT AWD',
+      make: '富士',
+      model: 'FORESTER 2.0 EYESIGHT AWD',
+      year: '—',
+      price: 'HKD$108,000',
+      content: 'Listing ID: s2613980 私家車 170次瀏覽, Make: 富士 SUBARU, Model: FORESTER 2.0 EYESIGHT AWD, Price: HKD$108,000, Contact: 13pt">, Updated: 2025-07-12 13:58:08, Description: 0首、行貨、*頂級i-S Eyesign版、*X-MODE越野模式、*EyeSight智能安全系統、GPS、電尾冚、AWD智能4驅',
+      summary: '富士 FORESTER 2.0 EYESIGHT AWD - HKD$108,000',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=627358895&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:28.916Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2613000/2613980/641408bb/2613980_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '豐田 NOAH',
+      make: '豐田',
+      model: 'NOAH',
+      year: '—',
+      price: 'HKD$200,000',
+      content: 'Listing ID: s2556481 私家車 1317次瀏覽, Make: 豐田 TOYOTA, Model: NOAH, Price: HKD$200,000, Contact: 13pt">, Updated: 2025-07-12 13:58:00, Description: 行貨 8座 5萬幾公里 私人出售',
+      summary: '豐田 NOAH - HKD$200,000',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=613548517&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:32.388Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2556000/2556481/aacf8035/2556481_m.jpg?20250222120547',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '豐田 VOXY HYBRID ZS',
+      make: '豐田',
+      model: 'VOXY HYBRID ZS',
+      year: '—',
+      price: 'HKD$97,800 減價 [原價$108,000]',
+      content: 'Listing ID: s2608304 私家車 941次瀏覽, Make: 豐田 TOYOTA, Model: VOXY HYBRID ZS, Price: HKD$97,800 減價 [原價$108,000], Contact: 13pt">, Updated: 2025-07-12 13:57:08, Description: 黑色 ZS 頂級新款皮座、蒙羅麗莎包圍、雙電趟門、越線警報、防追撞、天花喇叭、暖座',
+      summary: '豐田 VOXY HYBRID ZS - HKD$97,800 減價 [原價$108,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=626000017&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:35.855Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2608000/2608304/99339af1/2608304_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '豐田 VELLFIRE 2.5 ZG ALPHARD',
+      make: '豐田',
+      model: 'VELLFIRE 2.5 ZG ALPHARD',
+      year: '—',
+      price: 'HKD$197,800 減價 [原價$198,000]',
+      content: 'Listing ID: s2614425 私家車 262次瀏覽, Make: 豐田 TOYOTA, Model: VELLFIRE 2.5 ZG ALPHARD, Price: HKD$197,800 減價 [原價$198,000], Contact: 13pt">, Updated: 2025-07-12 13:55:48, Description: 日本到多部 3電門 4電坐 冷暖坐 閱讀燈 後排暖風 DVD音響 吊Mon 泊車鏡 正廠Modellista包圍',
+      summary: '豐田 VELLFIRE 2.5 ZG ALPHARD - HKD$197,800 減價 [原價$198,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=627465873&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:39.328Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2614000/2614425/a5582bed/2614425_m.jpg?20250709155157',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '富豪 V60 T5',
+      make: '富豪',
+      model: 'V60 T5',
+      year: '—',
+      price: 'HKD$69,000',
+      content: 'Listing ID: s2613206 私家車 249次瀏覽, Make: 富豪 VOLVO, Model: V60 T5, Price: HKD$69,000, Contact: 13pt">, Updated: 2025-07-12 13:53:55, Description: 17製造18落地 罕有一字牌簿 全原裝引擎底盤 擁有一年間已完成多項保養維修 即買即用 牌費至26年4月',
+      summary: '富豪 V60 T5 - HKD$69,000',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=627168906&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:02:43.175Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2613000/2613206/a2f6a144/2613206_m.jpg?20250707000349',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '本田 FREED',
+      make: '本田',
+      model: 'FREED',
+      year: '—',
+      price: 'HKD$95,000',
+      content: 'Listing ID: s2615552 私家車 13次瀏覽, Make: 本田 HONDA, Model: FREED, Price: HKD$95,000, Contact: 13pt">, Updated: 2025-07-12 13:52:30, Description: 行貨1字、5萬幾公里、牌費至12月、雙電門、7座232、後泊鏡、長泊有蓋、保養極佳、見車必合、車行',
+      summary: '本田 FREED - HKD$95,000',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=627737406&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:03:04.511Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2615000/2615552/cdeee5a3/2615552_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '豐田 VELLFIRE 2.4 Turbo',
+      make: '豐田',
+      model: 'VELLFIRE 2.4 Turbo',
+      year: '—',
+      price: 'HKD$858,000 減價 [原價$938,000]',
+      content: 'Listing ID: s2567604 私家車 301次瀏覽, Make: 豐田 TOYOTA, Model: VELLFIRE 2.4 Turbo, Price: HKD$858,000 減價 [原價$938,000], Contact: 13pt">, Updated: 2025-07-12 13:52:05, Description: 2025制造-未出牌全新車、天窗、4電座、3電門、360泊車、吊Mon、電動腳踏板、自動泊車、電子投射錶板',
+      summary: '豐田 VELLFIRE 2.4 Turbo - HKD$858,000 減價 [原價$938,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=616232017&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:03:07.982Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2567000/2567604/04d6f75a/2567604_m.jpg?20250319184929',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '本田 FIT HYBRID GP5 S',
+      make: '本田',
+      model: 'FIT HYBRID GP5 S',
+      year: '—',
+      price: 'HKD$78,000 減價 [原價$85,000]',
+      content: 'Listing ID: s2566170 私家車 4199次瀏覽, Make: 本田 HONDA, Model: FIT HYBRID GP5 S, Price: HKD$78,000 減價 [原價$85,000], Contact: 13pt">, Updated: 2025-07-12 13:51:58, Description: 0首 白色車 頂級S版 超慳油8毫1公里 大細電精神 勤保養 全車窗網 長泊室內',
+      summary: '本田 FIT HYBRID GP5 S - HKD$78,000 減價 [原價$85,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=615887551&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:03:11.449Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2566000/2566170/be2e10f9/2566170_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '寶馬 X6 35IA',
+      make: '寶馬',
+      model: 'X6 35IA',
+      year: '—',
+      price: 'HKD$35,000 減價 [原價$45,000]',
+      content: 'Listing ID: s2614152 私家車 112次瀏覽, Make: 寶馬 BMW, Model: X6 35IA, Price: HKD$35,000 減價 [原價$45,000], Contact: 13pt">, Updated: 2025-07-12 13:51:48, Description: 白色、皮座、天窗、新淨、7萬咪 歡迎查詢',
+      summary: '寶馬 X6 35IA - HKD$35,000 減價 [原價$45,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=627401406&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:03:14.898Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2614000/2614152/1981ed02/2614152_m.jpg?20250708230226',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    },
+    {
+      title: '本田 ODYSSEY',
+      make: '本田',
+      model: 'ODYSSEY',
+      year: '—',
+      price: 'HKD$68,001 減價 [原價$73,000]',
+      content: 'Listing ID: s2603371 私家車 475次瀏覽, Make: 本田 HONDA, Model: ODYSSEY, Price: HKD$68,001 減價 [原價$73,000], Contact: 13pt">, Updated: 2025-07-12 13:51:03, Description: 三字牌簿 後排冷氣 雙電動趟門 藍牙音響 後波鏡頭 RSR避震 AP Racing 煞車 Rays waltz forged s7 19吋軨',
+      summary: '本田 ODYSSEY - HKD$68,001 減價 [原價$73,000]',
+      url: 'http://m.28car.com/sell_dsp.php?h_vid=624804273&h_vw=y',
+      source: '28car',
+      author: '28car',
+      publishDate: '2025-07-12T06:03:18.398Z',
+      imageUrl: 'https://djlfajk23a.28car.com/data/image/sell/2603000/2603371/624a18e6/2603371_m.jpg',
+      images: [Array],
+      category: 'cars',
+      specs: [Object]
+    }
+  ]
+}
+ POST /api/cron/scrape-cars 200 in 95055ms
+Cars API: Fetching page 0 from both tables
+Found 452 cars in articles_unified
+Found 235 cars in articles table
+Total: 687 cars, returning 10 for page 0
+ GET /api/cars?page=0 200 in 2089ms
+Cars API: Fetching page 0 from both tables
+Found 452 cars in articles_unified
+Found 235 cars in articles table
+Total: 687 cars, returning 10 for page 0
+ GET /api/cars?page=0 200 in 1957ms
+Cars API: Fetching page 0 from both tables
+Found 452 cars in articles_unified
+Found 235 cars in articles table
+Total: 687 cars, returning 10 for page 0
+ GET /api/cars?page=0 200 in 1848ms
+ ✓ Compiled in 875ms (762 modules)
+ ✓ Compiled in 498ms (762 modules)
+ ✓ Compiled in 543ms (762 modules)
+ ✓ Compiled in 335ms (762 modules)
+ ✓ Compiled in 503ms (762 modules)
+ ✓ Compiled in 676ms (762 modules)
+ ✓ Compiled in 1124ms (762 modules)
+ ✓ Compiled in 376ms (762 modules)
+ ✓ Compiled in 954ms (1343 modules)
+ ✓ Compiled in 550ms (762 modules)
+ ✓ Compiled in 890ms (762 modules)
+ ○ Compiling /api/cars ...
+ ✓ Compiled /api/cars in 603ms (705 modules)
+Cars API: Fetching page 0 from both tables
+Found 519 cars in articles_unified
+Found 235 cars in articles table
+Total: 754 cars, returning 10 for page 0
+ GET /api/cars?page=0 200 in 6197ms
+ ✓ Compiled in 463ms (762 modules)
+ ✓ Compiled in 1337ms (762 modules)
+ ✓ Compiled in 482ms (762 modules)
+ ✓ Compiled in 361ms (762 modules)
+Cars API: Fetching page 0 from both tables
+Found 536 cars in articles_unified
+Found 235 cars in articles table
+Total: 771 cars, returning 10 for page 0
+ GET /api/cars?page=0 200 in 2079ms
+ ○ Compiling /_not-found ...
+ GET /api/cars?page=0 404 in 10022ms
+ GET /api/cars?page=0 404 in 10049ms

@@ -73,23 +73,10 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
     // Debug: log the content to see what we're working with
     console.log('Parsing car content:', content)
     
-    // The content is formatted like: "Make: BMW, Model: X5 xDrive40i, Year: 2022, Price: HK$850,000, Engine: 3.0L Turbo, Transmission: Automatic, Fuel: Petrol, Doors: 5, Color: Black, Mileage: 15,000 km"
-    // Use a more robust approach to handle comma-separated values
-    
-    // Split by ", " but first protect numbers with commas
+    // Split by ", " but be careful with commas in numbers
     let tempContent = content
     
-    // Find all instances of numbers with commas (prices, mileage, etc.)
-    // Updated regex to handle multi-comma numbers like 2,450,001
-    const numberWithCommasRegex = /(\d{1,3}(?:,\d{3})*)/g
-    const numbersWithCommas = tempContent.match(numberWithCommasRegex) || []
-    
-    // Replace each number with commas with a placeholder
-    numbersWithCommas.forEach((num, index) => {
-      tempContent = tempContent.replace(num, `###NUMBER_${index}###`)
-    })
-    
-    // Now split by comma
+    // Simple splitting approach - prioritize direct API data over parsed content
     const pairs = tempContent.split(',').map(pair => pair.trim())
     
     for (const pair of pairs) {
@@ -97,12 +84,7 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
       if (colonIndex === -1) continue
       
       const key = pair.substring(0, colonIndex).trim()
-      let value = pair.substring(colonIndex + 1).trim()
-      
-      // Restore numbers with commas
-      numbersWithCommas.forEach((num, index) => {
-        value = value.replace(`###NUMBER_${index}###`, num)
-      })
+      const value = pair.substring(colonIndex + 1).trim()
       
       if (key && value) {
         const lowerKey = key.toLowerCase()
@@ -117,6 +99,7 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
         else if (lowerKey === 'price') specs.price = value
         else if (lowerKey === 'doors') specs.doors = value
         else if (lowerKey === 'color') specs.color = value
+        else if (key === '規格') specs['規格'] = value
       }
     }
     
@@ -126,16 +109,26 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
   
   const carSpecs = parseCarSpecs(car.content || '')
   
-  // Use parsed price from content if available, otherwise use car.price
-  const priceFromContent = carSpecs.price || car.price || ''
-  const isOnSale = priceFromContent.includes('減價') || false
+  // Debug car object to see what's available
+  console.log('Car object:', { title: car.title, price: car.price, make: car.make, model: car.model })
+  console.log('Car specs from API:', car.specs)
+  console.log('Parsed carSpecs:', carSpecs)
+  
+  // Use direct price from API first, then fallback to parsed content
+  const directPrice = car.price || car.specs?.price || ''
+  const parsedPrice = carSpecs.price || ''
+  
+  // Choose the best price source - prefer direct API price if it doesn't contain placeholders
+  const priceFromContent = (directPrice && !directPrice.includes('###')) ? directPrice : parsedPrice
+  const isOnSale = priceFromContent.includes('減價')
   const originalPrice = isOnSale && priceFromContent ? extractOriginalPrice(priceFromContent) : null
   
   // Debug pricing
-  console.log('Price from content:', priceFromContent)
+  console.log('Car title:', car.title)
+  console.log('Direct price from API:', directPrice)
+  console.log('Parsed price from content:', parsedPrice)
+  console.log('Final price used:', priceFromContent)
   console.log('Formatted price:', formatPrice(priceFromContent))
-  console.log('Is on sale:', isOnSale)
-  console.log('Original price:', originalPrice)
   
   const handleImageError = () => {
     setImageError(true)
@@ -305,6 +298,13 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
             {(carSpecs.year || car.year) && <span>•</span>}
             <span>{new Date(car.publishedAt).toLocaleDateString()}</span>
           </div>
+          
+          {/* 規格 (Specifications) - compact display */}
+          {(car.specs?.['規格'] || carSpecs['規格']) && (
+            <div className="text-xs text-stone-600 dark:text-neutral-400 bg-stone-50 dark:bg-neutral-800 px-2 py-1 rounded">
+              <span className="font-medium">規格:</span> {car.specs?.['規格'] || carSpecs['規格']}
+            </div>
+          )}
           
           {/* Summary if no detailed specs */}
           {Object.keys(carSpecs).length === 0 && car.summary && (
