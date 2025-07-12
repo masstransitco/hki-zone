@@ -71,13 +71,16 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
     if (!content) return specs
     
     // Debug: log the content to see what we're working with
-    console.log('Parsing car content:', content)
+    console.log('Original content:', content)
     
-    // Split by ", " but be careful with commas in numbers
-    let tempContent = content
+    // Check if content already contains placeholder artifacts
+    if (content.includes('###NUMBER_') || content.includes('###') || content.includes('PLACEHOLDER')) {
+      console.log('Content contains placeholders, skipping parsing')
+      return specs
+    }
     
-    // Simple splitting approach - prioritize direct API data over parsed content
-    const pairs = tempContent.split(',').map(pair => pair.trim())
+    // Simple parsing without complex placeholder replacement
+    const pairs = content.split(',').map(pair => pair.trim())
     
     for (const pair of pairs) {
       const colonIndex = pair.indexOf(':')
@@ -114,19 +117,17 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
   console.log('Car specs from API:', car.specs)
   console.log('Parsed carSpecs:', carSpecs)
   
-  // Use direct price from API first, then fallback to parsed content
+  // Use direct price from API only - avoid parsing content for price to prevent placeholder issues
   const directPrice = car.price || car.specs?.price || ''
-  const parsedPrice = carSpecs.price || ''
   
-  // Choose the best price source - prefer direct API price if it doesn't contain placeholders
-  const priceFromContent = (directPrice && !directPrice.includes('###')) ? directPrice : parsedPrice
+  // Don't use parsed price from content as it may contain placeholder artifacts
+  const priceFromContent = directPrice || 'Price not available'
   const isOnSale = priceFromContent.includes('減價')
   const originalPrice = isOnSale && priceFromContent ? extractOriginalPrice(priceFromContent) : null
   
   // Debug pricing
   console.log('Car title:', car.title)
   console.log('Direct price from API:', directPrice)
-  console.log('Parsed price from content:', parsedPrice)
   console.log('Final price used:', priceFromContent)
   console.log('Formatted price:', formatPrice(priceFromContent))
   

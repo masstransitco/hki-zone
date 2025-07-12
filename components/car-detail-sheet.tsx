@@ -28,22 +28,25 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
     const specs: Record<string, string> = {}
     if (!content) return specs
     
-    // Clean up any existing malformed placeholders first
-    let tempContent = content
-      .replace(/###\d+_NUMBER###/g, '') // Remove malformed placeholders like ###5_NUMBER###
-      .replace(/###NUMBER_\d+###/g, '') // Remove any leftover placeholders
+    console.log('Car Detail - Original content:', content)
     
-    // Find all instances of numbers with commas
-    const numberWithCommasRegex = /(\d{1,3}(?:,\d{3})*)/g
+    let tempContent = content
+    
+    // Find only numbers that actually have commas (like prices: 168,000, 1,200,000)
+    // Don't match single digits or numbers without commas to avoid breaking model names like "2.5"
+    const numberWithCommasRegex = /(\d{1,3}(?:,\d{3})+)/g
     const numbersWithCommas = tempContent.match(numberWithCommasRegex) || []
     
-    // Replace each number with commas with a placeholder using a more unique pattern
-    const placeholderMap = new Map<string, string>()
+    console.log('Car Detail - Numbers found:', numbersWithCommas)
+    
+    // Replace each number with commas with a placeholder
     numbersWithCommas.forEach((num, index) => {
-      const placeholder = `__PLACEHOLDER_${index}__`
-      placeholderMap.set(placeholder, num)
+      const placeholder = `###NUMBER_${index}###`
+      console.log(`Car Detail - Replacing "${num}" with "${placeholder}"`)
       tempContent = tempContent.replace(num, placeholder)
     })
+    
+    console.log('Car Detail - Content after replacement:', tempContent)
     
     // Split by comma
     const pairs = tempContent.split(',').map(pair => pair.trim())
@@ -55,11 +58,22 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
       let key = pair.substring(0, colonIndex).trim()
       let value = pair.substring(colonIndex + 1).trim()
       
-      // Restore numbers with commas using the map
-      placeholderMap.forEach((originalNum, placeholder) => {
-        key = key.replace(placeholder, originalNum)
-        value = value.replace(placeholder, originalNum)
+      console.log(`Car Detail - Processing pair - Key: "${key}", Value before restore: "${value}"`)
+      
+      // Restore numbers with commas in both key and value
+      numbersWithCommas.forEach((num, index) => {
+        const placeholder = `###NUMBER_${index}###`
+        if (key.includes(placeholder)) {
+          console.log(`Car Detail - Restoring "${placeholder}" in key`)
+          key = key.replace(placeholder, num)
+        }
+        if (value.includes(placeholder)) {
+          console.log(`Car Detail - Restoring "${placeholder}" in value`)
+          value = value.replace(placeholder, num)
+        }
       })
+      
+      console.log(`Car Detail - Final - Key: "${key}", Value: "${value}"`)
       
       if (key && value) {
         const lowerKey = key.toLowerCase()
@@ -78,6 +92,7 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
       }
     }
     
+    console.log('Car Detail - Final parsed specs:', specs)
     return specs
   }
 
