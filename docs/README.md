@@ -87,6 +87,19 @@ The HKI News App is a Next.js 14 application that:
 
 **When to Use**: When setting up the development environment, deploying changes, or troubleshooting issues.
 
+### 6. [Car Search Implementation](./06-car-search-implementation.md)
+**Purpose**: Complete guide to the car search component implementation.
+
+**Key Information**:
+- Database schema and optimization
+- API endpoints and functions
+- React hooks and components
+- Performance characteristics
+- Scalability path (PostgreSQL → Typesense)
+- Security considerations
+
+**When to Use**: When working with car search functionality, implementing similar search features, or scaling search performance.
+
 ## Quick Reference
 
 ### Key File Locations
@@ -99,12 +112,18 @@ The HKI News App is a Next.js 14 application that:
 │   └── api/                     # API endpoints
 ├── components/                   # React components
 │   ├── ui/                      # Shadcn/ui components
-│   └── admin/                   # Admin-specific components
+│   ├── admin/                   # Admin-specific components
+│   ├── car-search.tsx           # Car search component
+│   └── cars-feed-with-search.tsx # Integrated cars page with search
 ├── lib/                         # Utilities and services
 │   ├── types.ts                 # Main TypeScript interfaces
 │   ├── types/unified.ts         # Unified content system types
+│   ├── hooks/                   # Custom React hooks
+│   │   └── use-car-search.ts    # Car search functionality hooks
 │   └── scrapers/                # News scraping modules
 └── scripts/                     # Database migrations and utilities
+    ├── car-search-migration-final.sql # Car search database schema
+    └── apply-car-search-migration.js  # Migration application script
 
 📁 Key Configuration Files
 ├── package.json                 # Dependencies and scripts
@@ -184,6 +203,12 @@ node scripts/setup-database.js   # Initialize database
 ./run-migrations.sh             # Run all migrations
 curl /api/debug/database        # Check database status
 
+# Car Search
+node scripts/apply-car-search-migration.js  # Apply car search migration
+curl "/api/cars/search?q=toyota&limit=5"    # Test car search
+curl "/api/cars/suggestions?q=toy&limit=5"  # Test autocomplete
+curl "/api/cars/filters"                    # Test filter options
+
 # Testing
 node test-api.js                # Test API endpoints
 curl -X POST /api/manual-scrape # Manual content scraping
@@ -256,6 +281,14 @@ const { data, isLoading, error } = useQuery({
 - **Performance**: Up to 8 photos per car with 8-10x better quality
 - **Success rate**: 100% high-resolution extraction achieved
 - **Automatic fallbacks**: Ensures compatibility if high-res unavailable
+
+### 7. **Car Search Component** ⭐ *New Feature*
+- **Real-time search**: PostgreSQL full-text search with trigram matching
+- **Advanced filtering**: Make, model, year, and price range filters
+- **Autocomplete suggestions**: Live suggestions with typo tolerance
+- **Sub-50ms performance**: Optimized GIN indexes and computed columns
+- **Mobile-responsive**: Touch-friendly interface with filter management
+- **Scalable architecture**: Ready for Typesense upgrade at high volume
 
 ## Troubleshooting Guide
 

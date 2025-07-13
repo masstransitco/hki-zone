@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import { Metadata } from "next"
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
-import CarsFeed from "@/components/cars-feed"
+import CarsFeedWithSearch from "@/components/cars-feed-with-search"
 import LoadingSkeleton from "@/components/loading-skeleton"
 
 export const metadata: Metadata = {
@@ -29,7 +29,7 @@ export default function CarsPage() {
       <main className="flex-1 pb-20">
         <div className="py-6">
           <Suspense fallback={<CarsLoadingSkeleton />}>
-            <CarsFeed />
+            <CarsFeedWithSearch />
           </Suspense>
         </div>
       </main>
