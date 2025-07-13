@@ -700,6 +700,47 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
+#### Car Image Quality Issues
+```bash
+# Check if high-resolution images are being extracted
+curl http://localhost:3000/api/cron/scrape-cars -X POST
+
+# Look for these indicators in logs:
+# ✅ Success: "📸 Upgraded to BIG quality: filename_b.jpg (50KB)"
+# ✅ Success: "(+5 photos: 5B)" = 5 Big images extracted
+# ❌ Issue: "(+5 photos: 5M)" = Only medium quality extracted
+
+# Test specific car image URLs manually
+curl -I "https://djlfajk23a.28car.com/data/image/sell/.../car_id_b.jpg"
+# Should return 200 OK for high-res images
+
+# Check scraper browser configuration
+# Development: Should use local Chrome
+# Production: Should use @sparticuz/chromium
+```
+
+#### Troubleshooting Image Extraction
+```bash
+# If high-res extraction is failing:
+
+# 1. Check browser dependencies
+npm list puppeteer @sparticuz/chromium
+
+# 2. Test modal gallery interaction
+# Look for this warning in logs:
+# "⚠️ Could not trigger modal gallery: [reason]"
+
+# 3. Verify URL pattern recognition
+# High-res URLs should follow this pattern:
+# https://djlfajk23a.28car.com/data/image/sell/XXXX/XXXX/hash/id_b.jpg
+
+# 4. Check network connectivity to 28car.com
+curl -I "http://m.28car.com/sell_lst.php"
+
+# 5. Monitor scraper performance
+# Should see: "🎉 High-res success: X/Y images are high-resolution (Z%)"
+```
+
 #### Browser Automation Issues
 
 ##### Playwright vs Puppeteer Migration

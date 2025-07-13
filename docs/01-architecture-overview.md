@@ -111,9 +111,13 @@ pending → enriched → ready → displayed
 
 #### Car Listings Pipeline
 1. **28car Scraping**: Dedicated scraper for automotive listings (every 15 minutes)
-2. **Photo Extraction**: Advanced image extraction (up to 5 photos per car)
+2. **High-Resolution Photo Extraction**: Advanced multi-tier image extraction system:
+   - **Modal Gallery Interaction**: Simulates user clicks to trigger high-res image loading
+   - **Direct URL Upgrade**: Tests `_b.jpg` (big), `_m.jpg` (medium), `_s.jpg` (small) variants
+   - **Quality Prioritization**: Automatically selects highest available resolution
+   - **Up to 8 photos per car** with 8-10x better quality (30-70KB vs 6-7KB)
 3. **Spec Parsing**: Price, make, model, year, and technical specifications with improved multi-comma number support
-4. **Data Storage**: Stored in articles table with category='cars'
+4. **Data Storage**: Stored in articles table with category='cars' and enhanced image metadata
 5. **AI Enrichment**: Automated Perplexity API enhancement every 2 hours
 
 #### Car AI Enrichment Pipeline
@@ -156,6 +160,10 @@ pending → enriched → ready → displayed
   - Automatic fallback between Puppeteer and @sparticuz/chromium
   - Environment-specific browser configuration
   - Graceful degradation when browser dependencies unavailable
+- **Advanced Image Extraction**:
+  - Multi-layered approach: Modal gallery simulation + Direct URL testing
+  - Smart quality prioritization with automatic upgrades
+  - Fallback mechanisms ensure compatibility across all scenarios
 
 ### Security
 - **API Authentication**: Supabase Row Level Security
