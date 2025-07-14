@@ -3340,3 +3340,13 @@ Total: 771 cars, returning 10 for page 0
  ○ Compiling /_not-found ...
  GET /api/cars?page=0 404 in 10022ms
  GET /api/cars?page=0 404 in 10049ms
+Cars API: Fetching page 0 from both tables
+Found 1000 cars in articles_unified
+Found 235 cars in articles table
+Total: 1235 cars, returning 10 for page 0
+ GET /api/cars?limit=3 200 in 4033ms
+Cars API: Fetching page 0 from both tables
+Found 1000 cars in articles_unified
+Found 235 cars in articles table
+Total: 1235 cars, returning 10 for page 0
+ GET /api/cars?limit=1 200 in 3045ms

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ExternalLink, Zap, Fuel, Calendar, DollarSign, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,6 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel"
 import { cn } from "@/lib/utils"
-import { useEffect } from "react"
 
 interface CarDetailSheetProps {
   car: any
@@ -23,6 +22,12 @@ interface CarDetailSheetProps {
 export default function CarDetailSheet({ car }: CarDetailSheetProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [carouselApi, setCarouselApi] = useState<CarouselApi>()
+  const [mounted, setMounted] = useState(false)
+
+  // Handle hydration-safe mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   // Parse car specifications from content
   const parseCarSpecs = (content: string) => {
     const specs: Record<string, string> = {}
@@ -145,6 +150,22 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
       .replace(/HKD\$/, 'HK$')
       .replace(/減價.*$/, '')
       .trim()
+  }
+
+  // Hydration-safe date formatting
+  const formatPublishedDate = (dateString: string) => {
+    if (!mounted) return '' // Return empty string during SSR
+    try {
+      const date = new Date(dateString)
+      // Use consistent format that works across all locales
+      return date.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: '2-digit', 
+        year: 'numeric'
+      })
+    } catch (error) {
+      return 'Date unavailable'
+    }
   }
 
   const carSpecs = parseCarSpecs(car.content || '')
@@ -396,7 +417,7 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
               <div className="space-y-1">
                 <div className="text-sm font-medium">Published</div>
                 <div className="text-sm text-muted-foreground">
-                  {new Date(car.publishedAt).toLocaleDateString()}
+                  {formatPublishedDate(car.publishedAt)}
                 </div>
               </div>
             </div>

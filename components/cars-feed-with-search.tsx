@@ -43,11 +43,32 @@ interface CarsResponse {
   }
 }
 
+// Hydration-safe date formatting utility
+const formatPublishedDate = (dateString: string) => {
+  try {
+    const date = new Date(dateString)
+    // Use consistent format that works across all locales
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    })
+  } catch (error) {
+    return 'Date unavailable'
+  }
+}
+
 // Modern minimal car card with optimized DOM structure
 function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarListing) => void }) {
   const [imageIndex, setImageIndex] = useState(0)
   const [imageError, setImageError] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const images = car.images || (car.imageUrl ? [car.imageUrl] : [])
+
+  // Handle hydration-safe mounting
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   
   // Optimized price formatting
   const formatPrice = (price: string) => {

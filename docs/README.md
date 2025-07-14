@@ -94,11 +94,25 @@ The HKI News App is a Next.js 14 application that:
 - Database schema and optimization
 - API endpoints and functions
 - React hooks and components
+- Grid/List view toggle functionality
 - Performance characteristics
 - Scalability path (PostgreSQL → Typesense)
 - Security considerations
 
 **When to Use**: When working with car search functionality, implementing similar search features, or scaling search performance.
+
+### 7. [Share Functionality](./07-share-functionality.md)
+**Purpose**: Comprehensive guide to the universal sharing system supporting multiple content types.
+
+**Key Information**:
+- Universal ShareButton component architecture
+- Content-specific sharing (articles, cars, signals)
+- Progressive fallback strategy (native share → clipboard → URL copy)
+- Analytics integration and tracking
+- Bottom sheet integration patterns
+- Bug fixes and implementation improvements
+
+**When to Use**: When working with sharing functionality, implementing content sharing features, or fixing share-related issues.
 
 ## Quick Reference
 

@@ -174,6 +174,113 @@ export function CarDetailSheet({ car }: CarDetailSheetProps) {
 }
 ```
 
+#### Car Feed with Search (`components/cars-feed-with-search.tsx`)
+```typescript
+interface CarsFeedWithSearchProps {
+  // Grid/List View Toggle Feature (2025 Update)
+}
+
+export function CarsFeedWithSearch() {
+  const [isGridView, setIsGridView] = useState(true)
+  const [searchResults, setSearchResults] = useState<CarListing[]>([])
+  const [isSearchActive, setIsSearchActive] = useState(false)
+  
+  // Enhanced Features (2025 Update):
+  // - Grid/List view toggle with dynamic component rendering
+  // - Improved search state management (fixes "no results" display bug)
+  // - Fixed header spacing to prevent overlap with sticky navigation
+  // - CarListItem component for horizontal layout option
+  // - View toggle positioned next to refresh button in header
+  // - Responsive design for both grid and list layouts
+  
+  const handleSearchResults = useCallback((results: CarListing[], isSearching: boolean) => {
+    setSearchResults(results)
+    setIsSearchActive(isSearching) // Active when searching, regardless of results
+  }, [])
+  
+  // Dynamic rendering based on view mode
+  return (
+    <div className={isGridView 
+      ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+      : "space-y-4"
+    }>
+      {displayCars.map((car) => (
+        isGridView ? (
+          <CarCard key={car.id} car={car} onCarClick={handleCarClick} />
+        ) : (
+          <CarListItem key={car.id} car={car} onCarClick={handleCarClick} />
+        )
+      ))}
+    </div>
+  )
+}
+```
+
+#### Car List Item (`components/cars-feed-with-search.tsx`)
+```typescript
+function CarListItem({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarListing) => void }) {
+  // List View Features (2025 Update):
+  // - Horizontal layout with 1:1 aspect ratio thumbnail (96px-112px)
+  // - Compact information display with title, price, year, specs
+  // - Sale badges and image count indicators
+  // - Responsive scaling for mobile and desktop
+  // - Consistent hover effects and interaction patterns
+  // - Same click handling as grid view for modal integration
+  
+  return (
+    <article className="group bg-white dark:bg-neutral-900 rounded-lg border hover:shadow-md transition-all duration-300 cursor-pointer">
+      <div className="flex gap-4 p-4">
+        <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 overflow-hidden rounded-lg">
+          {/* 1:1 thumbnail with sale badges and image count */}
+        </div>
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          {/* Title, price, year, and specs in optimized layout */}
+        </div>
+      </div>
+    </article>
+  )
+}
+```
+
+#### Share Button Component (`components/share-button.tsx`)
+```typescript
+interface ShareButtonProps {
+  articleId: string
+  title?: string
+  url?: string
+  article?: Article
+  car?: any
+  isPerplexityArticle?: boolean
+  compact?: boolean
+}
+
+export function ShareButton({ articleId, car, isPerplexityArticle, compact }: ShareButtonProps) {
+  // Enhanced Multi-Content Support (2025 Update):
+  // - Car sharing with custom URLs and metadata
+  // - Perplexity article (signals) sharing support
+  // - Content-specific analytics tracking
+  // - Progressive fallback (native share → clipboard → URL copy)
+  // - Mobile-optimized with native sharing API
+  
+  // Content type detection and URL generation
+  const isCarListing = !!car
+  const shareUrl = isCarListing 
+    ? `${baseUrl}/cars` 
+    : isPerplexityArticle 
+      ? `${baseUrl}/perplexity`
+      : `${baseUrl}/article/${articleId}`
+  
+  // Content-specific analytics
+  if (isCarListing) {
+    analytics.trackEvent('car_share', { carId: articleId, method: 'native' })
+  } else if (isPerplexityArticle) {
+    analytics.trackEvent('signal_share', { signalId: articleId, method: 'native' })
+  } else {
+    analytics.trackArticleShare(articleId, "native")
+  }
+}
+```
+
 ### 3. Admin Components
 
 #### Admin Layout (`app/admin/layout.tsx`)

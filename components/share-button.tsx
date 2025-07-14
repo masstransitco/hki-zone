@@ -32,9 +32,9 @@ export default function ShareButton({ articleId, title, url, article, car, isPer
   const baseUrl = mounted && typeof window !== 'undefined' ? window.location.origin : 'https://hki.zone'
   
   const shareUrl = url || (isCarListing 
-    ? `${baseUrl}/cars` 
+    ? `${baseUrl}/cars/${articleId}` 
     : isPerplexityArticle 
-      ? `${baseUrl}/perplexity`
+      ? `${baseUrl}/perplexity/${articleId}`
       : `${baseUrl}/article/${articleId}`)
     
   const shareTitle = title || (isCarListing 

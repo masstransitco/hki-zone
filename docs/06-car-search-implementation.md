@@ -219,14 +219,93 @@ useEffect(() => {
 
 **Seamless Integration:**
 ```typescript
-const handleSearchResults = useCallback((results: CarListing[]) => {
+const handleSearchResults = useCallback((results: CarListing[], isSearching: boolean) => {
   setSearchResults(results)
-  setIsSearchActive(results.length > 0)
+  setIsSearchActive(isSearching) // Active when user is searching, regardless of results
 }, [])
 
 // Use search results if active, otherwise use regular feed
 const displayCars = isSearchActive ? searchResults : (data?.pages.flatMap(page => page.articles) ?? [])
 ```
+
+**Grid/List View Toggle:**
+```typescript
+const [isGridView, setIsGridView] = useState(true)
+
+// Dynamic layout based on view mode
+<div className={isGridView 
+  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+  : "space-y-4"
+}>
+  {displayCars.map((car) => (
+    isGridView ? (
+      <CarCard key={car.id} car={car} onCarClick={handleCarClick} />
+    ) : (
+      <CarListItem key={car.id} car={car} onCarClick={handleCarClick} />
+    )
+  ))}
+</div>
+
+// View toggle button
+<button
+  onClick={() => setIsGridView(!isGridView)}
+  aria-label={isGridView ? 'Switch to list view' : 'Switch to grid view'}
+>
+  {isGridView ? <List className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
+</button>
+```
+
+#### 4. **Car List View Component** - `components/cars-feed-with-search.tsx`
+
+**List View Features:**
+- **Horizontal layout**: 1:1 aspect ratio thumbnail on left, content on right
+- **Compact design**: 96px-112px thumbnail with optimized information density
+- **Responsive scaling**: Adjusts thumbnail size and layout for mobile/desktop
+- **Consistent interactions**: Same click handling and modal integration as grid view
+
+**CarListItem Component:**
+```typescript
+function CarListItem({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarListing) => void }) {
+  return (
+    <article className="group bg-white dark:bg-neutral-900 rounded-lg border hover:shadow-md transition-all duration-300 cursor-pointer">
+      <div className="flex gap-4 p-4">
+        {/* 1:1 Thumbnail */}
+        <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 overflow-hidden rounded-lg">
+          <img src={images[0]} alt={displayTitle} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          {saleStatus && <div className="absolute top-1 left-1 bg-red-500 text-white text-xs font-medium px-1.5 py-0.5 rounded">Sale</div>}
+          {images.length > 1 && <div className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">{images.length}</div>}
+        </div>
+        
+        {/* Content Layout */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 text-base leading-tight line-clamp-2">{displayTitle}</h3>
+              <div className="flex items-center gap-2 mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                <span>{year}</span>
+                <span>•</span>
+                <span>{new Date(car.publishedAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+            <div className="flex-shrink-0 text-right">
+              {displayPrice && <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">{displayPrice}</div>}
+            </div>
+          </div>
+          {specs && <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-1">
+            <span className="font-medium text-neutral-700 dark:text-neutral-300">規格:</span> {specs}
+          </div>}
+        </div>
+      </div>
+    </article>
+  )
+}
+```
+
+**View Toggle Integration:**
+- **Position**: Left of refresh button in header
+- **Icons**: `List` icon in grid mode, `Grid3X3` icon in list mode
+- **State**: `isGridView` boolean controls rendering mode
+- **Layout**: Dynamic CSS classes for responsive grid vs. vertical spacing
 
 ## Database Functions
 
@@ -406,6 +485,41 @@ interface SearchResponse {
   query: string;
   debug?: any;
 }
+```
+
+## Share Integration
+
+### Car Share Button Implementation
+
+**Enhanced ShareButton Component:**
+The share button supports car-specific sharing with proper content generation and analytics tracking.
+
+```typescript
+// Car sharing integration in car-bottom-sheet.tsx
+<ShareButton 
+  articleId={car.id} 
+  car={car}
+  compact={true}
+/>
+
+// ShareButton automatically detects car content and generates:
+const shareUrl = `${baseUrl}/cars`
+const shareTitle = `${car.title || 'Car Listing'} - HKI Cars`
+const shareDescription = `${car.title}${car.price ? ` - ${car.price}` : ''}${car.year ? ` (${car.year})` : ''}. View this car listing and more on HKI Cars.`
+```
+
+**Car Share Features:**
+- **Custom URLs**: Points to `/cars` page instead of specific article
+- **Rich metadata**: Includes car make, model, year, and price
+- **Analytics tracking**: Separate `car_share` events for car-specific insights
+- **Fallback support**: Graceful degradation to clipboard copy
+- **Mobile optimization**: Native sharing API when available
+
+**Share Content Example:**
+```
+Title: BMW X5 xDrive40i - HKI Cars
+Description: BMW X5 xDrive40i - HK$850,000 (2023). View this car listing and more on HKI Cars.
+URL: https://hki.zone/cars
 ```
 
 ## Deployment Steps
