@@ -114,6 +114,19 @@ The HKI News App is a Next.js 14 application that:
 
 **When to Use**: When working with sharing functionality, implementing content sharing features, or fixing share-related issues.
 
+### 8. [News Feed Masonry Implementation](./08-news-feed-masonry.md)
+**Purpose**: Complete guide to the responsive waterfall masonry layout for news articles.
+
+**Key Information**:
+- Three-tier masonry approach (CSS columns → CSS Grid → JavaScript fallback)
+- Responsive breakpoints and spacing configuration
+- Infinite scroll implementation and pagination fixes
+- Variable aspect ratio distribution system
+- Performance optimizations and troubleshooting
+- Recent session improvements and bug fixes
+
+**When to Use**: When working with the news feed layout, implementing masonry grids, or fixing infinite scroll issues.
+
 ## Quick Reference
 
 ### Key File Locations

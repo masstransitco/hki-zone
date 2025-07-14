@@ -140,7 +140,7 @@ export async function getBalancedArticles(page = 0, limit = 10, filters?: { sour
     
     const allArticles = []
     
-    // Get articles from each source proportionally
+    // Get articles from each source proportionally with proper pagination
     for (let i = 0; i < sources.length; i++) {
       const source = sources[i]
       const sourceLimit = articlesPerSource + (i < extraArticles ? 1 : 0)
@@ -167,13 +167,14 @@ export async function getBalancedArticles(page = 0, limit = 10, filters?: { sour
         }
       }
       
-      const { data, error } = await query.limit(sourceLimit * (page + 1))
+      // Use proper pagination with range instead of limit + slice
+      const startIndex = sourceLimit * page
+      const endIndex = startIndex + sourceLimit - 1
+      
+      const { data, error } = await query.range(startIndex, endIndex)
       
       if (!error && data) {
-        // Skip articles for previous pages and take only what we need for current page
-        const startIndex = sourceLimit * page
-        const sourceArticles = data.slice(startIndex, startIndex + sourceLimit)
-        allArticles.push(...sourceArticles)
+        allArticles.push(...data)
       }
     }
     
@@ -245,9 +246,9 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
   }
 }
 
-// Main export - use balanced query by default
+// Main export - use regular query for better pagination reliability
 export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean }) {
-  return getBalancedArticles(page, limit, filters)
+  return getArticlesRegular(page, limit, filters)
 }
 
 export async function searchArticles(query: string) {

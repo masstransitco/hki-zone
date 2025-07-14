@@ -197,9 +197,18 @@ export async function GET(request: NextRequest) {
     }))
 
     console.log("Returning real articles from database")
+    
+    // Better nextPage logic: check if we got the requested limit and try to peek ahead
+    let hasMore = false
+    if (transformedArticles.length === limit) {
+      // Quick check: try to get one more article to see if there are more pages
+      const nextPageArticles = await getArticles(page + 1, 1, filters)
+      hasMore = nextPageArticles.length > 0
+    }
+    
     return NextResponse.json({
       articles: transformedArticles,
-      nextPage: transformedArticles.length === limit ? page + 1 : null,
+      nextPage: hasMore ? page + 1 : null,
       usingMockData: false,
       debug: "Using real database data",
     })
