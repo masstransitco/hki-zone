@@ -1,37 +1,42 @@
 import { Suspense } from "react"
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
-import HeadlinesFeed from "@/components/headlines-feed"
+import NewsFeedMasonry from "@/components/news-feed-masonry"
+import DatabaseStatus from "@/components/database-status"
 import LoadingSkeleton from "@/components/loading-skeleton"
+import { ClientOnly } from "@/components/client-only"
 
 export const metadata = {
-  title: "Headlines | Panora.hk",
-  description: "Top 10 headlines by category from Hong Kong news sources",
+  title: "News | Panora.hk",
+  description: "Latest news articles from Hong Kong news sources",
 }
 
-export default function HeadlinesPage() {
+export default function NewsPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <ClientOnly fallback={
+        <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-minimal border-b border-border h-[57px]" />
+      }>
+        <Header />
+      </ClientOnly>
 
-      <main className="flex-1 pb-20">
-        <div className="py-6">
-          <div className="px-6 mb-6">
-            <h1 className="text-2xl font-bold text-stone-900 dark:text-stone-100 mb-2">
-              Today's Headlines
-            </h1>
-            <p className="text-stone-600 dark:text-stone-400">
-              Top stories by category from Hong Kong news sources
-            </p>
-          </div>
-          
-          <Suspense fallback={<LoadingSkeleton />}>
-            <HeadlinesFeed />
-          </Suspense>
+      <main className="flex-1 pb-20 pt-16 overscroll-contain">
+        <div className="px-6 pt-4 pb-2">
+          <ClientOnly>
+            <DatabaseStatus />
+          </ClientOnly>
         </div>
+
+        <ClientOnly fallback={<LoadingSkeleton />}>
+          <NewsFeedMasonry />
+        </ClientOnly>
       </main>
 
-      <FooterNav />
+      <ClientOnly fallback={
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe h-[76px]" />
+      }>
+        <FooterNav />
+      </ClientOnly>
     </div>
   )
 }

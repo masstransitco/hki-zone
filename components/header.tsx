@@ -1,19 +1,11 @@
 "use client"
 
-import Link from "next/link"
-import { Search } from "lucide-react"
 import { useState, useEffect } from "react"
 import ThemeToggle from "./theme-toggle"
 import LanguageSelector from "./language-selector"
 import Logo from "./logo"
-import { useLanguage } from "./language-provider"
 
-interface HeaderProps {
-  showSearch?: boolean
-}
-
-export default function Header({ showSearch = true }: HeaderProps) {
-  const { t } = useLanguage()
+export default function Header() {
   const [isVisible, setIsVisible] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
   const [mounted, setMounted] = useState(false)
@@ -66,15 +58,6 @@ export default function Header({ showSearch = true }: HeaderProps) {
         <Logo />
 
         <div className="flex items-center gap-1">
-          {showSearch && (
-            <Link
-              href="/search"
-              className="p-2 hover:bg-surface-hover rounded-lg transition-colors focus-ring"
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5 text-muted" />
-            </Link>
-          )}
           <LanguageSelector />
           <ThemeToggle />
         </div>

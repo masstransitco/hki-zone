@@ -35,9 +35,11 @@ function formatPerplexityTime(publishedAt: string): string {
 interface ArticleCardProps {
   article: Article
   onReadMore?: (articleId: string) => void
+  className?: string
+  aspectRatio?: string
 }
 
-export default function ArticleCard({ article, onReadMore }: ArticleCardProps) {
+export default function ArticleCard({ article, onReadMore, className, aspectRatio }: ArticleCardProps) {
   const { t } = useLanguage()
   const timeAgo = useHydrationSafeDate(article.publishedAt)
   const [perplexityTime, setPerplexityTime] = useState("")
@@ -70,18 +72,18 @@ export default function ArticleCard({ article, onReadMore }: ArticleCardProps) {
 
   return (
     <Card 
-      className="group hover:shadow-lg hover:shadow-stone-200/30 dark:hover:shadow-neutral-900/40 transition-all duration-200 border-stone-200/60 dark:border-neutral-700/60 bg-stone-50/95 dark:bg-neutral-900/95 backdrop-blur-sm h-full cursor-pointer"
+      className={`group hover:shadow-lg hover:shadow-stone-200/30 dark:hover:shadow-neutral-900/40 transition-all duration-200 border-stone-200/60 dark:border-neutral-700/60 bg-stone-50/95 dark:bg-neutral-900/95 backdrop-blur-sm cursor-pointer ${className || ''}`}
       onClick={() => {
         handleArticleClick()
         onReadMore?.(article.id)
       }}
     >
-      <CardContent className="p-6 h-full">
+      <CardContent className="card-content">
         {/* Consistent vertical layout for better readability */}
-        <div className="flex flex-col gap-4 h-full">
-          {/* Article image */}
+        <div className="flex flex-col gap-4">
+          {/* Article image with dynamic aspect ratio */}
           {article.imageUrl && (
-            <div className="relative w-full aspect-video overflow-hidden rounded-lg bg-surface">
+            <div className={`relative w-full overflow-hidden rounded-lg bg-surface ${aspectRatio || 'aspect-video'}`}>
               <img
                 src={article.imageUrl || "/placeholder.svg"}
                 alt={article.title}
@@ -92,7 +94,7 @@ export default function ArticleCard({ article, onReadMore }: ArticleCardProps) {
           )}
 
           {/* Content area */}
-          <div className="flex-1 min-w-0 space-y-3">
+          <div className="min-w-0 space-y-3">
             {/* Header with source and time */}
             <div className="flex items-center justify-between text-xs text-stone-500 dark:text-neutral-400">
               <div className="flex items-center gap-2">

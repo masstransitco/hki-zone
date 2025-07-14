@@ -58,14 +58,14 @@ const shareUrl = isCarListing
 ```typescript
 const shareTitle = `${car.title || 'Car Listing'} - HKI Cars`
 const shareDescription = `${car.title}${car.price ? ` - ${car.price}` : ''}${car.year ? ` (${car.year})` : ''}. View this car listing and more on HKI Cars.`
-const shareUrl = `${baseUrl}/cars`
+const shareUrl = `${baseUrl}/cars/${articleId}`
 ```
 
 **Share Content Example:**
 ```
 Title: BMW X5 xDrive40i - HKI Cars
 Description: BMW X5 xDrive40i - HK$850,000 (2023). View this car listing and more on HKI Cars.
-URL: https://hki.zone/cars
+URL: https://hki.zone/cars/[car-id]
 ```
 
 **Analytics Tracking:**
@@ -108,14 +108,14 @@ const endpoint = isPerplexityArticle
 ```typescript
 const shareTitle = `${articleData?.title || 'Signal'} - HKI Signals`
 const shareDescription = `${articleData?.summary || articleData?.title || 'Signal article'}. Read this signal and more AI-generated insights on HKI Signals.`
-const shareUrl = `${baseUrl}/perplexity`
+const shareUrl = `${baseUrl}/perplexity/${articleId}`
 ```
 
 **Share Content Example:**
 ```
 Title: Hong Kong Government Unveils 2024 Digital Governance Initiative - HKI Signals
 Description: A comprehensive digital governance initiative for 2024 focusing on streamlining public services and enhancing citizen engagement through technology. Read this signal and more AI-generated insights on HKI Signals.
-URL: https://hki.zone/perplexity
+URL: https://hki.zone/perplexity/[article-id]
 ```
 
 **Analytics Tracking:**
@@ -363,6 +363,115 @@ analytics.trackArticleShare(articleId, "native" | "copy")
 - **Content Type Distribution**: Monitor which content types are shared most frequently
 - **Platform Analytics**: Track sharing patterns across different devices and platforms
 
+## Direct Linking Implementation (2025)
+
+### Individual Detail Pages
+To enable proper sharing with direct links, we created individual detail page routes:
+
+#### 1. **Car Detail Pages**
+**Route**: `/app/cars/[id]/page.tsx`
+**URL**: `https://hki.zone/cars/[car-id]`
+
+**Features**:
+- Full-page car detail view for shared links
+- SEO metadata generation with car-specific information
+- Dual-table data fetching (articles_unified + articles)
+- Hydration-safe date formatting to prevent SSR/client mismatches
+- Share button with car data pre-loaded
+
+```typescript
+// Car detail page implementation
+export async function generateMetadata({ params }: CarPageProps): Promise<Metadata> {
+  const car = await getCarById(params.id)
+  
+  return {
+    title: `${car.title} - HKI Cars`,
+    description: `${car.title}${car.price ? ` - ${car.price}` : ''}. View detailed specs and photos.`,
+    openGraph: {
+      title: `${car.title} - HKI Cars`,
+      description: `${car.title} - ${car.price}. View this car listing on HKI Cars.`,
+      images: [car.images?.[0] || '/hki-logo-black.png'],
+      url: `https://hki.zone/cars/${params.id}`
+    }
+  }
+}
+```
+
+#### 2. **Perplexity Detail Pages** 
+**Route**: `/app/perplexity/[id]/page.tsx`
+**URL**: `https://hki.zone/perplexity/[article-id]`
+
+**Features**:
+- Full-page AI signal detail view for shared links
+- SEO metadata with signal-specific content
+- Enhanced ArticleDetailSheet integration
+- Share button with perplexity article data
+
+```typescript
+// Perplexity detail page implementation
+export async function generateMetadata({ params }: PerplexityPageProps): Promise<Metadata> {
+  const article = await getPerplexityById(params.id)
+  
+  return {
+    title: `${article.title} - HKI Signals`,
+    description: article.summary || 'AI-generated insights and analysis.',
+    openGraph: {
+      title: `${article.title} - HKI Signals`,
+      description: article.summary || 'Read AI-generated insights on HKI Signals.',
+      url: `https://hki.zone/perplexity/${params.id}`
+    }
+  }
+}
+```
+
+### Navigation Patterns
+The app maintains dual navigation patterns:
+
+**In-App Navigation** (Bottom Sheets):
+- Car cards → `CarBottomSheet` 
+- Signal cards → `ArticleBottomSheet` with `isPerplexityArticle={true}`
+- Preserves smooth mobile UX
+
+**External/Shared Links** (Full Pages):
+- Shared car links → `/cars/[id]` full page
+- Shared signal links → `/perplexity/[id]` full page  
+- Optimized for SEO and social sharing
+
+### ShareButton URL Generation (Updated)
+```typescript
+const shareUrl = url || (isCarListing 
+  ? `${baseUrl}/cars/${articleId}` 
+  : isPerplexityArticle 
+    ? `${baseUrl}/perplexity/${articleId}`
+    : `${baseUrl}/article/${articleId}`)
+```
+
+**Before**: 
+- Cars: `https://hki.zone/cars` (generic page)
+- Signals: `https://hki.zone/perplexity` (generic page)
+
+**After**:
+- Cars: `https://hki.zone/cars/945af707-616e-4b6b-8332-ca08f6b9a43f` (specific car)
+- Signals: `https://hki.zone/perplexity/123e4567-e89b-12d3-a456-426614174000` (specific signal)
+
+### Hydration-Safe Date Handling
+Fixed hydration errors in car detail components:
+
+```typescript
+// Problem: Server renders "7/14/2025", client renders "14/07/2025"
+{new Date(car.publishedAt).toLocaleDateString()}
+
+// Solution: Consistent locale and mounted state
+const formatPublishedDate = (dateString: string) => {
+  if (!mounted) return ''; // Prevent SSR/client mismatch
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit', 
+    year: 'numeric'
+  });
+};
+```
+
 ## Implementation Files
 
 ### Core Components
@@ -370,11 +479,16 @@ analytics.trackArticleShare(articleId, "native" | "copy")
 - `components/article-bottom-sheet.tsx` - Enhanced with content type awareness
 - `components/car-bottom-sheet.tsx` - Car-specific bottom sheet integration
 - `components/perplexity-public-list.tsx` - Signal feed with share integration
+- `components/car-detail-sheet.tsx` - Hydration-safe date formatting
+
+### Page Routes (New)
+- `/app/cars/[id]/page.tsx` - Individual car detail pages for sharing
+- `/app/perplexity/[id]/page.tsx` - Individual signal detail pages for sharing
 
 ### API Endpoints
 - `/api/articles/[id]` - Regular article data for sharing
 - `/api/perplexity/[id]` - Signal article data for sharing
-- `/api/cars` - Car listing data (embedded in components)
+- `/api/cars/[id]` - Individual car data for sharing (new)
 
 ### Analytics
 - `lib/analytics.ts` - Enhanced with content-specific tracking events

@@ -66,16 +66,6 @@ export default function TopicsFeed() {
 
   return (
     <div className="px-6 pb-4">
-      {/* Header for AI-enhanced articles */}
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-stone-900 dark:text-neutral-50 mb-2">
-          {t("topics.aiEnhancedFeed")}
-        </h2>
-        <p className="text-sm text-stone-600 dark:text-neutral-400">
-          {t("topics.aiEnhancedDescription")}
-        </p>
-      </div>
-
       {/* Responsive grid layout: mobile 1col, tablet 2col, desktop 3col, large 4col */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
         {articles.map((article) => (

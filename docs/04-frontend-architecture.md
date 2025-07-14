@@ -216,7 +216,7 @@ export function CarsFeedWithSearch() {
 }
 ```
 
-#### Car List Item (`components/cars-feed-with-search.tsx`)
+#### Car List Item (`components/cars-feed-with-search.tsx`) (Enhanced 2025)
 ```typescript
 function CarListItem({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarListing) => void }) {
   // List View Features (2025 Update):
@@ -242,7 +242,7 @@ function CarListItem({ car, onCarClick }: { car: CarListing, onCarClick: (car: C
 }
 ```
 
-#### Share Button Component (`components/share-button.tsx`)
+#### Share Button Component (`components/share-button.tsx`) (Enhanced 2025)
 ```typescript
 interface ShareButtonProps {
   articleId: string
@@ -256,18 +256,19 @@ interface ShareButtonProps {
 
 export function ShareButton({ articleId, car, isPerplexityArticle, compact }: ShareButtonProps) {
   // Enhanced Multi-Content Support (2025 Update):
-  // - Car sharing with custom URLs and metadata
-  // - Perplexity article (signals) sharing support
+  // - Car sharing with DIRECT LINKS to individual car pages
+  // - Perplexity article (signals) sharing with DIRECT LINKS to signal pages
   // - Content-specific analytics tracking
   // - Progressive fallback (native share → clipboard → URL copy)
   // - Mobile-optimized with native sharing API
+  // - Fixed hydration errors with proper date formatting
   
-  // Content type detection and URL generation
+  // Content type detection and DIRECT URL generation (UPDATED)
   const isCarListing = !!car
   const shareUrl = isCarListing 
-    ? `${baseUrl}/cars` 
+    ? `${baseUrl}/cars/${articleId}` // CHANGED: Direct car detail page
     : isPerplexityArticle 
-      ? `${baseUrl}/perplexity`
+      ? `${baseUrl}/perplexity/${articleId}` // CHANGED: Direct signal detail page
       : `${baseUrl}/article/${articleId}`
   
   // Content-specific analytics
@@ -626,9 +627,12 @@ function useRealTimeArticles() {
 
 ## Custom Hooks
 
-### 1. Hydration Safety Hook
+### 1. Hydration Safety Hook (Enhanced 2025)
+
+**Problem Solved**: Hydration errors occurred when server-side rendering used different date locales than the client (e.g., "7/14/2025" vs "14/07/2025").
 
 ```typescript
+// OLD approach (caused hydration errors)
 function useHydrationSafeDate() {
   const [mounted, setMounted] = useState(false)
   
@@ -638,11 +642,69 @@ function useHydrationSafeDate() {
   
   const formatDate = useCallback((date: string) => {
     if (!mounted) return ''
-    return format(new Date(date), 'MMM d, yyyy')
+    return format(new Date(date), 'MMM d, yyyy') // Inconsistent across locales
   }, [mounted])
   
   return { formatDate, mounted }
 }
+
+// NEW approach (hydration-safe with consistent locale)
+function useHydrationSafeDate() {
+  const [mounted, setMounted] = useState(false)
+  
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+  
+  const formatDate = useCallback((date: string) => {
+    if (!mounted) return '' // Prevent SSR/client mismatch
+    return new Date(date).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    }) // Consistent DD/MM/YYYY format
+  }, [mounted])
+  
+  return { formatDate, mounted }
+}
+```
+
+**Applied to Car Components**:
+- `CarDetailSheet` - Fixed published date display
+- `CarCard` and `CarListItem` - Fixed card date displays  
+- All car-related date formatting
+
+**Error Before Fix**:
+```
+Unhandled Runtime Error
+Error: Text content does not match server-rendered HTML.
+Text content did not match. Server: "7/14/2025" Client: "14/07/2025"
+```
+
+**Fixed Implementation**:
+```typescript
+// In CarDetailSheet and other car components
+const [mounted, setMounted] = useState(false)
+
+useEffect(() => {
+  setMounted(true)
+}, [])
+
+const formatPublishedDate = (dateString: string) => {
+  if (!mounted) return '' // Return empty during SSR
+  try {
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric'
+    })
+  } catch (error) {
+    return 'Date unavailable'
+  }
+}
+
+// Usage in JSX
+<div>{formatPublishedDate(car.publishedAt)}</div>
 ```
 
 ### 2. Debounced Search Hook

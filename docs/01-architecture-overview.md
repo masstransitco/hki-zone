@@ -108,6 +108,8 @@ pending → enriched → ready → displayed
    - **Production**: Uses @sparticuz/chromium for Vercel serverless environment
 3. **Initial Processing**: Basic metadata extraction and categorization
 4. **Database Storage**: Raw content stored with appropriate category (news/cars)
+   - **Primary**: articles_unified table (2,272 cars - 90%+ of content)
+   - **Legacy**: articles table (235 cars - older content)
 
 #### Car Listings Pipeline
 1. **28car Scraping**: Dedicated scraper for automotive listings (every 15 minutes)
@@ -139,9 +141,14 @@ pending → enriched → ready → displayed
 
 ### Content Delivery
 1. **API Endpoints**: Serve content through REST APIs
+   - **Dual-table search**: Enhanced car search covers both articles_unified and articles tables
+   - **Individual detail pages**: Direct routes for cars (`/cars/[id]`) and signals (`/perplexity/[id]`)
 2. **Caching**: Client-side caching with React Query
 3. **Pagination**: Infinite scroll for large datasets
 4. **Real-time Updates**: Supabase subscriptions for live content
+5. **Share Functionality**: Direct linking with proper SEO metadata
+   - **In-app navigation**: Bottom sheets for smooth UX
+   - **External sharing**: Full pages for SEO and social media
 
 ## Performance Considerations
 

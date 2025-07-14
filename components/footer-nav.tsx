@@ -3,14 +3,17 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Hash, Search, User, Newspaper, Sparkles, Car } from "lucide-react"
+import RssFeedTwoToneIcon from '@mui/icons-material/RssFeedTwoTone'
+import SellTwoToneIcon from '@mui/icons-material/SellTwoTone'
+import OnlinePredictionTwoToneIcon from '@mui/icons-material/OnlinePredictionTwoTone'
+import NewspaperTwoToneIcon from '@mui/icons-material/NewspaperTwoTone'
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/", icon: Home, label: "Home", labelKey: "nav.home" },
-  // { href: "/headlines", icon: Newspaper, label: "Headlines", labelKey: "nav.headlines" },
-  { href: "/cars", icon: Car, label: "Cars", labelKey: "nav.cars" },
-  { href: "/perplexity", icon: Sparkles, label: "AI News", labelKey: "nav.perplexity" },
-  { href: "/topics", icon: Hash, label: "Topics", labelKey: "nav.topics" },
+  { href: "/", icon: NewspaperTwoToneIcon, label: "Topics", labelKey: "nav.topics" },
+  { href: "/signals", icon: OnlinePredictionTwoToneIcon, label: "Signals", labelKey: "nav.signals" },
+  { href: "/headlines", icon: RssFeedTwoToneIcon, label: "News", labelKey: "nav.news" },
+  { href: "/cars", icon: SellTwoToneIcon, label: "Cars", labelKey: "nav.cars" },
   // { href: "/search", icon: Search, label: "Search", labelKey: "nav.search" },
   // { href: "/profile", icon: User, label: "Profile", labelKey: "nav.profile" },
 ]

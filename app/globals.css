@@ -280,3 +280,196 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Streamlined Waterfall Masonry Layout */
+.news-feed {
+  /* Default: CSS columns for waterfall effect */
+  column-count: 2;
+  column-gap: 12px;
+  padding: 0 16px;
+}
+
+/* CSS Grid masonry for browsers that support it */
+@supports (grid-template-rows: masonry) {
+  .news-feed {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: masonry;
+    grid-gap: 12px;
+    column-count: unset; /* Disable columns when using grid */
+  }
+}
+
+/* Responsive breakpoints - maintaining 2-column minimum */
+@media (min-width: 640px) {
+  .news-feed {
+    column-count: 2;
+    column-gap: 16px;
+    padding: 0 20px;
+  }
+  
+  @supports (grid-template-rows: masonry) {
+    .news-feed {
+      grid-template-columns: repeat(2, 1fr);
+      grid-gap: 16px;
+    }
+  }
+}
+
+@media (min-width: 768px) {
+  .news-feed {
+    column-count: 3;
+    column-gap: 20px;
+    padding: 0 24px;
+  }
+  
+  @supports (grid-template-rows: masonry) {
+    .news-feed {
+      grid-template-columns: repeat(3, 1fr);
+      grid-gap: 20px;
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  .news-feed {
+    column-count: 4;
+    column-gap: 24px;
+  }
+  
+  @supports (grid-template-rows: masonry) {
+    .news-feed {
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 24px;
+    }
+  }
+}
+
+@media (min-width: 1280px) {
+  .news-feed {
+    column-count: 5;
+  }
+  
+  @supports (grid-template-rows: masonry) {
+    .news-feed {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+}
+
+/* Article card styling for waterfall masonry */
+.news-card {
+  break-inside: avoid; /* Prevent cards from breaking across columns */
+  page-break-inside: avoid;
+  display: inline-block; /* Important for column layout */
+  width: 100%;
+  margin-bottom: 12px; /* Space between cards vertically */
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Remove margin from last card in each column */
+.news-card:last-child {
+  margin-bottom: 0;
+}
+
+/* Adjust margin for responsive gaps */
+@media (min-width: 640px) {
+  .news-card {
+    margin-bottom: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .news-card {
+    margin-bottom: 20px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .news-card {
+    margin-bottom: 24px;
+  }
+}
+
+/* Ensure consistent card content spacing */
+.news-card .card-content {
+  padding: 16px !important; /* Consistent internal padding */
+}
+
+/* Responsive padding for larger screens */
+@media (min-width: 768px) {
+  .news-card .card-content {
+    padding: 20px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .news-card .card-content {
+    padding: 24px !important;
+  }
+}
+
+.news-card img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block; /* Ensure proper layout */
+}
+
+/* Aspect ratio variations for masonry diversity */
+.aspect-ratio-16-9 {
+  aspect-ratio: 16/9; /* Original landscape */
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.aspect-ratio-1-1 {
+  aspect-ratio: 1/1; /* Square */
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.aspect-ratio-4-5 {
+  aspect-ratio: 4/5; /* Portrait (0.8:1) */
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Apply aspect ratios to images within cards */
+.news-card .aspect-ratio-16-9 img,
+.news-card .aspect-ratio-1-1 img,
+.news-card .aspect-ratio-4-5 img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Ensure all cards and their content respect container width */
+.news-card * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure masonry container fills full width */
+.news-feed {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* JavaScript masonry fallback (only if CSS columns fail) */
+.news-feed.js-masonry {
+  column-count: unset; /* Disable CSS columns */
+  display: block;
+  position: relative;
+}
+
+.news-feed.js-masonry .news-card {
+  position: absolute;
+  margin-bottom: 0; /* JS will handle spacing */
+}

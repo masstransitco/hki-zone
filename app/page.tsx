@@ -2,7 +2,7 @@
 
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
-import NewsFeed from "@/components/news-feed"
+import TopicsFeed from "@/components/topics-feed"
 import DatabaseStatus from "@/components/database-status"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import { ClientOnly } from "@/components/client-only"
@@ -29,7 +29,7 @@ export default function HomePage() {
         </div>
 
         <ClientOnly fallback={<LoadingSkeleton />}>
-          <NewsFeed />
+          <TopicsFeed />
         </ClientOnly>
       </main>
 

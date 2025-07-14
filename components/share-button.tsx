@@ -34,7 +34,7 @@ export default function ShareButton({ articleId, title, url, article, car, isPer
   const shareUrl = url || (isCarListing 
     ? `${baseUrl}/cars/${articleId}` 
     : isPerplexityArticle 
-      ? `${baseUrl}/perplexity/${articleId}`
+      ? `${baseUrl}/signals/${articleId}`
       : `${baseUrl}/article/${articleId}`)
     
   const shareTitle = title || (isCarListing 
