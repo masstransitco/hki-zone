@@ -51,27 +51,26 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 
   // 4. Map selected IDs back to full article objects
   console.log(`DEBUG: Perplexity returned ${selectedIds.length} selections:`, selectedIds.map(s => ({ id: s.id, score: s.score })));
-  console.log(`DEBUG: Available candidate IDs:`, candidateArticles.slice(0, 5).map(a => a.id));
+  console.log(`DEBUG: Available candidate count: ${candidateArticles.length} articles`);
   
-  // Smart mapping: handle both UUID and index-based selections
+  // Map sequential numbers (1, 2, 3...) back to candidate articles
   const selectedArticles = selectedIds
     .map(selection => {
-      // First try direct UUID match
-      let article = candidateArticles.find(a => a.id === selection.id);
-      
-      // If no UUID match, try index-based matching (Perplexity often returns "1", "2", etc.)
-      if (!article && /^\d+$/.test(selection.id)) {
-        const index = parseInt(selection.id) - 1; // Convert "1" to index 0, "2" to index 1, etc.
-        if (index >= 0 && index < candidateArticles.length) {
-          article = candidateArticles[index];
-          console.log(`DEBUG: Mapped index ${selection.id} to article ${article.id} (${article.title})`);
-        }
-      }
-      
-      if (!article) {
-        console.log(`DEBUG: Could not find article for selection ID ${selection.id}`);
+      // Convert sequential ID to array index (1 -> 0, 2 -> 1, etc.)
+      if (!/^\d+$/.test(selection.id)) {
+        console.log(`DEBUG: Invalid selection ID format: ${selection.id} (expected number)`);
         return null;
       }
+      
+      const index = parseInt(selection.id) - 1; // Convert "1" to index 0, "2" to index 1, etc.
+      
+      if (index < 0 || index >= candidateArticles.length) {
+        console.log(`DEBUG: Selection ID ${selection.id} out of range (1-${candidateArticles.length})`);
+        return null;
+      }
+      
+      const article = candidateArticles[index];
+      console.log(`DEBUG: Mapped selection ${selection.id} to article ${article.id} (${article.title.substring(0, 50)}...)`);
       
       return {
         ...article,
@@ -84,9 +83,9 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   console.log(`Perplexity selected ${selectedArticles.length} articles for enhancement`);
   
   if (selectedArticles.length === 0 && selectedIds.length > 0) {
-    console.error('ERROR: Perplexity selections did not match any candidate article IDs');
+    console.error('ERROR: Perplexity selections did not map to any candidate articles');
     console.error('Selected IDs:', selectedIds.map(s => s.id));
-    console.error('Available IDs:', candidateArticles.map(a => a.id));
+    console.error('Valid range: 1 to', candidateArticles.length);
     
     // Fallback: if no articles selected but we have candidates, pick the most recent ones
     console.log(`FALLBACK: Selecting ${count} most recent articles as fallback`);
@@ -94,7 +93,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
       .slice(0, count)
       .map(article => ({
         ...article,
-        selection_reason: 'Fallback selection - most recent article due to Perplexity ID mismatch',
+        selection_reason: 'Fallback selection - most recent article due to Perplexity selection mapping failure',
         priority_score: 75 // Default score for fallback
       }));
     
@@ -159,8 +158,9 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
 
 function createArticleSelectionPrompt(candidates: CandidateArticle[], count: number): string {
   // Create a concise summary of each article for Perplexity to evaluate
-  const articleSummaries = candidates.map(article => ({
-    id: article.id,
+  // Use sequential numbers (1, 2, 3...) instead of UUIDs to avoid corruption
+  const articleSummaries = candidates.map((article, index) => ({
+    sequentialId: index + 1, // 1-based indexing for Perplexity
     title: article.title,
     source: article.source,
     category: article.category,
@@ -183,7 +183,7 @@ SELECTION CRITERIA (in order of importance):
 
 AVAILABLE ARTICLES TO CHOOSE FROM:
 ${articleSummaries.map((article) => `
-ARTICLE_ID: ${article.id}
+ARTICLE_NUMBER: ${article.sequentialId}
 Title: ${article.title}
 Source: ${article.source} | Category: ${article.category}
 Content: ${article.content_length} chars | Has Summary: ${article.has_summary} | Has Image: ${article.has_image}
@@ -199,23 +199,23 @@ SELECTION REQUIREMENTS:
 - Balance categories when possible
 - Consider both English and Chinese language articles
 
-CRITICAL INSTRUCTION: You must copy the exact ARTICLE_ID from above. Do NOT use numbers or indexes.
-
-The ARTICLE_ID field contains long UUID strings like "f4c412f7-337a-42fc-b222-934770921ee7" - copy these EXACTLY.
+CRITICAL INSTRUCTION: Use the ARTICLE_NUMBER (simple numbers like 1, 2, 3) in your response.
 
 Return ONLY a JSON array with exactly ${count} selections in this format:
 [
   {
-    "id": "COPY_THE_EXACT_ARTICLE_ID_UUID_FROM_ABOVE",
+    "id": "1",
     "reason": "Brief explanation why this article was selected",
     "score": 85
+  },
+  {
+    "id": "3", 
+    "reason": "Brief explanation why this article was selected",
+    "score": 82
   }
 ]
 
-WRONG: "id": "1" or "id": "2" 
-CORRECT: "id": "f4c412f7-337a-42fc-b222-934770921ee7"
-
-You MUST copy and paste the full UUID string from the ARTICLE_ID field above.
+Use only the ARTICLE_NUMBER values (1, 2, 3, etc.) from the list above.
 
 Select the ${count} best articles that would create the most valuable AI-enhanced content for Hong Kong readers across English, Traditional Chinese, and Simplified Chinese.`;
 }

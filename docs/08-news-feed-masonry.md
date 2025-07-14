@@ -127,7 +127,25 @@ useEffect(() => {
 
 ## Recent Improvements (Session Updates)
 
-### 1. Fixed Masonry Layout Issues
+### 1. Excluded AI Enhanced Articles
+
+**Purpose**: Remove AI enhanced articles from the news feed masonry to show only original content.
+
+**Implementation**:
+- Modified `fetchArticles()` function to include `enriched=false` parameter
+- Updated API endpoint to properly handle `isAiEnhanced` filter
+- Fixed parameter mapping from `hasEnrichment` to `isAiEnhanced`
+
+**Files Modified**:
+- `/components/news-feed-masonry.tsx`: Line 14
+- `/app/api/articles/route.ts`: Lines 164-165
+
+**Benefits**:
+- Clean separation between original and AI-enhanced content
+- Users see only source articles in the main news feed
+- AI-enhanced articles available separately in other sections
+
+### 2. Fixed Masonry Layout Issues
 
 **Problem**: Cards were rendering in rows instead of columns, causing poor space utilization.
 
