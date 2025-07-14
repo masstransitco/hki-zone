@@ -3350,3 +3350,4 @@ Found 1000 cars in articles_unified
 Found 235 cars in articles table
 Total: 1235 cars, returning 10 for page 0
  GET /api/cars?limit=1 200 in 3045ms
+ GET /api/cars 404 in 120050ms
