@@ -70,6 +70,7 @@ export default function CarBottomSheet({
           <div className="absolute right-6 top-4">
             <ShareButton 
               articleId={car.id} 
+              car={car}
               compact={true}
             />
           </div>

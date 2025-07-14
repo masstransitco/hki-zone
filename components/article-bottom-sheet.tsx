@@ -19,12 +19,14 @@ interface ArticleBottomSheetProps {
   articleId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  isPerplexityArticle?: boolean
 }
 
 export default function ArticleBottomSheet({ 
   articleId, 
   open, 
-  onOpenChange 
+  onOpenChange,
+  isPerplexityArticle = false
 }: ArticleBottomSheetProps) {
   // Freeze body scrolling while drawer is open to prevent bounce
   React.useEffect(() => {
@@ -75,6 +77,7 @@ export default function ArticleBottomSheet({
             <div className="absolute right-6 top-4">
               <ShareButton 
                 articleId={articleId} 
+                isPerplexityArticle={isPerplexityArticle}
                 compact={true}
               />
             </div>

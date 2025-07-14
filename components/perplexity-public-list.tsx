@@ -275,6 +275,7 @@ export default function PerplexityPublicList({
         articleId={selectedArticleId}
         open={bottomSheetOpen}
         onOpenChange={setBottomSheetOpen}
+        isPerplexityArticle={true}
       />
     </div>
   )

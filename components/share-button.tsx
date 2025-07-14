@@ -12,10 +12,12 @@ interface ShareButtonProps {
   title?: string
   url?: string
   article?: Article
+  car?: any
+  isPerplexityArticle?: boolean
   compact?: boolean
 }
 
-export default function ShareButton({ articleId, title, url, article, compact = false }: ShareButtonProps) {
+export default function ShareButton({ articleId, title, url, article, car, isPerplexityArticle = false, compact = false }: ShareButtonProps) {
   const { t } = useLanguage()
   const [copied, setCopied] = useState(false)
   const [articleData, setArticleData] = useState<Article | null>(article || null)
@@ -25,16 +27,35 @@ export default function ShareButton({ articleId, title, url, article, compact = 
     setMounted(true)
   }, [])
 
-  const shareUrl = url || `${mounted && typeof window !== 'undefined' ? window.location.origin : 'https://hki.zone'}/article/${articleId}`
-  const shareTitle = title || articleData?.title || "HKI 香港資訊 Article"
-  const shareDescription = articleData?.summary || articleData?.content?.substring(0, 200) || "Read the latest Hong Kong news"
+  // Generate appropriate URL and content based on content type
+  const isCarListing = !!car
+  const baseUrl = mounted && typeof window !== 'undefined' ? window.location.origin : 'https://hki.zone'
+  
+  const shareUrl = url || (isCarListing 
+    ? `${baseUrl}/cars` 
+    : isPerplexityArticle 
+      ? `${baseUrl}/perplexity`
+      : `${baseUrl}/article/${articleId}`)
+    
+  const shareTitle = title || (isCarListing 
+    ? `${car.title || 'Car Listing'} - HKI Cars` 
+    : isPerplexityArticle
+      ? `${articleData?.title || 'Signal'} - HKI Signals`
+      : articleData?.title || "HKI 香港資訊 Article")
+    
+  const shareDescription = isCarListing 
+    ? `${car.title || 'Car Listing'}${car.price ? ` - ${car.price}` : ''}${car.year ? ` (${car.year})` : ''}. View this car listing and more on HKI Cars.`
+    : isPerplexityArticle
+      ? `${articleData?.summary || articleData?.title || 'Signal article'}. Read this signal and more AI-generated insights on HKI Signals.`
+      : (articleData?.summary || articleData?.content?.substring(0, 200) || "Read the latest Hong Kong news")
 
-  // Fetch article data if not provided
+  // Fetch article data if not provided (and not a car listing)
   useEffect(() => {
-    if (!articleData && !article) {
+    if (!articleData && !article && !isCarListing) {
       const fetchArticleData = async () => {
         try {
-          const response = await fetch(`/api/articles/${articleId}`)
+          const endpoint = isPerplexityArticle ? `/api/perplexity/${articleId}` : `/api/articles/${articleId}`
+          const response = await fetch(endpoint)
           if (response.ok) {
             const data = await response.json()
             setArticleData(data)
@@ -45,7 +66,7 @@ export default function ShareButton({ articleId, title, url, article, compact = 
       }
       fetchArticleData()
     }
-  }, [articleId, article, articleData])
+  }, [articleId, article, articleData, isCarListing, isPerplexityArticle])
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -57,7 +78,13 @@ export default function ShareButton({ articleId, title, url, article, compact = 
         }
         
         await navigator.share(shareData)
-        analytics.trackArticleShare(articleId, "native")
+        if (isCarListing) {
+          analytics.trackEvent('car_share', { carId: articleId, method: 'native' })
+        } else if (isPerplexityArticle) {
+          analytics.trackEvent('signal_share', { signalId: articleId, method: 'native' })
+        } else {
+          analytics.trackArticleShare(articleId, "native")
+        }
       } catch (error) {
         // User cancelled sharing or sharing failed
         console.log('Share cancelled or failed:', error)
@@ -68,14 +95,26 @@ export default function ShareButton({ articleId, title, url, article, compact = 
         const shareText = `${shareTitle}\n\n${shareDescription}\n\n${shareUrl}`
         await navigator.clipboard.writeText(shareText)
         setCopied(true)
-        analytics.trackArticleShare(articleId, "copy")
+        if (isCarListing) {
+          analytics.trackEvent('car_share', { carId: articleId, method: 'copy' })
+        } else if (isPerplexityArticle) {
+          analytics.trackEvent('signal_share', { signalId: articleId, method: 'copy' })
+        } else {
+          analytics.trackArticleShare(articleId, "copy")
+        }
         setTimeout(() => setCopied(false), 2000)
       } catch (error) {
         // Fallback to simple URL copy
         try {
           await navigator.clipboard.writeText(shareUrl)
           setCopied(true)
-          analytics.trackArticleShare(articleId, "copy")
+          if (isCarListing) {
+            analytics.trackEvent('car_share', { carId: articleId, method: 'copy' })
+          } else if (isPerplexityArticle) {
+            analytics.trackEvent('signal_share', { signalId: articleId, method: 'copy' })
+          } else {
+            analytics.trackArticleShare(articleId, "copy")
+          }
           setTimeout(() => setCopied(false), 2000)
         } catch (fallbackError) {
           console.error("Failed to copy to clipboard:", fallbackError)
