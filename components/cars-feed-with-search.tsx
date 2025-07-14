@@ -3,7 +3,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState, useCallback } from "react"
 import { useInView } from "react-intersection-observer"
-import { RefreshCw, Car } from "lucide-react"
+import { RefreshCw, Car, Grid3X3, List } from "lucide-react"
 import LoadingSkeleton from "./loading-skeleton"
 import CarBottomSheet from "./car-bottom-sheet"
 import CarSearch from "./car-search"
@@ -201,6 +201,121 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
   )
 }
 
+// List view component with horizontal layout
+function CarListItem({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarListing) => void }) {
+  const [imageError, setImageError] = useState(false)
+  const images = car.images || (car.imageUrl ? [car.imageUrl] : [])
+  
+  // Reuse the same helper functions from CarCard
+  const formatPrice = (price: string) => {
+    if (!price) return null
+    return price.replace(/HKD\$/, 'HK$').replace(/減價.*$/, '').trim()
+  }
+  
+  const isOnSale = (price: string) => price?.includes('減價') || false
+  
+  const getDisplayTitle = () => {
+    if (car.title) return car.title
+    const make = car.make || car.specs?.make || ''
+    const model = car.model || car.specs?.model || ''
+    return `${make} ${model}`.trim() || 'Car Listing'
+  }
+  
+  const getDisplayPrice = () => {
+    const price = car.price || car.specs?.price || ''
+    return formatPrice(price)
+  }
+  
+  const getDisplayYear = () => {
+    return car.year || car.specs?.year || new Date(car.publishedAt).getFullYear().toString()
+  }
+  
+  const getSpecs = () => {
+    return car.specs?.['規格'] || ''
+  }
+  
+  const displayPrice = getDisplayPrice()
+  const displayTitle = getDisplayTitle()
+  const specs = getSpecs()
+  const year = getDisplayYear()
+  const saleStatus = displayPrice ? isOnSale(displayPrice) : false
+
+  return (
+    <article 
+      className="group relative bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200/50 dark:border-neutral-800/50 overflow-hidden hover:shadow-md dark:hover:shadow-neutral-900/40 transition-all duration-300 cursor-pointer"
+      onClick={() => onCarClick(car)}
+    >
+      <div className="flex gap-4 p-4">
+        {/* 1:1 Thumbnail */}
+        <div className="relative w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0 overflow-hidden rounded-lg">
+          {images.length > 0 && !imageError ? (
+            <>
+              <img
+                src={images[0]}
+                alt={displayTitle}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                onError={() => setImageError(true)}
+                loading="lazy"
+              />
+              
+              {/* Sale badge */}
+              {saleStatus && (
+                <div className="absolute top-1 left-1 bg-red-500 text-white text-xs font-medium px-1.5 py-0.5 rounded">
+                  Sale
+                </div>
+              )}
+              
+              {/* Image count indicator */}
+              {images.length > 1 && (
+                <div className="absolute bottom-1 right-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                  {images.length}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="w-full h-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center rounded-lg">
+              <Car className="w-8 h-8 text-neutral-400" />
+            </div>
+          )}
+        </div>
+        
+        {/* Content */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between">
+          {/* Top section: Title and Price */}
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 text-base leading-tight line-clamp-2">
+                {displayTitle}
+              </h3>
+              <div className="flex items-center gap-2 mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+                <span>{year}</span>
+                <span>•</span>
+                <span>{new Date(car.publishedAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+            
+            {/* Price section */}
+            <div className="flex-shrink-0 text-right">
+              {displayPrice && (
+                <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                  {displayPrice}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Bottom section: Specs */}
+          {specs && (
+            <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-1">
+              <span className="font-medium text-neutral-700 dark:text-neutral-300">規格:</span> {specs}
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  )
+}
+
 async function fetchCars(page: number): Promise<CarsResponse> {
   try {
     // Using the new cars API that handles both tables
@@ -243,6 +358,7 @@ export default function CarsFeedWithSearch() {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [searchResults, setSearchResults] = useState<CarListing[]>([])
   const [isSearchActive, setIsSearchActive] = useState(false)
+  const [isGridView, setIsGridView] = useState(true)
   
   const {
     data,
@@ -295,11 +411,18 @@ export default function CarsFeedWithSearch() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Clean Header with Search */}
       <header className="pt-16 pb-4 sm:pb-6">
-        {/* Search Component with Refresh Button */}
+        {/* Search Component with View Toggle and Refresh Button */}
         <div className="flex items-start gap-3">
           <div className="flex-1">
             <CarSearch onResults={handleSearchResults} />
           </div>
+          <button
+            onClick={() => setIsGridView(!isGridView)}
+            className="w-10 h-10 inline-flex items-center justify-center text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+            aria-label={isGridView ? 'Switch to list view' : 'Switch to grid view'}
+          >
+            {isGridView ? <List className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
+          </button>
           <button
             onClick={handleRefresh}
             disabled={isRefreshing}
@@ -338,18 +461,28 @@ export default function CarsFeedWithSearch() {
       <main>
         {/* Loading State */}
         {isLoading && !isSearchActive && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={isGridView 
+            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            : "space-y-4"
+          }>
             {Array.from({ length: 8 }).map((_, i) => (
               <LoadingSkeleton key={i} />
             ))}
           </div>
         )}
         
-        {/* Cars Grid */}
+        {/* Cars Grid or List */}
         {displayCars.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={isGridView 
+            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            : "space-y-4"
+          }>
             {displayCars.map((car) => (
-              <CarCard key={car.id} car={car} onCarClick={handleCarClick} />
+              isGridView ? (
+                <CarCard key={car.id} car={car} onCarClick={handleCarClick} />
+              ) : (
+                <CarListItem key={car.id} car={car} onCarClick={handleCarClick} />
+              )
             ))}
           </div>
         )}
