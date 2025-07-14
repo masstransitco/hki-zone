@@ -102,6 +102,12 @@ const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuer
   initialPageParam: 0,
 })
 
+// Fetch function excludes AI enhanced articles
+async function fetchArticles({ pageParam = 0 }) {
+  const response = await fetch(`/api/articles?page=${pageParam}&enriched=false`)
+  return response.json()
+}
+
 // Intersection observer for triggering loads
 const { ref, inView } = useInView({ rootMargin: "600px" })
 

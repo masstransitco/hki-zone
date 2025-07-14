@@ -138,11 +138,11 @@ export async function GET(request: NextRequest) {
       // Apply enrichment filter to mock data
       if (enriched === "true") {
         filteredArticles = filteredArticles.filter(article => 
-          article.id === "car-1" // Mock: only car-1 is "enriched"
+          article.id === "car-1" // Mock: only car-1 is "AI enhanced"
         )
       } else if (enriched === "false") {
         filteredArticles = filteredArticles.filter(article => 
-          article.id !== "car-1" // Mock: car-1 is enriched, others are not
+          article.id !== "car-1" // Mock: car-1 is AI enhanced, others are not
         )
       }
       
@@ -161,8 +161,8 @@ export async function GET(request: NextRequest) {
     console.log("Fetching articles from database...")
     const filters: any = {}
     if (category) filters.category = category
-    if (enriched === "true") filters.hasEnrichment = true
-    if (enriched === "false") filters.hasEnrichment = false
+    if (enriched === "true") filters.isAiEnhanced = true
+    if (enriched === "false") filters.isAiEnhanced = false
     
     const articles = await getArticles(page, limit, filters)
     console.log(`Fetched ${articles.length} articles from database`)

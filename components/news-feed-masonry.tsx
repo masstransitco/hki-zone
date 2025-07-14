@@ -10,7 +10,8 @@ import { useLanguage } from "./language-provider"
 import type { Article } from "@/lib/types"
 
 async function fetchArticles({ pageParam = 0 }): Promise<{ articles: Article[]; nextPage: number | null }> {
-  const response = await fetch(`/api/articles?page=${pageParam}`)
+  // Exclude AI enhanced articles from the news feed masonry
+  const response = await fetch(`/api/articles?page=${pageParam}&enriched=false`)
   if (!response.ok) throw new Error("Failed to fetch articles")
   return response.json()
 }
