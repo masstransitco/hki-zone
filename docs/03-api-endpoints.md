@@ -347,6 +347,164 @@ POST /api/admin/articles/clone-with-ai
 
 **Authentication**: Requires PERPLEXITY_API_KEY environment variable
 
+#### Trilingual Auto-Select & Enhance (Batch)
+```
+POST /api/admin/auto-select-headlines
+```
+
+**Purpose**: Automatically select 10 best articles using Perplexity AI and enhance them into 30 trilingual articles (English, Traditional Chinese, Simplified Chinese)
+
+#### Trilingual Auto-Select & Enhance (Single)
+```
+POST /api/admin/auto-select-single
+```
+
+**Purpose**: Automatically select 1 best article using Perplexity AI and enhance it into 3 trilingual articles (English, Traditional Chinese, Simplified Chinese)
+
+**Request Body**: None required
+
+**Response**:
+```json
+{
+  "success": true,
+  "batchId": "single_1752484233132_abc123",
+  "sourceArticles": 1,
+  "totalEnhanced": 3,
+  "totalSaved": 3,
+  "selectedArticle": {
+    "id": "uuid",
+    "title": "Selected Article Title",
+    "source": "HKFP",
+    "selectionReason": "This article covers...",
+    "priorityScore": 92
+  },
+  "articlesByLanguage": {
+    "english": 1,
+    "traditionalChinese": 1,
+    "simplifiedChinese": 1
+  },
+  "processingTime": 45000,
+  "processingTimeMinutes": 0.8,
+  "estimatedCost": "0.2250",
+  "articles": [
+    {
+      "id": "uuid",
+      "title": "Enhanced Article Title",
+      "language": "en",
+      "url": "https://source.com/article#enhanced-en-1752484233132",
+      "source": "HKFP",
+      "qualityScore": 92
+    }
+  ]
+}
+```
+
+**Features**:
+- **Quick Processing**: Faster than batch enhancement (~1-3 minutes vs 15-20 minutes)
+- **Single Article Focus**: AI selects the single most newsworthy article
+- **Same Quality**: Uses identical enhancement pipeline as batch processing
+- **Lower Cost**: ~$0.225 per operation (3 articles vs 30)
+- **Immediate Results**: Ideal for testing or quick content creation
+
+**Processing Pipeline**:
+1. **Article Selection**: Perplexity AI analyzes candidate articles and selects the single best one
+2. **Trilingual Enhancement**: Sequential processing (EN → zh-TW → zh-CN) with rate limiting
+3. **Database Storage**: Saves all 3 enhanced articles with unique URLs and metadata
+4. **Batch Tracking**: Links all articles with trilingual_batch_id for relationship queries
+
+#### Check Single Article Configuration
+```
+GET /api/admin/auto-select-single
+```
+
+**Purpose**: Check API configuration and candidate article statistics
+
+**Response**:
+```json
+{
+  "configured": true,
+  "message": "Single article trilingual enhancement is ready",
+  "candidateStats": {
+    "totalCandidates": number,
+    "qualityArticles": number,
+    "sourcesRepresented": ["string"],
+    "averageQuality": number
+  }
+}
+```
+
+#### Check Batch Configuration
+```
+GET /api/admin/auto-select-headlines
+```
+
+**Purpose**: Check API configuration and candidate article statistics for batch processing
+
+**Response**:
+```json
+{
+  "sourceArticles": 10,
+  "totalEnhanced": 30,
+  "totalSaved": 30,
+  "articlesByLanguage": {
+    "english": 10,
+    "traditionalChinese": 10,
+    "simplifiedChinese": 10
+  },
+  "processingTime": number,
+  "processingTimeMinutes": number,
+  "estimatedCost": "string",
+  "articles": [
+    {
+      "id": "string",
+      "title": "string",
+      "language": "en" | "zh-TW" | "zh-CN",
+      "url": "string",
+      "source": "string",
+      "qualityScore": number
+    }
+  ]
+}
+```
+
+**Features**:
+- **Intelligent Selection**: Uses Perplexity AI to evaluate and select the 10 most newsworthy articles from existing non-enhanced articles
+- **Quality Scoring**: Articles scored based on newsworthiness, impact, relevance, and enhancement potential
+- **Trilingual Processing**: Each selected article enhanced into 3 languages with unique URLs
+- **Batch Tracking**: All articles linked with trilingual_batch_id for relationship tracking
+- **Rate Limiting**: 1.5s between languages, 2s between articles to respect API limits
+- **Metadata Storage**: All trilingual tracking data stored in enhancement_metadata
+
+**Authentication**: Requires PERPLEXITY_API_KEY environment variable
+
+**Processing Pipeline**:
+1. **Article Selection**: Perplexity AI analyzes 50 candidate articles and selects top 10
+2. **Quality Filtering**: Filters to articles with sufficient content and metadata
+3. **Trilingual Enhancement**: Sequential processing (EN → zh-TW → zh-CN) with rate limiting
+4. **Database Storage**: Saves all 30 enhanced articles with unique URLs and metadata
+5. **Batch Tracking**: Links all articles in the same trilingual batch for relationship queries
+
+#### Check Trilingual Configuration
+```
+GET /api/admin/auto-select-headlines
+```
+
+**Purpose**: Check API configuration and candidate article statistics
+
+**Response**:
+```json
+{
+  "configured": true,
+  "message": "Trilingual auto-enhancement is ready",
+  "candidateStats": {
+    "totalCandidates": number,
+    "qualityArticles": number,
+    "sourcesRepresented": ["string"],
+    "averageQuality": number
+  }
+}
+```
+
 ### 3. Perplexity Management
 
 #### Get Perplexity Articles (Admin)
@@ -571,9 +729,67 @@ GET /api/cron/enrich-cars
 
 **Purpose**: Automated AI enrichment of car listings using Perplexity API
 
-**Schedule**: Every 2 hours (`0 */2 * * *`)
+#### Hourly Single Article Trilingual Enhancement
+```
+GET /api/cron/auto-enhance-single
+```
+
+**Schedule**: Every hour (`0 * * * *`)
 
 **Implementation Details**:
+- Uses Perplexity AI to intelligently select 1 most newsworthy article from existing non-enhanced articles
+- Enhances the selected article into 3 languages (English, Traditional Chinese, Simplified Chinese)
+- Saves all 3 enhanced versions to the database with unique URLs
+- Provides detailed logging with `[CRON]` prefix for monitoring
+- Includes authentication verification for Vercel cron requests
+- Supports manual testing via POST requests
+
+**Processing Steps**:
+1. Verify Perplexity API configuration
+2. AI-powered article selection (1 from available candidates)
+3. Sequential trilingual enhancement with rate limiting
+4. Database storage with unique URLs and metadata
+5. Comprehensive result logging and monitoring
+
+**Response**: Processing results with detailed statistics
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "message": "Hourly trilingual enhancement completed: 1 → 3 articles",
+  "batchId": "cron_single_1752484233132_abc123",
+  "sourceArticles": 1,
+  "totalEnhanced": 3,
+  "totalSaved": 3,
+  "selectedArticle": {
+    "id": "uuid",
+    "title": "Selected Article Title",
+    "source": "HKFP",
+    "selectionReason": "High impact political news with enhancement potential",
+    "priorityScore": 92
+  },
+  "articlesByLanguage": {
+    "english": 1,
+    "traditionalChinese": 1,
+    "simplifiedChinese": 1
+  },
+  "processingTime": 45000,
+  "processingTimeMinutes": 0.8,
+  "estimatedCost": "0.2250",
+  "timestamp": "2025-07-14T12:00:00.000Z"
+}
+```
+
+**Error Handling**:
+- Returns 422 if no articles available for enhancement
+- Returns 503 if Perplexity API not configured
+- Returns 401 for unauthorized non-cron requests
+- Comprehensive error logging for debugging
+
+**Authentication**: Requires Vercel cron user-agent or CRON_SECRET environment variable
+
+#### Car Enrichment (Legacy)
 - Processes maximum 5 cars per run (cost control)
 - Only enriches cars with `ai_summary` = null (unenriched cars)
 - Processes newest cars first (`order('created_at', { ascending: false })`)

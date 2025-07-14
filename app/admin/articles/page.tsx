@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, RefreshCw } from "lucide-react"
+import { Search, Filter, RefreshCw, Languages, Sparkles, Loader2 } from "lucide-react"
 import ArticleReviewGrid from "@/components/admin/article-review-grid"
 import ArticleDetailPanel from "@/components/admin/article-detail-panel"
 import ArticleDetailSheet from "@/components/admin/article-detail-sheet"
+import TrilingualAutoSelectModal from "@/components/admin/trilingual-auto-select-modal"
 import { useLanguage } from "@/components/language-provider"
 import type { Article } from "@/lib/types"
 
@@ -25,6 +26,9 @@ export default function ArticlesPage() {
   const [aiEnhancedFilter, setAiEnhancedFilter] = useState("all")
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showProgressModal, setShowProgressModal] = useState(false)
+  const [processProgress, setProcessProgress] = useState<any>(null)
 
   useEffect(() => {
     loadArticles()
@@ -96,6 +100,118 @@ export default function ArticlesPage() {
 
   const handleLoadMore = () => {
     setPage(prev => prev + 1)
+  }
+
+  const handleTrilingualAutoSelect = async () => {
+    try {
+      setIsProcessing(true)
+      setShowProgressModal(true)
+      setProcessProgress({
+        step: 'headlines',
+        currentArticle: 0,
+        totalArticles: 10,
+        currentLanguage: 'en',
+        completedByLanguage: {
+          english: 0,
+          traditionalChinese: 0,
+          simplifiedChinese: 0
+        },
+        estimatedTimeRemaining: 960, // 16 minutes
+        totalCost: 0
+      })
+
+      const response = await fetch('/api/admin/auto-select-headlines', {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to start auto-selection')
+      }
+
+      const result = await response.json()
+      
+      // Update progress to complete
+      setProcessProgress({
+        ...processProgress,
+        step: 'complete',
+        completedByLanguage: {
+          english: result.articlesByLanguage.english,
+          traditionalChinese: result.articlesByLanguage.traditionalChinese,
+          simplifiedChinese: result.articlesByLanguage.simplifiedChinese
+        },
+        totalCost: parseFloat(result.estimatedCost)
+      })
+
+      // Refresh the article list after successful processing
+      setTimeout(() => {
+        handleRefresh()
+        setShowProgressModal(false)
+        setProcessProgress(null)
+      }, 3000)
+
+    } catch (error) {
+      console.error('Auto-select error:', error)
+      alert(error instanceof Error ? error.message : 'Failed to run auto-selection')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  const handleSingleTrilingualAutoSelect = async () => {
+    try {
+      setIsProcessing(true)
+      setShowProgressModal(true)
+      setProcessProgress({
+        step: 'headlines',
+        currentArticle: 0,
+        totalArticles: 1,
+        currentLanguage: 'en',
+        completedByLanguage: {
+          english: 0,
+          traditionalChinese: 0,
+          simplifiedChinese: 0
+        },
+        estimatedTimeRemaining: 180, // 3 minutes
+        totalCost: 0
+      })
+
+      const response = await fetch('/api/admin/auto-select-single', {
+        method: 'POST'
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to start single article auto-selection')
+      }
+
+      const result = await response.json()
+      
+      // Update progress to complete
+      setProcessProgress({
+        ...processProgress,
+        step: 'complete',
+        completedByLanguage: {
+          english: result.articlesByLanguage.english,
+          traditionalChinese: result.articlesByLanguage.traditionalChinese,
+          simplifiedChinese: result.articlesByLanguage.simplifiedChinese
+        },
+        totalCost: parseFloat(result.estimatedCost)
+      })
+
+      // Refresh the article list after successful processing
+      setTimeout(() => {
+        handleRefresh()
+        setShowProgressModal(false)
+        setProcessProgress(null)
+      }, 3000)
+
+    } catch (error) {
+      console.error('Single auto-select error:', error)
+      alert(error instanceof Error ? error.message : 'Failed to run single article auto-selection')
+    } finally {
+      setIsProcessing(false)
+    }
   }
 
   const totalArticles = articles.length
@@ -201,9 +317,49 @@ export default function ArticlesPage() {
                 </SelectContent>
               </Select>
               
-              <Button onClick={handleRefresh} variant="outline" size="icon" className="sm:ml-auto">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
+              <div className="flex gap-2 sm:ml-auto">
+                <Button
+                  onClick={handleSingleTrilingualAutoSelect}
+                  disabled={isProcessing}
+                  className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">AI Select & Enhance (1 → 3)</span>
+                      <span className="sm:hidden">AI Single</span>
+                      <span className="ml-2 text-xs opacity-75">EN | 繁 | 简</span>
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleTrilingualAutoSelect}
+                  disabled={isProcessing}
+                  className="bg-gradient-to-r from-purple-600 via-blue-600 to-green-600 hover:from-purple-700 hover:via-blue-700 hover:to-green-700 text-white"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Languages className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">AI Select & Enhance (10 → 30)</span>
+                      <span className="sm:hidden">AI Select</span>
+                      <span className="ml-2 text-xs opacity-75">EN | 繁 | 简</span>
+                    </>
+                  )}
+                </Button>
+                <Button onClick={handleRefresh} variant="outline" size="icon">
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -253,6 +409,13 @@ export default function ArticlesPage() {
         article={selectedArticle}
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}
+      />
+
+      {/* Trilingual Auto-Select Progress Modal */}
+      <TrilingualAutoSelectModal
+        isOpen={showProgressModal}
+        onClose={() => setShowProgressModal(false)}
+        progress={processProgress}
       />
     </div>
   )

@@ -10,6 +10,7 @@ This is a comprehensive documentation suite for the HKI News App (香港資訊),
 The HKI News App is a Next.js 14 application that:
 - Aggregates news from major Hong Kong sources (HKFP, SingTao, HK01, ONCC, RTHK)
 - Enhances content using AI (Perplexity API, Anthropic Claude)
+- **Automatically selects and enhances articles into trilingual content (EN, zh-TW, zh-CN)**
 - Provides both public and admin interfaces
 - Uses Supabase for data persistence
 - Implements a unified content management system
@@ -236,6 +237,12 @@ curl "/api/cars/search?q=toyota&limit=5"    # Test car search
 curl "/api/cars/suggestions?q=toy&limit=5"  # Test autocomplete
 curl "/api/cars/filters"                    # Test filter options
 
+# Trilingual AI Enhancement
+curl -X GET /api/admin/auto-select-headlines   # Check batch configuration (10→30)
+curl -X POST /api/admin/auto-select-headlines  # Run trilingual enhancement (10→30 articles)
+curl -X GET /api/admin/auto-select-single      # Check single configuration (1→3)
+curl -X POST /api/admin/auto-select-single     # Run single enhancement (1→3 articles)
+
 # Testing
 node test-api.js                # Test API endpoints
 curl -X POST /api/manual-scrape # Manual content scraping
@@ -271,9 +278,11 @@ const { data, isLoading, error } = useQuery({
 ## Important Implementation Notes
 
 ### 1. AI Enhancement Process
-- Articles can be enhanced with contextual information using Perplexity API
+- **Individual Enhancement**: Articles can be enhanced with contextual information using Perplexity API
+- **Trilingual Auto-Enhancement**: AI automatically selects and enhances 10 articles into 30 trilingual versions
 - Enhancement process tracks costs and sources
 - Status progression: `pending` → `enriched` → `ready`
+- **Batch Processing**: Trilingual enhancement processes 10 source articles → 30 enhanced articles (3 languages each)
 
 ### 2. Database Architecture
 - Unified table design consolidates different content types
@@ -294,6 +303,7 @@ const { data, isLoading, error } = useQuery({
 - Headlines collection: Daily at 8 AM
 - Perplexity news: Every hour
 - Article enrichment: Every hour at 5 minutes past
+- **Single article trilingual enhancement: Every hour** ⭐ *New Feature*
 - Car AI enrichment: Every 2 hours
 
 ### 5. Performance Optimizations
@@ -316,6 +326,16 @@ const { data, isLoading, error } = useQuery({
 - **Sub-50ms performance**: Optimized GIN indexes and computed columns
 - **Mobile-responsive**: Touch-friendly interface with filter management
 - **Scalable architecture**: Ready for Typesense upgrade at high volume
+
+### 8. **Trilingual AI Article Enhancement** ⭐ *New Feature*
+- **Intelligent Selection**: Perplexity AI automatically selects 10 best articles from existing content
+- **Quality Scoring**: Advanced scoring algorithm based on newsworthiness, impact, and enhancement potential
+- **Trilingual Processing**: Each article enhanced into English, Traditional Chinese, and Simplified Chinese
+- **Batch Operations**: Processes 10 → 30 articles (10×3 languages) in a single operation
+- **Rate Limiting**: Smart API rate limiting (1.5s between languages, 2s between articles)
+- **Metadata Tracking**: Comprehensive trilingual batch tracking and relationship management
+- **Unique URLs**: Each language version gets a unique URL for proper database constraints
+- **Cost Estimation**: Real-time cost tracking and estimation for API usage
 
 ## Troubleshooting Guide
 
