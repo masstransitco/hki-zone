@@ -106,63 +106,34 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
         </div>
       )}
 
-      <div className="space-y-6">
-        {article.content && (
-          <AIEnhancedContent content={article.content} isBottomSheet={false} />
-        )}
-
-        {/* Sources section for AI enhanced articles */}
-        {article.isAiEnhanced && article.enhancementMetadata?.sources && article.enhancementMetadata.sources.length > 0 && (
-          <div className="space-y-4 mt-8 pt-6 border-t border-[rgb(var(--apple-gray-5))]">
-            <h3 className="text-title-3 text-foreground">Sources</h3>
-            <div className="space-y-3">
-              {article.enhancementMetadata.sources.map((source, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-[rgb(var(--apple-gray-6))] rounded-lg">
-                  <span className="flex-shrink-0 w-6 h-6 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center text-xs font-semibold text-blue-700 dark:text-blue-300">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    {source.url ? (
-                      <a 
-                        href={source.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-base font-medium text-[rgb(var(--apple-blue))] hover:underline line-clamp-2"
-                      >
-                        {source.title}
-                      </a>
-                    ) : (
-                      <h4 className="text-base font-medium text-foreground line-clamp-2">
-                        {source.title}
-                      </h4>
-                    )}
-                    <p className="text-caption text-[rgb(var(--apple-gray-1))] mt-1">
-                      {source.domain}
-                    </p>
-                    {source.snippet && (
-                      <blockquote className="text-caption text-[rgb(var(--apple-gray-1))] mt-2 italic line-clamp-2">
-                        "{source.snippet}"
-                      </blockquote>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="space-y-8">
+        {article.content ? (
+          <AIEnhancedContent 
+            content={article.content} 
+            isBottomSheet={false} 
+            sources={article.enhancementMetadata?.sources}
+          />
+        ) : (
+          <div className="text-muted-foreground text-center py-8">
+            <p>No article content available</p>
           </div>
         )}
       </div>
 
-      <footer className="mt-12 pt-8 border-t border-[rgb(var(--apple-gray-5))]">
-        <Link
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-[rgb(var(--apple-blue))] hover:opacity-70 transition-opacity apple-focus rounded-lg p-1 -m-1"
-        >
-          <ExternalLink className="w-4 h-4" />
-          <span className="text-base font-medium">{t("article.readOriginal")}</span>
-        </Link>
-      </footer>
+      {/* Only show "Read original article" button for non-AI enhanced articles */}
+      {!article.isAiEnhanced && (
+        <footer className="mt-12 pt-8 border-t border-[rgb(var(--apple-gray-5))]">
+          <Link
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-[rgb(var(--apple-blue))] hover:opacity-70 transition-opacity apple-focus rounded-lg p-1 -m-1"
+          >
+            <ExternalLink className="w-4 h-4" />
+            <span className="text-base font-medium">{t("article.readOriginal")}</span>
+          </Link>
+        </footer>
+      )}
     </article>
   )
 }

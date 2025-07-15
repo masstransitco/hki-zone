@@ -21,18 +21,20 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
     }
   }
 
-  // Remove sources section - handle multiple formats
+  // Remove sources section - handle multiple formats (targeted patterns)
   let cleanedContent = content
-    // Remove "## Sources" sections (Perplexity format)
-    .replace(/\n\n?## Sources\n\n[\s\S]*$/i, '')
-    // Remove "Sources:" sections  
-    .replace(/\n\n?Sources?:\s*\n[\s\S]*$/i, '')
-    // Remove "**Sources**" sections
+    // Remove "## Sources" sections (Perplexity format) - at end only
+    .replace(/\n\n?##\s*Sources\s*\n[\s\S]*$/i, '')
+    // Remove "## SOURCES" sections (uppercase) - at end only
+    .replace(/\n\n?##\s*SOURCES\s*\n[\s\S]*$/i, '')
+    // Remove "**Sources:**" sections with [n] domain.com format (from user example)
+    .replace(/\n\n?\*\*Sources?:\*\*\s*\n(?:\[\d+\]\s+[\w.-]+\.[\w.-]+\s*\n?)+$/i, '')
+    // Remove "**Sources**" sections (without colon)
     .replace(/\n\n?\*\*Sources?\*\*\n[\s\S]*$/i, '')
+    // Remove simple "Sources:" sections at the very end
+    .replace(/\n+Sources?:\s*\n(?:\d+\s+[\w.-]+\.[\w.-]+\s*\n?)+$/i, '')
     // Remove numbered citations at end (1. [Title](url) format)
     .replace(/\n\n?(?:\d+\.\s+\[.*?\]\(.*?\).*\n?)+$/i, '')
-    // Remove citation lists that start with numbers
-    .replace(/\n\n?(?:\d+\.\s+.*\n?){2,}$/i, '')
 
   // Debug logging for development
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -42,8 +44,8 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
     })
   }
 
-  // Check if content has structured format (English or Chinese)
-  const hasStructuredSections = /\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*/i.test(cleanedContent)
+  // Check if content has structured format (English or Chinese) - handle both ** and ## formats
+  const hasStructuredSections = /(\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*|##\s*(SUMMARY|KEY POINTS?|KEY CONTEXT|WHY IT MATTERS?|摘要|重点|重點|重要性))/i.test(cleanedContent)
   
   if (!hasStructuredSections) {
     return {
@@ -58,12 +60,12 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
   let mainContent = ''
 
   // Check if this is a Perplexity-style article where structured content comes first
-  const firstSectionMatch = cleanedContent.match(/^\*\*(Summary|摘要)\*\*/i)
+  const firstSectionMatch = cleanedContent.match(/^(\*\*(Summary|摘要)\*\*|##\s*(SUMMARY|摘要))/i)
   const isPerplexityFormat = firstSectionMatch !== null
 
   if (isPerplexityFormat) {
     // For Perplexity format, extract structured sections first, then get main content
-    const structuredEndMatch = cleanedContent.match(/\*\*(Why It Matters?|重要性)\*\*[\s\S]*?\n\n/i)
+    const structuredEndMatch = cleanedContent.match(/(\*\*(Why It Matters?|重要性)\*\*|##\s*(WHY IT MATTERS?|重要性))[\s\S]*?\n\n/i)
     if (structuredEndMatch) {
       const structuredEndIndex = structuredEndMatch.index! + structuredEndMatch[0].length
       mainContent = cleanedContent.substring(structuredEndIndex).trim()
@@ -75,8 +77,13 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
     }
   }
 
+  // Parse structured sections using a more reliable approach
+  // First, normalize the content by converting ## headers to ** format (excluding Sources)
+  let normalizedContent = cleanedContent
+    .replace(/##\s*(SUMMARY|KEY POINTS?|KEY CONTEXT|WHY IT MATTERS?|摘要|重点|重點|重要性)/gi, '**$1**')
+
   // Split content by structured sections (English or Chinese)
-  const sections = cleanedContent.split(/\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*/i)
+  const sections = normalizedContent.split(/\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*/i)
   
   // If not Perplexity format, first section is main content
   if (!isPerplexityFormat && sections[0]) {
@@ -88,7 +95,7 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
     const sectionTitle = sections[i]?.toLowerCase().trim()
     const sectionContent = sections[i + 1]?.trim()
 
-    if (!sectionContent) continue
+    if (!sectionContent || !sectionTitle) continue
 
     // Debug logging
     if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
