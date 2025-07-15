@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Clock, ExternalLink, Eye, Image as ImageIcon, Sparkles, Edit, Trash2 } from "lucide-react"
+import { Clock, ExternalLink, Eye, Image as ImageIcon, Sparkles, Edit, Trash2, Target } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatDistanceToNow } from "date-fns"
 import type { Article } from "@/lib/types"
@@ -109,6 +109,7 @@ function ArticleReviewCard({ article, onExpand, isSelected, onSelect }: ArticleR
   const publishedDate = article.publishedAt ? new Date(article.publishedAt) : new Date()
   const hasImage = article.imageUrl && !article.imageUrl.includes("placeholder")
   const isDeleted = article.deletedAt != null
+  const isSelectedForEnhancement = article.selectedForEnhancement || false
   
   return (
     <div
@@ -163,7 +164,7 @@ function ArticleReviewCard({ article, onExpand, isSelected, onSelect }: ArticleR
             )}
             
             {/* Compact Status Indicators */}
-            {(isDeleted || article.isAiEnhanced) && (
+            {(isDeleted || article.isAiEnhanced || isSelectedForEnhancement) && (
               <div className="absolute -top-1 -right-1 flex gap-1">
                 {isDeleted && (
                   <div className="bg-red-600 rounded-full p-1 shadow-sm">
@@ -173,6 +174,11 @@ function ArticleReviewCard({ article, onExpand, isSelected, onSelect }: ArticleR
                 {article.isAiEnhanced && (
                   <div className="bg-purple-600 rounded-full p-1 shadow-sm">
                     <Sparkles className="h-2.5 w-2.5 text-white" />
+                  </div>
+                )}
+                {isSelectedForEnhancement && !article.isAiEnhanced && (
+                  <div className="bg-amber-600 rounded-full p-1 shadow-sm">
+                    <Target className="h-2.5 w-2.5 text-white" />
                   </div>
                 )}
               </div>
@@ -222,6 +228,11 @@ function ArticleReviewCard({ article, onExpand, isSelected, onSelect }: ArticleR
               {article.isAiEnhanced && (
                 <Badge variant="secondary" className="text-xs h-5 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
                   AI Enhanced
+                </Badge>
+              )}
+              {isSelectedForEnhancement && !article.isAiEnhanced && (
+                <Badge variant="secondary" className="text-xs h-5 bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+                  Selected for enhancement
                 </Badge>
               )}
               

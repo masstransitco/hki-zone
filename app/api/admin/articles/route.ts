@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
       language: article.enhancement_metadata?.language || 'en',
       enhancementMetadata: article.enhancement_metadata,
       deletedAt: article.deleted_at,
+      selectedForEnhancement: article.selected_for_enhancement || false,
     }))
 
     return NextResponse.json({

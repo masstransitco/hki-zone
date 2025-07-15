@@ -354,7 +354,8 @@ const { data, isLoading, error } = useQuery({
 - **Scalable architecture**: Ready for Typesense upgrade at high volume
 
 ### 8. **Trilingual AI Article Enhancement** ⭐ *New Feature*
-- **Intelligent Selection**: Perplexity AI automatically selects 10 best articles from existing content
+- **Intelligent Selection**: Perplexity AI automatically selects articles from non-enhanced, non-selected content
+- **Selection Tracking**: Marks articles as `selected_for_enhancement = true` to prevent re-selection
 - **Quality Scoring**: Advanced scoring algorithm based on newsworthiness, impact, and enhancement potential
 - **Trilingual Processing**: Each article enhanced into English, Traditional Chinese, and Simplified Chinese
 - **Batch Operations**: Processes 10 → 30 articles (10×3 languages) in a single operation
@@ -362,6 +363,7 @@ const { data, isLoading, error } = useQuery({
 - **Metadata Tracking**: Comprehensive trilingual batch tracking and relationship management
 - **Unique URLs**: Each language version gets a unique URL for proper database constraints
 - **Cost Estimation**: Real-time cost tracking and estimation for API usage
+- **UI Indicators**: Visual badges showing article selection status in admin interface
 
 ## Troubleshooting Guide
 

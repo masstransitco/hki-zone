@@ -406,6 +406,7 @@ POST /api/admin/articles/bulk-clone
     "failedClones": number,
     "successRate": number,
     "totalCost": number,
+    "articlesMarkedAsSelected": number,
     "languageBreakdown": {
       "en": number,
       "zh-TW": number,
@@ -448,6 +449,7 @@ POST /api/admin/articles/bulk-clone
 - **Cost Tracking**: Real-time cost calculation and reporting
 - **Error Resilience**: Continues processing if individual articles fail
 - **Selection Validation**: Only allows cloning of non-AI-enhanced articles
+- **Selection Tracking**: Marks original articles as `selected_for_enhancement = true` to prevent re-selection by automated processes
 
 **Limits**:
 - Maximum 20 articles per batch operation
@@ -459,8 +461,9 @@ POST /api/admin/articles/bulk-clone
 2. Process each article in each language sequentially
 3. Generate unique URLs per language version
 4. Store trilingual metadata and relationships
-5. Track costs and processing statistics
-6. Return comprehensive results with language breakdown
+5. Mark original articles as `selected_for_enhancement = true` (prevents re-selection)
+6. Track costs and processing statistics
+7. Return comprehensive results with language breakdown and selection status
 
 **Authentication**: Requires PERPLEXITY_API_KEY environment variable
 
@@ -524,10 +527,10 @@ POST /api/admin/auto-select-single
 - **Immediate Results**: Ideal for testing or quick content creation
 
 **Processing Pipeline**:
-1. **Article Candidate Filtering**: Gets recent articles excluding enhanced and previously selected articles
+1. **Article Candidate Filtering**: Gets recent articles where `is_ai_enhanced = false` AND `selected_for_enhancement = false`
 2. **Sequential ID Assignment**: Maps articles to sequential numbers (1, 2, 3...) for Perplexity
 3. **AI Selection**: Perplexity analyzes candidates and selects the single best one using sequential IDs
-4. **Selection Marking**: Immediately marks selected article as selected_for_enhancement = true
+4. **Selection Marking**: Immediately marks selected article as `selected_for_enhancement = true` with metadata
 5. **Trilingual Enhancement**: Sequential processing (EN → zh-TW → zh-CN) with rate limiting
 6. **Database Storage**: Saves all 3 enhanced articles with unique URLs and metadata
 7. **Batch Tracking**: Links all articles with trilingual_batch_id for relationship queries
@@ -588,8 +591,8 @@ GET /api/admin/auto-select-headlines
 ```
 
 **Features**:
-- **Intelligent Selection**: Uses Perplexity AI to evaluate and select the 10 most newsworthy articles from existing non-enhanced articles
-- **Selection Tracking**: Prevents re-selection of articles by marking them as selected (selected_for_enhancement = true)
+- **Intelligent Selection**: Uses Perplexity AI to evaluate and select the 10 most newsworthy articles from existing non-enhanced, non-selected articles
+- **Selection Tracking**: Prevents re-selection of articles by marking them as `selected_for_enhancement = true` with comprehensive metadata
 - **UUID Corruption Fix**: Uses sequential IDs (1, 2, 3...) instead of UUIDs for Perplexity communication
 - **Quality Scoring**: Articles scored based on newsworthiness, impact, relevance, and enhancement potential
 - **Trilingual Processing**: Each selected article enhanced into 3 languages with unique URLs
@@ -600,10 +603,10 @@ GET /api/admin/auto-select-headlines
 **Authentication**: Requires PERPLEXITY_API_KEY environment variable
 
 **Processing Pipeline**:
-1. **Article Candidate Filtering**: Gets 50 recent articles excluding enhanced and previously selected articles
+1. **Article Candidate Filtering**: Gets 50 recent articles where `is_ai_enhanced = false` AND `selected_for_enhancement = false`
 2. **Sequential ID Assignment**: Maps articles to sequential numbers (1, 2, 3...) for Perplexity
 3. **AI Selection**: Perplexity analyzes candidates and returns selections using sequential IDs
-4. **Selection Marking**: Immediately marks selected articles as selected_for_enhancement = true
+4. **Selection Marking**: Immediately marks selected articles as `selected_for_enhancement = true` with metadata
 5. **Trilingual Enhancement**: Sequential processing (EN → zh-TW → zh-CN) with rate limiting
 6. **Database Storage**: Saves all 30 enhanced articles with unique URLs and metadata
 7. **Batch Tracking**: Links all articles in the same trilingual batch for relationship queries
@@ -870,10 +873,11 @@ GET /api/cron/auto-enhance-single
 
 **Processing Steps**:
 1. Verify Perplexity API configuration
-2. AI-powered article selection (1 from available candidates)
-3. Sequential trilingual enhancement with rate limiting
-4. Database storage with unique URLs and metadata
-5. Comprehensive result logging and monitoring
+2. AI-powered article selection (1 from available candidates where `is_ai_enhanced = false` AND `selected_for_enhancement = false`)
+3. Mark selected article as `selected_for_enhancement = true` with selection metadata
+4. Sequential trilingual enhancement with rate limiting
+5. Database storage with unique URLs and metadata
+6. Comprehensive result logging and monitoring
 
 **Response**: Processing results with detailed statistics
 

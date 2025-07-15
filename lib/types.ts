@@ -13,6 +13,7 @@ export interface Article {
   originalArticleId?: string
   language?: string // 'en' | 'zh-TW' | 'zh-CN'
   deletedAt?: string | null
+  selectedForEnhancement?: boolean
   enhancementMetadata?: {
     searchQueries: string[]
     sources: {

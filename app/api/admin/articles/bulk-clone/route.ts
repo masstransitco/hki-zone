@@ -62,8 +62,24 @@ export async function POST(request: NextRequest) {
       totalCost: 0
     }
 
+    // Track which articles have been successfully processed for marking
+    const processedArticles = new Map<string, {
+      article: any,
+      successfulLanguages: string[],
+      failedLanguages: string[]
+    }>()
+
     // Process each article in each language
     for (const article of originalArticles) {
+      // Initialize tracking for this article
+      if (!processedArticles.has(article.id)) {
+        processedArticles.set(article.id, {
+          article,
+          successfulLanguages: [],
+          failedLanguages: []
+        })
+      }
+
       for (const language of languages) {
         try {
           // Add small delay between requests to avoid rate limiting
@@ -143,6 +159,8 @@ export async function POST(request: NextRequest) {
               language,
               error: saveError.message
             })
+            // Track failed language for this article
+            processedArticles.get(article.id)!.failedLanguages.push(language)
           } else {
             results.successful.push({
               originalArticleId: article.id,
@@ -154,6 +172,8 @@ export async function POST(request: NextRequest) {
               searchQueries: enhancementResult.searchQueries.length
             })
             results.totalCost += estimatedCost
+            // Track successful language for this article
+            processedArticles.get(article.id)!.successfulLanguages.push(language)
           }
 
           results.totalProcessed++
@@ -166,12 +186,53 @@ export async function POST(request: NextRequest) {
             language,
             error: error instanceof Error ? error.message : 'Unknown error'
           })
+          // Track failed language for this article
+          processedArticles.get(article.id)!.failedLanguages.push(language)
           results.totalProcessed++
         }
       }
     }
 
+    // Mark original articles as selected to prevent re-selection by automated processes
+    console.log('Marking original articles as selected for enhancement...')
+    for (const [articleId, articleData] of processedArticles.entries()) {
+      // Only mark articles that had at least one successful language enhancement
+      if (articleData.successfulLanguages.length > 0) {
+        try {
+          const { error } = await supabase
+            .from('articles')
+            .update({ 
+              selected_for_enhancement: true,
+              selection_metadata: {
+                selected_at: new Date().toISOString(),
+                selection_reason: 'Manual bulk clone selection',
+                selection_type: 'bulk_manual',
+                selection_session: Date.now(),
+                languages_processed: articleData.successfulLanguages,
+                languages_failed: articleData.failedLanguages,
+                success_count: articleData.successfulLanguages.length,
+                total_languages: languages.length
+              }
+            })
+            .eq('id', articleId)
+
+          if (error) {
+            console.error(`Failed to mark article ${articleId} as selected:`, error)
+          } else {
+            console.log(`✓ Marked article "${articleData.article.title}" as selected (${articleData.successfulLanguages.length}/${languages.length} languages successful)`)
+          }
+        } catch (error) {
+          console.error(`Error marking article ${articleId} as selected:`, error)
+        }
+      } else {
+        console.log(`⚠ Skipping marking article "${articleData.article.title}" - no successful language enhancements`)
+      }
+    }
+
     // Calculate summary statistics
+    const articlesMarkedAsSelected = Array.from(processedArticles.values())
+      .filter(data => data.successfulLanguages.length > 0).length
+    
     const summary = {
       originalArticles: originalArticles.length,
       targetClones: originalArticles.length * 3, // 3 languages per article
@@ -179,6 +240,7 @@ export async function POST(request: NextRequest) {
       failedClones: results.failed.length,
       successRate: Math.round((results.successful.length / (originalArticles.length * 3)) * 100),
       totalCost: Math.round(results.totalCost * 100) / 100, // Round to 2 decimal places
+      articlesMarkedAsSelected, // Track how many original articles were marked
       languageBreakdown: {
         en: results.successful.filter(r => r.language === 'en').length,
         'zh-TW': results.successful.filter(r => r.language === 'zh-TW').length,
@@ -190,7 +252,7 @@ export async function POST(request: NextRequest) {
       success: true,
       summary,
       results,
-      message: `Successfully cloned ${results.successful.length} articles across ${languages.length} languages from ${originalArticles.length} source articles`
+      message: `Successfully cloned ${results.successful.length} articles across ${languages.length} languages from ${originalArticles.length} source articles. Marked ${articlesMarkedAsSelected} original articles as selected to prevent re-selection.`
     })
 
   } catch (error) {

@@ -111,13 +111,14 @@ CREATE TABLE articles (
 ```
 
 **Selection Tracking Fields**:
-- `selected_for_enhancement`: Boolean flag preventing AI from re-selecting the same articles
+- `selected_for_enhancement`: Boolean flag preventing AI from re-selecting articles (set to true after selection)
 - `selection_metadata`: JSONB containing:
   - `selected_at`: Timestamp when article was selected
   - `selection_reason`: Why Perplexity chose this article
   - `priority_score`: Quality score assigned by AI (0-100)
   - `perplexity_selection_id`: Original selection identifier
   - `selection_session`: Session timestamp for grouping selections
+  - `selection_type`: Type of selection (auto, bulk_manual, etc.)
 
 **Enhanced Articles**:
 - Original articles remain unchanged with `selected_for_enhancement = true`

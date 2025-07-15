@@ -33,8 +33,7 @@ The Trilingual AI Enhancement feature is an automated content processing system 
 
 ```
 1. Article Candidate Selection
-   ├── Fetch 50 recent non-enhanced articles
-   ├── Filter out previously selected articles (selected_for_enhancement = false)
+   ├── Fetch 50 recent articles where is_ai_enhanced = false AND selected_for_enhancement = false
    ├── Apply quality filters (length, metadata, sources)
    └── Score articles for enhancement potential
 
@@ -42,7 +41,7 @@ The Trilingual AI Enhancement feature is an automated content processing system 
    ├── Send candidate articles with sequential IDs (1, 2, 3...) to Perplexity
    ├── AI analyzes newsworthiness, impact, and relevance
    ├── Returns ranked list with sequential IDs (avoids UUID corruption)
-   └── Mark selected articles immediately to prevent re-selection
+   └── Mark selected articles as selected_for_enhancement = true with metadata
 
 3. Trilingual Enhancement
    ├── For each selected article:
@@ -111,9 +110,9 @@ Articles are stored in the main `articles` table with trilingual metadata:
 -- Core article fields
 id, title, content, summary, url, source, category, is_ai_enhanced, published_at
 
--- Selection tracking fields (NEW - prevents re-selection)
-selected_for_enhancement -- BOOLEAN: true if article has been selected by AI
-selection_metadata      -- JSONB: selection details (reason, score, timestamp, session)
+-- Selection tracking fields (prevents re-selection)
+selected_for_enhancement -- BOOLEAN: true if article has been selected (AI or manual)
+selection_metadata      -- JSONB: selection details (reason, score, timestamp, session, type)
 
 -- Trilingual tracking (stored in enhancement_metadata JSON)
 trilingual_batch_id      -- Links related language versions
@@ -235,6 +234,7 @@ The trilingual enhancement feature is integrated into the admin articles page wi
 
 #### Enhanced Article Management
 - **Deleted Article Indicators**: Visual indicators for soft-deleted articles
+- **Selected Article Indicators**: Visual indicators for articles marked for enhancement
 - **Modern UI Design**: Clean, minimal design with improved visual hierarchy
 - **Efficient Workflow**: Streamlined operations without navigation between pages
 

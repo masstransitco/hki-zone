@@ -80,6 +80,7 @@ const handleBatchDelete = async () => {
 - **Progress Tracking**: Detailed processing status with time estimates
 - **Language Breakdown**: Individual success counts per language
 - **Error Resilience**: Continues processing if individual articles fail
+- **Selection Tracking**: Marks original articles as `selected_for_enhancement = true` with comprehensive metadata to prevent re-selection by automated processes
 
 ```typescript
 const handleBulkClone = async () => {
@@ -120,9 +121,14 @@ className={`group relative rounded-xl border transition-all duration-200 ${
 
 #### Status Indicators
 - **Compact Design**: Small circular indicators for status
-- **Color Coding**: Red for deleted, purple for AI-enhanced
-- **Icon Integration**: Clear icons (Trash, Sparkles) for immediate recognition
+- **Color Coding**: Red for deleted, purple for AI-enhanced, amber for selected for enhancement
+- **Icon Integration**: Clear icons (Trash, Sparkles, Target) for immediate recognition
 - **Absolute Positioning**: Non-intrusive placement
+- **Status Badges**: Text badges for clear status communication:
+  - "Deleted" - Red badge for soft-deleted articles
+  - "AI Enhanced" - Purple badge for completed enhancements  
+  - "Selected for enhancement" - Amber badge for articles marked for processing
+- **Conditional Logic**: Only shows "Selected for enhancement" for non-AI-enhanced articles
 
 #### Enhanced Control Layout
 - **Two-Tier Structure**: Primary filters separated from action controls
