@@ -24,6 +24,8 @@ The integration of AI in healthcare is not without challenges. Privacy concerns,
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    console.log(`📡 /api/articles/${params.id} - Starting request`)
+    
     // Check if database is set up
     const isDatabaseReady = await checkDatabaseSetup()
 

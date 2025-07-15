@@ -18,47 +18,20 @@ interface ArticleDetailSheetProps {
 async function fetchArticle(id: string): Promise<Article> {
   console.log(`🔍 ArticleDetailSheet: Fetching article with ID: ${id}`)
   
-  // Try the unified API first (preferred for new system)
-  try {
-    const unifiedResponse = await fetch(`/api/unified/articles/${id}`)
-    if (unifiedResponse.ok) {
-      const article = await unifiedResponse.json()
-      console.log(`✅ Found article in unified API: ${article.title}`)
-      return article
-    }
-  } catch (error) {
-    console.log(`⚠️ Unified API failed for ${id}, trying legacy APIs`)
-  }
-  
-  // Check if this is likely a perplexity article by trying perplexity API
-  // but only if it doesn't respond with a mock article
-  let response = await fetch(`/api/perplexity/${id}`)
-  
-  if (response.ok) {
-    const article = await response.json()
-    // If we get a real perplexity article (not mock data), use it
-    if (!article.usingMockData) {
-      console.log(`✅ Found real perplexity article: ${article.title}`)
-      return article
-    }
-    console.log(`🔄 Perplexity API returned mock data for ${id}, trying regular articles API`)
-  } else {
-    console.log(`❌ Perplexity API failed for ${id}, trying regular articles API`)
-  }
-  
-  // Fall back to regular articles API
-  response = await fetch(`/api/articles/${id}`)
+  // Since topics feed uses the regular articles table for AI-enhanced articles,
+  // we should fetch from the same source for consistency
+  const response = await fetch(`/api/articles/${id}`)
   
   if (!response.ok) {
-    throw new Error("Failed to fetch article from all APIs")
+    throw new Error("Failed to fetch article")
   }
   
   const article = await response.json()
-  console.log(`✅ Article fetched from regular API:`, {
+  console.log(`✅ Article fetched:`, {
     id: article.id,
     title: article.title,
     source: article.source,
-    usingMockData: article.usingMockData
+    isAiEnhanced: article.isAiEnhanced
   })
   
   return article
@@ -151,7 +124,11 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
 
       <div className="space-y-8">
         {article.content ? (
-          <AIEnhancedContent content={article.content} isBottomSheet={true} />
+          <AIEnhancedContent 
+            content={article.content} 
+            isBottomSheet={true} 
+            sources={article.enhancementMetadata?.sources}
+          />
         ) : (
           <div className="text-muted-foreground text-center py-8">
             <p>No article content available</p>
@@ -172,58 +149,22 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
           </div>
         )}
 
-        {/* Sources section for AI enhanced articles */}
-        {article.isAiEnhanced && article.enhancementMetadata?.sources && article.enhancementMetadata.sources.length > 0 && (
-          <div className="space-y-6 mt-8 pt-6 border-t border-border">
-            <h3 className="text-lg font-semibold text-foreground">Sources</h3>
-            <div className="space-y-3">
-              {article.enhancementMetadata.sources.map((source, index) => (
-                <div key={index} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
-                  <span className="flex-shrink-0 w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-semibold text-primary">
-                    {index + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    {source.url ? (
-                      <a 
-                        href={source.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm font-medium text-primary hover:underline line-clamp-2"
-                      >
-                        {source.title}
-                      </a>
-                    ) : (
-                      <h4 className="text-sm font-medium text-foreground line-clamp-2">
-                        {source.title}
-                      </h4>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {source.domain}
-                    </p>
-                    {source.snippet && (
-                      <blockquote className="text-xs text-muted-foreground mt-2 italic line-clamp-2">
-                        "{source.snippet}"
-                      </blockquote>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
-      <footer className="mt-10 pt-6 border-t border-border">
-        <Link
-          href={article.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-primary hover:opacity-70 transition-opacity rounded-lg p-1 -m-1"
-        >
-          <ExternalLink className="w-4 h-4" />
-          <span className="text-sm font-medium">{t("article.readOriginal")}</span>
-        </Link>
-      </footer>
+      {/* Only show "Read original article" button for non-AI enhanced articles */}
+      {!article.isAiEnhanced && (
+        <footer className="mt-10 pt-6 border-t border-border">
+          <Link
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-primary hover:opacity-70 transition-opacity rounded-lg p-1 -m-1"
+          >
+            <ExternalLink className="w-4 h-4" />
+            <span className="text-sm font-medium">{t("article.readOriginal")}</span>
+          </Link>
+        </footer>
+      )}
     </article>
   )
 }

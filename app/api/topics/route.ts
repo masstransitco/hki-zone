@@ -173,6 +173,7 @@ export async function GET(request: NextRequest) {
         }))
 
         console.log("Returning real AI-enhanced articles from database")
+        console.log("Article IDs being returned:", transformedArticles.map(a => a.id))
         return NextResponse.json({
           articles: transformedArticles,
           nextPage: transformedArticles.length === limit ? page + 1 : null,

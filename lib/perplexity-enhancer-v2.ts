@@ -394,7 +394,7 @@ Requirements:
 
   private cleanStructuredContentForDisplay(content: string): string {
     // Remove hashtags and structure markers, keep only the clean content
-    return content
+    let cleanedContent = content
       .replace(/^# ENHANCED TITLE:\s*/gm, '')
       .replace(/^# 增强标题：\s*/gm, '')
       .replace(/^# 增強標題：\s*/gm, '')
@@ -403,6 +403,46 @@ Requirements:
       .replace(/^## KEY POINTS$/gm, '**Key Points**')
       .replace(/^## 重点$/gm, '**重点**')
       .replace(/^## 重點$/gm, '**重點**')
+
+    // Remove title lines that appear after the ENHANCED TITLE prefix
+    const lines = cleanedContent.split('\n')
+    const filteredLines = []
+    let skipNext = false
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      if (skipNext) {
+        skipNext = false
+        continue
+      }
+      
+      // Check if this is a title prefix line
+      if (line.match(/^# ENHANCED TITLE:\s*$|^# 增强标题：\s*$|^# 增強標題：\s*$/)) {
+        // Skip this line and the next line (which contains the actual title)
+        skipNext = true
+        continue
+      }
+      
+      // Check if this line looks like a standalone title (after title prefix was removed)
+      if (i === 0 || (i > 0 && lines[i-1].trim() === '')) {
+        // If it's a short line that doesn't end with punctuation and isn't a section header
+        if (line.length > 0 && line.length < 120 && 
+            !line.match(/[.!?]$/) && 
+            !line.startsWith('**') && 
+            !line.startsWith('##') &&
+            !line.startsWith('-') &&
+            !line.startsWith('*') &&
+            (i === 0 || i === 1)) {
+          // This is likely a title line at the beginning, skip it
+          continue
+        }
+      }
+      
+      filteredLines.push(line)
+    }
+    
+    return filteredLines.join('\n')
       .replace(/^## WHY IT MATTERS$/gm, '**Why It Matters**')
       .replace(/^## 重要性$/gm, '**重要性**')
       .replace(/^Requirements:[\s\S]*$/gm, '') // Remove requirements section if it appears

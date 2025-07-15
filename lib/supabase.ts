@@ -277,9 +277,22 @@ export async function searchArticles(query: string) {
 
 export async function getArticleById(id: string) {
   try {
+    console.log(`📍 getArticleById called with ID: ${id}`)
+    
     const { data, error } = await supabase.from("articles").select("*").eq("id", id).single()
 
     if (error) {
+      console.error(`❌ Error fetching article ${id}:`, error)
+      
+      // If not found, log sample IDs for debugging
+      if (error.code === 'PGRST116') {
+        const { data: sampleArticles } = await supabase
+          .from("articles")
+          .select("id")
+          .limit(5)
+        console.log("📋 Sample article IDs in database:", sampleArticles?.map(a => a.id))
+      }
+      
       // If table doesn't exist, return null instead of throwing
       if (error.code === "42P01" || error.message.includes("does not exist")) {
         console.warn("Articles table does not exist. Please run the database setup.")
@@ -287,6 +300,8 @@ export async function getArticleById(id: string) {
       }
       throw error
     }
+    
+    console.log(`✅ Found article: ${data.title}`)
     return data
   } catch (error) {
     console.error("Error fetching article by ID:", error)
