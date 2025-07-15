@@ -82,6 +82,11 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 
   console.log(`Perplexity selected ${selectedArticles.length} articles for enhancement`);
   
+  // Mark selected articles to prevent re-selection in future runs
+  if (selectedArticles.length > 0) {
+    await markArticlesAsSelected(selectedArticles, selectedIds);
+  }
+  
   if (selectedArticles.length === 0 && selectedIds.length > 0) {
     console.error('ERROR: Perplexity selections did not map to any candidate articles');
     console.error('Selected IDs:', selectedIds.map(s => s.id));
@@ -91,11 +96,21 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
     console.log(`FALLBACK: Selecting ${count} most recent articles as fallback`);
     const fallbackArticles = candidateArticles
       .slice(0, count)
-      .map(article => ({
+      .map((article, index) => ({
         ...article,
         selection_reason: 'Fallback selection - most recent article due to Perplexity selection mapping failure',
         priority_score: 75 // Default score for fallback
       }));
+    
+    // Mark fallback articles as selected too
+    if (fallbackArticles.length > 0) {
+      const fallbackSelections = fallbackArticles.map((_, index) => ({
+        id: `fallback-${index + 1}`,
+        reason: 'Fallback selection',
+        score: 75
+      }));
+      await markArticlesAsSelected(fallbackArticles, fallbackSelections);
+    }
     
     console.log(`Fallback selected ${fallbackArticles.length} articles`);
     return fallbackArticles;
@@ -106,11 +121,12 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 
 async function getCandidateArticles(): Promise<CandidateArticle[]> {
   try {
-    // Get recent articles that haven't been AI enhanced
+    // Get recent articles that haven't been AI enhanced and haven't been selected before
     const { data: articles, error } = await supabase
       .from('articles')
       .select('*')
       .is('is_ai_enhanced', false) // Only non-enhanced articles
+      .is('selected_for_enhancement', false) // Only articles never selected before
       .gte('created_at', getDateDaysAgo(7)) // Last 7 days
       .not('content', 'is', null) // Must have content
       .order('created_at', { ascending: false })
@@ -298,24 +314,64 @@ function getDateDaysAgo(days: number): string {
   return date.toISOString();
 }
 
+// Mark selected articles to prevent re-selection in future runs
+async function markArticlesAsSelected(
+  selectedArticles: SelectedArticle[], 
+  originalSelections: Array<{id: string, reason: string, score: number}>
+): Promise<void> {
+  console.log(`Marking ${selectedArticles.length} articles as selected to prevent re-selection...`);
+  
+  for (let i = 0; i < selectedArticles.length; i++) {
+    const article = selectedArticles[i];
+    const selection = originalSelections[i];
+    
+    try {
+      const { error } = await supabase
+        .from('articles')
+        .update({ 
+          selected_for_enhancement: true,
+          selection_metadata: {
+            selected_at: new Date().toISOString(),
+            selection_reason: article.selection_reason,
+            priority_score: article.priority_score,
+            perplexity_selection_id: selection?.id || `${i + 1}`,
+            selection_session: Date.now() // To group selections from same session
+          }
+        })
+        .eq('id', article.id);
+      
+      if (error) {
+        console.error(`Failed to mark article ${article.id} as selected:`, error);
+      } else {
+        console.log(`✓ Marked article "${article.title}" as selected`);
+      }
+    } catch (error) {
+      console.error(`Error marking article ${article.id} as selected:`, error);
+    }
+  }
+}
+
 // Helper function to get selection statistics
 export async function getSelectionStatistics(): Promise<any> {
   try {
     const { data: total, error: totalError } = await supabase
       .from('articles')
       .select('id', { count: 'exact' })
-      .is('is_ai_enhanced', false);
+      .is('is_ai_enhanced', false)
+      .is('selected_for_enhancement', false);
 
     const { data: recent, error: recentError } = await supabase
       .from('articles')
       .select('id', { count: 'exact' })
       .is('is_ai_enhanced', false)
+      .is('selected_for_enhancement', false)
       .gte('created_at', getDateDaysAgo(7));
 
     const { data: bySource, error: sourceError } = await supabase
       .from('articles')
       .select('source')
       .is('is_ai_enhanced', false)
+      .is('selected_for_enhancement', false)
       .gte('created_at', getDateDaysAgo(7));
 
     if (totalError || recentError || sourceError) {
