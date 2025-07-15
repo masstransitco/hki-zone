@@ -10,12 +10,10 @@ import type { PerplexityArticle } from "@/lib/types"
 
 const CATEGORIES = [
   { value: "all", label: "All" },
-  { value: "politics", label: "Politics" },
-  { value: "business", label: "Business" },
-  { value: "tech", label: "Technology" },
-  { value: "health", label: "Health" },
-  { value: "lifestyle", label: "Lifestyle" },
-  { value: "entertainment", label: "Entertainment" },
+  { value: "road", label: "Road" },
+  { value: "rail", label: "Rail" },
+  { value: "weather", label: "Weather" },
+  { value: "utility", label: "Utility" },
 ]
 
 export default function SignalsPage() {
@@ -61,8 +59,8 @@ export default function SignalsPage() {
       
       if (categoryFilter !== "all") params.set("category", categoryFilter)
       
-      const response = await fetch(`/api/perplexity?${params.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch articles')
+      const response = await fetch(`/api/signals?${params.toString()}`)
+      if (!response.ok) throw new Error('Failed to fetch signals')
       
       const data = await response.json()
       
@@ -74,7 +72,7 @@ export default function SignalsPage() {
       
       setHasMore(data.hasMore || false)
     } catch (error) {
-      console.error('Error loading articles:', error)
+      console.error('Error loading signals:', error)
     } finally {
       setLoading(false)
     }

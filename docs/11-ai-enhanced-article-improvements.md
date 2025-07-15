@@ -157,9 +157,19 @@ if (error.code === 'PGRST116') {
 
 ## Citation Functionality
 
-### 1. Interactive Citation Buttons
+### 1. Interactive Citation System Architecture
 
-**Feature**: Transform citation numbers `[1][2]` into clickable buttons that open source URLs.
+**Feature**: Transform citation numbers `[1][2]` into clickable buttons that open source URLs while maintaining clean UI without direct source list rendering.
+
+#### Citation Processing Pipeline
+
+```
+Raw Content → Source Removal → Citation Detection → Interactive Buttons
+     ↓              ↓               ↓                    ↓
+Format with    Remove source    Find [1][2]         Clickable UI
+citations      lists from       patterns in         elements
+               display          content
+```
 
 #### Implementation
 ```typescript
@@ -180,14 +190,14 @@ const processTextWithCitations = (text: string) => {
     }
     
     if (match[1] !== undefined) {
-      // Bold text
+      // Bold text formatting
       parts.push(
         <strong key={`bold-${match.index}`} className="font-semibold">
           {match[1]}
         </strong>
       )
     } else if (match[2] !== undefined && sources && sources.length > 0) {
-      // Citation button
+      // Interactive citation button
       const citationNumber = parseInt(match[2])
       const sourceIndex = citationNumber - 1
       
@@ -208,7 +218,13 @@ const processTextWithCitations = (text: string) => {
             {citationNumber}
           </button>
         )
+      } else {
+        // Fallback for invalid citations
+        parts.push(match[0])
       }
+    } else if (match[2] !== undefined) {
+      // Citation without sources - show as plain text
+      parts.push(match[0])
     }
     
     lastIndex = combinedRegex.lastIndex
@@ -229,6 +245,32 @@ const processTextWithCitations = (text: string) => {
 - **Interaction**: Click opens source URL in new window
 - **Accessibility**: Tooltip shows source title
 - **Positioning**: Proper spacing with `mx-0.5`
+- **Fallback**: Graceful handling of invalid citations
+
+#### Source Access Methods
+
+**Primary**: Interactive Citations
+- Citations `[1][2][3]` become clickable buttons
+- Direct access to specific sources
+- Integrated into content flow
+
+**Secondary**: Sources Badge
+- "X sources" badge in article header
+- Opens modal with full source list
+- Provides comprehensive source overview
+
+#### Consistency Across Implementations
+
+Both bottom sheet and standalone article detail page use identical citation processing:
+
+```typescript
+// Both implementations use same component with sources prop
+<AIEnhancedContent 
+  content={article.content} 
+  isBottomSheet={isBottomSheet} 
+  sources={article.enhancementMetadata?.sources}
+/>
+```
 
 ### 2. Markdown Bold Text Support
 
@@ -244,7 +286,113 @@ const processTextWithCitations = (text: string) => {
 
 ## Content Parsing Improvements
 
-### 1. Duplicate Title Removal
+### 1. Dual Format Support Architecture
+
+**Problem**: AI enhanced articles were returning in two different formats:
+- `**Header**` format (traditional markdown)
+- `## HEADER` format (markdown headers)
+
+**Solution**: Implemented a dual-format parsing system that normalizes content before processing.
+
+#### Content Format Examples
+
+**Traditional Format:**
+```markdown
+**Summary**
+Content summary here...
+
+**Key Points**
+• Point 1 with citations [1][2]
+• Point 2 with citations [3][4]
+
+**Why It Matters**
+Analysis of significance...
+
+**Sources:**
+[1] source1.com
+[2] source2.com
+```
+
+**Markdown Header Format:**
+```markdown
+## SUMMARY
+Content summary here...
+
+## KEY POINTS
+• Point 1 with citations [1][2]
+• Point 2 with citations [3][4]
+
+## WHY IT MATTERS
+Analysis of significance...
+
+**Sources:**
+[1] source1.com
+[2] source2.com
+```
+
+#### Parsing Architecture
+
+The system implements a two-stage parsing approach:
+
+1. **Normalization Stage**: Convert `## HEADER` format to `**Header**` format
+2. **Standard Parsing**: Use existing proven parsing logic for consistency
+
+```typescript
+// Normalize content by converting ## headers to ** format
+let normalizedContent = cleanedContent
+  .replace(/##\s*(SUMMARY|KEY POINTS?|KEY CONTEXT|WHY IT MATTERS?|摘要|重点|重點|重要性)/gi, '**$1**')
+
+// Split content using standard ** format
+const sections = normalizedContent.split(/\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*/i)
+```
+
+### 2. Comprehensive Source Removal System
+
+**Problem**: Source lists were being rendered directly in the content, cluttering the UI.
+
+**Solution**: Implemented comprehensive source removal patterns that handle multiple formats:
+
+#### Source Removal Patterns
+
+```typescript
+// Remove various source section formats
+let cleanedContent = content
+  // Remove "## Sources" sections (Perplexity format)
+  .replace(/\n\n?##\s*Sources\s*\n[\s\S]*$/i, '')
+  // Remove "## SOURCES" sections (uppercase)
+  .replace(/\n\n?##\s*SOURCES\s*\n[\s\S]*$/i, '')
+  // Remove "**Sources:**" sections with [n] domain.com format
+  .replace(/\n\n?\*\*Sources?:\*\*\s*\n(?:\[\d+\]\s+[\w.-]+\.[\w.-]+\s*\n?)+$/i, '')
+  // Remove "**Sources**" sections (without colon)
+  .replace(/\n\n?\*\*Sources?\*\*\n[\s\S]*$/i, '')
+  // Remove simple "Sources:" sections
+  .replace(/\n+Sources?:\s*\n(?:\d+\s+[\w.-]+\.[\w.-]+\s*\n?)+$/i, '')
+```
+
+#### Source Format Examples Handled
+
+**Format 1: Markdown Header**
+```markdown
+## SOURCES
+1. source1.com
+2. source2.com
+```
+
+**Format 2: Bold with Colon**
+```markdown
+**Sources:**
+[1] source1.com
+[2] source2.com
+```
+
+**Format 3: Simple List**
+```markdown
+Sources:
+1 source1.com
+2 source2.com
+```
+
+### 3. Duplicate Title Removal
 
 **Problem**: AI enhanced articles were showing titles twice - once in the header and once in the main content.
 
@@ -429,3 +577,227 @@ Key achievements:
 - **Enhanced debugging** for easier troubleshooting
 
 These improvements provide a solid foundation for future enhancements while maintaining high performance and user experience standards.
+
+## Content Parsing Architecture
+
+### Content Parser Library (`/lib/content-parser.ts`)
+
+The content parser is the core component responsible for transforming raw AI enhanced content into structured, renderable sections.
+
+#### Key Functions
+
+**`parseAIEnhancedContent(content: string): ParsedArticleContent`**
+- **Purpose**: Main parsing function that processes AI enhanced content
+- **Input**: Raw content string from AI enhancement
+- **Output**: Structured article content with sections
+
+```typescript
+export interface ParsedArticleContent {
+  summary?: string
+  keyPoints?: string[]
+  whyItMatters?: string
+  mainContent: string
+  hasStructuredContent: boolean
+}
+```
+
+#### Processing Pipeline
+
+```
+Raw Content → Source Removal → Format Detection → Normalization → Section Parsing → Structured Output
+     ↓              ↓               ↓                ↓              ↓              ↓
+  Full text    Clean content    ** vs ##        Unified **      Extract         Parsed
+  with          without         format           format        sections        sections
+  sources       source lists    detection                     
+```
+
+#### Format Detection Logic
+
+```typescript
+// Detect structured content in both formats
+const hasStructuredSections = /(\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*|##\s*(SUMMARY|KEY POINTS?|KEY CONTEXT|WHY IT MATTERS?|摘要|重点|重點|重要性))/i.test(cleanedContent)
+
+// Detect Perplexity-style format (structured content first)
+const firstSectionMatch = cleanedContent.match(/^(\*\*(Summary|摘要)\*\*|##\s*(SUMMARY|摘要))/i)
+const isPerplexityFormat = firstSectionMatch !== null
+```
+
+#### Section Extraction Process
+
+1. **Content Normalization**: Convert `## HEADER` to `**Header**` format
+2. **Section Splitting**: Split content by recognized section headers
+3. **Content Assignment**: Map sections to structured fields
+4. **Bullet Point Processing**: Parse key points into array format
+
+```typescript
+// Section parsing logic
+for (let i = 1; i < sections.length; i += 2) {
+  const sectionTitle = sections[i]?.toLowerCase().trim()
+  const sectionContent = sections[i + 1]?.trim()
+
+  switch (sectionTitle) {
+    case 'summary':
+    case '摘要':
+      summary = sectionContent
+      break
+    case 'key points':
+    case 'key point':
+    case 'key context':
+    case '重点':
+    case '重點':
+      keyPoints = sectionContent
+        .split(/\n/)
+        .map(point => point.replace(/^[-•*]\s*|^\d+\.\s*/, '').trim())
+        .filter(point => point.length > 0)
+      break
+    case 'why it matters':
+    case 'why it matter':
+    case '重要性':
+      whyItMatters = sectionContent
+      break
+  }
+}
+```
+
+### Rendering Architecture (`/components/ai-enhanced-content.tsx`)
+
+The AIEnhancedContent component handles the display of parsed content with interactive features.
+
+#### Component Structure
+
+```typescript
+interface AIEnhancedContentProps {
+  content: string
+  isBottomSheet?: boolean
+  sources?: Array<{
+    url: string
+    title: string
+    domain: string
+    snippet?: string
+    accessedAt: string
+  }>
+}
+```
+
+#### Rendering Flow
+
+```
+Content Input → HTML Detection → Parsing → Section Rendering → Citation Processing
+     ↓              ↓              ↓              ↓                ↓
+  Raw string    Check for     parseAIEnhanced    Structured      Interactive
+  content       HTML tags      Content()         sections        citations
+```
+
+#### Section Rendering Logic
+
+```typescript
+return (
+  <div className="space-y-8">
+    {/* Summary Section */}
+    {parsed.summary && (
+      <div className="space-y-4">
+        <h3 className={`${headingSizeClass} text-foreground`}>
+          {t("article.summary") || "Summary"}
+        </h3>
+        <div className={`${textSizeClass} text-foreground leading-loose font-normal`}>
+          {processTextWithCitations(parsed.summary)}
+        </div>
+      </div>
+    )}
+
+    {/* Key Points Section */}
+    {parsed.keyPoints && parsed.keyPoints.length > 0 && (
+      <div className="space-y-4">
+        <h3 className={`${headingSizeClass} text-foreground`}>
+          {t("article.keyPoints") || "Key Points"}
+        </h3>
+        <ul className="space-y-2">
+          {parsed.keyPoints.map((point, index) => (
+            <li key={index} className="flex items-start gap-3">
+              <span className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></span>
+              <span className={`${textSizeClass} text-foreground leading-loose font-normal flex-1`}>
+                {processTextWithCitations(point)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {/* Why It Matters Section */}
+    {parsed.whyItMatters && (
+      <div className="space-y-4">
+        <h3 className={`${headingSizeClass} text-foreground`}>
+          {t("article.whyItMatters") || "Why It Matters"}
+        </h3>
+        <div className={`${textSizeClass} text-foreground leading-loose font-normal`}>
+          {processTextWithCitations(parsed.whyItMatters)}
+        </div>
+      </div>
+    )}
+
+    {/* Main Content */}
+    {parsed.mainContent && (
+      <div className={`${textSizeClass} text-foreground leading-loose whitespace-pre-wrap font-normal`}>
+        {processTextWithCitations(parsed.mainContent)}
+      </div>
+    )}
+  </div>
+)
+```
+
+### Implementation Consistency
+
+Both the bottom sheet and standalone article detail page implementations use identical parsing and rendering logic:
+
+#### Bottom Sheet Implementation
+```typescript
+// /components/article-detail-sheet.tsx
+<AIEnhancedContent 
+  content={article.content} 
+  isBottomSheet={true} 
+  sources={article.enhancementMetadata?.sources}
+/>
+```
+
+#### Standalone Page Implementation
+```typescript
+// /components/article-detail.tsx
+<AIEnhancedContent 
+  content={article.content} 
+  isBottomSheet={false} 
+  sources={article.enhancementMetadata?.sources}
+/>
+```
+
+### Error Handling and Fallbacks
+
+The system includes comprehensive error handling:
+
+1. **Invalid Content**: Returns non-structured content rendering
+2. **Missing Sources**: Citations display as plain text
+3. **Malformed Sections**: Graceful degradation to main content
+4. **HTML Content**: Direct HTML rendering with prose styling
+
+```typescript
+// HTML content fallback
+if (isHTML) {
+  return (
+    <div 
+      className={`${textSizeClass} text-foreground leading-loose font-normal prose prose-neutral dark:prose-invert max-w-none`}
+      dangerouslySetInnerHTML={{ __html: content }}
+    />
+  )
+}
+
+// Non-structured content fallback
+if (!parsed.hasStructuredContent) {
+  return (
+    <div className={`${textSizeClass} text-foreground leading-loose whitespace-pre-wrap font-normal`}>
+      {content}
+    </div>
+  )
+}
+```
+
+This architecture ensures robust, consistent parsing and rendering of AI enhanced articles across all contexts while maintaining interactive citation functionality and clean UI presentation.

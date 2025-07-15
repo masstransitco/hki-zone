@@ -135,9 +135,13 @@ pending → enriched → ready → displayed
 ### AI Enhancement Pipeline
 1. **Content Selection**: Identify articles for AI enhancement
 2. **Perplexity Processing**: Generate enhanced summaries and key points
-3. **Image Enhancement**: AI-generated image prompts and search
-4. **Structured Data**: Extract citations, sources, and metadata
-5. **Status Update**: Mark articles as 'enriched' or 'ready'
+3. **Dual Format Support**: Handle both `**Header**` and `## HEADER` formats
+4. **Content Parsing**: Extract structured sections (Summary, Key Points, Why It Matters)
+5. **Source Management**: Remove redundant source lists while preserving citations
+6. **Interactive Citations**: Transform `[1][2]` into clickable buttons
+7. **Image Enhancement**: AI-generated image prompts and search
+8. **Structured Data**: Extract citations, sources, and metadata
+9. **Status Update**: Mark articles as 'enriched' or 'ready'
 
 ### Content Delivery
 1. **API Endpoints**: Serve content through REST APIs

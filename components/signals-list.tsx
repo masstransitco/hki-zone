@@ -6,11 +6,17 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { 
-  Loader2
+  Loader2,
+  AlertTriangle,
+  MapPin,
+  Clock,
+  Activity,
+  Sparkles,
+  CheckCircle,
+  XCircle
 } from "lucide-react"
 import { format } from "date-fns"
 import ArticleCard from "@/components/article-card"
-import ArticleBottomSheet from "@/components/article-bottom-sheet"
 
 interface PerplexityArticle {
   id: string
@@ -31,6 +37,16 @@ interface PerplexityArticle {
   key_points?: string[]
   why_it_matters?: string
   enhanced_title?: string
+  
+  // Incident-specific fields
+  severity?: number
+  relevance_score?: number
+  longitude?: number
+  latitude?: number
+  starts_at?: string
+  source_updated_at?: string
+  source_slug?: string
+  enrichment_status?: "pending" | "enriched" | "ready" | "failed"
 }
 
 interface SignalsListProps {
@@ -50,8 +66,6 @@ export default function SignalsList({
 }: SignalsListProps) {
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set())
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
-  const [bottomSheetOpen, setBottomSheetOpen] = useState(false)
   const observerRef = useRef<IntersectionObserver>()
   const loadMoreRef = useRef<HTMLDivElement>(null)
 
@@ -89,6 +103,13 @@ export default function SignalsList({
 
   const getCategoryColor = (category: string) => {
     const colors = {
+      // Incident categories
+      road: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
+      rail: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+      weather: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
+      utility: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+      
+      // Legacy categories (fallback)
       politics: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
       business: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
       tech: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
@@ -97,6 +118,43 @@ export default function SignalsList({
       entertainment: "bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400"
     }
     return colors[category as keyof typeof colors] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+  }
+
+  const getSeverityColor = (severity: number) => {
+    if (severity >= 7) return "text-red-600 dark:text-red-400"
+    if (severity >= 4) return "text-orange-600 dark:text-orange-400"
+    return "text-green-600 dark:text-green-400"
+  }
+
+  const getEnrichmentStatusBadge = (status: string) => {
+    const statusConfig = {
+      pending: {
+        label: "Direct",
+        color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+        icon: Clock,
+        description: "Direct government content"
+      },
+      enriched: {
+        label: "AI Enhanced",
+        color: "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
+        icon: Sparkles,
+        description: "Enhanced with AI analysis"
+      },
+      ready: {
+        label: "Ready",
+        color: "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400",
+        icon: CheckCircle,
+        description: "Fully processed"
+      },
+      failed: {
+        label: "Failed",
+        color: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
+        icon: XCircle,
+        description: "Enhancement failed"
+      }
+    }
+    
+    return statusConfig[status as keyof typeof statusConfig] || statusConfig.pending
   }
 
   const formatDate = (dateString: string) => {
@@ -117,10 +175,6 @@ export default function SignalsList({
     setExpandedCards(newExpanded)
   }
 
-  const handleArticleClick = (articleId: string) => {
-    setSelectedArticleId(articleId)
-    setBottomSheetOpen(true)
-  }
 
   if (loading) {
     return (
@@ -147,31 +201,35 @@ export default function SignalsList({
               </CardContent>
             </Card>
           ) : (
-            articles.map((article) => (
-              <ArticleCard
-                key={article.id}
-                article={{
-                  id: article.id,
-                  title: article.enhanced_title || article.title,
-                  url: article.url,
-                  content: article.article_html || '',
-                  summary: article.summary || article.lede || '',
-                  category: article.category,
-                  source: article.source,
-                  author: article.author,
-                  published_at: article.published_at || article.created_at,
-                  created_at: article.created_at,
-                  imageUrl: article.image_url,
-                  has_image: !!article.image_url,
-                  key_points: article.key_points,
-                  why_it_matters: article.why_it_matters,
-                  has_ai_content: !!(article.summary || article.key_points || article.why_it_matters),
-                  article_type: 'ai_generated'
-                }}
-                isExpanded={expandedCards.has(article.id)}
-                onToggleExpand={() => toggleCardExpansion(article.id)}
-              />
-            ))
+            articles.map((article) => {
+              const isEnriched = article.enrichment_status === 'enriched' || article.enrichment_status === 'ready'
+              
+              return (
+                <ArticleCard
+                  key={article.id}
+                  article={{
+                    id: article.id,
+                    title: isEnriched ? (article.enhanced_title || article.title) : article.title,
+                    url: article.url,
+                    content: article.article_html || '',
+                    summary: isEnriched && article.summary ? article.summary : (article.lede || ''),
+                    category: article.category,
+                    source: article.source,
+                    author: article.author,
+                    published_at: article.published_at || article.created_at,
+                    created_at: article.created_at,
+                    imageUrl: article.image_url,
+                    has_image: !!article.image_url,
+                    key_points: article.key_points,
+                    why_it_matters: article.why_it_matters,
+                    has_ai_content: !!(article.summary || article.key_points || article.why_it_matters),
+                    article_type: 'ai_generated'
+                  }}
+                  isExpanded={expandedCards.has(article.id)}
+                  onToggleExpand={() => toggleCardExpansion(article.id)}
+                />
+              )
+            })
           )}
         </div>
         
@@ -206,8 +264,7 @@ export default function SignalsList({
         articles.map((article) => (
           <Card 
             key={article.id} 
-            className="hover:shadow-lg transition-shadow duration-200 overflow-hidden cursor-pointer"
-            onClick={() => handleArticleClick(article.id)}
+            className="hover:shadow-lg transition-shadow duration-200 overflow-hidden"
           >
             <CardContent className="p-4">
               <div className="flex gap-4">
@@ -227,27 +284,89 @@ export default function SignalsList({
                 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  {/* Category and time */}
-                  <div className="flex items-center gap-2 mb-2">
+                  {/* Category and metadata */}
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <Badge variant="outline" className={getCategoryColor(article.category)}>
                       {article.category}
                     </Badge>
+                    
+                    
+                    {article.severity && (
+                      <div className="flex items-center gap-1">
+                        <AlertTriangle className={`h-3 w-3 ${getSeverityColor(article.severity)}`} />
+                        <span className={`text-xs ${getSeverityColor(article.severity)}`}>
+                          {article.severity}
+                        </span>
+                      </div>
+                    )}
+                    {article.relevance_score && (
+                      <div className="flex items-center gap-1">
+                        <Activity className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          {article.relevance_score}
+                        </span>
+                      </div>
+                    )}
                     <span className="text-xs text-muted-foreground">
-                      {formatDate(article.created_at)}
+                      {formatDate(article.source_updated_at || article.created_at)}
                     </span>
                   </div>
                   
                   {/* Title */}
                   <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">
-                    {article.enhanced_title || article.title}
+                    {article.enrichment_status === 'enriched' || article.enrichment_status === 'ready' 
+                      ? (article.enhanced_title || article.title)
+                      : article.title
+                    }
                   </h3>
                   
-                  {/* Summary */}
-                  {(article.summary || article.lede) && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {article.summary || article.lede}
-                    </p>
+                  {/* Location */}
+                  {(article.longitude && article.latitude) && (
+                    <div className="flex items-center gap-1 mb-1">
+                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">
+                        {article.latitude.toFixed(4)}, {article.longitude.toFixed(4)}
+                      </span>
+                    </div>
                   )}
+                  
+                  {/* Summary - show enriched content if available, otherwise show direct content */}
+                  {(() => {
+                    const isEnriched = article.enrichment_status === 'enriched' || article.enrichment_status === 'ready'
+                    const content = isEnriched && article.summary ? article.summary : article.lede
+                    
+                    if (content) {
+                      return (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {content}
+                        </p>
+                      )
+                    }
+                    return null
+                  })()}
+                  
+                  {/* AI-Enhanced Content Indicators */}
+                  {(article.enrichment_status === 'enriched' || article.enrichment_status === 'ready') && (
+                    <div className="flex items-center gap-2 mt-2">
+                      {article.key_points && article.key_points.length > 0 && (
+                        <span className="text-xs text-blue-600 dark:text-blue-400">
+                          • {article.key_points.length} key points
+                        </span>
+                      )}
+                      {article.why_it_matters && (
+                        <span className="text-xs text-green-600 dark:text-green-400">
+                          • Impact analysis
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Source */}
+                  <div className="flex items-center gap-1 mt-2">
+                    <span className="text-xs text-muted-foreground">
+                      <strong>Source:</strong> {article.source_slug?.toUpperCase() || article.source}
+                    </span>
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -270,13 +389,6 @@ export default function SignalsList({
         </div>
       )}
       
-      {/* Article Bottom Sheet */}
-      <ArticleBottomSheet
-        articleId={selectedArticleId}
-        open={bottomSheetOpen}
-        onOpenChange={setBottomSheetOpen}
-        isPerplexityArticle={true}
-      />
     </div>
   )
 }

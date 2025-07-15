@@ -12,6 +12,7 @@ import {
   Shield,
   Brain,
   Car,
+  Radio,
 } from "lucide-react"
 
 import {
@@ -46,10 +47,10 @@ const navigationItems = [
     description: "Manage car listings and 28car scraper",
   },
   {
-    title: "Perplexity News",
-    url: "/admin/perplexity",
-    icon: Brain,
-    description: "Manage AI-generated news articles",
+    title: "Government Signals",
+    url: "/admin/signals",
+    icon: Radio,
+    description: "Monitor government incident feeds and AI enrichment",
   },
   {
     title: "Database",

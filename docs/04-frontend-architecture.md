@@ -99,6 +99,48 @@ export default function RootLayout({
 - Real-time updates with React Query
 - Error handling and retry logic
 
+#### AI Enhanced Article System
+
+The AI enhanced article system provides structured content rendering with interactive features:
+
+**Content Flow Architecture:**
+```
+Topics Feed → Article Selection → Bottom Sheet/Standalone Page → AI Enhanced Content
+     ↓               ↓                      ↓                           ↓
+ AI enhanced    User clicks         Consistent rendering        Interactive citations
+ articles       article card        across both contexts        with source access
+```
+
+**Key Components:**
+
+1. **Content Parser (`/lib/content-parser.ts`)**
+   - Handles dual format support (`**Header**` and `## HEADER`)
+   - Removes source lists from display
+   - Parses structured sections
+   - Language support (English and Chinese)
+
+2. **AIEnhancedContent Component (`/components/ai-enhanced-content.tsx`)**
+   - Renders structured content sections
+   - Processes interactive citations
+   - Handles markdown bold text
+   - Responsive text sizing
+
+3. **Citation System**
+   - Transforms `[1][2]` into clickable buttons
+   - Opens source URLs in new windows
+   - Provides tooltips with source information
+   - Fallback for missing sources
+
+**Implementation Consistency:**
+Both bottom sheet and standalone page use identical rendering logic:
+```typescript
+<AIEnhancedContent 
+  content={article.content} 
+  isBottomSheet={isBottomSheet} 
+  sources={article.enhancementMetadata?.sources}
+/>
+```
+
 #### Article Card (`components/article-card.tsx`)
 ```typescript
 interface ArticleCardProps {
@@ -122,9 +164,18 @@ export function ArticleCard({
 
 #### Article Detail (`components/article-detail.tsx`)
 - Full article view with structured data
+- AI enhanced content parsing and rendering
+- Interactive citation system
 - Social sharing integration
 - SEO optimization
 - Related articles
+
+#### AI Enhanced Content (`components/ai-enhanced-content.tsx`)
+- **Dual Format Support**: Handles both `**Header**` and `## HEADER` formats
+- **Structured Rendering**: Parses content into Summary, Key Points, Why It Matters sections
+- **Interactive Citations**: Transforms `[1][2]` into clickable buttons
+- **Source Management**: Removes redundant source lists from display
+- **Responsive Design**: Adapts text sizing for bottom sheet vs standalone page
 
 #### Cars Feed (`components/cars-feed.tsx`)
 - **Modern Minimal Design**: Clean grid layout with optimized responsive breakpoints

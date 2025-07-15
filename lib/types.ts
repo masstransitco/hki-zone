@@ -108,3 +108,93 @@ export interface PerplexityNewsResponse {
   debug: string
   error?: string
 }
+
+// Government Incident Types
+export type IncidentCategory = 'road' | 'rail' | 'weather' | 'utility'
+export type EnrichmentStatus = 'pending' | 'enriched' | 'ready' | 'failed'
+
+export interface GovFeed {
+  id: string
+  slug: string
+  url: string
+  active: boolean
+  last_seen_pubdate?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Incident {
+  id: string
+  source_slug: string
+  title: string
+  body?: string
+  category: IncidentCategory
+  severity: number
+  longitude?: number
+  latitude?: number
+  starts_at?: string
+  source_updated_at: string
+  
+  // Enrichment fields
+  enrichment_status: EnrichmentStatus
+  relevance_score: number
+  enriched_title?: string
+  enriched_summary?: string
+  enriched_content?: string
+  key_points?: string[]
+  why_it_matters?: string
+  image_url?: string
+  image_prompt?: string
+  
+  // New enrichment fields
+  additional_sources?: Array<{
+    title: string
+    url: string
+    description?: string
+    domain?: string
+    accessed_at: string
+  }>
+  key_facts?: string[]
+  reporting_score?: number
+  
+  // Metadata
+  sources?: {
+    citations: string[]
+    sources: Array<{
+      title: string
+      url: string
+      description?: string
+      domain?: string
+    }>
+    generated_at: string
+  }
+  citations?: string[]
+  enrichment_metadata?: {
+    enriched_at: string
+    enrichment_cost?: string
+    ai_model?: string
+    search_queries?: string[]
+  }
+  
+  // Timestamps
+  created_at: string
+  updated_at: string
+}
+
+export interface IncidentsResponse {
+  incidents: Incident[]
+  total: number
+  page: number
+  limit: number
+  hasMore: boolean
+  error?: string
+}
+
+export interface SignalResponse {
+  signals: (PerplexityArticle | Incident)[]
+  total: number
+  page: number
+  limit: number
+  hasMore: boolean
+  error?: string
+}
