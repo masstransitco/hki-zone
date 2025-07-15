@@ -128,6 +128,32 @@ The HKI News App is a Next.js 14 application that:
 
 **When to Use**: When working with the news feed layout, implementing masonry grids, or fixing infinite scroll issues.
 
+### 9. [Trilingual AI Enhancement System](./09-trilingual-ai-enhancement.md)
+**Purpose**: Comprehensive guide to the automated trilingual article enhancement system.
+
+**Key Information**:
+- AI-powered article selection using Perplexity API
+- Trilingual processing (English, Traditional Chinese, Simplified Chinese)
+- Batch management and processing pipelines
+- API integration and authentication
+- Progress tracking and cost estimation
+- Admin interface integration
+
+**When to Use**: When working with AI enhancement features, implementing trilingual content, or managing automated processing workflows.
+
+### 10. [Admin Interface Improvements](./10-admin-interface-improvements.md) ⭐ *New Feature*
+**Purpose**: Complete guide to the enhanced admin article management system with modern UI and batch operations.
+
+**Key Information**:
+- Enhanced article selection system with multi-checkbox interface
+- Batch operations (bulk delete, bulk clone to 3 languages)
+- Modern UI design implementation with minimal design principles
+- AI enhancement workflow integration (auto-selection vs manual selection)
+- Enhanced user experience features and contextual controls
+- API integration for new bulk endpoints
+
+**When to Use**: When working with admin interface improvements, implementing batch operations, modernizing UI components, or enhancing content management workflows.
+
 ## Quick Reference
 
 ### Key File Locations

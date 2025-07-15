@@ -93,9 +93,36 @@ CREATE TABLE articles (
     image_url TEXT,
     category TEXT DEFAULT 'General',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    
+    -- AI Enhancement Tracking
+    is_ai_enhanced BOOLEAN DEFAULT false,
+    original_article_id UUID,
+    enhancement_metadata JSONB,
+    language VARCHAR(10),
+    
+    -- Selection Tracking (prevents re-selection)
+    selected_for_enhancement BOOLEAN DEFAULT false,
+    selection_metadata JSONB,
+    
+    -- Soft Delete Support
+    deleted_at TIMESTAMPTZ NULL
 );
 ```
+
+**Selection Tracking Fields**:
+- `selected_for_enhancement`: Boolean flag preventing AI from re-selecting the same articles
+- `selection_metadata`: JSONB containing:
+  - `selected_at`: Timestamp when article was selected
+  - `selection_reason`: Why Perplexity chose this article
+  - `priority_score`: Quality score assigned by AI (0-100)
+  - `perplexity_selection_id`: Original selection identifier
+  - `selection_session`: Session timestamp for grouping selections
+
+**Enhanced Articles**:
+- Original articles remain unchanged with `selected_for_enhancement = true`
+- Enhanced versions are saved as separate records with `is_ai_enhanced = true`
+- Unique URLs prevent conflicts (`#enhanced-en-timestamp`, etc.)
 
 #### `perplexity_news` (AI-Generated Content)
 ```sql

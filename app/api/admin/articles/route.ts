@@ -87,6 +87,7 @@ export async function GET(request: NextRequest) {
       isAiEnhanced: article.is_ai_enhanced || false,
       language: article.enhancement_metadata?.language || 'en',
       enhancementMetadata: article.enhancement_metadata,
+      deletedAt: article.deleted_at,
     }))
 
     return NextResponse.json({
@@ -144,12 +145,12 @@ async function getArticlesWithFilters({
       query = query.eq("category", category)
     }
     
-    if (language) {
+    if (language && language !== "all") {
       // Use metadata-based language filtering (same logic as Topics API)
       if (language !== "en") {
         query = query.eq('enhancement_metadata->>language', language)
       } else {
-        query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null`)
+        query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null,enhancement_metadata.is.null`)
       }
     }
     

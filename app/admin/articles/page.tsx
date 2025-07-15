@@ -6,9 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, RefreshCw, Languages, Sparkles, Loader2 } from "lucide-react"
+import { Search, Filter, RefreshCw, Languages, Sparkles, Loader2, Trash2, CheckSquare, Copy } from "lucide-react"
 import ArticleReviewGrid from "@/components/admin/article-review-grid"
-import ArticleDetailPanel from "@/components/admin/article-detail-panel"
 import ArticleDetailSheet from "@/components/admin/article-detail-sheet"
 import TrilingualAutoSelectModal from "@/components/admin/trilingual-auto-select-modal"
 import { useLanguage } from "@/components/language-provider"
@@ -29,6 +28,9 @@ export default function ArticlesPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [showProgressModal, setShowProgressModal] = useState(false)
   const [processProgress, setProcessProgress] = useState<any>(null)
+  const [selectedArticleIds, setSelectedArticleIds] = useState<Set<string>>(new Set())
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isBulkCloning, setIsBulkCloning] = useState(false)
 
   useEffect(() => {
     loadArticles()
@@ -87,19 +89,128 @@ export default function ArticlesPage() {
     setPage(0)
     setSelectedArticle(null)
     setIsSheetOpen(false)
+    setSelectedArticleIds(new Set())
     loadArticles()
   }
 
-  const handleArticleSelect = (article: Article) => {
+  const handleArticleExpand = (article: Article) => {
     setSelectedArticle(article)
-  }
-
-  const handleExpandToFullScreen = () => {
     setIsSheetOpen(true)
   }
 
   const handleLoadMore = () => {
     setPage(prev => prev + 1)
+  }
+
+  const handleArticleSelect = (articleId: string, selected: boolean) => {
+    setSelectedArticleIds(prev => {
+      const newSelected = new Set(prev)
+      if (selected) {
+        newSelected.add(articleId)
+      } else {
+        newSelected.delete(articleId)
+      }
+      return newSelected
+    })
+  }
+
+  const handleSelectAll = () => {
+    const allIds = new Set(articles.map(article => article.id))
+    setSelectedArticleIds(allIds)
+  }
+
+  const handleSelectNone = () => {
+    setSelectedArticleIds(new Set())
+  }
+
+  const handleBatchDelete = async () => {
+    if (selectedArticleIds.size === 0) {
+      alert('Please select articles to delete')
+      return
+    }
+
+    if (!confirm(`Are you sure you want to delete ${selectedArticleIds.size} selected articles?`)) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch('/api/admin/articles/batch-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articleIds: Array.from(selectedArticleIds)
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete articles')
+      }
+
+      alert(`Successfully deleted ${data.deletedCount} articles`)
+      setSelectedArticleIds(new Set())
+      handleRefresh()
+    } catch (error) {
+      console.error('Batch delete error:', error)
+      alert('Failed to delete articles: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleBulkClone = async () => {
+    if (selectedArticleIds.size === 0) {
+      alert('Please select articles to clone')
+      return
+    }
+
+    if (selectedArticleIds.size > 20) {
+      alert('Maximum 20 articles allowed per bulk operation')
+      return
+    }
+
+    if (!confirm(`Clone ${selectedArticleIds.size} selected articles into all 3 languages (${selectedArticleIds.size * 3} total new articles)?\n\nThis will create:\n• ${selectedArticleIds.size} English versions\n• ${selectedArticleIds.size} Traditional Chinese versions\n• ${selectedArticleIds.size} Simplified Chinese versions\n\nEstimated time: ${Math.ceil(selectedArticleIds.size * 3 * 0.5)} minutes`)) {
+      return
+    }
+
+    setIsBulkCloning(true)
+    try {
+      const response = await fetch('/api/admin/articles/bulk-clone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          articleIds: Array.from(selectedArticleIds),
+          options: {
+            searchDepth: 'medium',
+            recencyFilter: 'month',
+            maxTokens: 2000
+          }
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to clone articles')
+      }
+
+      const { summary } = data
+      alert(`Bulk cloning completed!\n\n✅ Successfully cloned: ${summary.successfulClones}/${summary.targetClones} articles\n📊 Success rate: ${summary.successRate}%\n🌐 Language breakdown:\n  • English: ${summary.languageBreakdown.en}\n  • 繁體中文: ${summary.languageBreakdown['zh-TW']}\n  • 简体中文: ${summary.languageBreakdown['zh-CN']}\n💰 Total cost: $${summary.totalCost}`)
+      
+      setSelectedArticleIds(new Set())
+      handleRefresh()
+    } catch (error) {
+      console.error('Bulk clone error:', error)
+      alert('Failed to clone articles: ' + (error instanceof Error ? error.message : 'Unknown error'))
+    } finally {
+      setIsBulkCloning(false)
+    }
   }
 
   const handleTrilingualAutoSelect = async () => {
@@ -278,131 +389,168 @@ export default function ArticlesPage() {
             </form>
             
             {/* Filters Row */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by source" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sources</SelectItem>
-                  <SelectItem value="HKFP">HKFP</SelectItem>
-                  <SelectItem value="SingTao">SingTao</SelectItem>
-                  <SelectItem value="HK01">HK01</SelectItem>
-                  <SelectItem value="ONCC">ONCC</SelectItem>
-                  <SelectItem value="RTHK">RTHK</SelectItem>
-                  <SelectItem value="on.cc">on.cc</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={languageFilter} onValueChange={setLanguageFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Languages</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="zh-TW">繁體中文</SelectItem>
-                  <SelectItem value="zh-CN">简体中文</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={aiEnhancedFilter} onValueChange={setAiEnhancedFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Articles</SelectItem>
-                  <SelectItem value="true">AI Enhanced Only</SelectItem>
-                  <SelectItem value="false">Regular Articles Only</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <div className="flex gap-2 sm:ml-auto">
-                <Button
-                  onClick={handleSingleTrilingualAutoSelect}
-                  disabled={isProcessing}
-                  className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 text-white"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">AI Select & Enhance (1 → 3)</span>
-                      <span className="sm:hidden">AI Single</span>
-                      <span className="ml-2 text-xs opacity-75">EN | 繁 | 简</span>
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleTrilingualAutoSelect}
-                  disabled={isProcessing}
-                  className="bg-gradient-to-r from-purple-600 via-blue-600 to-green-600 hover:from-purple-700 hover:via-blue-700 hover:to-green-700 text-white"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <Languages className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">AI Select & Enhance (10 → 30)</span>
-                      <span className="sm:hidden">AI Select</span>
-                      <span className="ml-2 text-xs opacity-75">EN | 繁 | 简</span>
-                    </>
-                  )}
-                </Button>
-                <Button onClick={handleRefresh} variant="outline" size="icon">
+            <div className="space-y-4">
+              {/* Primary Filters */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Sources</SelectItem>
+                    <SelectItem value="HKFP">HKFP</SelectItem>
+                    <SelectItem value="SingTao">SingTao</SelectItem>
+                    <SelectItem value="HK01">HK01</SelectItem>
+                    <SelectItem value="ONCC">ONCC</SelectItem>
+                    <SelectItem value="RTHK">RTHK</SelectItem>
+                    <SelectItem value="on.cc">on.cc</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={languageFilter} onValueChange={setLanguageFilter}>
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Languages</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="zh-TW">繁體中文</SelectItem>
+                    <SelectItem value="zh-CN">简体中文</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={aiEnhancedFilter} onValueChange={setAiEnhancedFilter}>
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Articles</SelectItem>
+                    <SelectItem value="true">AI Enhanced</SelectItem>
+                    <SelectItem value="false">Regular</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Button onClick={handleRefresh} variant="outline" size="icon" className="ml-auto">
                   <RefreshCw className="h-4 w-4" />
                 </Button>
+              </div>
+
+              {/* Action Controls */}
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                {/* Selection Controls */}
+                <div className="flex items-center gap-3">
+                  {selectedArticleIds.size > 0 ? (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                        {selectedArticleIds.size} selected
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSelectNone}
+                        className="h-7 px-2 text-xs"
+                      >
+                        Clear
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleBulkClone}
+                        disabled={isBulkCloning}
+                        className="h-7 px-3 text-xs bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200 text-emerald-700 hover:from-emerald-100 hover:to-blue-100"
+                      >
+                        {isBulkCloning ? (
+                          <div className="mr-1 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <Copy className="h-3 w-3 mr-1" />
+                        )}
+                        Clone to 3 Languages
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleBatchDelete}
+                        disabled={isDeleting}
+                        className="h-7 px-3 text-xs"
+                      >
+                        {isDeleting ? (
+                          <div className="mr-1 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <Trash2 className="h-3 w-3 mr-1" />
+                        )}
+                        Delete
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSelectAll}
+                        className="h-8 px-3 text-xs"
+                      >
+                        <CheckSquare className="h-3 w-3 mr-1" />
+                        Select All
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* AI Enhancement Actions */}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={handleSingleTrilingualAutoSelect}
+                    disabled={isProcessing}
+                    size="sm"
+                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white h-8"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-3 w-3" />
+                        AI Enhance (1→3)
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleTrilingualAutoSelect}
+                    disabled={isProcessing}
+                    size="sm"
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-8"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Languages className="mr-2 h-3 w-3" />
+                        AI Batch (10→30)
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Article Grid and Detail Panel */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <ArticleReviewGrid
-            articles={articles}
-            loading={loading}
-            onArticleSelect={handleArticleSelect}
-            selectedArticle={selectedArticle}
-            onLoadMore={handleLoadMore}
-            hasMore={hasMore}
-          />
-        </div>
-        
-        {/* Desktop Detail Panel */}
-        <div className="hidden lg:block lg:col-span-1">
-          <ArticleDetailPanel 
-            article={selectedArticle} 
-            onExpand={handleExpandToFullScreen}
-          />
-        </div>
-      </div>
-
-      {/* Mobile Detail Panel - Sheet/Modal */}
-      {selectedArticle && (
-        <div className="lg:hidden">
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle className="text-lg">Article Details</CardTitle>
-              <CardDescription>
-                {selectedArticle.source} • {selectedArticle.category}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ArticleDetailPanel article={selectedArticle} />
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* Article Grid */}
+      <ArticleReviewGrid
+        articles={articles}
+        loading={loading}
+        onArticleExpand={handleArticleExpand}
+        onLoadMore={handleLoadMore}
+        hasMore={hasMore}
+        selectedArticleIds={selectedArticleIds}
+        onArticleSelect={handleArticleSelect}
+      />
 
       {/* Full-Screen Article Detail Sheet */}
       <ArticleDetailSheet

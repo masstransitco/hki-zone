@@ -34,13 +34,15 @@ The Trilingual AI Enhancement feature is an automated content processing system 
 ```
 1. Article Candidate Selection
    ├── Fetch 50 recent non-enhanced articles
+   ├── Filter out previously selected articles (selected_for_enhancement = false)
    ├── Apply quality filters (length, metadata, sources)
    └── Score articles for enhancement potential
 
 2. Perplexity AI Selection
-   ├── Send candidate articles to Perplexity for evaluation
+   ├── Send candidate articles with sequential IDs (1, 2, 3...) to Perplexity
    ├── AI analyzes newsworthiness, impact, and relevance
-   └── Returns ranked list of top 10 articles
+   ├── Returns ranked list with sequential IDs (avoids UUID corruption)
+   └── Mark selected articles immediately to prevent re-selection
 
 3. Trilingual Enhancement
    ├── For each selected article:
@@ -69,11 +71,13 @@ Source Articles (DB) → Quality Filter → AI Selection → Enhancement → Sto
 ### Core Components
 
 #### 1. Article Selector (`/lib/perplexity-article-selector.ts`)
-- **Purpose**: Intelligent article selection using Perplexity AI
+- **Purpose**: Intelligent article selection using Perplexity AI with selection tracking
 - **Key Functions**:
-  - `selectArticlesWithPerplexity(count)`: Main selection function
-  - `getCandidateArticles()`: Retrieves and filters candidate articles
-  - `callPerplexityForSelection()`: AI evaluation and ranking
+  - `selectArticlesWithPerplexity(count)`: Main selection function with tracking
+  - `getCandidateArticles()`: Retrieves and filters candidate articles (excludes previously selected)
+  - `callPerplexityForSelection()`: AI evaluation and ranking using sequential IDs
+  - `markArticlesAsSelected()`: Marks selected articles to prevent re-selection
+- **Selection Tracking**: Prevents AI from repeatedly choosing the same articles by marking them as selected
 
 #### 2. Trilingual Enhancer (`/lib/perplexity-trilingual-enhancer.ts`)
 - **Purpose**: Sequential enhancement of articles into three languages
@@ -106,6 +110,10 @@ Articles are stored in the main `articles` table with trilingual metadata:
 ```sql
 -- Core article fields
 id, title, content, summary, url, source, category, is_ai_enhanced, published_at
+
+-- Selection tracking fields (NEW - prevents re-selection)
+selected_for_enhancement -- BOOLEAN: true if article has been selected by AI
+selection_metadata      -- JSONB: selection details (reason, score, timestamp, session)
 
 -- Trilingual tracking (stored in enhancement_metadata JSON)
 trilingual_batch_id      -- Links related language versions
@@ -190,13 +198,45 @@ GET /api/admin/auto-select-headlines
 ## User Interface
 
 ### Admin Panel Integration
-The trilingual enhancement feature is integrated into the admin articles page with:
+The trilingual enhancement feature is integrated into the admin articles page with multiple enhancement options:
 
-#### Enhancement Button
+#### AI Auto-Selection Buttons
 - **Location**: Admin articles page (`/admin/articles`)
-- **Button Text**: "AI Select & Enhance (10 → 30)"
-- **Visual Design**: Gradient styling with language indicators (EN | 繁 | 简)
+- **AI Enhance (1→3)**: Single article auto-selection and trilingual enhancement
+  - **Visual Design**: Emerald to teal gradient styling
+  - **Function**: Automatically selects 1 best article and creates 3 language versions
+  - **Processing Time**: ~1-3 minutes
+  - **Cost**: ~$0.225 per operation
+- **AI Batch (10→30)**: Batch auto-selection and trilingual enhancement
+  - **Visual Design**: Purple to blue gradient styling  
+  - **Function**: Automatically selects 10 best articles and creates 30 language versions
+  - **Processing Time**: ~15-20 minutes
+  - **Cost**: ~$2.25 per operation
 - **States**: Loading state with spinner during processing
+
+#### Bulk Clone Functionality
+- **Location**: Article selection controls in admin articles page
+- **Button Text**: "Clone to 3 Languages"
+- **Visual Design**: Emerald/blue gradient with copy icon
+- **Function**: Clone selected articles into all 3 languages
+- **Selection Method**: Manual checkbox selection of specific articles
+- **Limits**: Maximum 20 articles per batch operation
+- **Features**:
+  - Appears when articles are selected via checkboxes
+  - Comprehensive confirmation dialog with breakdown
+  - Detailed success reporting with language breakdown
+  - Cost calculation and processing time estimates
+
+#### Batch Operations Interface
+- **Selection Controls**: Checkbox-based multi-selection of articles
+- **Select All/Clear**: Quick selection management
+- **Selection Indicator**: Visual feedback showing selected article count
+- **Batch Actions**: Delete and Clone buttons appear when articles are selected
+
+#### Enhanced Article Management
+- **Deleted Article Indicators**: Visual indicators for soft-deleted articles
+- **Modern UI Design**: Clean, minimal design with improved visual hierarchy
+- **Efficient Workflow**: Streamlined operations without navigation between pages
 
 #### Progress Modal (`/components/admin/trilingual-auto-select-modal.tsx`)
 - **Real-time Progress**: Shows current article and language being processed
@@ -225,10 +265,11 @@ interface TrilingualProgress {
 ## Performance Characteristics
 
 ### Processing Times
-- **Article Selection**: ~10-15 seconds
+- **Article Selection**: ~10-15 seconds (improved with selection tracking)
 - **Single Article Enhancement**: ~15-20 seconds per language
 - **Complete Trilingual Batch**: ~15-20 minutes for 10 articles
 - **Database Storage**: ~1-2 seconds for 30 articles
+- **Selection Marking**: ~1-2 seconds to mark articles as selected
 
 ### API Rate Limits
 - **Between Languages**: 1.5 seconds delay
@@ -378,6 +419,14 @@ interface BatchStatistics {
 **Symptom**: Some articles save successfully, others fail
 **Expected Behavior**: System continues processing and reports partial success
 **Action**: Review error logs for specific failure reasons
+
+#### No Articles Available for Selection
+**Symptom**: "No articles available for selection" error
+**Cause**: All recent articles have been selected or enhanced
+**Solutions**:
+1. Wait for new articles to be scraped
+2. Reset selection tracking: `UPDATE articles SET selected_for_enhancement = false WHERE selected_for_enhancement = true;`
+3. Increase date range in candidate selection (modify `getDateDaysAgo(7)` to larger value)
 
 ### Debug Commands
 ```bash

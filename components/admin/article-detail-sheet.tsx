@@ -66,9 +66,6 @@ interface ArticleDetailSheetProps {
 }
 
 export default function ArticleDetailSheet({ article, open, onOpenChange }: ArticleDetailSheetProps) {
-  const [isEnhancing, setIsEnhancing] = useState(false)
-  const [currentLanguage, setCurrentLanguage] = useState<'en' | 'zh-TW' | 'zh-CN' | null>(null)
-  const [enhancementStatus, setEnhancementStatus] = useState<string>('')
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -201,90 +198,6 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
     }
   }
 
-  const handleCloneWithAI = async (language: 'en' | 'zh-TW' | 'zh-CN' = 'en') => {
-    if (!article) return
-    
-    // Prevent multiple simultaneous enhancements
-    if (isEnhancing) {
-      console.log('Enhancement already in progress, ignoring click')
-      return
-    }
-    
-    setIsEnhancing(true)
-    setCurrentLanguage(language)
-    const languageLabels = {
-      'en': 'English',
-      'zh-TW': '繁體中文',
-      'zh-CN': '简体中文'
-    }
-    setEnhancementStatus(`Initializing AI enhancement in ${languageLabels[language]}...`)
-    
-    try {
-      // Check API configuration first
-      setEnhancementStatus('Checking Perplexity API configuration...')
-      const configResponse = await fetch('/api/admin/articles/clone-with-ai')
-      const configData = await configResponse.json()
-      
-      if (!configData.configured) {
-        toast.error('Perplexity API not configured', {
-          description: 'Please add PERPLEXITY_API_KEY to environment variables'
-        })
-        return
-      }
-
-      // Perform enhancement
-      setEnhancementStatus(`Searching for additional context in ${languageLabels[language]}...`)
-      const response = await fetch('/api/admin/articles/clone-with-ai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          articleId: article.id,
-          language: language,
-          options: {
-            searchDepth: 'medium',
-            recencyFilter: 'month',
-            maxTokens: 2000
-          }
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Enhancement failed')
-      }
-
-      setEnhancementStatus('Enhancement completed successfully!')
-      
-      toast.success('Article enhanced with AI!', {
-        description: `Created enhanced version with ${data.enhancementStats.sources} sources and ${data.enhancementStats.searchQueries} research queries`
-      })
-
-      // Close sheet and refresh
-      setTimeout(() => {
-        onOpenChange(false)
-        window.location.reload()
-      }, 2000)
-
-    } catch (error) {
-      console.error('Enhancement error:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      
-      toast.error('Enhancement failed', {
-        description: errorMessage
-      })
-      
-      setEnhancementStatus('Enhancement failed')
-    } finally {
-      setTimeout(() => {
-        setIsEnhancing(false)
-        setCurrentLanguage(null)
-        setEnhancementStatus('')
-      }, 2000)
-    }
-  }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -606,58 +519,6 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                 </Button>
               </div>
               
-              {/* AI Enhancement Section */}
-              {!article.isAiEnhanced && (
-                <>
-                  <Separator className="my-4" />
-                  <div className="space-y-3">
-                    <Button 
-                      onClick={() => handleCloneWithAI('en')}
-                      disabled={isEnhancing}
-                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                    >
-                      {isEnhancing && currentLanguage === 'en' ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4 mr-2" />
-                      )}
-                      <span>{isEnhancing && currentLanguage === 'en' ? 'Enhancing...' : 'Clone (English)'}</span>
-                    </Button>
-                    
-                    <Button 
-                      onClick={() => handleCloneWithAI('zh-TW')}
-                      disabled={isEnhancing}
-                      className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
-                    >
-                      {isEnhancing && currentLanguage === 'zh-TW' ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4 mr-2" />
-                      )}
-                      <span>{isEnhancing && currentLanguage === 'zh-TW' ? 'Enhancing...' : 'Clone (繁體中文)'}</span>
-                    </Button>
-                    
-                    <Button 
-                      onClick={() => handleCloneWithAI('zh-CN')}
-                      disabled={isEnhancing}
-                      className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"
-                    >
-                      {isEnhancing && currentLanguage === 'zh-CN' ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-4 w-4 mr-2" />
-                      )}
-                      <span>{isEnhancing && currentLanguage === 'zh-CN' ? 'Enhancing...' : 'Clone (简体中文)'}</span>
-                    </Button>
-                  </div>
-                  
-                  {enhancementStatus && (
-                    <p className="text-sm text-muted-foreground text-center mt-2">
-                      {enhancementStatus}
-                    </p>
-                  )}
-                </>
-              )}
               
               {/* Enhanced Article Indicator */}
               {article.isAiEnhanced && (

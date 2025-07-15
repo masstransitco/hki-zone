@@ -131,6 +131,7 @@ export async function GET(request: NextRequest) {
         .from("articles")
         .select("*")
         .eq('is_ai_enhanced', true)
+        .is('deleted_at', null)
         .order("created_at", { ascending: false })
       
       // Filter by language using only metadata (since language column doesn't exist)

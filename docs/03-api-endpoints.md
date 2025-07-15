@@ -306,6 +306,35 @@ DELETE /api/admin/articles/[id]
 }
 ```
 
+#### Batch Delete Articles
+```
+POST /api/admin/articles/batch-delete
+```
+
+**Purpose**: Soft delete multiple articles simultaneously
+
+**Request Body**:
+```json
+{
+  "articleIds": ["string"]
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "deletedCount": number,
+  "message": "Successfully deleted N articles"
+}
+```
+
+**Features**:
+- Supports batch deletion of multiple selected articles
+- Uses soft deletion (sets deleted_at timestamp)
+- Returns count of successfully deleted articles
+- Accessible from admin interface batch selection
+
 ### 2. AI Enhancement
 
 #### Clone Article with AI
@@ -344,6 +373,94 @@ POST /api/admin/articles/clone-with-ai
   }
 }
 ```
+
+**Authentication**: Requires PERPLEXITY_API_KEY environment variable
+
+#### Bulk Clone Articles with AI
+```
+POST /api/admin/articles/bulk-clone
+```
+
+**Purpose**: Clone multiple selected articles into all 3 languages (English, Traditional Chinese, Simplified Chinese)
+
+**Request Body**:
+```json
+{
+  "articleIds": ["string"],
+  "options": {
+    "searchDepth": "light" | "medium" | "thorough",
+    "recencyFilter": "day" | "week" | "month",
+    "maxTokens": number
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "summary": {
+    "originalArticles": number,
+    "targetClones": number,
+    "successfulClones": number,
+    "failedClones": number,
+    "successRate": number,
+    "totalCost": number,
+    "languageBreakdown": {
+      "en": number,
+      "zh-TW": number,
+      "zh-CN": number
+    }
+  },
+  "results": {
+    "successful": [
+      {
+        "originalArticleId": "string",
+        "originalTitle": "string",
+        "enhancedArticleId": "string",
+        "language": "en" | "zh-TW" | "zh-CN",
+        "enhancementCost": number,
+        "sources": number,
+        "searchQueries": number
+      }
+    ],
+    "failed": [
+      {
+        "originalArticleId": "string",
+        "originalTitle": "string",
+        "language": "en" | "zh-TW" | "zh-CN",
+        "error": "string"
+      }
+    ],
+    "totalProcessed": number,
+    "totalCost": number
+  },
+  "message": "Successfully cloned N articles across 3 languages from N source articles"
+}
+```
+
+**Features**:
+- **Batch Processing**: Clone up to 20 articles per operation
+- **Trilingual Support**: Each article cloned into English, Traditional Chinese, and Simplified Chinese
+- **Rate Limiting**: 1-second delay between requests to prevent API overwhelm
+- **Unique URLs**: Each language version gets unique URL with timestamp
+- **Comprehensive Reporting**: Detailed success/failure tracking with language breakdown
+- **Cost Tracking**: Real-time cost calculation and reporting
+- **Error Resilience**: Continues processing if individual articles fail
+- **Selection Validation**: Only allows cloning of non-AI-enhanced articles
+
+**Limits**:
+- Maximum 20 articles per batch operation
+- Only non-enhanced articles can be cloned
+- Requires PERPLEXITY_API_KEY environment variable
+
+**Processing Pipeline**:
+1. Validate article selection (max 20, non-enhanced only)
+2. Process each article in each language sequentially
+3. Generate unique URLs per language version
+4. Store trilingual metadata and relationships
+5. Track costs and processing statistics
+6. Return comprehensive results with language breakdown
 
 **Authentication**: Requires PERPLEXITY_API_KEY environment variable
 
@@ -407,10 +524,13 @@ POST /api/admin/auto-select-single
 - **Immediate Results**: Ideal for testing or quick content creation
 
 **Processing Pipeline**:
-1. **Article Selection**: Perplexity AI analyzes candidate articles and selects the single best one
-2. **Trilingual Enhancement**: Sequential processing (EN → zh-TW → zh-CN) with rate limiting
-3. **Database Storage**: Saves all 3 enhanced articles with unique URLs and metadata
-4. **Batch Tracking**: Links all articles with trilingual_batch_id for relationship queries
+1. **Article Candidate Filtering**: Gets recent articles excluding enhanced and previously selected articles
+2. **Sequential ID Assignment**: Maps articles to sequential numbers (1, 2, 3...) for Perplexity
+3. **AI Selection**: Perplexity analyzes candidates and selects the single best one using sequential IDs
+4. **Selection Marking**: Immediately marks selected article as selected_for_enhancement = true
+5. **Trilingual Enhancement**: Sequential processing (EN → zh-TW → zh-CN) with rate limiting
+6. **Database Storage**: Saves all 3 enhanced articles with unique URLs and metadata
+7. **Batch Tracking**: Links all articles with trilingual_batch_id for relationship queries
 
 #### Check Single Article Configuration
 ```
@@ -469,6 +589,8 @@ GET /api/admin/auto-select-headlines
 
 **Features**:
 - **Intelligent Selection**: Uses Perplexity AI to evaluate and select the 10 most newsworthy articles from existing non-enhanced articles
+- **Selection Tracking**: Prevents re-selection of articles by marking them as selected (selected_for_enhancement = true)
+- **UUID Corruption Fix**: Uses sequential IDs (1, 2, 3...) instead of UUIDs for Perplexity communication
 - **Quality Scoring**: Articles scored based on newsworthiness, impact, relevance, and enhancement potential
 - **Trilingual Processing**: Each selected article enhanced into 3 languages with unique URLs
 - **Batch Tracking**: All articles linked with trilingual_batch_id for relationship tracking
@@ -478,11 +600,13 @@ GET /api/admin/auto-select-headlines
 **Authentication**: Requires PERPLEXITY_API_KEY environment variable
 
 **Processing Pipeline**:
-1. **Article Selection**: Perplexity AI analyzes 50 candidate articles and selects top 10
-2. **Quality Filtering**: Filters to articles with sufficient content and metadata
-3. **Trilingual Enhancement**: Sequential processing (EN → zh-TW → zh-CN) with rate limiting
-4. **Database Storage**: Saves all 30 enhanced articles with unique URLs and metadata
-5. **Batch Tracking**: Links all articles in the same trilingual batch for relationship queries
+1. **Article Candidate Filtering**: Gets 50 recent articles excluding enhanced and previously selected articles
+2. **Sequential ID Assignment**: Maps articles to sequential numbers (1, 2, 3...) for Perplexity
+3. **AI Selection**: Perplexity analyzes candidates and returns selections using sequential IDs
+4. **Selection Marking**: Immediately marks selected articles as selected_for_enhancement = true
+5. **Trilingual Enhancement**: Sequential processing (EN → zh-TW → zh-CN) with rate limiting
+6. **Database Storage**: Saves all 30 enhanced articles with unique URLs and metadata
+7. **Batch Tracking**: Links all articles in the same trilingual batch for relationship queries
 
 #### Check Trilingual Configuration
 ```
