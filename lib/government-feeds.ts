@@ -72,7 +72,12 @@ class GovernmentFeeds {
       const parsedFeed = await parser.parseString(xml)
       
       return parsedFeed.items.map((item: any) => {
-        const incidentId = this.generateIncidentId(feed.slug, item.guid || item.title, item.pubDate)
+        // Use content for ID generation instead of GUID/timestamp
+        const incidentId = this.generateIncidentId(
+          feed.slug, 
+          item.title, 
+          item.contentSnippet || item.description
+        )
         
         return {
           id: incidentId,
@@ -100,7 +105,12 @@ class GovernmentFeeds {
       const items = parsed?.root?.item || []
       
       return items.map((item: any) => {
-        const incidentId = this.generateIncidentId(feed.slug, item.newsId, item.pubDate)
+        // Use content for ID generation instead of newsId
+        const incidentId = this.generateIncidentId(
+          feed.slug, 
+          item.title, 
+          item.description
+        )
         
         return {
           id: incidentId,
@@ -123,14 +133,18 @@ class GovernmentFeeds {
   }
 
   /**
-   * Generate unique incident ID
+   * Generate unique incident ID based on content hash
    */
-  private generateIncidentId(slug: string, identifier: string, pubDate: string): string {
-    const date = new Date(pubDate)
-    const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '')
-    const timeStr = date.toTimeString().slice(0, 8).replace(/:/g, '')
-    const hash = crypto.createHash('md5').update(identifier).digest('hex').slice(0, 6)
-    return `${slug}_${dateStr}_${timeStr}_${hash}`
+  private generateIncidentId(slug: string, title: string, content?: string): string {
+    // Create hash from normalized content to prevent duplicates
+    const normalizedTitle = title.trim().toLowerCase().replace(/\s+/g, ' ')
+    const normalizedContent = content ? content.trim().toLowerCase().replace(/\s+/g, ' ') : ''
+    const contentHash = crypto.createHash('sha256')
+      .update(`${slug}:${normalizedTitle}:${normalizedContent}`)
+      .digest('hex')
+      .slice(0, 12)
+    
+    return `${slug}_${contentHash}`
   }
 
   /**
@@ -223,12 +237,28 @@ class GovernmentFeeds {
   }
 
   /**
-   * Update feed last seen timestamp
+   * Filter items to only include new ones since last processing
    */
-  private async updateFeedLastSeen(feedId: string): Promise<void> {
+  private async filterNewItems(items: ParsedIncident[], feed: GovFeed): Promise<ParsedIncident[]> {
+    if (!feed.last_seen_pubdate) {
+      return items // First run, process all items
+    }
+    
+    const lastSeen = new Date(feed.last_seen_pubdate)
+    return items.filter(item => {
+      const itemDate = new Date(item.source_updated_at)
+      return itemDate > lastSeen
+    })
+  }
+
+  /**
+   * Update feed last seen timestamp with specific timestamp
+   */
+  private async updateFeedLastSeen(feedId: string, lastSeenTimestamp?: string): Promise<void> {
+    const timestamp = lastSeenTimestamp || new Date().toISOString()
     const { error } = await supabase
       .from('gov_feeds')
-      .update({ last_seen_pubdate: new Date().toISOString() })
+      .update({ last_seen_pubdate: timestamp })
       .eq('id', feedId)
     
     if (error) {
@@ -275,7 +305,7 @@ class GovernmentFeeds {
   }
 
   /**
-   * Process a single feed
+   * Process a single feed with incremental processing
    */
   private async processFeed(feed: GovFeed): Promise<{ feed: string, incidents: number, errors: string[] }> {
     const errors: string[] = []
@@ -287,23 +317,36 @@ class GovernmentFeeds {
       const content = await this.fetchWithTimeout(feed.url)
       
       // Parse based on feed type
-      let incidents: ParsedIncident[] = []
+      let allIncidents: ParsedIncident[] = []
       
       if (feed.slug.startsWith('td_') && !content.includes('<rss')) {
         // Transport Department custom XML format
-        incidents = this.parseTransportDeptXml(content, feed)
+        allIncidents = this.parseTransportDeptXml(content, feed)
       } else {
         // Standard RSS format
-        incidents = await this.parseRssFeed(content, feed)
+        allIncidents = await this.parseRssFeed(content, feed)
       }
       
-      // Upsert to database
-      const saved = await this.upsertIncidents(incidents)
+      // Filter to only new items since last processing
+      const newIncidents = await this.filterNewItems(allIncidents, feed)
       
-      // Update feed timestamp
-      await this.updateFeedLastSeen(feed.id)
+      if (newIncidents.length === 0) {
+        console.log(`✅ ${feed.slug}: No new incidents since last check`)
+        return { feed: feed.slug, incidents: 0, errors: [] }
+      }
       
-      console.log(`✅ ${feed.slug}: ${saved}/${incidents.length} incidents processed`)
+      // Upsert new incidents to database
+      const saved = await this.upsertIncidents(newIncidents)
+      
+      // Update feed timestamp to latest incident time
+      if (allIncidents.length > 0) {
+        const latestIncident = allIncidents.reduce((latest, current) => 
+          new Date(current.source_updated_at) > new Date(latest.source_updated_at) ? current : latest
+        )
+        await this.updateFeedLastSeen(feed.id, latestIncident.source_updated_at)
+      }
+      
+      console.log(`✅ ${feed.slug}: ${saved}/${newIncidents.length} new incidents processed`)
       
       return {
         feed: feed.slug,
