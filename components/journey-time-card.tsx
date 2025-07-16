@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { Clock, TrendingUp, TrendingDown } from 'lucide-react'
+import { useLanguage } from './language-provider'
 
 type RouteType = 'expressway' | 'trunk' | 'local' | 'temp'
+type Language = 'en' | 'zh-CN' | 'zh-TW'
 
 interface JourneyTimeCardProps {
   from: string
@@ -15,33 +17,30 @@ interface JourneyTimeCardProps {
   locale?: 'en' | 'zh'
   routeType?: RouteType
   onRouteClick?: (from: string, to: string) => void
+  language?: Language
 }
 
-// Hong Kong road signage color system with fixed heights
+// Hong Kong road signage color system with fixed heights and consistent white borders
 const routeTypeColors = {
   expressway: {
-    border: 'border-green-700',
     bg: 'bg-green-700 dark:bg-green-800',
     text: 'text-white',
     accent: '#2e7d32', // deep motorway-green
     height: 'h-32' // Largest - most important roads
   },
   trunk: {
-    border: 'border-blue-700', 
     bg: 'bg-blue-700 dark:bg-blue-800',
     text: 'text-white',
     accent: '#1565c0', // deep trunk-blue
     height: 'h-28' // Medium-large - major roads
   },
   local: {
-    border: 'border-gray-500',
     bg: 'bg-gray-600 dark:bg-gray-700', 
     text: 'text-white',
     accent: '#9e9e9e', // medium grey
     height: 'h-24' // Medium - local roads
   },
   temp: {
-    border: 'border-amber-600',
     bg: 'bg-amber-600 dark:bg-amber-700',
     text: 'text-white',
     accent: '#f9a825', // amber for alerts
@@ -90,12 +89,7 @@ const routeTypeIcons = {
   )
 }
 
-const routeTypeLabels = {
-  expressway: 'Expressway',
-  trunk: 'Major Road',
-  local: 'Local Road', 
-  temp: 'Temporary'
-}
+// Route type labels will be generated dynamically based on language
 
 export const JourneyTimeCard: React.FC<JourneyTimeCardProps> = React.memo(({
   from,
@@ -106,9 +100,14 @@ export const JourneyTimeCard: React.FC<JourneyTimeCardProps> = React.memo(({
   capture,
   locale = 'en',
   routeType = 'trunk',
-  onRouteClick
+  onRouteClick,
+  language: propLanguage
 }) => {
+  const { language: contextLanguage, t } = useLanguage()
   const [flash, setFlash] = useState(false)
+  
+  // Use prop language if provided, otherwise use context language
+  const currentLanguage = propLanguage || contextLanguage
 
   useEffect(() => {
     setFlash(true)
@@ -116,9 +115,20 @@ export const JourneyTimeCard: React.FC<JourneyTimeCardProps> = React.memo(({
     return () => clearTimeout(timer)
   }, [timeMin, trendMin])
 
-  const displayTime = locale === 'en' ? `${timeMin} min` : `${timeMin} 分`
-  const displayTrend = trendMin === 0 ? '' : `${Math.abs(trendMin)} min`
-  const trendDirection = trendMin > 0 ? 'slower' : 'faster'
+  const displayTime = currentLanguage === 'en' ? `${timeMin} ${t('journey.min')}` : `${timeMin} ${t('journey.min')}`
+  const displayTrend = trendMin === 0 ? '' : `${Math.abs(trendMin)} ${t('journey.min')}`
+  const trendDirection = trendMin > 0 ? t('journey.slower') : t('journey.faster')
+  
+  // Helper function to get route type label
+  const getRouteTypeLabel = (routeType: RouteType): string => {
+    const labels = {
+      expressway: t('journey.expressway'),
+      trunk: t('journey.trunk'),
+      local: t('journey.local'),
+      temp: t('journey.temp')
+    }
+    return labels[routeType] || routeType
+  }
 
   const formatCaptureTime = (isoString: string) => {
     try {
@@ -140,16 +150,19 @@ export const JourneyTimeCard: React.FC<JourneyTimeCardProps> = React.memo(({
   return (
     <div
       className={`
-        relative p-4 border-2 rounded-2xl cursor-pointer 
+        relative p-1 border-4 border-white rounded-2xl cursor-pointer 
         transition-all duration-300 hover:shadow-md
-        ${colors.border} ${colors.bg} ${colors.height}
         ${flash ? 'scale-[1.02]' : 'scale-100'}
-        flex flex-col justify-between
+        bg-white
       `}
       onClick={() => onRouteClick?.(from, to)}
       role="button"
-      aria-label={`Route ${from} to ${to}: ${displayTime}, ${routeTypeLabels[routeType]}`}
+      aria-label={`${t('journey.route')} ${from} to ${to}: ${displayTime}, ${getRouteTypeLabel(routeType)}`}
     >
+      <div className={`
+        p-4 rounded-xl ${colors.bg} ${colors.height}
+        flex flex-col justify-between
+      `}>
       {/* Main Content */}
       <div className="flex items-start gap-3">
         {/* Journey Time Indicator */}
@@ -162,8 +175,8 @@ export const JourneyTimeCard: React.FC<JourneyTimeCardProps> = React.memo(({
               <span className={`font-medium ${colors.text}`}>{from}</span>
               <span className="text-white/70 flex-shrink-0">→</span>
             </div>
-            <div className="text-sm">
-              <span className={`font-medium ${colors.text}`}>{to}</span>
+            <div className="text-lg">
+              <span className={`font-semibold ${colors.text} font-mono tracking-wide`}>{to}</span>
             </div>
           </div>
         </div>
@@ -208,15 +221,16 @@ export const JourneyTimeCard: React.FC<JourneyTimeCardProps> = React.memo(({
 
       {/* Tooltip */}
       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-black text-white text-xs rounded-lg opacity-0 pointer-events-none transition-opacity duration-200 group-hover:opacity-100 whitespace-nowrap">
-        <div className="font-medium">{routeTypeLabels[routeType]} Route</div>
-        <div>Updated at {formatCaptureTime(capture)}</div>
+        <div className="font-medium">{getRouteTypeLabel(routeType)} {t('journey.route')}</div>
+        <div>{t('journey.updatedAt')} {formatCaptureTime(capture)}</div>
         {trendMin !== 0 && (
           <div className={trendMin > 0 ? 'text-red-300' : 'text-green-300'}>
-            {Math.abs(trendMin)} min {trendDirection} than usual
+            {Math.abs(trendMin)} {t('journey.min')} {trendDirection} {t('journey.thanUsual')}
           </div>
         )}
         {/* Tooltip Arrow */}
         <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-black"></div>
+      </div>
       </div>
     </div>
   )

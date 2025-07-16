@@ -27,78 +27,80 @@ interface JourneyTimeCardProps {
 }
 
 // Location and destination mappings for user-friendly names
-const LOCATION_NAMES: { [key: string]: string } = {
+type Language = 'en' | 'zh-CN' | 'zh-TW'
+
+const LOCATION_NAMES: { [key: string]: { [lang in Language]: string } } = {
   // Hong Kong Island
-  'H1': 'Central/Admiralty',
-  'H2': 'Wan Chai',
-  'H3': 'Causeway Bay',
-  'H4': 'North Point',
-  'H5': 'Quarry Bay',
-  'H6': 'Tai Koo',
-  'H7': 'Shau Kei Wan',
-  'H8': 'Chai Wan',
-  'H9': 'Aberdeen',
-  'H11': 'Kennedy Town',
+  'H1': { en: 'Central/Admiralty', 'zh-CN': '中环/金钟', 'zh-TW': '中環/金鐘' },
+  'H2': { en: 'Wan Chai', 'zh-CN': '湾仔', 'zh-TW': '灣仔' },
+  'H3': { en: 'Causeway Bay', 'zh-CN': '铜锣湾', 'zh-TW': '銅鑼灣' },
+  'H4': { en: 'North Point', 'zh-CN': '北角', 'zh-TW': '北角' },
+  'H5': { en: 'Quarry Bay', 'zh-CN': '鲗鱼涌', 'zh-TW': '鰂魚涌' },
+  'H6': { en: 'Tai Koo', 'zh-CN': '太古', 'zh-TW': '太古' },
+  'H7': { en: 'Shau Kei Wan', 'zh-CN': '筲箕湾', 'zh-TW': '筲箕灣' },
+  'H8': { en: 'Chai Wan', 'zh-CN': '柴湾', 'zh-TW': '柴灣' },
+  'H9': { en: 'Aberdeen', 'zh-CN': '香港仔', 'zh-TW': '香港仔' },
+  'H11': { en: 'Kennedy Town', 'zh-CN': '坚尼地城', 'zh-TW': '堅尼地城' },
   
   // Kowloon
-  'K01': 'Tsim Sha Tsui',
-  'K02': 'Jordan',
-  'K03': 'Yau Ma Tei',
-  'K04': 'Mong Kok',
-  'K05': 'Sham Shui Po',
-  'K06': 'Kowloon Tong',
-  'K07': 'Wong Tai Sin',
+  'K01': { en: 'Tsim Sha Tsui', 'zh-CN': '尖沙咀', 'zh-TW': '尖沙咀' },
+  'K02': { en: 'Jordan', 'zh-CN': '佐敦', 'zh-TW': '佐敦' },
+  'K03': { en: 'Yau Ma Tei', 'zh-CN': '油麻地', 'zh-TW': '油麻地' },
+  'K04': { en: 'Mong Kok', 'zh-CN': '旺角', 'zh-TW': '旺角' },
+  'K05': { en: 'Sham Shui Po', 'zh-CN': '深水埗', 'zh-TW': '深水埗' },
+  'K06': { en: 'Kowloon Tong', 'zh-CN': '九龙塘', 'zh-TW': '九龍塘' },
+  'K07': { en: 'Wong Tai Sin', 'zh-CN': '黄大仙', 'zh-TW': '黃大仙' },
   
   // New Territories
-  'N01': 'Sha Tin',
-  'N02': 'Tai Po',
-  'N03': 'Fanling',
-  'N05': 'Tuen Mun',
-  'N06': 'Yuen Long',
-  'N07': 'Tsuen Wan',
-  'N08': 'Kwai Chung',
-  'N09': 'Tsing Yi',
-  'N10': 'Ma On Shan',
-  'N11': 'Tseung Kwan O',
-  'N12': 'Sai Kung',
-  'N13': 'Tai Wai',
+  'N01': { en: 'Sha Tin', 'zh-CN': '沙田', 'zh-TW': '沙田' },
+  'N02': { en: 'Tai Po', 'zh-CN': '大埔', 'zh-TW': '大埔' },
+  'N03': { en: 'Fanling', 'zh-CN': '粉岭', 'zh-TW': '粉嶺' },
+  'N05': { en: 'Tuen Mun', 'zh-CN': '屯门', 'zh-TW': '屯門' },
+  'N06': { en: 'Yuen Long', 'zh-CN': '元朗', 'zh-TW': '元朗' },
+  'N07': { en: 'Tsuen Wan', 'zh-CN': '荃湾', 'zh-TW': '荃灣' },
+  'N08': { en: 'Kwai Chung', 'zh-CN': '葵涌', 'zh-TW': '葵涌' },
+  'N09': { en: 'Tsing Yi', 'zh-CN': '青衣', 'zh-TW': '青衣' },
+  'N10': { en: 'Ma On Shan', 'zh-CN': '马鞍山', 'zh-TW': '馬鞍山' },
+  'N11': { en: 'Tseung Kwan O', 'zh-CN': '将军澳', 'zh-TW': '將軍澳' },
+  'N12': { en: 'Sai Kung', 'zh-CN': '西贡', 'zh-TW': '西貢' },
+  'N13': { en: 'Tai Wai', 'zh-CN': '大围', 'zh-TW': '大圍' },
   
   // Strategic Routes (Traffic monitoring points)
-  'SJ1': 'Strategic Junction 1',
-  'SJ2': 'Strategic Junction 2', 
-  'SJ3': 'Strategic Junction 3',
-  'SJ4': 'Strategic Junction 4',
-  'SJ5': 'Strategic Junction 5'
+  'SJ1': { en: 'Strategic Junction 1', 'zh-CN': '策略交汇点1', 'zh-TW': '策略交匯點1' },
+  'SJ2': { en: 'Strategic Junction 2', 'zh-CN': '策略交汇点2', 'zh-TW': '策略交匯點2' },
+  'SJ3': { en: 'Strategic Junction 3', 'zh-CN': '策略交汇点3', 'zh-TW': '策略交匯點3' },
+  'SJ4': { en: 'Strategic Junction 4', 'zh-CN': '策略交汇点4', 'zh-TW': '策略交匯點4' },
+  'SJ5': { en: 'Strategic Junction 5', 'zh-CN': '策略交汇点5', 'zh-TW': '策略交匯點5' }
 }
 
-const DESTINATION_NAMES: { [key: string]: string } = {
-  'CH': 'Cross-Harbour Tunnel',
-  'EH': 'Eastern Harbour Tunnel', 
-  'WH': 'Western Harbour Tunnel',
-  'TKTL': 'Tseung Kwan O',
-  'TMCLK': 'Tuen Mun',
-  'TPR': 'Tai Po',
-  'TKOT': 'TKO Tunnel',
-  'ATL': 'Airport',
-  'MOS': 'Ma On Shan',
-  'ABT': 'Aberdeen Tunnel',
-  'ACTT': 'Airport Core Tunnel',
-  'ATSCA': 'Airport to SCAR',
-  'CWBR': 'Causeway Bay',
-  'KTPR': 'Kwai Tsing',
-  'LRT': 'Lion Rock Tunnel',
-  'PFL': 'Po Fulam',
-  'SMT': 'Shing Mun Tunnel',
-  'SSCPR': 'Sha Sha Chi',
-  'SSYLH': 'Sha Sha Yuen Long',
-  'TCT': 'Tai Lam Tunnel',
-  'TKOLTT': 'TKO Lam Tin Tunnel',
-  'TKTM': 'Tsing Kwan O Tunnel',
-  'TLH': 'Tai Lam',
-  'TSCA': 'Tsing Sha Control Area',
-  'TWCP': 'Tsuen Wan',
-  'TWTM': 'Tsuen Wan to Tuen Mun',
-  'WNCG': 'Wan Chai to Central'
+const DESTINATION_NAMES: { [key: string]: { [lang in Language]: string } } = {
+  'CH': { en: 'Cross-Harbour Tunnel', 'zh-CN': '海底隧道', 'zh-TW': '海底隧道' },
+  'EH': { en: 'Eastern Harbour Tunnel', 'zh-CN': '东区海底隧道', 'zh-TW': '東區海底隧道' },
+  'WH': { en: 'Western Harbour Tunnel', 'zh-CN': '西区海底隧道', 'zh-TW': '西區海底隧道' },
+  'TKTL': { en: 'Tseung Kwan O', 'zh-CN': '将军澳', 'zh-TW': '將軍澳' },
+  'TMCLK': { en: 'Tuen Mun', 'zh-CN': '屯门', 'zh-TW': '屯門' },
+  'TPR': { en: 'Tai Po', 'zh-CN': '大埔', 'zh-TW': '大埔' },
+  'TKOT': { en: 'TKO Tunnel', 'zh-CN': '将军澳隧道', 'zh-TW': '將軍澳隧道' },
+  'ATL': { en: 'Airport', 'zh-CN': '机场', 'zh-TW': '機場' },
+  'MOS': { en: 'Ma On Shan', 'zh-CN': '马鞍山', 'zh-TW': '馬鞍山' },
+  'ABT': { en: 'Aberdeen Tunnel', 'zh-CN': '香港仔隧道', 'zh-TW': '香港仔隧道' },
+  'ACTT': { en: 'Airport Core Tunnel', 'zh-CN': '机场核心隧道', 'zh-TW': '機場核心隧道' },
+  'ATSCA': { en: 'Airport to SCAR', 'zh-CN': '机场至石岗', 'zh-TW': '機場至石崗' },
+  'CWBR': { en: 'Causeway Bay', 'zh-CN': '铜锣湾', 'zh-TW': '銅鑼灣' },
+  'KTPR': { en: 'Kwai Tsing', 'zh-CN': '葵青', 'zh-TW': '葵青' },
+  'LRT': { en: 'Lion Rock Tunnel', 'zh-CN': '狮子山隧道', 'zh-TW': '獅子山隧道' },
+  'PFL': { en: 'Po Fulam', 'zh-CN': '薄扶林', 'zh-TW': '薄扶林' },
+  'SMT': { en: 'Shing Mun Tunnel', 'zh-CN': '城门隧道', 'zh-TW': '城門隧道' },
+  'SSCPR': { en: 'Sha Sha Chi', 'zh-CN': '沙沙池', 'zh-TW': '沙沙池' },
+  'SSYLH': { en: 'Sha Sha Yuen Long', 'zh-CN': '沙沙元朗', 'zh-TW': '沙沙元朗' },
+  'TCT': { en: 'Tai Lam Tunnel', 'zh-CN': '大榄隧道', 'zh-TW': '大欖隧道' },
+  'TKOLTT': { en: 'TKO Lam Tin Tunnel', 'zh-CN': '将军澳蓝田隧道', 'zh-TW': '將軍澳藍田隧道' },
+  'TKTM': { en: 'Tsing Kwan O Tunnel', 'zh-CN': '将军澳隧道', 'zh-TW': '將軍澳隧道' },
+  'TLH': { en: 'Tai Lam', 'zh-CN': '大榄', 'zh-TW': '大欖' },
+  'TSCA': { en: 'Tsing Sha Control Area', 'zh-CN': '青沙管制区', 'zh-TW': '青沙管制區' },
+  'TWCP': { en: 'Tsuen Wan', 'zh-CN': '荃湾', 'zh-TW': '荃灣' },
+  'TWTM': { en: 'Tsuen Wan to Tuen Mun', 'zh-CN': '荃湾至屯门', 'zh-TW': '荃灣至屯門' },
+  'WNCG': { en: 'Wan Chai to Central', 'zh-CN': '湾仔至中环', 'zh-TW': '灣仔至中環' }
 }
 
 // Region-based filtering system
@@ -227,6 +229,7 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(url.searchParams.get('limit') || '20')
     const startRegion = url.searchParams.get('start') as Region | null // 'hk', 'kln', 'nt'
     const destRegion = url.searchParams.get('dest') as Region | null // 'hk', 'kln', 'nt'
+    const language = url.searchParams.get('language') as Language || 'en' // 'en', 'zh-CN', 'zh-TW'
     
     const journeyTimeData = await fetchJourneyTimeData()
     
@@ -252,13 +255,13 @@ export async function GET(request: NextRequest) {
         const trendMin = calculateTrend(specificRoute.journeyData, specificRoute.locationId, specificRoute.destinationId)
         
         const cardData: JourneyTimeCardProps = {
-          from: LOCATION_NAMES[specificRoute.locationId] || specificRoute.locationId,
-          to: DESTINATION_NAMES[specificRoute.destinationId] || specificRoute.destinationId,
+          from: LOCATION_NAMES[specificRoute.locationId]?.[language] || specificRoute.locationId,
+          to: DESTINATION_NAMES[specificRoute.destinationId]?.[language] || specificRoute.destinationId,
           timeMin: specificRoute.journeyData,
           trendMin,
           colourId: specificRoute.colourId,
           capture: specificRoute.captureDate,
-          locale: 'en',
+          locale: language === 'en' ? 'en' : 'zh',
           routeType: getRouteType(specificRoute.destinationId)
         }
         
@@ -275,13 +278,13 @@ export async function GET(request: NextRequest) {
         const trendMin = calculateTrend(jt.journeyData, jt.locationId, jt.destinationId)
         
         return {
-          from: LOCATION_NAMES[jt.locationId] || jt.locationId,
-          to: DESTINATION_NAMES[jt.destinationId] || jt.destinationId,
+          from: LOCATION_NAMES[jt.locationId]?.[language] || jt.locationId,
+          to: DESTINATION_NAMES[jt.destinationId]?.[language] || jt.destinationId,
           timeMin: jt.journeyData,
           trendMin,
           colourId: jt.colourId,
           capture: jt.captureDate,
-          locale: 'en',
+          locale: language === 'en' ? 'en' : 'zh',
           routeType: getRouteType(jt.destinationId)
         }
       })

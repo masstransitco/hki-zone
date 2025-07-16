@@ -35,6 +35,7 @@ interface UseJourneyTimeDataOptions {
   startRegion?: 'hk' | 'kln' | 'nt'
   destRegion?: 'hk' | 'kln' | 'nt'
   limit?: number
+  language?: 'en' | 'zh-CN' | 'zh-TW'
 }
 
 interface UseJourneyTimeDataReturn {
@@ -54,7 +55,8 @@ export function useJourneyTimeData(options: UseJourneyTimeDataOptions = {}): Use
     enabled = true,
     startRegion,
     destRegion,
-    limit = 20
+    limit = 20,
+    language = 'en'
   } = options
 
   const [data, setData] = useState<JourneyTimeCardProps[] | null>(null)
@@ -75,6 +77,7 @@ export function useJourneyTimeData(options: UseJourneyTimeDataOptions = {}): Use
       
       if (startRegion) params.set('start', startRegion)
       if (destRegion) params.set('dest', destRegion)
+      if (language) params.set('language', language)
 
       const response = await fetch(`/api/journey-time?${params.toString()}`, {
         signal,
@@ -95,7 +98,7 @@ export function useJourneyTimeData(options: UseJourneyTimeDataOptions = {}): Use
       }
       throw err
     }
-  }, [startRegion, destRegion, limit])
+  }, [startRegion, destRegion, limit, language])
 
   const refresh = useCallback(async () => {
     if (!enabled) return

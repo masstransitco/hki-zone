@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import JourneyTimeCard from "@/components/journey-time-card"
 import { useJourneyTimeData } from "@/hooks/useJourneyTimeData"
+import { useLanguage } from "@/components/language-provider"
 import { 
   RefreshCw, 
   AlertTriangle,
@@ -16,31 +17,13 @@ import {
   ArrowRight
 } from "lucide-react"
 
-const REGION_FILTERS = [
-  { value: "hk", label: "🏝️ Hong Kong Island" },
-  { value: "kln", label: "🏙️ Kowloon" },
-  { value: "nt", label: "🏔️ New Territories" },
-]
+// Region filters will be generated dynamically based on language
 
 // Valid region combinations based on actual journey time data
 const VALID_REGION_COMBINATIONS: Record<string, string[]> = {
   "hk": ["kln"], // Hong Kong Island -> Kowloon only
   "kln": ["hk", "nt"], // Kowloon -> Hong Kong Island or New Territories
   "nt": ["hk", "kln", "nt"] // New Territories -> Hong Kong Island, Kowloon, or New Territories
-}
-
-// Helper function to get valid destination regions for a given start region
-const getValidDestinations = (startRegion: string): typeof REGION_FILTERS => {
-  const validDestinations = VALID_REGION_COMBINATIONS[startRegion] || []
-  return REGION_FILTERS.filter(region => validDestinations.includes(region.value))
-}
-
-// Helper function to get valid start regions for a given destination region
-const getValidStartRegions = (destRegion: string): typeof REGION_FILTERS => {
-  const validStartRegions = Object.keys(VALID_REGION_COMBINATIONS).filter(startRegion => 
-    VALID_REGION_COMBINATIONS[startRegion].includes(destRegion)
-  )
-  return REGION_FILTERS.filter(region => validStartRegions.includes(region.value))
 }
 
 // Helper function to get random region pair (follows valid combinations)
@@ -85,7 +68,30 @@ export default function JourneyTimeList({
   autoRefresh = true,
   refreshInterval = 2 * 60 * 1000 
 }: JourneyTimeListProps) {
+  const { language, t } = useLanguage()
   const randomPair = getRandomRegionPair()
+  
+  // Generate region filters based on current language
+  const REGION_FILTERS = useMemo(() => [
+    { value: "hk", label: `🏝️ ${t('regions.hk')}` },
+    { value: "kln", label: `🏙️ ${t('regions.kln')}` },
+    { value: "nt", label: `🏔️ ${t('regions.nt')}` },
+  ], [t])
+  
+  // Helper function to get valid destination regions for a given start region
+  const getValidDestinations = useMemo(() => (startRegion: string): typeof REGION_FILTERS => {
+    const validDestinations = VALID_REGION_COMBINATIONS[startRegion] || []
+    return REGION_FILTERS.filter(region => validDestinations.includes(region.value))
+  }, [REGION_FILTERS])
+
+  // Helper function to get valid start regions for a given destination region
+  const getValidStartRegions = useMemo(() => (destRegion: string): typeof REGION_FILTERS => {
+    const validStartRegions = Object.keys(VALID_REGION_COMBINATIONS).filter(startRegion => 
+      VALID_REGION_COMBINATIONS[startRegion].includes(destRegion)
+    )
+    return REGION_FILTERS.filter(region => validStartRegions.includes(region.value))
+  }, [REGION_FILTERS])
+  
   const [startRegionFilter, setStartRegionFilter] = useState<"hk" | "kln" | "nt">(randomPair.start)
   const [destRegionFilter, setDestRegionFilter] = useState<"hk" | "kln" | "nt">(randomPair.dest)
   const [routeTypeFilters, setRouteTypeFilters] = useState<{
@@ -101,12 +107,12 @@ export default function JourneyTimeList({
   // Get valid destinations for current start region
   const validDestinations = useMemo(() => {
     return getValidDestinations(startRegionFilter)
-  }, [startRegionFilter])
+  }, [startRegionFilter, getValidDestinations])
 
   // Get valid start regions for current destination region
   const validStartRegions = useMemo(() => {
     return getValidStartRegions(destRegionFilter)
-  }, [destRegionFilter])
+  }, [destRegionFilter, getValidStartRegions])
 
   // Auto-update destination if current selection becomes invalid
   useEffect(() => {
@@ -138,7 +144,8 @@ export default function JourneyTimeList({
     refreshInterval,
     startRegion: startRegionFilter,
     destRegion: destRegionFilter,
-    limit: 50
+    limit: 50,
+    language: language
   })
 
   // Determine available road types for current region combination
@@ -222,6 +229,17 @@ export default function JourneyTimeList({
     if (!availableRouteTypes[routeType]) return 'disabled'
     if (routeTypeFilters[routeType]) return 'enabled'
     return 'available'
+  }
+
+  // Helper function to get route type label
+  const getRouteTypeLabel = (routeType: string): string => {
+    const labels = {
+      expressway: t('journey.expressway'),
+      trunk: t('journey.trunk'),
+      local: t('journey.local'),
+      temp: t('journey.temp')
+    }
+    return labels[routeType as keyof typeof labels] || routeType
   }
 
   const formatLastUpdated = (isoString: string) => {
@@ -308,7 +326,7 @@ export default function JourneyTimeList({
             {/* Road Type Filter Row */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                Road Type
+                {t('journey.roadType')}
               </label>
               <div className="flex gap-2">
                 {Object.entries(ROUTE_TYPE_ICONS).map(([routeType, icon]) => {
@@ -333,7 +351,7 @@ export default function JourneyTimeList({
                         }
                         ${isLastEnabled ? 'ring-2 ring-gray-400 dark:ring-gray-500' : ''}
                       `}
-                      title={`${routeType === 'expressway' ? 'Expressway' : routeType === 'trunk' ? 'Major Road' : 'Local Road'} - ${isDisabled ? 'Not available for this route' : isEnabled ? 'Enabled' : 'Available'}`}
+                      title={`${getRouteTypeLabel(routeType)} - ${isDisabled ? t('journey.notAvailableForRoute') : isEnabled ? t('journey.enabled') : t('journey.available')}`}
                     >
                       {icon}
                       {isLastEnabled && (
@@ -361,13 +379,13 @@ export default function JourneyTimeList({
                 <div className="space-y-2">
                   <p>
                     {journeyTimeData && journeyTimeData.length > 0 
-                      ? `No routes available for selected road types`
-                      : 'No journey time data available'
+                      ? t('journey.noRoutes')
+                      : t('journey.noData')
                     }
                   </p>
                   {journeyTimeData && journeyTimeData.length > 0 && (
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Try enabling different road types or selecting different regions
+                      {t('journey.tryDifferent')}
                     </p>
                   )}
                 </div>
@@ -387,6 +405,7 @@ export default function JourneyTimeList({
                   locale={journey.locale}
                   routeType={journey.routeType}
                   onRouteClick={handleRouteClick}
+                  language={language}
                 />
               ))}
             </div>
