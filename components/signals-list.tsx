@@ -108,12 +108,16 @@ export default function SignalsList({
       rail: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
       weather: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
       utility: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
+      health: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
+      financial: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
+      gov: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400",
+      ae: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
+      administrative: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
       
       // Legacy categories (fallback)
       politics: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
       business: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
       tech: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
-      health: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
       lifestyle: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
       entertainment: "bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400"
     }
@@ -174,6 +178,7 @@ export default function SignalsList({
     }
     setExpandedCards(newExpanded)
   }
+
 
 
   if (loading) {
@@ -261,117 +266,120 @@ export default function SignalsList({
           </CardContent>
         </Card>
       ) : (
-        articles.map((article) => (
-          <Card 
-            key={article.id} 
-            className="hover:shadow-lg transition-shadow duration-200 overflow-hidden"
-          >
-            <CardContent className="p-4">
-              <div className="flex gap-4">
-                {/* Square thumbnail */}
-                {article.image_url && (
-                  <div className="flex-shrink-0">
-                    <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-                      <img
-                        src={article.image_url}
-                        alt={article.title}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+        articles.map((article) => {
+          // Handle regular articles
+          return (
+            <Card 
+              key={article.id} 
+              className="hover:shadow-lg transition-shadow duration-200 overflow-hidden"
+            >
+              <CardContent className="p-4">
+                <div className="flex gap-4">
+                  {/* Square thumbnail */}
+                  {article.image_url && (
+                    <div className="flex-shrink-0">
+                      <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                        <img
+                          src={article.image_url}
+                          alt={article.title}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
-                
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  {/* Category and metadata */}
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <Badge variant="outline" className={getCategoryColor(article.category)}>
-                      {article.category}
-                    </Badge>
-                    
-                    
-                    {article.severity && (
-                      <div className="flex items-center gap-1">
-                        <AlertTriangle className={`h-3 w-3 ${getSeverityColor(article.severity)}`} />
-                        <span className={`text-xs ${getSeverityColor(article.severity)}`}>
-                          {article.severity}
-                        </span>
-                      </div>
-                    )}
-                    {article.relevance_score && (
-                      <div className="flex items-center gap-1">
-                        <Activity className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">
-                          {article.relevance_score}
-                        </span>
-                      </div>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      {formatDate(article.source_updated_at || article.created_at)}
-                    </span>
-                  </div>
+                  )}
                   
-                  {/* Title */}
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">
-                    {article.enrichment_status === 'enriched' || article.enrichment_status === 'ready' 
-                      ? (article.enhanced_title || article.title)
-                      : article.title
-                    }
-                  </h3>
-                  
-                  {/* Location */}
-                  {(article.longitude && article.latitude) && (
-                    <div className="flex items-center gap-1 mb-1">
-                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    {/* Category and metadata */}
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      <Badge variant="outline" className={getCategoryColor(article.category)}>
+                        {article.category}
+                      </Badge>
+                      
+                      
+                      {article.severity && (
+                        <div className="flex items-center gap-1">
+                          <AlertTriangle className={`h-3 w-3 ${getSeverityColor(article.severity)}`} />
+                          <span className={`text-xs ${getSeverityColor(article.severity)}`}>
+                            {article.severity}
+                          </span>
+                        </div>
+                      )}
+                      {article.relevance_score && (
+                        <div className="flex items-center gap-1">
+                          <Activity className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-muted-foreground">
+                            {article.relevance_score}
+                          </span>
+                        </div>
+                      )}
                       <span className="text-xs text-muted-foreground">
-                        {article.latitude.toFixed(4)}, {article.longitude.toFixed(4)}
+                        {formatDate(article.source_updated_at || article.created_at)}
                       </span>
                     </div>
-                  )}
-                  
-                  {/* Summary - show enriched content if available, otherwise show direct content */}
-                  {(() => {
-                    const isEnriched = article.enrichment_status === 'enriched' || article.enrichment_status === 'ready'
-                    const content = isEnriched && article.summary ? article.summary : article.lede
                     
-                    if (content) {
-                      return (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                          {content}
-                        </p>
-                      )
-                    }
-                    return null
-                  })()}
-                  
-                  {/* AI-Enhanced Content Indicators */}
-                  {(article.enrichment_status === 'enriched' || article.enrichment_status === 'ready') && (
-                    <div className="flex items-center gap-2 mt-2">
-                      {article.key_points && article.key_points.length > 0 && (
-                        <span className="text-xs text-blue-600 dark:text-blue-400">
-                          • {article.key_points.length} key points
+                    {/* Title */}
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-2 mb-1">
+                      {article.enrichment_status === 'enriched' || article.enrichment_status === 'ready' 
+                        ? (article.enhanced_title || article.title)
+                        : article.title
+                      }
+                    </h3>
+                    
+                    {/* Location */}
+                    {(article.longitude && article.latitude) && (
+                      <div className="flex items-center gap-1 mb-1">
+                        <MapPin className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">
+                          {article.latitude.toFixed(4)}, {article.longitude.toFixed(4)}
                         </span>
-                      )}
-                      {article.why_it_matters && (
-                        <span className="text-xs text-green-600 dark:text-green-400">
-                          • Impact analysis
-                        </span>
-                      )}
+                      </div>
+                    )}
+                    
+                    {/* Summary - show enriched content if available, otherwise show direct content */}
+                    {(() => {
+                      const isEnriched = article.enrichment_status === 'enriched' || article.enrichment_status === 'ready'
+                      const content = isEnriched && article.summary ? article.summary : article.lede
+                      
+                      if (content) {
+                        return (
+                          <p className="text-sm text-muted-foreground line-clamp-2">
+                            {content}
+                          </p>
+                        )
+                      }
+                      return null
+                    })()}
+                    
+                    {/* AI-Enhanced Content Indicators */}
+                    {(article.enrichment_status === 'enriched' || article.enrichment_status === 'ready') && (
+                      <div className="flex items-center gap-2 mt-2">
+                        {article.key_points && article.key_points.length > 0 && (
+                          <span className="text-xs text-blue-600 dark:text-blue-400">
+                            • {article.key_points.length} key points
+                          </span>
+                        )}
+                        {article.why_it_matters && (
+                          <span className="text-xs text-green-600 dark:text-green-400">
+                            • Impact analysis
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Source */}
+                    <div className="flex items-center gap-1 mt-2">
+                      <span className="text-xs text-muted-foreground">
+                        <strong>Source:</strong> {article.source_slug?.toUpperCase() || article.source}
+                      </span>
                     </div>
-                  )}
-                  
-                  {/* Source */}
-                  <div className="flex items-center gap-1 mt-2">
-                    <span className="text-xs text-muted-foreground">
-                      <strong>Source:</strong> {article.source_slug?.toUpperCase() || article.source}
-                    </span>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))
+              </CardContent>
+            </Card>
+          )
+        })
       )}
       
       {/* Infinite scroll trigger */}

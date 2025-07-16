@@ -110,7 +110,7 @@ export interface PerplexityNewsResponse {
 }
 
 // Government Incident Types
-export type IncidentCategory = 'road' | 'rail' | 'weather' | 'utility'
+export type IncidentCategory = 'road' | 'rail' | 'weather' | 'utility' | 'health' | 'financial' | 'administrative' | 'gov' | 'ae'
 export type EnrichmentStatus = 'pending' | 'enriched' | 'ready' | 'failed'
 
 export interface GovFeed {

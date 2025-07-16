@@ -84,7 +84,7 @@ class GovernmentFeeds {
           source_slug: feed.slug,
           title: this.cleanTitle(item.title),
           body: item.contentSnippet || item.description,
-          category: this.mapCategory(feed.slug),
+          category: this.mapCategory(feed.slug, item.title, item.contentSnippet || item.description),
           severity: this.calculateSeverity(item.title, item.description),
           source_updated_at: new Date(item.isoDate || item.pubDate).toISOString(),
           relevance_score: this.calculateRelevanceScore(item.title, item.description, feed.slug)
@@ -133,6 +133,141 @@ class GovernmentFeeds {
   }
 
   /**
+   * Parse Hospital A&E waiting times JSON API
+   */
+  private parseHospitalAeJson(json: string, feed: GovFeed): ParsedIncident[] {
+    try {
+      const data = JSON.parse(json)
+      
+      // Handle the current HA A&E JSON structure (from opendata endpoint)
+      if (data.waitTime && Array.isArray(data.waitTime)) {
+        return data.waitTime.map((hospital: any) => {
+          const waitTime = hospital.topWait || 'Unknown'
+          const hospitalName = hospital.hospName || 'Unknown Hospital'
+          const lastUpdated = data.updateTime || 'Unknown'
+          
+          const title = `A&E Waiting Time: ${hospitalName}`
+          const description = `Current waiting time: ${waitTime}. Last updated: ${lastUpdated}`
+          
+          // Use hospital name for ID generation
+          const incidentId = this.generateIncidentId(
+            feed.slug,
+            title,
+            `${hospitalName}_${waitTime}`
+          )
+          
+          // Calculate severity based on waiting time
+          const severity = this.calculateAeSeverity(waitTime, waitTime)
+          
+          return {
+            id: incidentId,
+            source_slug: feed.slug,
+            title: this.cleanTitle(title),
+            body: description,
+            category: 'utility' as IncidentCategory,
+            severity: severity,
+            source_updated_at: new Date().toISOString(),
+            relevance_score: this.calculateAeRelevanceScore(waitTime, waitTime)
+          }
+        })
+      }
+      
+      // Handle alternative HA A&E JSON structure (from aedWtData endpoint)
+      if (data.result && data.result.hospData && Array.isArray(data.result.hospData)) {
+        return data.result.hospData.map((hospital: any) => {
+          const waitTime = hospital.topWait || 'Unknown'
+          const hospitalName = hospital.hospNameEn || 'Unknown Hospital'
+          const hospitalCode = hospital.hospCode || 'UNKNOWN'
+          const lastUpdated = hospital.hospTimeEn || 'Unknown'
+          
+          const title = `A&E Waiting Time: ${hospitalName}`
+          const description = `Current waiting time: ${waitTime}. Last updated: ${lastUpdated}. Hospital Code: ${hospitalCode}`
+          
+          // Use hospital code and current time for ID generation
+          const incidentId = this.generateIncidentId(
+            feed.slug,
+            title,
+            `${hospitalCode}_${waitTime}`
+          )
+          
+          // Calculate severity based on waiting time
+          const severity = this.calculateAeSeverity(waitTime, waitTime)
+          
+          // Extract coordinates from hospCoord field
+          const coordinates = hospital.hospCoord ? hospital.hospCoord.split(',') : [null, null]
+          
+          return {
+            id: incidentId,
+            source_slug: feed.slug,
+            title: this.cleanTitle(title),
+            body: description,
+            category: 'utility' as IncidentCategory,
+            severity: severity,
+            source_updated_at: new Date().toISOString(),
+            relevance_score: this.calculateAeRelevanceScore(waitTime, waitTime)
+          }
+        })
+      }
+      
+      console.error(`Invalid A&E data structure for ${feed.slug}`)
+      return []
+    } catch (error) {
+      console.error(`Error parsing A&E JSON ${feed.slug}:`, error)
+      return []
+    }
+  }
+
+  /**
+   * Parse generic JSON API response
+   */
+  private parseJsonFeed(json: string, feed: GovFeed): ParsedIncident[] {
+    try {
+      const data = JSON.parse(json)
+      
+      // Handle different JSON structures
+      let items: any[] = []
+      
+      if (Array.isArray(data)) {
+        items = data
+      } else if (data.items && Array.isArray(data.items)) {
+        items = data.items
+      } else if (data.data && Array.isArray(data.data)) {
+        items = data.data
+      } else {
+        console.error(`Unknown JSON structure for ${feed.slug}`)
+        return []
+      }
+      
+      return items.map((item: any, index: number) => {
+        const title = item.title || item.name || item.subject || `Item ${index + 1}`
+        const description = item.description || item.content || item.summary || JSON.stringify(item)
+        
+        const incidentId = this.generateIncidentId(
+          feed.slug,
+          title,
+          description
+        )
+        
+        return {
+          id: incidentId,
+          source_slug: feed.slug,
+          title: this.cleanTitle(title),
+          body: description,
+          category: this.mapCategory(feed.slug, title, description),
+          severity: this.calculateSeverity(title, description),
+          latitude: item.latitude ? Number(item.latitude) : undefined,
+          longitude: item.longitude ? Number(item.longitude) : undefined,
+          source_updated_at: item.date || item.timestamp || item.updated || new Date().toISOString(),
+          relevance_score: this.calculateRelevanceScore(title, description, feed.slug)
+        }
+      })
+    } catch (error) {
+      console.error(`Error parsing JSON feed ${feed.slug}:`, error)
+      return []
+    }
+  }
+
+  /**
    * Generate unique incident ID based on content hash
    */
   private generateIncidentId(slug: string, title: string, content?: string): string {
@@ -158,13 +293,80 @@ class GovernmentFeeds {
   }
 
   /**
-   * Map feed slug to incident category
+   * Map feed slug to incident category with content-based classification
    */
-  private mapCategory(slug: string): IncidentCategory {
-    if (slug.startsWith('td_')) return 'road'
+  private mapCategory(slug: string, title: string = '', description: string = ''): IncidentCategory {
+    const text = `${title} ${description}`.toLowerCase()
+    
+    // Transport Department feeds - enhanced categorization
+    if (slug.startsWith('td_')) {
+      return this.mapTransportCategory(slug, title, description)
+    }
+    
+    // Health feeds - content-based categorization
+    if (slug.startsWith('chp_')) {
+      if (text.includes('heat') || text.includes('hot weather')) return 'weather' // Heat warnings better fit weather
+      if (text.includes('disease') || text.includes('virus') || text.includes('infection')) return 'utility' // Use utility for health alerts
+      if (text.includes('arrest') || text.includes('regulatory')) return 'utility'
+      return 'utility' // Map health to utility for now
+    }
+    
+    // Financial feeds - content-based categorization  
+    if (slug.startsWith('hkma_')) {
+      if (text.includes('fraud') || text.includes('scam') || text.includes('phishing')) return 'utility' // Use utility for fraud alerts
+      if (text.includes('market') || text.includes('exchange') || text.includes('rate')) return 'utility'
+      if (text.includes('regulation') || text.includes('policy') || text.includes('guideline')) return 'utility'
+      return 'utility' // Map financial to utility for now
+    }
+    
+    // Weather feeds - enhanced categorization
+    if (slug.startsWith('hko_')) {
+      if (text.includes('earthquake') || text.includes('seismic')) return 'weather'
+      if (text.includes('typhoon') || text.includes('storm') || text.includes('rain')) return 'weather'
+      return 'weather'
+    }
+    
+    // Existing mappings
     if (slug === 'mtr_rail') return 'rail'
-    if (slug.startsWith('hko_')) return 'weather'
+    if (slug.startsWith('ha_')) return 'utility' // Hospital Authority A&E feeds -> utility category (excluded from signals)
     if (slug.startsWith('emsd_')) return 'utility'
+    if (slug.startsWith('news_gov_')) return 'utility' // Map government news to utility for now
+    
+    return 'road' // Default fallback
+  }
+  
+  /**
+   * Enhanced Transport Department categorization based on content
+   */
+  private mapTransportCategory(slug: string, title: string, description: string): IncidentCategory {
+    const text = `${title} ${description}`.toLowerCase()
+    
+    if (slug === 'td_special') {
+      // Special traffic news - actual incidents
+      if (text.includes('accident') || text.includes('crash') || text.includes('collision')) return 'road'
+      if (text.includes('closed') || text.includes('blocked') || text.includes('suspended')) return 'road'
+      if (text.includes('jam') || text.includes('congestion') || text.includes('slow')) return 'road'
+      return 'road'
+    }
+    
+    if (slug === 'td_notices') {
+      // Traffic notices - check for rail/bus content
+      if (text.includes('mtr') || text.includes('railway') || text.includes('train')) return 'rail'
+      if (text.includes('bus') || text.includes('minibus') || text.includes('route')) return 'road'
+      if (text.includes('temporary') && text.includes('arrangement')) return 'road'
+      if (text.includes('parking') || text.includes('meter')) return 'road'
+      return 'road'
+    }
+    
+    if (slug === 'td_press') {
+      // Press releases - check for policy vs operational content
+      if (text.includes('fraud') || text.includes('scam')) return 'utility' // Fraud alerts better fit utility
+      if (text.includes('mtr') || text.includes('railway') || text.includes('train')) return 'rail'
+      if (text.includes('regulation') || text.includes('policy')) return 'utility' // Policy better fits utility
+      if (text.includes('ballot') || text.includes('registration')) return 'utility' // Administrative better fits utility
+      return 'road' // Default for transport department
+    }
+    
     return 'road' // Default fallback
   }
 
@@ -210,12 +412,155 @@ class GovernmentFeeds {
     // Boost for certain sources
     if (slug === 'mtr_rail') score += 10 // MTR incidents are important
     if (slug.startsWith('hko_')) score += 5 // Weather alerts are relevant
+    if (slug.startsWith('chp_')) score += 15 // Health alerts are important
+    if (slug.startsWith('ha_')) score += 10 // Hospital data is relevant
     
     // Penalty for routine notices
     if (text.includes('routine') || text.includes('scheduled')) score -= 10
     if (text.includes('maintenance')) score -= 5
     
     return Math.max(0, Math.min(100, score))
+  }
+
+  /**
+   * Calculate A&E severity based on waiting times
+   */
+  private calculateAeSeverity(waitTime: string, topWait: string): number {
+    // Extract numeric values from waiting time strings
+    const extractHours = (timeStr: string): number => {
+      const match = timeStr.match(/(\d+(?:\.\d+)?)/);
+      return match ? parseFloat(match[1]) : 0;
+    };
+    
+    const waitHours = extractHours(waitTime);
+    const topWaitHours = extractHours(topWait);
+    const maxWait = Math.max(waitHours, topWaitHours);
+    
+    // Calculate severity based on waiting time
+    if (maxWait >= 8) return 9; // Critical - 8+ hours
+    if (maxWait >= 6) return 7; // High - 6-8 hours
+    if (maxWait >= 4) return 5; // Medium - 4-6 hours
+    if (maxWait >= 2) return 3; // Low - 2-4 hours
+    return 1; // Very low - under 2 hours
+  }
+
+  /**
+   * Calculate A&E relevance score based on waiting times
+   */
+  private calculateAeRelevanceScore(waitTime: string, topWait: string): number {
+    const extractHours = (timeStr: string): number => {
+      const match = timeStr.match(/(\d+(?:\.\d+)?)/);
+      return match ? parseFloat(match[1]) : 0;
+    };
+    
+    const waitHours = extractHours(waitTime);
+    const topWaitHours = extractHours(topWait);
+    const maxWait = Math.max(waitHours, topWaitHours);
+    
+    // Higher relevance for longer waiting times
+    if (maxWait >= 8) return 95; // Critical waiting times
+    if (maxWait >= 6) return 85; // High waiting times
+    if (maxWait >= 4) return 75; // Medium waiting times
+    if (maxWait >= 2) return 65; // Moderate waiting times
+    return 55; // Short waiting times
+  }
+
+  /**
+   * Get hospital latitude by hospital code
+   */
+  private getHospitalLatitude(hospIdentifier: string): number | undefined {
+    const hospitalCoords: { [key: string]: { lat: number; lng: number } } = {
+      // By hospital code
+      'AHN': { lat: 22.458575, lng: 114.17472 }, // Alice Ho Miu Ling Nethersole Hospital
+      'CMC': { lat: 22.341458, lng: 114.153126 }, // Caritas Medical Centre
+      'KWH': { lat: 22.315322, lng: 114.172465 }, // Kwong Wah Hospital
+      'NDH': { lat: 22.497036, lng: 114.123968 }, // North District Hospital
+      'NLT': { lat: 22.282536, lng: 113.939104 }, // North Lantau Hospital
+      'PYN': { lat: 22.269419, lng: 114.235707 }, // Pamela Youde Nethersole Eastern Hospital
+      'POH': { lat: 22.445051, lng: 114.041691 }, // Pok Oi Hospital
+      'PWH': { lat: 22.380531, lng: 114.202017 }, // Prince of Wales Hospital
+      'PMH': { lat: 22.340314, lng: 114.134045 }, // Princess Margaret Hospital
+      'QEH': { lat: 22.30884, lng: 114.174693 }, // Queen Elizabeth Hospital
+      'QMH': { lat: 22.270695, lng: 114.131259 }, // Queen Mary Hospital
+      'RH': { lat: 22.275939, lng: 114.175363 }, // Ruttonjee Hospital
+      'SJH': { lat: 22.208049, lng: 114.031519 }, // St John Hospital
+      'TSH': { lat: 22.458985, lng: 113.995809 }, // Tin Shui Wai Hospital
+      'TKO': { lat: 22.317443, lng: 114.270358 }, // Tseung Kwan O Hospital
+      'TMH': { lat: 22.406923, lng: 113.975942 }, // Tuen Mun Hospital
+      'UCH': { lat: 22.322248, lng: 114.227946 }, // United Christian Hospital
+      'YCH': { lat: 22.369653, lng: 114.119561 }, // Yan Chai Hospital
+      
+      // By hospital name
+      'Alice Ho Miu Ling Nethersole Hospital': { lat: 22.458575, lng: 114.17472 },
+      'Caritas Medical Centre': { lat: 22.341458, lng: 114.153126 },
+      'Kwong Wah Hospital': { lat: 22.315322, lng: 114.172465 },
+      'North District Hospital': { lat: 22.497036, lng: 114.123968 },
+      'North Lantau Hospital': { lat: 22.282536, lng: 113.939104 },
+      'Pamela Youde Nethersole Eastern Hospital': { lat: 22.269419, lng: 114.235707 },
+      'Pok Oi Hospital': { lat: 22.445051, lng: 114.041691 },
+      'Prince of Wales Hospital': { lat: 22.380531, lng: 114.202017 },
+      'Princess Margaret Hospital': { lat: 22.340314, lng: 114.134045 },
+      'Queen Elizabeth Hospital': { lat: 22.30884, lng: 114.174693 },
+      'Queen Mary Hospital': { lat: 22.270695, lng: 114.131259 },
+      'Ruttonjee Hospital': { lat: 22.275939, lng: 114.175363 },
+      'St John Hospital': { lat: 22.208049, lng: 114.031519 },
+      'Tin Shui Wai Hospital': { lat: 22.458985, lng: 113.995809 },
+      'Tseung Kwan O Hospital': { lat: 22.317443, lng: 114.270358 },
+      'Tuen Mun Hospital': { lat: 22.406923, lng: 113.975942 },
+      'United Christian Hospital': { lat: 22.322248, lng: 114.227946 },
+      'Yan Chai Hospital': { lat: 22.369653, lng: 114.119561 }
+    };
+    
+    return hospitalCoords[hospIdentifier]?.lat;
+  }
+
+  /**
+   * Get hospital longitude by hospital code
+   */
+  private getHospitalLongitude(hospIdentifier: string): number | undefined {
+    const hospitalCoords: { [key: string]: { lat: number; lng: number } } = {
+      // By hospital code
+      'AHN': { lat: 22.458575, lng: 114.17472 }, // Alice Ho Miu Ling Nethersole Hospital
+      'CMC': { lat: 22.341458, lng: 114.153126 }, // Caritas Medical Centre
+      'KWH': { lat: 22.315322, lng: 114.172465 }, // Kwong Wah Hospital
+      'NDH': { lat: 22.497036, lng: 114.123968 }, // North District Hospital
+      'NLT': { lat: 22.282536, lng: 113.939104 }, // North Lantau Hospital
+      'PYN': { lat: 22.269419, lng: 114.235707 }, // Pamela Youde Nethersole Eastern Hospital
+      'POH': { lat: 22.445051, lng: 114.041691 }, // Pok Oi Hospital
+      'PWH': { lat: 22.380531, lng: 114.202017 }, // Prince of Wales Hospital
+      'PMH': { lat: 22.340314, lng: 114.134045 }, // Princess Margaret Hospital
+      'QEH': { lat: 22.30884, lng: 114.174693 }, // Queen Elizabeth Hospital
+      'QMH': { lat: 22.270695, lng: 114.131259 }, // Queen Mary Hospital
+      'RH': { lat: 22.275939, lng: 114.175363 }, // Ruttonjee Hospital
+      'SJH': { lat: 22.208049, lng: 114.031519 }, // St John Hospital
+      'TSH': { lat: 22.458985, lng: 113.995809 }, // Tin Shui Wai Hospital
+      'TKO': { lat: 22.317443, lng: 114.270358 }, // Tseung Kwan O Hospital
+      'TMH': { lat: 22.406923, lng: 113.975942 }, // Tuen Mun Hospital
+      'UCH': { lat: 22.322248, lng: 114.227946 }, // United Christian Hospital
+      'YCH': { lat: 22.369653, lng: 114.119561 }, // Yan Chai Hospital
+      
+      // By hospital name
+      'Alice Ho Miu Ling Nethersole Hospital': { lat: 22.458575, lng: 114.17472 },
+      'Caritas Medical Centre': { lat: 22.341458, lng: 114.153126 },
+      'Kwong Wah Hospital': { lat: 22.315322, lng: 114.172465 },
+      'North District Hospital': { lat: 22.497036, lng: 114.123968 },
+      'North Lantau Hospital': { lat: 22.282536, lng: 113.939104 },
+      'Pamela Youde Nethersole Eastern Hospital': { lat: 22.269419, lng: 114.235707 },
+      'Pok Oi Hospital': { lat: 22.445051, lng: 114.041691 },
+      'Prince of Wales Hospital': { lat: 22.380531, lng: 114.202017 },
+      'Princess Margaret Hospital': { lat: 22.340314, lng: 114.134045 },
+      'Queen Elizabeth Hospital': { lat: 22.30884, lng: 114.174693 },
+      'Queen Mary Hospital': { lat: 22.270695, lng: 114.131259 },
+      'Ruttonjee Hospital': { lat: 22.275939, lng: 114.175363 },
+      'St John Hospital': { lat: 22.208049, lng: 114.031519 },
+      'Tin Shui Wai Hospital': { lat: 22.458985, lng: 113.995809 },
+      'Tseung Kwan O Hospital': { lat: 22.317443, lng: 114.270358 },
+      'Tuen Mun Hospital': { lat: 22.406923, lng: 113.975942 },
+      'United Christian Hospital': { lat: 22.322248, lng: 114.227946 },
+      'Yan Chai Hospital': { lat: 22.369653, lng: 114.119561 }
+    };
+    
+    return hospitalCoords[hospIdentifier]?.lng;
   }
 
   /**
@@ -316,12 +661,18 @@ class GovernmentFeeds {
       // Fetch feed content
       const content = await this.fetchWithTimeout(feed.url)
       
-      // Parse based on feed type
+      // Parse based on feed type and content
       let allIncidents: ParsedIncident[] = []
       
-      if (feed.slug.startsWith('td_') && !content.includes('<rss')) {
+      if (feed.slug === 'ha_ae_waiting') {
+        // Hospital A&E waiting times JSON API
+        allIncidents = this.parseHospitalAeJson(content, feed)
+      } else if (feed.slug.startsWith('td_') && !content.includes('<rss')) {
         // Transport Department custom XML format
         allIncidents = this.parseTransportDeptXml(content, feed)
+      } else if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+        // Generic JSON API
+        allIncidents = this.parseJsonFeed(content, feed)
       } else {
         // Standard RSS format
         allIncidents = await this.parseRssFeed(content, feed)

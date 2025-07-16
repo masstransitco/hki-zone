@@ -33,6 +33,10 @@ const INCIDENT_CATEGORIES = [
   { value: "rail", label: "Rail" },
   { value: "weather", label: "Weather" },
   { value: "utility", label: "Utility" },
+  { value: "ae", label: "A&E" },
+  { value: "health", label: "Health" },
+  { value: "financial", label: "Financial" },
+  { value: "gov", label: "Gov" },
 ]
 
 const ENRICHMENT_STATUSES = [
@@ -52,13 +56,21 @@ const SEVERITY_LEVELS = [
 
 const SOURCES = [
   { value: "all", label: "All Sources" },
-  { value: "td_special", label: "TD Special Traffic" },
   { value: "td_notices", label: "TD Notices" },
   { value: "td_press", label: "TD Press" },
-  { value: "mtr_rail", label: "MTR Rail" },
   { value: "hko_warn", label: "HKO Warnings" },
   { value: "hko_eq", label: "HKO Earthquake" },
-  { value: "emsd_util", label: "EMSD Utilities" },
+  { value: "hko_felt_eq", label: "HKO Felt Earthquake" },
+  { value: "ha_ae_waiting", label: "A&E Waiting Times" },
+  { value: "chp_press", label: "CHP Press Releases" },
+  { value: "chp_disease", label: "CHP Disease Watch" },
+  { value: "chp_ncd", label: "CHP NCD Watch" },
+  { value: "chp_guidelines", label: "CHP Guidelines" },
+  { value: "hkma_press", label: "HKMA Press Releases" },
+  { value: "hkma_speeches", label: "HKMA Speeches" },
+  { value: "hkma_guidelines", label: "HKMA Guidelines" },
+  { value: "hkma_circulars", label: "HKMA Circulars" },
+  { value: "news_gov_top", label: "Government News" },
 ]
 
 export default function AdminSignalsPage() {

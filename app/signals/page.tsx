@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react"
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
 import SignalsList from "@/components/signals-list"
+import AeHospitalsList from "@/components/ae-hospitals-list"
+import JourneyTimeList from "@/components/journey-time-list"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import type { PerplexityArticle } from "@/lib/types"
@@ -14,6 +16,7 @@ const CATEGORIES = [
   { value: "rail", label: "Rail" },
   { value: "weather", label: "Weather" },
   { value: "utility", label: "Utility" },
+  { value: "ae", label: "A&E" },
 ]
 
 export default function SignalsPage() {
@@ -27,10 +30,13 @@ export default function SignalsPage() {
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
 
+
   useEffect(() => {
     setPage(0)
     setArticles([])
-    loadArticles(0)
+    if (categoryFilter !== "ae") {
+      loadArticles(0)
+    }
   }, [categoryFilter])
 
   useEffect(() => {
@@ -49,6 +55,11 @@ export default function SignalsPage() {
   }, [categoryFilter])
 
   const loadArticles = async (pageNum: number) => {
+    if (categoryFilter === "ae") {
+      // A&E data is handled by the useAeData hook
+      return
+    }
+
     try {
       if (pageNum === 0) setLoading(true)
       
@@ -80,7 +91,9 @@ export default function SignalsPage() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await loadArticles(0)
+    if (categoryFilter !== "ae") {
+      await loadArticles(0)
+    }
     setRefreshing(false)
   }
 
@@ -195,13 +208,45 @@ export default function SignalsPage() {
             </Button>
           </div>
 
-          <SignalsList
-            articles={articles}
-            loading={loading}
-            onLoadMore={handleLoadMore}
-            hasMore={hasMore}
-            viewMode="list"
-          />
+          {categoryFilter === "ae" ? (
+            // Render A&E hospitals with enhanced component
+            <AeHospitalsList 
+              showFilters={true}
+              autoRefresh={true}
+              refreshInterval={5 * 60 * 1000}
+            />
+          ) : categoryFilter === "road" ? (
+            // Render journey time cards for road category
+            <div className="space-y-8">
+              <JourneyTimeList
+                showFilters={true}
+                autoRefresh={true}
+                refreshInterval={2 * 60 * 1000}
+              />
+              {/* Also show road-related signals below journey times */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                  Road Incidents & Updates
+                </h3>
+                <SignalsList
+                  articles={articles}
+                  loading={loading}
+                  onLoadMore={handleLoadMore}
+                  hasMore={hasMore}
+                  viewMode="list"
+                />
+              </div>
+            </div>
+          ) : (
+            // Render regular signals for other categories
+            <SignalsList
+              articles={articles}
+              loading={loading}
+              onLoadMore={handleLoadMore}
+              hasMore={hasMore}
+              viewMode="list"
+            />
+          )}
         </div>
       </main>
 

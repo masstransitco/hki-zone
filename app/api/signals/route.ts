@@ -24,10 +24,11 @@ export async function GET(request: NextRequest) {
       category, status, search, page, limit, severity, source 
     })
 
-    // Build query
+    // Build query - exclude A&E data (hospital authority feeds) from signals
     let query = supabase
       .from('incidents_public')
       .select('*')
+      .not('source_slug', 'like', 'ha_%')
 
     // Apply filters
     if (category && category !== "all") {
