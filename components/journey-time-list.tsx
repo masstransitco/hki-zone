@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -22,33 +22,16 @@ const REGION_FILTERS = [
   { value: "nt", label: "🏔️ New Territories" },
 ]
 
-// Valid region combinations based on actual journey time data
-const VALID_REGION_COMBINATIONS: Record<string, string[]> = {
-  "hk": ["kln"], // Hong Kong Island -> Kowloon only
-  "kln": ["hk", "nt"], // Kowloon -> Hong Kong Island or New Territories
-  "nt": ["hk", "kln", "nt"] // New Territories -> Hong Kong Island, Kowloon, or New Territories
-}
-
-// Helper function to get valid destination regions for a given start region
-const getValidDestinations = (startRegion: string): typeof REGION_FILTERS => {
-  const validDestinations = VALID_REGION_COMBINATIONS[startRegion] || []
-  return REGION_FILTERS.filter(region => validDestinations.includes(region.value))
-}
-
-// Helper function to get valid start regions for a given destination region
-const getValidStartRegions = (destRegion: string): typeof REGION_FILTERS => {
-  const validStartRegions = Object.keys(VALID_REGION_COMBINATIONS).filter(startRegion => 
-    VALID_REGION_COMBINATIONS[startRegion].includes(destRegion)
-  )
-  return REGION_FILTERS.filter(region => validStartRegions.includes(region.value))
-}
-
-// Helper function to get random region pair (follows valid combinations)
+// Helper function to get random region pair (not Kowloon to Kowloon)
 const getRandomRegionPair = () => {
   const regions = ["hk", "kln", "nt"] as const
-  const start = regions[Math.floor(Math.random() * regions.length)]
-  const validDestinations = VALID_REGION_COMBINATIONS[start]
-  const dest = validDestinations[Math.floor(Math.random() * validDestinations.length)]
+  let start = regions[Math.floor(Math.random() * regions.length)]
+  let dest = regions[Math.floor(Math.random() * regions.length)]
+  
+  // Ensure not Kowloon to Kowloon
+  while (start === "kln" && dest === "kln") {
+    dest = regions[Math.floor(Math.random() * regions.length)]
+  }
   
   return { start, dest }
 }
@@ -93,36 +76,10 @@ export default function JourneyTimeList({
     trunk: boolean
     local: boolean
   }>({
-    expressway: false,
-    trunk: false,
-    local: false
+    expressway: true,
+    trunk: true,
+    local: true
   })
-
-  // Get valid destinations for current start region
-  const validDestinations = useMemo(() => {
-    return getValidDestinations(startRegionFilter)
-  }, [startRegionFilter])
-
-  // Get valid start regions for current destination region
-  const validStartRegions = useMemo(() => {
-    return getValidStartRegions(destRegionFilter)
-  }, [destRegionFilter])
-
-  // Auto-update destination if current selection becomes invalid
-  useEffect(() => {
-    const isCurrentDestValid = validDestinations.some(dest => dest.value === destRegionFilter)
-    if (!isCurrentDestValid && validDestinations.length > 0) {
-      setDestRegionFilter(validDestinations[0].value as "hk" | "kln" | "nt")
-    }
-  }, [startRegionFilter, destRegionFilter, validDestinations])
-
-  // Auto-update start region if current selection becomes invalid
-  useEffect(() => {
-    const isCurrentStartValid = validStartRegions.some(start => start.value === startRegionFilter)
-    if (!isCurrentStartValid && validStartRegions.length > 0) {
-      setStartRegionFilter(validStartRegions[0].value as "hk" | "kln" | "nt")
-    }
-  }, [destRegionFilter, startRegionFilter, validStartRegions])
 
   const {
     data: journeyTimeData,
@@ -140,48 +97,6 @@ export default function JourneyTimeList({
     destRegion: destRegionFilter,
     limit: 50
   })
-
-  // Determine available road types for current region combination
-  const availableRouteTypes = useMemo(() => {
-    if (!journeyTimeData) return { expressway: false, trunk: false, local: false }
-    
-    const available = {
-      expressway: false,
-      trunk: false,
-      local: false
-    }
-    
-    journeyTimeData.forEach(journey => {
-      if (journey.routeType === 'expressway') available.expressway = true
-      if (journey.routeType === 'trunk') available.trunk = true
-      if (journey.routeType === 'local') available.local = true
-    })
-    
-    return available
-  }, [journeyTimeData])
-
-  // Auto-enable available route types when data loads or regions change
-  useEffect(() => {
-    const hasAvailableTypes = Object.values(availableRouteTypes).some(available => available)
-    
-    if (hasAvailableTypes) {
-      // Reset and enable all available route types when regions change
-      const newFilters = {
-        expressway: availableRouteTypes.expressway,
-        trunk: availableRouteTypes.trunk,
-        local: availableRouteTypes.local
-      }
-      
-      setRouteTypeFilters(newFilters)
-    } else {
-      // If no types are available, reset all to false
-      setRouteTypeFilters({
-        expressway: false,
-        trunk: false,
-        local: false
-      })
-    }
-  }, [availableRouteTypes, startRegionFilter, destRegionFilter])
 
   // Filter data by route type
   const filteredData = useMemo(() => {
@@ -202,26 +117,10 @@ export default function JourneyTimeList({
   }
 
   const toggleRouteType = (routeType: keyof typeof routeTypeFilters) => {
-    // Don't allow toggling if this route type is not available
-    if (!availableRouteTypes[routeType]) return
-    
-    // Don't allow turning off if this is the only enabled route type
-    const currentlyEnabled = Object.entries(routeTypeFilters).filter(([_, enabled]) => enabled)
-    if (currentlyEnabled.length === 1 && currentlyEnabled[0][0] === routeType && routeTypeFilters[routeType]) {
-      return // Prevent turning off the last enabled route type
-    }
-    
     setRouteTypeFilters(prev => ({
       ...prev,
       [routeType]: !prev[routeType]
     }))
-  }
-
-  // Helper function to get the visual state of a route type button
-  const getRouteTypeState = (routeType: keyof typeof routeTypeFilters): 'disabled' | 'enabled' | 'available' => {
-    if (!availableRouteTypes[routeType]) return 'disabled'
-    if (routeTypeFilters[routeType]) return 'enabled'
-    return 'available'
   }
 
   const formatLastUpdated = (isoString: string) => {
@@ -241,7 +140,44 @@ export default function JourneyTimeList({
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          Journey Times
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          Real-time traffic conditions and journey times across Hong Kong
+        </p>
+      </div>
 
+      {/* Status and last updated */}
+      <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+        <div className="flex items-center gap-3">
+          <div className={`w-3 h-3 rounded-full ${isStale ? 'bg-orange-500' : 'bg-green-500 animate-pulse'}`} />
+          <span className="text-sm text-muted-foreground">
+            {lastUpdated ? (
+              `Last updated: ${formatLastUpdated(lastUpdated)}`
+            ) : (
+              'Loading...'
+            )}
+          </span>
+          {isStale && (
+            <Badge variant="outline" className="text-orange-600 border-orange-600">
+              Data may be stale
+            </Badge>
+          )}
+        </div>
+        
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={refresh}
+          disabled={loading}
+          className="flex items-center justify-center w-9 h-9"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
 
       {/* Error handling */}
       {error && (
@@ -276,7 +212,7 @@ export default function JourneyTimeList({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {validStartRegions.map((filter) => (
+                    {REGION_FILTERS.map((filter) => (
                       <SelectItem key={filter.value} value={filter.value}>
                         {filter.label}
                       </SelectItem>
@@ -295,7 +231,7 @@ export default function JourneyTimeList({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {validDestinations.map((filter) => (
+                    {REGION_FILTERS.map((filter) => (
                       <SelectItem key={filter.value} value={filter.value}>
                         {filter.label}
                       </SelectItem>
@@ -311,37 +247,23 @@ export default function JourneyTimeList({
                 Road Type
               </label>
               <div className="flex gap-2">
-                {Object.entries(ROUTE_TYPE_ICONS).map(([routeType, icon]) => {
-                  const state = getRouteTypeState(routeType as keyof typeof routeTypeFilters)
-                  const isDisabled = state === 'disabled'
-                  const isEnabled = state === 'enabled'
-                  const isLastEnabled = Object.entries(routeTypeFilters).filter(([_, enabled]) => enabled).length === 1 && isEnabled
-                  
-                  return (
-                    <button
-                      key={routeType}
-                      onClick={() => toggleRouteType(routeType as keyof typeof routeTypeFilters)}
-                      disabled={isDisabled}
-                      className={`
-                        w-12 h-12 rounded-full border-2 flex items-center justify-center
-                        transition-all duration-200 relative
-                        ${isDisabled 
-                          ? 'bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-300 dark:text-gray-700 cursor-not-allowed opacity-50'
-                          : isEnabled
-                          ? 'bg-gray-800 dark:bg-gray-200 border-gray-800 dark:border-gray-200 text-white dark:text-gray-800 hover:bg-gray-900 dark:hover:bg-gray-100 hover:shadow-md'
-                          : 'bg-white dark:bg-gray-800 border-gray-500 dark:border-gray-400 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-600 dark:hover:border-gray-300 hover:shadow-md'
-                        }
-                        ${isLastEnabled ? 'ring-2 ring-gray-400 dark:ring-gray-500' : ''}
-                      `}
-                      title={`${routeType === 'expressway' ? 'Expressway' : routeType === 'trunk' ? 'Major Road' : 'Local Road'} - ${isDisabled ? 'Not available for this route' : isEnabled ? 'Enabled' : 'Available'}`}
-                    >
-                      {icon}
-                      {isLastEnabled && (
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-gray-600 dark:bg-gray-400 rounded-full border-2 border-white dark:border-gray-900" />
-                      )}
-                    </button>
-                  )
-                })}
+                {Object.entries(ROUTE_TYPE_ICONS).map(([routeType, icon]) => (
+                  <button
+                    key={routeType}
+                    onClick={() => toggleRouteType(routeType as keyof typeof routeTypeFilters)}
+                    className={`
+                      w-12 h-12 rounded-full border-2 flex items-center justify-center
+                      transition-all duration-200 hover:shadow-md
+                      ${routeTypeFilters[routeType as keyof typeof routeTypeFilters]
+                        ? 'bg-gray-800 dark:bg-gray-200 border-gray-800 dark:border-gray-200 text-white dark:text-gray-800'
+                        : 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400'
+                      }
+                    `}
+                    title={routeType === 'expressway' ? 'Expressway' : routeType === 'trunk' ? 'Major Road' : 'Local Road'}
+                  >
+                    {icon}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -358,19 +280,10 @@ export default function JourneyTimeList({
           {!filteredData || filteredData.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center text-muted-foreground">
-                <div className="space-y-2">
-                  <p>
-                    {journeyTimeData && journeyTimeData.length > 0 
-                      ? `No routes available for selected road types`
-                      : 'No journey time data available'
-                    }
-                  </p>
-                  {journeyTimeData && journeyTimeData.length > 0 && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Try enabling different road types or selecting different regions
-                    </p>
-                  )}
-                </div>
+                {journeyTimeData && journeyTimeData.length > 0 
+                  ? `No routes available for selected filters`
+                  : 'No journey time data available'
+                }
               </CardContent>
             </Card>
           ) : (
