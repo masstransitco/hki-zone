@@ -306,17 +306,19 @@ class GovernmentFeeds {
     // Health feeds - content-based categorization
     if (slug.startsWith('chp_')) {
       if (text.includes('heat') || text.includes('hot weather')) return 'weather' // Heat warnings better fit weather
-      if (text.includes('disease') || text.includes('virus') || text.includes('infection')) return 'utility' // Use utility for health alerts
+      if (slug === 'chp_disease' || slug === 'chp_ncd' || slug === 'chp_guidelines') return 'environment' // CHP health sources -> Environment category
+      if (text.includes('disease') || text.includes('virus') || text.includes('infection')) return 'environment' // Disease-related content -> Environment
       if (text.includes('arrest') || text.includes('regulatory')) return 'utility'
-      return 'utility' // Map health to utility for now
+      return 'environment' // Map most health content to environment instead of utility
     }
     
     // Financial feeds - content-based categorization  
     if (slug.startsWith('hkma_')) {
+      if (slug === 'hkma_press' || slug === 'hkma_speeches') return 'top_signals' // HKMA_PRESS & HKMA_SPEECHES -> Top Signals
       if (text.includes('fraud') || text.includes('scam') || text.includes('phishing')) return 'utility' // Use utility for fraud alerts
       if (text.includes('market') || text.includes('exchange') || text.includes('rate')) return 'utility'
       if (text.includes('regulation') || text.includes('policy') || text.includes('guideline')) return 'utility'
-      return 'utility' // Map financial to utility for now
+      return 'utility' // Map other financial to utility for now
     }
     
     // Weather feeds - enhanced categorization
@@ -330,7 +332,8 @@ class GovernmentFeeds {
     if (slug === 'mtr_rail') return 'rail'
     if (slug.startsWith('ha_')) return 'utility' // Hospital Authority A&E feeds -> utility category (excluded from signals)
     if (slug.startsWith('emsd_')) return 'utility'
-    if (slug.startsWith('news_gov_')) return 'utility' // Map government news to utility for now
+    if (slug === 'news_gov_top') return 'top_signals' // NEWS_GOV_TOP -> Top Signals
+    if (slug.startsWith('news_gov_')) return 'utility' // Map other government news to utility for now
     
     return 'road' // Default fallback
   }

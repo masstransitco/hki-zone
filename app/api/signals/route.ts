@@ -31,7 +31,16 @@ export async function GET(request: NextRequest) {
       .not('source_slug', 'like', 'ha_%')
 
     // Apply filters
-    if (category && category !== "all") {
+    if (category === "top_signals" || !category) {
+      // For top_signals (default) or no category, show only top signals
+      // Include both category-based and source-based filtering for backward compatibility
+      query = query.or('category.eq.top_signals,source_slug.in.(hkma_press,hkma_speeches,news_gov_top)')
+    } else if (category === "environment") {
+      // For environment category, include both category-based and source-based filtering
+      // Include all CHP sources: chp_disease, chp_press, chp_ncd, chp_guidelines
+      query = query.or('category.eq.environment,source_slug.like.chp_%')
+    } else if (category) {
+      // For other specific categories
       query = query.eq('category', category)
     }
 
@@ -132,7 +141,7 @@ export async function GET(request: NextRequest) {
       metadata: {
         source: 'government_feeds',
         last_updated: new Date().toISOString(),
-        categories_available: ['road', 'rail', 'weather', 'utility'],
+        categories_available: ['top_signals', 'road', 'rail', 'weather', 'utility', 'environment'],
         enrichment_statuses: ['pending', 'enriched', 'ready', 'failed']
       }
     })

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Journey Time component provides real-time traffic information for Hong Kong's road network, displaying journey times with an intuitive color-coded system based on Hong Kong's road signage standards. The implementation includes region-based filtering, mobile-optimized cards, and a modern toggle-based interface.
+The Journey Time component provides real-time traffic information for Hong Kong's road network, displaying journey times with an intuitive color-coded system based on Hong Kong's road signage standards. The implementation includes region-based filtering, mobile-optimized cards, a modern toggle-based interface, and full multilingual support for English, Simplified Chinese, and Traditional Chinese.
 
 ## Architecture
 
@@ -358,4 +358,136 @@ const nextConfig = {
 4. **Voice Interface**: Accessibility improvements
 5. **Analytics Integration**: User behavior tracking
 
-This implementation provides a robust, mobile-optimized journey time system that aligns with Hong Kong's transportation infrastructure while offering an intuitive user experience through modern web technologies.
+## Language Support Implementation
+
+### Multilingual Architecture
+
+The Journey Time component supports Hong Kong's trilingual environment with complete localization:
+
+#### **Supported Languages:**
+- **English (EN)**: Primary interface language
+- **Simplified Chinese (简体中文)**: Mainland China standard
+- **Traditional Chinese (繁體中文)**: Hong Kong/Taiwan standard
+
+#### **Localized Content:**
+
+**1. User Interface Elements:**
+```typescript
+// Component labels and messages
+"journey.title": "Journey Times" | "行程时间" | "行程時間"
+"journey.roadType": "Road Type" | "道路类型" | "道路類型"
+"journey.expressway": "Expressway" | "高速公路" | "高速公路"
+"journey.trunk": "Major Road" | "主要道路" | "主要道路"
+"journey.local": "Local Road" | "本地道路" | "本地道路"
+```
+
+**2. Region Names:**
+```typescript
+"regions.hk": "Hong Kong Island" | "香港岛" | "香港島"
+"regions.kln": "Kowloon" | "九龙" | "九龍"
+"regions.nt": "New Territories" | "新界" | "新界"
+```
+
+**3. Route Location Names:**
+```typescript
+// Hong Kong Island locations
+'H1': 'Central/Admiralty' | '中环/金钟' | '中環/金鐘'
+'H2': 'Wan Chai' | '湾仔' | '灣仔'
+'H3': 'Causeway Bay' | '铜锣湾' | '銅鑼灣'
+
+// Kowloon locations
+'K01': 'Tsim Sha Tsui' | '尖沙咀' | '尖沙咀'
+'K04': 'Mong Kok' | '旺角' | '旺角'
+
+// New Territories locations
+'N01': 'Sha Tin' | '沙田' | '沙田'
+'N05': 'Tuen Mun' | '屯门' | '屯門'
+```
+
+**4. Destination Names:**
+```typescript
+// Major tunnels and destinations
+'CH': 'Cross-Harbour Tunnel' | '海底隧道' | '海底隧道'
+'EH': 'Eastern Harbour Tunnel' | '东区海底隧道' | '東區海底隧道'
+'WH': 'Western Harbour Tunnel' | '西区海底隧道' | '西區海底隧道'
+'ATL': 'Airport' | '机场' | '機場'
+```
+
+### Implementation Details
+
+#### **1. Language Context Integration:**
+```typescript
+// Component uses app-wide language context
+const { language, t } = useLanguage()
+
+// Dynamic region filters based on language
+const REGION_FILTERS = useMemo(() => [
+  { value: "hk", label: `🏝️ ${t('regions.hk')}` },
+  { value: "kln", label: `🏙️ ${t('regions.kln')}` },
+  { value: "nt", label: `🏔️ ${t('regions.nt')}` },
+], [t])
+```
+
+#### **2. API Language Support:**
+```typescript
+// API endpoint accepts language parameter
+const language = url.searchParams.get('language') as Language || 'en'
+
+// Localized name lookup
+from: LOCATION_NAMES[jt.locationId]?.[language] || jt.locationId,
+to: DESTINATION_NAMES[jt.destinationId]?.[language] || jt.destinationId,
+```
+
+#### **3. Hook Integration:**
+```typescript
+// Hook passes language to API
+const { data } = useJourneyTimeData({
+  startRegion: startRegionFilter,
+  destRegion: destRegionFilter,
+  language: language
+})
+```
+
+### Visual Design Updates
+
+#### **Card Design Enhancements:**
+- **Consistent White Borders**: All route cards feature white borders matching Hong Kong road signage
+- **Enlarged Destination Text**: Destination names use larger, semi-bold monospace font for road sign authenticity
+- **Neutral Toggle Colors**: Road type toggles use gray instead of blue for better visual hierarchy
+
+#### **Three-State Toggle System:**
+- **Disabled State**: Gray background (50% opacity) - Not available for current region
+- **Available State**: White background with gray border - Can be toggled on
+- **Enabled State**: Dark gray background - Currently active
+
+#### **Smart Region Filtering:**
+- **Bidirectional Logic**: Both "From" and "To" dropdowns filter based on each other
+- **Data-Driven**: Only shows regions with actual journey time data
+- **Auto-Correction**: Automatically updates invalid selections
+
+### Language Switching Behavior
+
+#### **Real-Time Updates:**
+- **Instant Translation**: All text updates immediately when language changes
+- **Consistent Experience**: UI labels and route names change together
+- **Preserved State**: Filter selections and toggle states maintained
+
+#### **Fallback Handling:**
+- **Graceful Degradation**: Falls back to original location ID if translation missing
+- **Error Prevention**: Prevents blank or undefined text display
+- **Type Safety**: TypeScript ensures proper language key usage
+
+### Testing Considerations
+
+#### **Language-Specific Testing:**
+- **Character Encoding**: Verify Chinese characters display correctly
+- **Text Overflow**: Ensure longer Chinese text fits in containers
+- **Font Rendering**: Test font fallbacks for Chinese characters
+- **Input Validation**: Validate language parameter handling
+
+#### **Cross-Browser Compatibility:**
+- **Font Support**: Chinese character rendering across browsers
+- **Layout Stability**: Text expansion/contraction handling
+- **Memory Usage**: Multiple language dictionaries impact
+
+This implementation provides a robust, mobile-optimized journey time system that aligns with Hong Kong's transportation infrastructure while offering an intuitive user experience through modern web technologies and comprehensive multilingual support.

@@ -113,6 +113,8 @@ export default function SignalsList({
       gov: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400",
       ae: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
       administrative: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
+      top_signals: "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 dark:bg-gradient-to-r dark:from-amber-900/20 dark:to-orange-900/20 dark:text-amber-400",
+      environment: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400",
       
       // Legacy categories (fallback)
       politics: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",

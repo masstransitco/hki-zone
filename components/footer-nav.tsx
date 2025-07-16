@@ -13,7 +13,6 @@ import { cn } from "@/lib/utils"
 const navItems = [
   { href: "/", icon: NewspaperTwoToneIcon, label: "Topics", labelKey: "nav.topics" },
   { href: "/signals", icon: OnlinePredictionTwoToneIcon, label: "Signals", labelKey: "nav.signals" },
-  { href: "/signals?category=ae", icon: LocalHospitalTwoToneIcon, label: "A&E", labelKey: "nav.ae" },
   { href: "/headlines", icon: RssFeedTwoToneIcon, label: "News", labelKey: "nav.news" },
   { href: "/cars", icon: SellTwoToneIcon, label: "Cars", labelKey: "nav.cars" },
   // { href: "/search", icon: Search, label: "Search", labelKey: "nav.search" },
@@ -27,9 +26,7 @@ export default function FooterNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe">
       <div className="flex items-center justify-around py-3 px-2">
         {navItems.map(({ href, icon: Icon, label }) => {
-          // Special handling for A&E category link
-          const isAeCategory = href.includes('category=ae') && pathname === '/signals'
-          const isActive = pathname === href || isAeCategory
+          const isActive = pathname === href
 
           return (
             <Link

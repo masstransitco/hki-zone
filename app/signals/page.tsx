@@ -11,18 +11,19 @@ import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import type { PerplexityArticle } from "@/lib/types"
 
 const CATEGORIES = [
-  { value: "all", label: "All" },
+  { value: "top_signals", label: "Top Signals" },
   { value: "road", label: "Road" },
-  { value: "rail", label: "Rail" },
+  // { value: "rail", label: "Rail" },
   { value: "weather", label: "Weather" },
-  { value: "utility", label: "Utility" },
+  // { value: "utility", label: "Utility" },
+  { value: "environment", label: "Environment" },
   { value: "ae", label: "A&E" },
 ]
 
 export default function SignalsPage() {
   const [articles, setArticles] = useState<PerplexityArticle[]>([])
   const [loading, setLoading] = useState(true)
-  const [categoryFilter, setCategoryFilter] = useState("all")
+  const [categoryFilter, setCategoryFilter] = useState("top_signals")
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -68,7 +69,7 @@ export default function SignalsPage() {
         limit: "20"
       })
       
-      if (categoryFilter !== "all") params.set("category", categoryFilter)
+      params.set("category", categoryFilter)
       
       const response = await fetch(`/api/signals?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch signals')
