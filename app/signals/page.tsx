@@ -6,6 +6,7 @@ import FooterNav from "@/components/footer-nav"
 import SignalsList from "@/components/signals-list"
 import AeHospitalsList from "@/components/ae-hospitals-list"
 import JourneyTimeList from "@/components/journey-time-list"
+import WeatherDashboard from "@/components/weather-dashboard"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import type { PerplexityArticle } from "@/lib/types"
@@ -228,6 +229,24 @@ export default function SignalsPage() {
               <div>
                 <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
                   Road Incidents & Updates
+                </h3>
+                <SignalsList
+                  articles={articles}
+                  loading={loading}
+                  onLoadMore={handleLoadMore}
+                  hasMore={hasMore}
+                  viewMode="list"
+                />
+              </div>
+            </div>
+          ) : categoryFilter === "weather" ? (
+            // Render weather dashboard for weather category
+            <div className="space-y-8">
+              <WeatherDashboard />
+              {/* Also show weather-related signals below weather dashboard */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+                  Weather Alerts & Updates
                 </h3>
                 <SignalsList
                   articles={articles}

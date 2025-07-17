@@ -1,0 +1,37 @@
+{
+  "slug": "metroradio",
+  "url": "https://www.metroradio.com.hk/",
+  "picked": {
+    "href": "https://www.google.com/s2/favicons?domain=www.metroradio.com.hk&sz=128",
+    "ext": "png",
+    "mime": "image/png",
+    "bytes": 368,
+    "file": "metroradio.png"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.metroradio.com.hk/favicon.ico",
+      "ok": false,
+      "status": null,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "google-s2",
+      "rel": "icon",
+      "href": "https://www.google.com/s2/favicons?domain=www.metroradio.com.hk&sz=128",
+      "ok": true,
+      "status": 200,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 368,
+      "file": "raw/icon-1.png",
+      "error": null
+    }
+  ]
+}

@@ -50,7 +50,7 @@ CREATE TABLE incidents (
     source_slug TEXT NOT NULL,       -- References gov_feeds.slug
     title TEXT NOT NULL,
     body TEXT,
-    category incident_category NOT NULL,  -- 'road', 'rail', 'weather', 'utility'
+    category incident_category NOT NULL,  -- 'road', 'rail', 'weather', 'utility', 'top_signals', 'environment'
     severity INTEGER DEFAULT 0,      -- 0-10 severity scale
     relevance_score INTEGER DEFAULT 0, -- Content-based relevance (0-100)
     location GEOMETRY(Point, 4326),  -- PostGIS location data
@@ -240,11 +240,13 @@ interface EnrichmentResult {
 ### 1. Public Signals Feed (`/app/signals/page.tsx`)
 
 **Features:**
-- **Category filtering** (Road, Rail, Weather, Utility)
+- **Category filtering** (Top Signals, Road, Weather, Environment, A&E)
+- **Default Top Signals view** highlighting priority government communications
 - **Real-time updates** (auto-refresh every 2 minutes)
 - **Both direct and enriched content** display
 - **Infinite scroll** for large datasets
 - **Responsive design** with mobile optimization
+- **Streamlined navigation** with optimized category selection
 
 **Content Display Logic:**
 ```typescript
@@ -439,7 +441,7 @@ const handleProcessSingleFeed = async (feedSlug: string) => {
 
 ## 🏗️ **Government Feed Sources**
 
-### Currently Supported Feeds
+### Currently Supported Feeds (15+ Sources)
 
 1. **Transport Department Feeds**
    - **Traffic Notices**: `https://www.td.gov.hk/filemanager/rss/en/traffic_notices.xml` ✅
@@ -449,6 +451,24 @@ const handleProcessSingleFeed = async (feedSlug: string) => {
    - **Weather Warnings**: `https://rss.weather.gov.hk/rss/WeatherWarningSummaryv2.xml` ✅
    - **Earthquake Messages**: `https://rss.weather.gov.hk/rss/QuickEarthquakeMessage.xml` ✅
    - **Felt Earthquakes**: `https://rss.weather.gov.hk/rss/FeltEarthquake.xml` ✅
+
+3. **Centre for Health Protection (CHP)**
+   - **Press Releases**: `https://www.chp.gov.hk/rss/pressreleases_en_RSS.xml` ✅
+   - **Disease Watch**: `https://www.chp.gov.hk/rss/cdwatch_en_RSS.xml` ✅
+   - **Non-Communicable Disease Watch**: `https://www.chp.gov.hk/rss/ncdaware_en_RSS.xml` ✅
+   - **Guidelines**: `https://www.chp.gov.hk/rss/guidelines_en_RSS.xml` ✅
+
+4. **Hong Kong Monetary Authority (HKMA)**
+   - **Press Releases**: `https://www.hkma.gov.hk/eng/other-information/rss/rss_press-release.xml` ✅
+   - **Speeches**: `https://www.hkma.gov.hk/eng/other-information/rss/rss_speeches.xml` ✅
+   - **Guidelines**: `https://www.hkma.gov.hk/eng/other-information/rss/rss_guidelines.xml` ✅
+   - **Circulars**: `https://www.hkma.gov.hk/eng/other-information/rss/rss_circulars.xml` ✅
+
+5. **Government News**
+   - **Top Stories**: `https://www.news.gov.hk/rss/news/topstories_en.xml` ✅
+
+6. **Hospital Authority**
+   - **A&E Waiting Times**: `https://www.ha.org.hk/opendata/aed/aedwtdata-en.json` ✅
 
 ### Feed Status Monitoring
 
