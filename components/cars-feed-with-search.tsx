@@ -3,7 +3,7 @@
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState, useCallback } from "react"
 import { useInView } from "react-intersection-observer"
-import { RefreshCw, Car, Grid3X3, List } from "lucide-react"
+import { RefreshCw, Car, Grid3X3, List, Tag } from "lucide-react"
 import LoadingSkeleton from "./loading-skeleton"
 import CarBottomSheet from "./car-bottom-sheet"
 import CarSearch from "./car-search"
@@ -11,6 +11,7 @@ import { useLanguage } from "./language-provider"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
+import { parseCarSpecs, getFormattedSpecString } from "../utils/car-specs-parser"
 
 interface CarListing {
   id: string
@@ -58,7 +59,7 @@ const formatPublishedDate = (dateString: string) => {
   }
 }
 
-// Modern minimal car card with optimized DOM structure
+// Mobile-optimized car card with compact layout
 function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarListing) => void }) {
   const [imageIndex, setImageIndex] = useState(0)
   const [imageError, setImageError] = useState(false)
@@ -96,7 +97,17 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
   }
   
   const getSpecs = () => {
-    return car.specs?.['規格'] || ''
+    // Use pre-parsed database field if available
+    if (car.specFormattedDisplay) {
+      return car.specFormattedDisplay
+    }
+    
+    // Fall back to parsing the raw specs
+    const rawSpecs = car.specs?.['規格'] || ''
+    if (!rawSpecs) return ''
+    
+    const parsedSpecs = parseCarSpecs(rawSpecs)
+    return getFormattedSpecString(parsedSpecs)
   }
   
   // Optimized image navigation
@@ -120,101 +131,103 @@ function CarCard({ car, onCarClick }: { car: CarListing, onCarClick: (car: CarLi
 
   return (
     <article 
-      className="group relative bg-white dark:bg-neutral-900 rounded-xl border border-neutral-200/50 dark:border-neutral-800/50 overflow-hidden hover:shadow-lg dark:hover:shadow-neutral-900/40 transition-all duration-300 cursor-pointer"
+      className="group relative bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 overflow-hidden hover:border-green-200 dark:hover:border-green-800 hover:shadow-md transition-all duration-200 cursor-pointer"
       onClick={() => onCarClick(car)}
     >
-      {/* Image Section */}
-      <div className="relative aspect-[4/3] overflow-hidden">
+      {/* Compact Image Section */}
+      <div className="relative aspect-[3/2] overflow-hidden">
         {images.length > 0 && !imageError ? (
           <>
             <img
               src={images[imageIndex]}
               alt={displayTitle}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
               onError={() => setImageError(true)}
               loading="lazy"
             />
             
-            {/* Image Navigation */}
+            
+            {/* Mobile-Optimized Navigation */}
             {images.length > 1 && (
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); prevImage() }}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
                   aria-label="Previous image"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); nextImage() }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/40 hover:bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/50 hover:bg-black/70 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center"
                   aria-label="Next image"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
                 
-                {/* Image indicators */}
-                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
+                {/* Compact Image Counter */}
+                <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
+                  {imageIndex + 1}/{images.length}
+                </div>
+                
+                {/* Bottom indicators */}
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
                   {images.map((_, index) => (
                     <div
                       key={index}
-                      className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                      className={`w-1 h-1 rounded-full transition-all duration-200 ${
                         index === imageIndex ? 'bg-white' : 'bg-white/50'
                       }`}
                     />
                   ))}
-                </div>
-                
-                {/* Image counter */}
-                <div className="absolute top-3 right-3 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
-                  {imageIndex + 1}/{images.length}
                 </div>
               </>
             )}
             
             {/* Sale badge */}
             {saleStatus && (
-              <div className="absolute top-3 left-3 bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full">
+              <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-medium px-2 py-1 rounded-full">
                 Sale
               </div>
             )}
           </>
         ) : (
           <div className="w-full h-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center">
-            <Car className="w-12 h-12 text-neutral-400" />
+            <Car className="w-8 h-8 text-neutral-400" />
           </div>
         )}
       </div>
       
-      {/* Content Section */}
-      <div className="p-4 space-y-3">
-        {/* Title and Price */}
-        <div className="space-y-1">
-          <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug">
+      {/* Compact Content Section */}
+      <div className="p-3 space-y-2">
+        {/* Title and Price Row */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="flex-1 text-sm font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-1 leading-tight">
             {displayTitle}
           </h3>
           {displayPrice && (
-            <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+            <div className="flex-shrink-0 flex items-center gap-1 text-sm font-bold text-neutral-700 dark:text-neutral-300">
+              <Tag className="w-3 h-3 text-green-600 dark:text-green-400" />
               {displayPrice}
             </div>
           )}
         </div>
         
-        {/* Metadata */}
-        <div className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+        {/* Compact Metadata */}
+        <div className="flex items-center gap-2 text-xs text-neutral-600 dark:text-neutral-400">
           <span>{year}</span>
           <span>•</span>
           <span>{new Date(car.publishedAt).toLocaleDateString()}</span>
         </div>
         
-        {/* Specs */}
+        {/* Compact Specs */}
         {specs && (
-          <div className="text-sm text-neutral-600 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 px-3 py-2 rounded-lg">
-            <span className="font-medium text-neutral-700 dark:text-neutral-300">規格:</span> {specs}
+          <div className="text-xs text-neutral-600 dark:text-neutral-400 line-clamp-1">
+            {specs}
           </div>
         )}
       </div>
@@ -252,7 +265,17 @@ function CarListItem({ car, onCarClick }: { car: CarListing, onCarClick: (car: C
   }
   
   const getSpecs = () => {
-    return car.specs?.['規格'] || ''
+    // Use pre-parsed database field if available
+    if (car.specFormattedDisplay) {
+      return car.specFormattedDisplay
+    }
+    
+    // Fall back to parsing the raw specs
+    const rawSpecs = car.specs?.['規格'] || ''
+    if (!rawSpecs) return ''
+    
+    const parsedSpecs = parseCarSpecs(rawSpecs)
+    return getFormattedSpecString(parsedSpecs)
   }
   
   const displayPrice = getDisplayPrice()
@@ -318,7 +341,8 @@ function CarListItem({ car, onCarClick }: { car: CarListing, onCarClick: (car: C
             {/* Price section */}
             <div className="flex-shrink-0 text-right">
               {displayPrice && (
-                <div className="text-lg font-bold text-neutral-900 dark:text-neutral-100">
+                <div className="flex items-center gap-1.5 text-lg font-bold text-neutral-700 dark:text-neutral-300">
+                  <Tag className="w-4 h-4 text-green-600 dark:text-green-400" />
                   {displayPrice}
                 </div>
               )}
@@ -328,7 +352,7 @@ function CarListItem({ car, onCarClick }: { car: CarListing, onCarClick: (car: C
           {/* Bottom section: Specs */}
           {specs && (
             <div className="mt-2 text-sm text-neutral-600 dark:text-neutral-400 line-clamp-1">
-              <span className="font-medium text-neutral-700 dark:text-neutral-300">規格:</span> {specs}
+              {specs}
             </div>
           )}
         </div>
@@ -379,7 +403,10 @@ export default function CarsFeedWithSearch() {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [searchResults, setSearchResults] = useState<CarListing[]>([])
   const [isSearchActive, setIsSearchActive] = useState(false)
-  const [isGridView, setIsGridView] = useState(true)
+  const [searchHasMore, setSearchHasMore] = useState(false)
+  const [searchLoadMore, setSearchLoadMore] = useState<(() => void) | null>(null)
+  const [searchIsFetchingNextPage, setSearchIsFetchingNextPage] = useState(false)
+  const [isGridView, setIsGridView] = useState(false)
   
   const {
     data,
@@ -403,10 +430,12 @@ export default function CarsFeedWithSearch() {
   })
   
   useEffect(() => {
-    if (inView && hasNextPage && !isFetchingNextPage && !isSearchActive) {
+    if (inView && !isSearchActive && hasNextPage && !isFetchingNextPage) {
       fetchNextPage()
+    } else if (inView && isSearchActive && searchHasMore && !searchIsFetchingNextPage && searchLoadMore) {
+      searchLoadMore()
     }
-  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, isSearchActive])
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage, isSearchActive, searchHasMore, searchIsFetchingNextPage, searchLoadMore])
   
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -419,9 +448,12 @@ export default function CarsFeedWithSearch() {
     setIsBottomSheetOpen(true)
   }
 
-  const handleSearchResults = useCallback((results: CarListing[], isSearching: boolean) => {
+  const handleSearchResults = useCallback((results: CarListing[], isSearching: boolean, hasMore?: boolean, loadMore?: () => void, isFetchingNextPage?: boolean) => {
     setSearchResults(results)
     setIsSearchActive(isSearching) // Active when user is searching, regardless of results
+    setSearchHasMore(hasMore || false)
+    setSearchLoadMore(() => loadMore || null)
+    setSearchIsFetchingNextPage(isFetchingNextPage || false)
   }, [])
   
   // Use search results if active, otherwise use regular feed
@@ -429,9 +461,9 @@ export default function CarsFeedWithSearch() {
   const debugInfo = data?.pages[0]?.debug
   
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="space-y-6">
       {/* Clean Header with Search */}
-      <header className="pt-6 pb-4 sm:pb-6">
+      <header className="pb-4 sm:pb-6">
         {/* Search Component with View Toggle and Refresh Button */}
         <div className="flex items-start gap-3">
           <div className="flex-1">
@@ -483,11 +515,21 @@ export default function CarsFeedWithSearch() {
         {/* Loading State */}
         {isLoading && !isSearchActive && (
           <div className={isGridView 
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
             : "space-y-4"
           }>
-            {Array.from({ length: 8 }).map((_, i) => (
-              <LoadingSkeleton key={i} />
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="aspect-[3/2] bg-neutral-200 dark:bg-neutral-700 rounded-lg"></div>
+                <div className="p-3 space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-2/3"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4"></div>
+                  </div>
+                  <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
+                  <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                </div>
+              </div>
             ))}
           </div>
         )}
@@ -495,7 +537,7 @@ export default function CarsFeedWithSearch() {
         {/* Cars Grid or List */}
         {displayCars.length > 0 && (
           <div className={isGridView 
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
             : "space-y-4"
           }>
             {displayCars.map((car) => (
@@ -529,10 +571,10 @@ export default function CarsFeedWithSearch() {
           </div>
         )}
         
-        {/* Load More - only show for regular feed, not search results */}
-        {hasNextPage && !isSearchActive && (
+        {/* Load More - show for both regular feed and search results */}
+        {((hasNextPage && !isSearchActive) || (searchHasMore && isSearchActive)) && (
           <div ref={ref} className="flex justify-center py-12">
-            {isFetchingNextPage && (
+            {(isFetchingNextPage || searchIsFetchingNextPage) && (
               <div className="w-8 h-8 border-2 border-neutral-300 dark:border-neutral-600 border-t-neutral-900 dark:border-t-neutral-100 rounded-full animate-spin" />
             )}
           </div>

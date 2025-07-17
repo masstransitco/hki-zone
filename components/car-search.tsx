@@ -8,7 +8,7 @@ import { useCarSearch, useCarSuggestions, useSearchState } from '../lib/hooks/us
 import { cn } from '../lib/utils';
 
 interface CarSearchProps {
-  onResults?: (results: any[], isSearching: boolean) => void;
+  onResults?: (results: any[], isSearching: boolean, hasMore?: boolean, loadMore?: () => void, isFetchingNextPage?: boolean) => void;
   className?: string;
 }
 
@@ -35,7 +35,7 @@ function CarSearch({ onResults, className }: CarSearchProps) {
     return term;
   }, [searchTerm]);
 
-  const { cars: rawCars, isLoading, hasMore, loadMore, debug } = useCarSearch(effectiveSearchTerm);
+  const { cars: rawCars, isLoading, hasMore, loadMore, isFetchingNextPage, debug } = useCarSearch(effectiveSearchTerm);
   const { suggestions, isLoading: suggestionsLoading } = useCarSuggestions(
     searchTerm, 
     Boolean(showSuggestions)
@@ -50,9 +50,9 @@ function CarSearch({ onResults, className }: CarSearchProps) {
     if (currentState.searchTerm !== lastNotifiedState.current.searchTerm || 
         currentState.resultsCount !== lastNotifiedState.current.resultsCount) {
       lastNotifiedState.current = currentState;
-      onResults?.(rawCars, isSearching);
+      onResults?.(rawCars, isSearching, hasMore, loadMore, isFetchingNextPage);
     }
-  }, [effectiveSearchTerm, rawCars.length]);
+  }, [effectiveSearchTerm, rawCars.length, hasMore, isFetchingNextPage]);
 
   // Handle clicking outside suggestions
   useEffect(() => {
@@ -113,7 +113,7 @@ function CarSearch({ onResults, className }: CarSearchProps) {
         {showSuggestions && suggestions.length > 0 && (
           <div
             ref={suggestionsRef}
-            className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto"
+            className="absolute top-full left-0 z-50 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto w-full min-w-[400px] max-w-[600px]"
           >
             {suggestions.map((suggestion, index) => (
               <button
@@ -130,20 +130,13 @@ function CarSearch({ onResults, className }: CarSearchProps) {
         )}
       </div>
 
-
-
       {/* Search Results Summary */}
       {!isLoading && rawCars.length > 0 && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground">
           <span>
             Found {rawCars.length} car{rawCars.length !== 1 ? 's' : ''}
             {effectiveSearchTerm && ` for "${effectiveSearchTerm}"`}
           </span>
-          {hasMore && (
-            <Button variant="outline" size="sm" onClick={loadMore}>
-              Load more
-            </Button>
-          )}
         </div>
       )}
 

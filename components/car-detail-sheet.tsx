@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ExternalLink, Zap, Fuel, Calendar, DollarSign, ChevronLeft, ChevronRight } from "lucide-react"
+import { ExternalLink, Zap, Fuel, Calendar, DollarSign, ChevronLeft, ChevronRight, Tag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { parseCarSpecs as parseCarSpecsFromUtils, getDetailedSpecs, getFormattedSpecString } from "../utils/car-specs-parser"
 import {
   Carousel,
   CarouselContent,
@@ -29,7 +30,7 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
     setMounted(true)
   }, [])
   // Parse car specifications from content
-  const parseCarSpecs = (content: string) => {
+  const parseCarContent = (content: string) => {
     const specs: Record<string, string> = {}
     if (!content) return specs
     
@@ -168,7 +169,7 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
     }
   }
 
-  const carSpecs = parseCarSpecs(car.content || '')
+  const carSpecs = parseCarContent(car.content || '')
   const enrichmentData = parseEnrichmentData(car.ai_summary || '')
   const priceFromContent = carSpecs.price || car.price || ''
   
@@ -266,16 +267,17 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
         )}
 
         {/* Car Title and Price */}
-        <header className="space-y-2">
+        <header className="space-y-3">
           <h1 className="text-3xl md:text-4xl font-bold text-foreground leading-tight">
             {car.title}
           </h1>
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="text-xl font-bold text-foreground">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2 text-xl font-bold text-neutral-700 dark:text-neutral-300">
+              <Tag className="w-5 h-5 text-green-600 dark:text-green-400" />
               {formatPrice(priceFromContent)}
             </div>
             {isOnSale && (
-              <Badge variant="secondary" className="bg-stone-600 text-white">
+              <Badge variant="secondary" className="bg-red-600 text-white">
                 Price Reduced
               </Badge>
             )}
@@ -288,85 +290,86 @@ export default function CarDetailSheet({ car }: CarDetailSheetProps) {
           </div>
         </header>
 
-        {/* 規格 (Specifications) - prominent display */}
-        {(car.specs?.['規格'] || carSpecs['規格']) && (
-          <div className="bg-muted/50 rounded-lg p-4 border">
-            <div className="text-sm font-medium text-muted-foreground mb-1">規格 (Specifications)</div>
-            <div className="text-base font-medium text-foreground">
-              {car.specs?.['規格'] || carSpecs['規格']}
-            </div>
-          </div>
-        )}
-
         {/* Car Specifications */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-2 gap-4">
-              {carSpecs.year && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">Year</div>
-                  <div className="text-sm">{carSpecs.year}</div>
-                </div>
-              )}
-              {carSpecs.make && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">Make</div>
-                  <div className="text-sm">{carSpecs.make}</div>
-                </div>
-              )}
-              {carSpecs.model && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">Model</div>
-                  <div className="text-sm">{carSpecs.model}</div>
-                </div>
-              )}
-              {carSpecs.engine && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">Engine</div>
-                  <div className="text-sm">{carSpecs.engine}</div>
-                </div>
-              )}
-              {carSpecs.transmission && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">Transmission</div>
-                  <div className="text-sm">{carSpecs.transmission}</div>
-                </div>
-              )}
-              {carSpecs.fuel && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">Fuel</div>
-                  <div className="text-sm">{carSpecs.fuel}</div>
-                </div>
-              )}
-              {carSpecs.mileage && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">Mileage</div>
-                  <div className="text-sm">{carSpecs.mileage}</div>
-                </div>
-              )}
-              {carSpecs.color && (
-                <div className="space-y-1">
-                  <div className="text-sm font-medium text-muted-foreground">Color</div>
-                  <div className="text-sm">{carSpecs.color}</div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {(() => {
+          // Use pre-parsed database fields if available, otherwise parse the raw specs
+          const rawSpecs = car.specs?.['規格'] || carSpecs['規格'] || '';
+          
+          // Check if we have pre-parsed formatted display from database
+          const preFormattedSpecs = car.specFormattedDisplay;
+          
+          // Parse specs if we don't have pre-formatted version
+          const parsedSpecs = parseCarSpecsFromUtils(rawSpecs);
+          const detailedSpecs = getDetailedSpecs(parsedSpecs);
+          const formattedSpecs = preFormattedSpecs || getFormattedSpecString(parsedSpecs);
+          
+          // Debug logging
+          console.log('Car Detail Sheet - Debug:');
+          console.log('rawSpecs:', rawSpecs);
+          console.log('preFormattedSpecs:', preFormattedSpecs);
+          console.log('parsedSpecs:', parsedSpecs);
+          console.log('detailedSpecs:', detailedSpecs);
+          console.log('formattedSpecs:', formattedSpecs);
+          
+          // Show if we have either formatted specs or individual detailed specs
+          if (!formattedSpecs && detailedSpecs.length === 0) {
+            console.log('No specs to display, returning null');
+            return null;
+          }
+          
+          return (
+            <Card>
+              <CardContent className="pt-6 space-y-4">
+                {/* Detailed breakdown */}
+                {detailedSpecs.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4">
+                    {detailedSpecs.map((spec, index) => (
+                      <div key={index} className="space-y-1">
+                        <div className="text-sm font-medium text-muted-foreground">{spec.label}</div>
+                        <div className="text-sm">{spec.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Additional parsed fields from content */}
+                {(carSpecs.make || carSpecs.model || carSpecs.mileage || carSpecs.color) && (
+                  <div className={`grid grid-cols-2 gap-4 ${detailedSpecs.length > 0 ? 'pt-4 border-t' : ''}`}>
+                    {carSpecs.make && (
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-muted-foreground">Make</div>
+                        <div className="text-sm">{carSpecs.make}</div>
+                      </div>
+                    )}
+                    {carSpecs.model && (
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-muted-foreground">Model</div>
+                        <div className="text-sm">{carSpecs.model}</div>
+                      </div>
+                    )}
+                    {carSpecs.mileage && (
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-muted-foreground">Mileage</div>
+                        <div className="text-sm">{carSpecs.mileage}</div>
+                      </div>
+                    )}
+                    {carSpecs.color && (
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium text-muted-foreground">Color</div>
+                        <div className="text-sm">{carSpecs.color}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })()}
 
-        {/* Enriched Data */}
-        {enrichmentData && (
+        {/* Additional Information */}
+        {enrichmentData && (enrichmentData.estimatedYear || enrichmentData.fuelConsumption || enrichmentData.fuelCost || (enrichmentData.faults && enrichmentData.faults.length > 0)) && (
           <Card>
             <CardContent className="pt-6 space-y-4">
-              {/* Estimated Year */}
-              {enrichmentData.estimatedYear && (
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Estimated Year:</span>
-                  <span className="text-sm">{enrichmentData.estimatedYear}</span>
-                </div>
-              )}
-
               {/* Fuel Information */}
               {enrichmentData.fuelConsumption && (
                 <div className="flex items-center gap-2">

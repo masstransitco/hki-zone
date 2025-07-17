@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { useDebounce } from '../../hooks/use-debounce';
 
 interface CarListing {
@@ -65,31 +65,45 @@ const fetcher = async (url: string) => {
 export function useCarSearch(searchTerm: string = '', limit: number = 30) {
   const debouncedTerm = useDebounce(searchTerm, 300);
 
-  // Build search URL
-  const searchUrl = `/api/cars/search?q=${encodeURIComponent(debouncedTerm)}&limit=${limit}&offset=0`;
-
-  const { data, error, isLoading, refetch } = useQuery<SearchResponse>({
+  const {
+    data,
+    error,
+    isLoading,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    refetch
+  } = useInfiniteQuery<SearchResponse>({
     queryKey: ['car-search', debouncedTerm, limit],
-    queryFn: () => fetcher(searchUrl),
+    queryFn: ({ pageParam = 0 }) => {
+      const searchUrl = `/api/cars/search?q=${encodeURIComponent(debouncedTerm)}&limit=${limit}&offset=${pageParam}`;
+      return fetcher(searchUrl);
+    },
+    getNextPageParam: (lastPage) => lastPage.nextOffset,
     enabled: Boolean(debouncedTerm && debouncedTerm.length > 0),
     refetchOnWindowFocus: false,
     staleTime: 5000,
-    retry: false, // Don't retry if the function doesn't exist
+    retry: false,
+    initialPageParam: 0,
   });
 
   const refresh = useCallback(() => {
     refetch();
   }, [refetch]);
 
+  // Flatten all pages into a single array
+  const allCars = data?.pages.flatMap(page => page.cars) || [];
+
   return {
-    cars: data?.cars || [],
+    cars: allCars,
     isLoading,
     error,
-    hasMore: data?.hasMore || false,
-    totalCount: data?.totalCount || 0,
-    loadMore: () => {}, // Simplified for now - search doesn't need pagination
+    hasMore: hasNextPage || false,
+    totalCount: data?.pages[0]?.totalCount || 0,
+    loadMore: fetchNextPage,
+    isFetchingNextPage,
     refresh,
-    debug: data?.debug
+    debug: data?.pages[0]?.debug
   };
 }
 

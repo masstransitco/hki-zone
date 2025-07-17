@@ -10,7 +10,7 @@ export default function CarsPageWithSelector() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="pt-16 pb-4">
+      <div className="pt-16 pb-2">
         <CategorySelector value={category} onChange={setCategory} />
       </div>
       

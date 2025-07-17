@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
       // Get from articles_unified
       supabase
         .from("articles_unified")
-        .select("id, title, content, summary, url, source, author, image_url, images, category, published_at, contextual_data")
+        .select("id, title, content, summary, url, source, author, image_url, images, category, published_at, contextual_data, spec_year, spec_fuel_type, spec_seats, spec_engine_cc, spec_transmission, spec_formatted_display")
         .eq("category", "cars")
         .order("published_at", { ascending: false }),
       
@@ -134,8 +134,15 @@ export async function GET(request: NextRequest) {
       specs: car.contextual_data?.specs || {},
       make: car.contextual_data?.make,
       model: car.contextual_data?.model,
-      year: car.contextual_data?.year,
+      year: car.contextual_data?.year || car.spec_year,
       price: car.contextual_data?.price,
+      // Add parsed specification fields
+      specYear: car.spec_year,
+      specFuelType: car.spec_fuel_type,
+      specSeats: car.spec_seats,
+      specEngineCC: car.spec_engine_cc,
+      specTransmission: car.spec_transmission,
+      specFormattedDisplay: car.spec_formatted_display,
       _source: 'unified'
     }))
 

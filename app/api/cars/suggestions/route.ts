@@ -28,29 +28,83 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Use the optimized suggestions function
-    const { data: suggestions, error } = await supabase
-      .rpc('get_car_suggestions', {
-        search_query: query,
-        suggestion_limit: limit
-      });
+    // Search both tables directly for suggestions
+    const [unifiedResult, legacyResult] = await Promise.all([
+      // Search articles_unified table
+      supabase
+        .from('articles_unified')
+        .select('title, contextual_data')
+        .eq('category', 'cars')
+        .or(`title.ilike.%${query}%,contextual_data->>make.ilike.%${query}%,contextual_data->>model.ilike.%${query}%`)
+        .limit(limit * 2),
+      
+      // Search articles table (legacy)
+      supabase
+        .from('articles')
+        .select('title, make, model')
+        .eq('category', 'cars')
+        .or(`title.ilike.%${query}%,make.ilike.%${query}%,model.ilike.%${query}%`)
+        .limit(limit)
+    ]);
 
-    if (error) {
-      console.error('Car suggestions error:', error);
-      return NextResponse.json({
-        suggestions: [],
-        query,
-        debug: { error: error.message, source: 'database_error' }
-      });
-    }
+    // Extract suggestions from both tables
+    const suggestions = new Map();
+    
+    // Process unified table results
+    (unifiedResult.data || []).forEach(car => {
+      const make = car.contextual_data?.make;
+      const model = car.contextual_data?.model;
+      
+      if (make && make.toLowerCase().includes(query.toLowerCase())) {
+        const key = make.toUpperCase();
+        suggestions.set(key, {
+          text: key,
+          type: 'make',
+          count: (suggestions.get(key)?.count || 0) + 1
+        });
+      }
+      
+      if (model && model.toLowerCase().includes(query.toLowerCase())) {
+        const key = model.toUpperCase();
+        suggestions.set(key, {
+          text: key,
+          type: 'model',
+          count: (suggestions.get(key)?.count || 0) + 1
+        });
+      }
+    });
+
+    // Process legacy table results
+    (legacyResult.data || []).forEach(car => {
+      if (car.make && car.make.toLowerCase().includes(query.toLowerCase())) {
+        const key = car.make.toUpperCase();
+        suggestions.set(key, {
+          text: key,
+          type: 'make',
+          count: (suggestions.get(key)?.count || 0) + 1
+        });
+      }
+      
+      if (car.model && car.model.toLowerCase().includes(query.toLowerCase())) {
+        const key = car.model.toUpperCase();
+        suggestions.set(key, {
+          text: key,
+          type: 'model',
+          count: (suggestions.get(key)?.count || 0) + 1
+        });
+      }
+    });
 
     // Transform suggestions to include display text
-    const transformedSuggestions = (suggestions || []).map((item: any) => ({
-      text: item.suggestion,
-      type: item.type,
-      count: item.count,
-      display: `${item.suggestion} (${item.count})`
-    }));
+    const transformedSuggestions = Array.from(suggestions.values())
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit)
+      .map(item => ({
+        text: item.text,
+        type: item.type,
+        count: item.count,
+        display: `${item.text} (${item.count})`
+      }));
 
     return NextResponse.json({
       suggestions: transformedSuggestions,

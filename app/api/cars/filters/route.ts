@@ -15,30 +15,107 @@ const supabase = createClient(
 
 export async function GET(request: NextRequest) {
   try {
-    // Use the optimized filters function
-    const { data: filters, error } = await supabase
-      .rpc('get_car_filters');
+    // Get filter data from both tables directly
+    const [unifiedResult, legacyResult] = await Promise.all([
+      // Get data from articles_unified table
+      supabase
+        .from('articles_unified')
+        .select('contextual_data, spec_year')
+        .eq('category', 'cars'),
+      
+      // Get data from articles table (legacy)
+      supabase
+        .from('articles')
+        .select('make, model, specs')
+        .eq('category', 'cars')
+    ]);
 
-    if (error) {
-      console.error('Car filters error:', error);
-      return NextResponse.json({
-        makes: [],
-        years: [],
-        priceRanges: {},
-        debug: { error: error.message, source: 'database_error' }
-      });
-    }
+    // Process filter data
+    const makesMap = new Map();
+    const yearsMap = new Map();
+    const priceRanges = {
+      under_100k: 0,
+      range_100_300k: 0,
+      range_300_500k: 0,
+      range_500k_1m: 0,
+      over_1m: 0
+    };
 
-    const filterData = filters?.[0] || {};
+    // Process unified table results
+    (unifiedResult.data || []).forEach(car => {
+      const make = car.contextual_data?.make;
+      const year = car.contextual_data?.year || car.spec_year;
+      const price = car.contextual_data?.price;
+      
+      if (make) {
+        const key = make.toUpperCase();
+        makesMap.set(key, (makesMap.get(key) || 0) + 1);
+      }
+      
+      if (year) {
+        const yearStr = year.toString();
+        yearsMap.set(yearStr, (yearsMap.get(yearStr) || 0) + 1);
+      }
+      
+      if (price) {
+        const priceNum = parseFloat(price.replace(/[^\d.]/g, ''));
+        if (priceNum < 100000) priceRanges.under_100k++;
+        else if (priceNum < 300000) priceRanges.range_100_300k++;
+        else if (priceNum < 500000) priceRanges.range_300_500k++;
+        else if (priceNum < 1000000) priceRanges.range_500k_1m++;
+        else priceRanges.over_1m++;
+      }
+    });
+
+    // Process legacy table results
+    (legacyResult.data || []).forEach(car => {
+      if (car.make) {
+        const key = car.make.toUpperCase();
+        makesMap.set(key, (makesMap.get(key) || 0) + 1);
+      }
+      
+      const year = car.specs?.year || car.specs?.['年份'];
+      if (year) {
+        const yearStr = year.toString();
+        yearsMap.set(yearStr, (yearsMap.get(yearStr) || 0) + 1);
+      }
+      
+      const price = car.specs?.price || car.specs?.['售價'];
+      if (price) {
+        const priceNum = parseFloat(price.replace(/[^\d.]/g, ''));
+        if (priceNum < 100000) priceRanges.under_100k++;
+        else if (priceNum < 300000) priceRanges.range_100_300k++;
+        else if (priceNum < 500000) priceRanges.range_300_500k++;
+        else if (priceNum < 1000000) priceRanges.range_500k_1m++;
+        else priceRanges.over_1m++;
+      }
+    });
+
+    // Transform to expected format
+    const makes = Array.from(makesMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([value, count]) => ({
+        value,
+        label: value,
+        count
+      }));
+
+    const years = Array.from(yearsMap.entries())
+      .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+      .map(([value, count]) => ({
+        value,
+        label: value,
+        count
+      }));
 
     return NextResponse.json({
-      makes: filterData.makes || [],
-      years: filterData.years || [],
-      priceRanges: filterData.price_ranges || {},
+      makes,
+      years,
+      priceRanges,
       debug: {
         source: 'database',
-        makesCount: (filterData.makes || []).length,
-        yearsCount: (filterData.years || []).length
+        makesCount: makes.length,
+        yearsCount: years.length
       }
     });
 

@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       // Search articles_unified table (where most cars are)
       const { data: unifiedCars, error: unifiedError } = await supabase
         .from('articles_unified')
-        .select('id, title, contextual_data, image_url, images, url, published_at, content')
+        .select('id, title, contextual_data, image_url, images, url, published_at, content, spec_year, spec_fuel_type, spec_seats, spec_engine_cc, spec_transmission, spec_formatted_display')
         .eq('category', 'cars')
         .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
         .order('published_at', { ascending: false })
@@ -78,15 +78,22 @@ export async function GET(request: NextRequest) {
         make: car.contextual_data?.make || '',
         model: car.contextual_data?.model || '',
         price: car.contextual_data?.price || '',
-        year: car.contextual_data?.year || '',
+        year: car.contextual_data?.year || car.spec_year || '',
         imageUrl: car.image_url,
-        images: car.images,
+        images: car.images || (car.image_url ? [car.image_url] : []),
         url: car.url,
         publishedAt: car.published_at,
         specs: car.contextual_data || {},
         source: '28car',
         category: 'cars',
-        rank: calculateRank(car, query)
+        rank: calculateRank(car, query),
+        // Add parsed specification fields
+        specYear: car.spec_year,
+        specFuelType: car.spec_fuel_type,
+        specSeats: car.spec_seats,
+        specEngineCC: car.spec_engine_cc,
+        specTransmission: car.spec_transmission,
+        specFormattedDisplay: car.spec_formatted_display
       }));
 
       // Transform legacy cars
@@ -113,45 +120,72 @@ export async function GET(request: NextRequest) {
         .slice(offset, offset + limit);
 
     } else {
-      // If no query, fall back to the original RPC function for general listing
-      const { data: cars, error } = await supabase
-        .rpc('search_car_listings', {
-          search_query: null,
-          result_limit: limit,
-          result_offset: offset
-        });
+      // If no query, get cars from both tables for general listing
+      const [unifiedResult, legacyResult] = await Promise.all([
+        // Get from articles_unified
+        supabase
+          .from('articles_unified')
+          .select('id, title, contextual_data, image_url, images, url, published_at, content, spec_year, spec_fuel_type, spec_seats, spec_engine_cc, spec_transmission, spec_formatted_display')
+          .eq('category', 'cars')
+          .order('published_at', { ascending: false })
+          .range(offset, offset + limit),
+        
+        // Get from articles (legacy)
+        supabase
+          .from('articles')
+          .select('id, title, make, model, specs, image_url, url, created_at, content')
+          .eq('category', 'cars')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit)
+      ]);
 
-      if (error) {
-        console.error('Car search error:', error);
-        return NextResponse.json(
-          { 
-            error: 'Search failed', 
-            details: error.message,
-            cars: [],
-            totalCount: 0,
-            hasMore: false
-          },
-          { status: 500 }
-        );
-      }
-
-      // Transform legacy cars for no-query case
-      allCars = (cars || []).map((car: any) => ({
+      // Transform unified cars
+      const transformedUnified = (unifiedResult.data || []).map((car: any) => ({
         id: car.id,
         title: car.title,
-        make: car.make,
-        model: car.model,
-        price: car.price,
-        year: car.year,
+        make: car.contextual_data?.make || '',
+        model: car.contextual_data?.model || '',
+        price: car.contextual_data?.price || '',
+        year: car.contextual_data?.year || car.spec_year || '',
         imageUrl: car.image_url,
-        images: car.images,
+        images: car.images || (car.image_url ? [car.image_url] : []),
         url: car.url,
-        publishedAt: car.created_at,
-        specs: car.specs,
+        publishedAt: car.published_at,
+        specs: car.contextual_data || {},
         source: '28car',
         category: 'cars',
-        rank: car.rank || 0
+        rank: 0,
+        // Add parsed specification fields
+        specYear: car.spec_year,
+        specFuelType: car.spec_fuel_type,
+        specSeats: car.spec_seats,
+        specEngineCC: car.spec_engine_cc,
+        specTransmission: car.spec_transmission,
+        specFormattedDisplay: car.spec_formatted_display
       }));
+
+      // Transform legacy cars
+      const transformedLegacy = (legacyResult.data || []).map((car: any) => ({
+        id: car.id,
+        title: car.title,
+        make: car.make || '',
+        model: car.model || '',
+        price: car.specs?.price || car.specs?.['售價'] || '',
+        year: car.specs?.year || car.specs?.['年份'] || '',
+        imageUrl: car.image_url,
+        images: car.image_url ? [car.image_url] : [],
+        url: car.url,
+        publishedAt: car.created_at,
+        specs: car.specs || {},
+        source: '28car',
+        category: 'cars',
+        rank: 0
+      }));
+
+      // Combine and sort by published date
+      allCars = [...transformedUnified, ...transformedLegacy]
+        .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime())
+        .slice(0, limit);
     }
 
     // Calculate if there are more results
