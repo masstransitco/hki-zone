@@ -2,7 +2,7 @@
 
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
-import TopicsFeed from "@/components/topics-feed"
+import MainContentWithSelector from "@/components/main-content-with-selector"
 import DatabaseStatus from "@/components/database-status"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import { ClientOnly } from "@/components/client-only"
@@ -22,14 +22,8 @@ export default function HomePage() {
           <TopicChips />
         </div> */}
 
-        <div className="px-6 pt-4 pb-2">
-          <ClientOnly>
-            <DatabaseStatus />
-          </ClientOnly>
-        </div>
-
         <ClientOnly fallback={<LoadingSkeleton />}>
-          <TopicsFeed />
+          <MainContentWithSelector />
         </ClientOnly>
       </main>
 
