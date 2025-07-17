@@ -74,7 +74,7 @@ export default function WeatherPrecipitationMap({ language = 'en' }: Precipitati
   
   // HKO radar data
   const [radarData, setRadarData] = useState<any>(null)
-  const [useHKO, setUseHKO] = useState(false) // Toggle between HKO and OpenWeatherMap
+  const [useHKO, setUseHKO] = useState(true) // Toggle between HKO and OpenWeatherMap
 
   const t = precipitationTranslations[language]
 
@@ -102,9 +102,14 @@ export default function WeatherPrecipitationMap({ language = 'en' }: Precipitati
   // Fetch HKO radar data
   const fetchHKORadarData = async () => {
     try {
-      console.log('[PrecipMap] Fetching HKO radar data...')
-      const response = await fetch('https://www.hko.gov.hk/wxinfo/radars/temp_json/nradar_img.json')
+      console.log('[PrecipMap] Fetching HKO radar data via proxy...')
+      const response = await fetch('/api/weather/hko-radar')
       const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.details || `HTTP ${response.status}`)
+      }
+      
       setRadarData(data)
       console.log('[PrecipMap] HKO radar data loaded:', data)
       return data
@@ -116,12 +121,28 @@ export default function WeatherPrecipitationMap({ language = 'en' }: Precipitati
 
   // Get HKO radar image URL for specific frame
   const getHKORadarImageUrl = (frameIndex: number, range: number = 1) => {
-    if (!radarData || !radarData[range] || !radarData[range][frameIndex]) {
+    if (!radarData?.radar) {
       return null
     }
-    const imageName = radarData[range][frameIndex]
-    const resolution = range === 0 ? '256' : range === 1 ? '128' : '064'
-    return `https://www.hko.gov.hk/wxinfo/radars/rad_${resolution}_png/images/${imageName}`
+    
+    const rangeKey = `range${range}`
+    const rangeData = radarData.radar[rangeKey]
+    
+    if (!rangeData?.image || !rangeData.image[frameIndex]) {
+      return null
+    }
+    
+    // Extract filename from the JavaScript assignment string
+    // e.g., 'picture[1][0]="rad_128_png/2d128nradar_202507171042.jpg";'
+    const imageString = rangeData.image[frameIndex]
+    const match = imageString.match(/"([^"]+)"/)
+    
+    if (!match) {
+      return null
+    }
+    
+    const imagePath = match[1]
+    return `https://www.hko.gov.hk/wxinfo/radars/${imagePath}`
   }
 
   // Animation controls
@@ -129,7 +150,7 @@ export default function WeatherPrecipitationMap({ language = 'en' }: Precipitati
     if (animationIntervalRef.current) return
     setIsAnimating(true)
     animationIntervalRef.current = setInterval(() => {
-      const maxFrames = useHKO && radarData?.[1] ? radarData[1].length : animationFrames.length
+      const maxFrames = useHKO && radarData?.radar?.range1?.image ? radarData.radar.range1.image.length : animationFrames.length
       setTimeIndex(prev => (prev + 1) % maxFrames)
     }, 800) // Change frame every 800ms for better visibility
   }
@@ -164,7 +185,7 @@ export default function WeatherPrecipitationMap({ language = 'en' }: Precipitati
 
     if (useHKO && radarData) {
       // Use HKO radar images
-      const frameIndex = timeIndex % (radarData[1]?.length || 1)
+      const frameIndex = timeIndex % (radarData.radar?.range1?.image?.length || 1)
       const imageUrl = getHKORadarImageUrl(frameIndex, 1) // Use 128km range
       
       if (!imageUrl) {
@@ -585,7 +606,7 @@ export default function WeatherPrecipitationMap({ language = 'en' }: Precipitati
                 <>
                   {radarData ? (
                     <>
-                      HKO Radar frame: {timeIndex + 1} of {radarData[1]?.length || 0}
+                      HKO Radar frame: {timeIndex + 1} of {radarData.radar?.range1?.image?.length || 0}
                       {isAnimating && " (animating)"}
                       {!isAnimating && " (paused)"}
                     </>

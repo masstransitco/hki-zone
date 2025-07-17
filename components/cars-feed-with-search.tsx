@@ -431,7 +431,7 @@ export default function CarsFeedWithSearch() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Clean Header with Search */}
-      <header className="pt-16 pb-4 sm:pb-6">
+      <header className="pt-6 pb-4 sm:pb-6">
         {/* Search Component with View Toggle and Refresh Button */}
         <div className="flex items-start gap-3">
           <div className="flex-1">
