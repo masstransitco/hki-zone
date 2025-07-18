@@ -192,7 +192,7 @@ export default function GovernmentBulletin({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="pt-6 space-y-4">
       {/* Header with refresh button */}
       <div className="flex items-center justify-between">
         <div>

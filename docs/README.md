@@ -195,6 +195,19 @@ The HKI News App is a Next.js 14 application that:
 
 **When to Use**: When working with source attribution display, implementing favicon systems, or enhancing visual recognition in news interfaces.
 
+### 21. [Header Navigation Improvements](./21-header-navigation-improvements.md) ⭐ *New Feature*
+**Purpose**: Complete guide to header navigation enhancements including animated Live News indicator, theme toggle updates, and background color warmth improvements.
+
+**Key Information**:
+- Live News indicator relocation from main content to header with animated behavior
+- Expandable indicator with click-to-reveal and auto-collapse functionality
+- Theme toggle icon updates from Lucide to Material-UI icons
+- Warmer background colors for improved visual comfort in light and dark modes
+- Space optimization and layout improvements
+- Performance considerations and responsive design
+
+**When to Use**: When working with header navigation components, implementing animated UI elements, updating theme systems, or enhancing visual comfort through color adjustments.
+
 ## Quick Reference
 
 ### Key File Locations

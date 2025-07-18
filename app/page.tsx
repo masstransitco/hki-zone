@@ -1,13 +1,18 @@
 "use client"
 
+import { useState } from "react"
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
-import MainContentWithSelector from "@/components/main-content-with-selector"
+import MainContent from "@/components/main-content-with-selector"
+import StickyCategorySelector from "@/components/sticky-category-selector"
 import DatabaseStatus from "@/components/database-status"
 import LoadingSkeleton from "@/components/loading-skeleton"
 import { ClientOnly } from "@/components/client-only"
+import { ContentType } from "@/components/content-type-selector"
 
 export default function HomePage() {
+  const [contentType, setContentType] = useState<ContentType>('headlines')
+
   return (
     <div className="flex flex-col min-h-screen">
       <ClientOnly fallback={
@@ -16,14 +21,15 @@ export default function HomePage() {
         <Header />
       </ClientOnly>
 
-      <main className="flex-1 pb-20 pt-16 overscroll-contain">
-        {/* Category selector buttons - temporarily disabled for cleaner UI */}
-        {/* <div className="sticky top-16 z-10 bg-background/90 backdrop-minimal border-b border-border">
-          <TopicChips />
-        </div> */}
+      <ClientOnly fallback={
+        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border h-[73px]" />
+      }>
+        <StickyCategorySelector value={contentType} onChange={setContentType} />
+      </ClientOnly>
 
+      <main className="flex-1 pb-20 pt-[73px] overscroll-contain">
         <ClientOnly fallback={<LoadingSkeleton />}>
-          <MainContentWithSelector />
+          <MainContent contentType={contentType} />
         </ClientOnly>
       </main>
 

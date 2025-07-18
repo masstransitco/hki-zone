@@ -1,18 +1,18 @@
 "use client"
 
 import * as React from 'react';
-import { ContentTypeSelector, ContentType } from './content-type-selector';
+import { ContentType } from './content-type-selector';
 import TopicsFeed from './topics-feed';
 import NewsFeedMasonry from './news-feed-masonry';
 import GovernmentBulletin from './government-bulletin';
 
-export default function MainContentWithSelector() {
-  const [contentType, setContentType] = React.useState<ContentType>('headlines');
+interface MainContentProps {
+  contentType: ContentType;
+}
 
+export default function MainContent({ contentType }: MainContentProps) {
   return (
     <div className="px-6 pt-4 pb-2">
-      <ContentTypeSelector value={contentType} onChange={setContentType} />
-      
       {contentType === 'headlines' ? (
         <TopicsFeed />
       ) : contentType === 'news' ? (

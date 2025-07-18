@@ -11,12 +11,12 @@ interface ContentTypeSelectorProps {
 
 export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value, onChange }) => {
   return (
-    <div className="relative mb-8">
+    <div className="relative">
       {/* Background container with glass morphism effect */}
-      <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl rounded-2xl p-1 shadow-sm border border-neutral-200/50 dark:border-neutral-700/50">
+      <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl rounded-2xl p-1 shadow-lg border border-neutral-200/50 dark:border-neutral-700/50">
         {/* Animated background pill */}
         <div 
-          className={`absolute top-1 bottom-1 w-1/3 bg-gradient-to-r from-neutral-100 to-neutral-50 dark:from-neutral-800 dark:to-neutral-750 rounded-xl shadow-sm transition-all duration-300 ease-in-out ${
+          className={`absolute top-1 bottom-1 w-1/3 bg-gradient-to-r from-neutral-100 to-neutral-50 dark:from-neutral-800 dark:to-neutral-750 rounded-xl shadow-md transition-all duration-300 ease-in-out ${
             value === 'headlines' ? 'left-1' : value === 'news' ? 'left-1/3' : 'left-2/3'
           }`}
           style={{
