@@ -5,9 +5,9 @@
 @layer base {
   :root {
     /* Sophisticated white and warm gray color system */
-    --background: 255 255 255; /* Pure white base */
-    --surface: 250 250 249; /* Stone-50: Warmest subtle off-white */
-    --surface-secondary: 245 245 244; /* Stone-100: Soft warm white */
+    --background: 250 250 249; /* Stone-50: Warm off-white base */
+    --surface: 245 245 244; /* Stone-100: Subtle warm surface */
+    --surface-secondary: 241 245 249; /* Warmer stone-100 variant */
     --foreground: 41 37 36; /* Stone-700: Rich warm charcoal */
     --foreground-secondary: 87 83 78; /* Stone-600: Medium warm gray */
     --foreground-muted: 120 113 108; /* Stone-500: Warm muted gray */
@@ -15,18 +15,18 @@
     /* Semantic UI colors - warm white spectrum */
     --card: 250 250 249; /* Stone-50: Subtle warm card background */
     --card-foreground: 41 37 36; /* Stone-700 for readability */
-    --popover: 255 255 255; /* Pure white for overlays */
+    --popover: 250 250 249; /* Warm white for overlays */
     --popover-foreground: 41 37 36;
     --primary: 87 83 78; /* Stone-600: Sophisticated warm primary */
-    --primary-foreground: 255 255 255;
+    --primary-foreground: 250 250 249;
     --secondary: 245 245 244; /* Stone-100: Elegant warm secondary */
     --secondary-foreground: 68 64 60; /* Stone-600 for contrast */
     --muted: 250 250 249; /* Stone-50: Subtle muted background */
     --muted-foreground: 120 113 108; /* Stone-500: Readable muted text */
     --accent: 168 162 158; /* Stone-400: Subtle warm accent */
-    --accent-foreground: 255 255 255;
+    --accent-foreground: 250 250 249;
     --destructive: 220 38 38; /* Red-600: Refined error color */
-    --destructive-foreground: 255 255 255;
+    --destructive-foreground: 250 250 249;
     --border: 231 229 228; /* Stone-200: Warm subtle borders */
     --input: 250 250 249; /* Stone-50: Warm input backgrounds */
     --ring: 87 83 78; /* Stone-600: Warm focus rings */
@@ -36,8 +36,8 @@
     --text-primary: 41 37 36; /* Stone-700: Primary content */
     --text-secondary: 87 83 78; /* Stone-600: Secondary content */
     --text-muted: 120 113 108; /* Stone-500: Muted content */
-    --text-inverse: 255 255 255; /* Pure white for dark backgrounds */
-    --surface-elevated: 255 255 255; /* Pure white for highest elevation */
+    --text-inverse: 250 250 249; /* Warm white for dark backgrounds */
+    --surface-elevated: 250 250 249; /* Warm white for highest elevation */
     --surface-hover: 245 245 244; /* Stone-100: Gentle hover state */
     --surface-pressed: 231 229 228; /* Stone-200: Pressed state */
     --interactive-primary: 87 83 78; /* Stone-600: Warm interactive */
@@ -47,7 +47,7 @@
 
   .dark {
     /* Sophisticated dark mode with warm undertones */
-    --background: 12 10 9; /* Stone-950: Rich warm black */
+    --background: 20 18 16; /* Warmer dark background */
     --surface: 28 25 23; /* Stone-900: Primary surface */
     --surface-secondary: 41 37 36; /* Stone-800: Secondary surface */
     --foreground: 250 250 249; /* Stone-50: Warm white text */

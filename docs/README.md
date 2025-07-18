@@ -182,6 +182,19 @@ The HKI News App is a Next.js 14 application that:
 
 **When to Use**: When understanding the signals page architecture changes or implementing similar content separation strategies.
 
+### 20. [Source Icon System](./20-source-icon-system.md) ⭐ *New Feature*
+**Purpose**: Comprehensive guide to the media outlet favicon/logo display system for enhanced visual recognition.
+
+**Key Information**:
+- Source-to-favicon mapping utility for 18 Hong Kong news outlets
+- Outlet favicon component with multiple size variants and fallback strategies
+- Integration with article cards, detail sheets, and detail pages
+- Pill-shaped text fallback for unmapped sources
+- Performance optimizations and error handling
+- Asset management and maintenance procedures
+
+**When to Use**: When working with source attribution display, implementing favicon systems, or enhancing visual recognition in news interfaces.
+
 ## Quick Reference
 
 ### Key File Locations

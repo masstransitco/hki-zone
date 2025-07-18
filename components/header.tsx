@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import ThemeToggle from "./theme-toggle"
 import LanguageSelector from "./language-selector"
 import Logo from "./logo"
+import LiveNewsIndicator from "./live-news-indicator"
 
 export default function Header() {
   const [isVisible, setIsVisible] = useState(true)
@@ -57,7 +58,8 @@ export default function Header() {
       <div className="flex items-center justify-between px-4 py-3">
         <Logo />
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          <LiveNewsIndicator />
           <LanguageSelector />
           <ThemeToggle />
         </div>
