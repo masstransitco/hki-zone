@@ -3,9 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { X } from "lucide-react"
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'
-import CloudIcon from '@mui/icons-material/Cloud'
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital'
+import Image from "next/image"
 import { 
   Drawer, 
   DrawerContent, 
@@ -27,25 +25,36 @@ const categories = [
     id: "road",
     label: "Roads",
     description: "Traffic & journey times",
-    icon: DirectionsCarIcon,
-    href: "/road",
-    color: "text-blue-600 dark:text-blue-400"
-  },
-  {
-    id: "weather",
-    label: "Weather",
-    description: "Current & forecast",
-    icon: CloudIcon,
-    href: "/weather",
-    color: "text-green-600 dark:text-green-400"
+    icon: "/menu-icons/road.PNG",
+    href: "/road"
   },
   {
     id: "ae",
     label: "A&E",
     description: "Hospital wait times",
-    icon: LocalHospitalIcon,
-    href: "/ae",
-    color: "text-red-600 dark:text-red-400"
+    icon: "/menu-icons/ae.PNG",
+    href: "/ae"
+  },
+  {
+    id: "weather",
+    label: "Weather",
+    description: "Current & forecast",
+    icon: "/menu-icons/observatory.PNG",
+    href: "/weather"
+  },
+  {
+    id: "postbox",
+    label: "Postbox",
+    description: "Postal services",
+    icon: "/menu-icons/postbox.PNG",
+    href: "/postbox"
+  },
+  {
+    id: "trashbin",
+    label: "Trashbin",
+    description: "Waste management",
+    icon: "/menu-icons/orangebin.PNG",
+    href: "/trashbin"
   }
 ]
 
@@ -77,13 +86,12 @@ export default function CategoryMenuBottomSheet({
     >
       <DrawerContent 
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[12px] border bg-background",
+          "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[16px] border bg-background",
           "focus:outline-none [&>div:first-child]:mt-2"
         )}
         style={{
-          maxHeight: "calc(50dvh - env(safe-area-inset-top, 0px) - 8px)",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-          marginTop: "8px"
+          maxHeight: "calc(80dvh - env(safe-area-inset-top, 0px))",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)"
         }}
       >
         <div className="relative px-6 pt-4 pb-2 shrink-0">
@@ -107,26 +115,33 @@ export default function CategoryMenuBottomSheet({
           Choose a category to view related information
         </DrawerDescription>
 
-        <div className="flex-1 px-6 pb-6">
-          <div className="grid gap-3">
+        <div className="flex-1 px-4 pb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-sm mx-auto">
             {categories.map((category) => {
-              const Icon = category.icon
               return (
                 <button
                   key={category.id}
                   onClick={() => handleCategoryClick(category.href)}
                   className={cn(
-                    "flex items-center p-4 rounded-lg border transition-all duration-200",
-                    "hover:bg-muted hover:shadow-sm active:scale-[0.98]",
-                    "bg-background border-border"
+                    "flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200",
+                    "hover:bg-muted hover:shadow-md active:scale-[0.96]",
+                    "bg-background border-border",
+                    "min-h-[100px] touch-manipulation",
+                    "aspect-square"
                   )}
                 >
-                  <div className={cn("mr-4", category.color)}>
-                    <Icon className="w-6 h-6" />
+                  <div className="mb-3 w-10 h-10 flex items-center justify-center">
+                    <Image
+                      src={category.icon}
+                      alt={category.label}
+                      width={40}
+                      height={40}
+                      className="max-w-10 max-h-10 object-contain"
+                    />
                   </div>
-                  <div className="flex-1 text-left">
-                    <h3 className="font-medium text-foreground">{category.label}</h3>
-                    <p className="text-sm text-muted-foreground">{category.description}</p>
+                  <div className="text-center">
+                    <h3 className="font-semibold text-foreground text-sm leading-tight">{category.label}</h3>
+                    <p className="text-xs text-muted-foreground mt-1 leading-tight">{category.description}</p>
                   </div>
                 </button>
               )
