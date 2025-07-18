@@ -12,19 +12,15 @@ import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react"
 import type { PerplexityArticle } from "@/lib/types"
 
 const CATEGORIES = [
-  { value: "top_signals", label: "Top Signals" },
   { value: "road", label: "Road" },
-  // { value: "rail", label: "Rail" },
   { value: "weather", label: "Weather" },
-  // { value: "utility", label: "Utility" },
-  { value: "environment", label: "Environment" },
   { value: "ae", label: "A&E" },
 ]
 
 export default function SignalsPage() {
   const [articles, setArticles] = useState<PerplexityArticle[]>([])
   const [loading, setLoading] = useState(true)
-  const [categoryFilter, setCategoryFilter] = useState("top_signals")
+  const [categoryFilter, setCategoryFilter] = useState("road")
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -57,45 +53,15 @@ export default function SignalsPage() {
   }, [categoryFilter])
 
   const loadArticles = async (pageNum: number) => {
-    if (categoryFilter === "ae") {
-      // A&E data is handled by the useAeData hook
-      return
-    }
-
-    try {
-      if (pageNum === 0) setLoading(true)
-      
-      const params = new URLSearchParams({
-        page: pageNum.toString(),
-        limit: "20"
-      })
-      
-      params.set("category", categoryFilter)
-      
-      const response = await fetch(`/api/signals?${params.toString()}`)
-      if (!response.ok) throw new Error('Failed to fetch signals')
-      
-      const data = await response.json()
-      
-      if (pageNum === 0) {
-        setArticles(data.articles || [])
-      } else {
-        setArticles(prev => [...prev, ...(data.articles || [])])
-      }
-      
-      setHasMore(data.hasMore || false)
-    } catch (error) {
-      console.error('Error loading signals:', error)
-    } finally {
-      setLoading(false)
-    }
+    // No articles to load since we removed government feeds from this page
+    setLoading(false)
+    setArticles([])
+    setHasMore(false)
   }
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    if (categoryFilter !== "ae") {
-      await loadArticles(0)
-    }
+    // Refresh logic will be handled by individual components
     setRefreshing(false)
   }
 
@@ -219,54 +185,15 @@ export default function SignalsPage() {
             />
           ) : categoryFilter === "road" ? (
             // Render journey time cards for road category
-            <div className="space-y-8">
-              <JourneyTimeList
-                showFilters={true}
-                autoRefresh={true}
-                refreshInterval={2 * 60 * 1000}
-              />
-              {/* Also show road-related signals below journey times */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-                  Road Incidents & Updates
-                </h3>
-                <SignalsList
-                  articles={articles}
-                  loading={loading}
-                  onLoadMore={handleLoadMore}
-                  hasMore={hasMore}
-                  viewMode="list"
-                />
-              </div>
-            </div>
+            <JourneyTimeList
+              showFilters={true}
+              autoRefresh={true}
+              refreshInterval={2 * 60 * 1000}
+            />
           ) : categoryFilter === "weather" ? (
             // Render weather dashboard for weather category
-            <div className="space-y-8">
-              <WeatherDashboard />
-              {/* Also show weather-related signals below weather dashboard */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
-                  Weather Alerts & Updates
-                </h3>
-                <SignalsList
-                  articles={articles}
-                  loading={loading}
-                  onLoadMore={handleLoadMore}
-                  hasMore={hasMore}
-                  viewMode="list"
-                />
-              </div>
-            </div>
-          ) : (
-            // Render regular signals for other categories
-            <SignalsList
-              articles={articles}
-              loading={loading}
-              onLoadMore={handleLoadMore}
-              hasMore={hasMore}
-              viewMode="list"
-            />
-          )}
+            <WeatherDashboard />
+          ) : null}
         </div>
       </main>
 

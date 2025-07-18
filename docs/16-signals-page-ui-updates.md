@@ -1,8 +1,8 @@
-# Signals Page UI/UX Updates and Category Restructuring
+# Signals Page UI/UX Updates and Complete Restructuring
 
 ## Overview
 
-This document details the comprehensive UI/UX updates and category restructuring implemented for the `/signals` page, including the removal of redundant navigation elements, introduction of new signal categories, and enhanced user experience improvements.
+This document details the comprehensive UI/UX updates and complete restructuring implemented for the `/signals` page, including the removal of government news feeds, streamlined category focus, and the creation of a new Government Bulletin component on the main page.
 
 ## 🎯 **Key Changes Implemented**
 
@@ -22,49 +22,64 @@ This document details the comprehensive UI/UX updates and category restructuring
 - Reduced redundancy while maintaining functionality
 - Better visual balance in the footer navigation
 
-### 2. **New Signal Categories Implementation**
+### 2. **Complete Government Feed Removal from Signals Page**
 
-**Added Two New Categories:**
+**Major Restructuring:**
 
-#### **Top Signals Category**
-- **Purpose**: Highlight high-priority government communications
-- **Sources**: 
-  - `hkma_press` (HKMA Press Releases)
-  - `hkma_speeches` (HKMA Speeches)
-  - `news_gov_top` (Government Top Stories)
-- **Default category**: Set as the main view when users visit `/signals`
+#### **Removed Government News Feeds**
+- **All 15+ government feeds** moved from Signals page to new Bulletin component
+- **Eliminated**: Top Signals and Environment categories entirely
+- **Government feeds**: Now exclusively available on main page under "Bulletin" tab
+- **Focused approach**: Signals page now dedicated to service-specific information only
 
-#### **Environment Category**
-- **Purpose**: Centralize health and disease-related information
-- **Sources**:
-  - `chp_disease` (CHP Disease Watch)
-  - `chp_press` (CHP Press Releases)
-  - `chp_ncd` (CHP Non-Communicable Diseases)
-  - `chp_guidelines` (CHP Guidelines)
-- **Focus**: Health alerts, disease monitoring, environmental health
+#### **Streamlined Category Focus**
+- **Signals page purpose**: Real-time service status and alerts only
+- **Clear separation**: Government communications vs. service information
+- **Improved user experience**: Reduced cognitive load with focused content
 
-### 3. **Category Selector Updates**
+### 3. **Simplified Category Structure**
 
-**Updated Category List:**
+**Streamlined Category List:**
 ```typescript
 const CATEGORIES = [
-  { value: "top_signals", label: "Top Signals" },     // New - Default
-  { value: "road", label: "Road" },
-  // { value: "rail", label: "Rail" },                // Temporarily disabled
-  { value: "weather", label: "Weather" },
-  // { value: "utility", label: "Utility" },          // Temporarily disabled
-  { value: "environment", label: "Environment" },     // New
-  { value: "ae", label: "A&E" },
+  { value: "road", label: "Road" },           // Journey Time data only
+  { value: "weather", label: "Weather" },     // Weather Dashboard only  
+  { value: "ae", label: "A&E" },             // Hospital waiting times
 ]
 ```
 
-**Changes:**
-- **"All" replaced with "Top Signals"** as the default category
-- **"Rail" and "Utility" temporarily disabled** (commented out)
-- **"Environment" added** for health-related content
-- **Streamlined selection** to focus on most relevant categories
+**Major Simplification:**
+- **Reduced from 6 to 3 categories** for focused user experience
+- **"Road" now default**: Shows Journey Time cards without government incidents
+- **"Weather"**: Shows Weather Dashboard without government alerts
+- **"A&E"**: Maintains Hospital Authority waiting times display
+- **Removed entirely**: Top Signals, Environment, Rail, Utility categories
 
-### 4. **Enhanced Visual Design**
+### 4. **New Government Bulletin Component**
+
+**Centralized Government Communications:**
+
+#### **Main Page Integration**
+- **New "Bulletin" tab** added to main page content selector (Headlines | News | Bulletin)
+- **All 15+ government feeds** consolidated into single bulletin view
+- **Modern minimal UI** with bulletin-style list design
+- **Auto-refresh enabled** every 2 minutes for real-time updates
+
+#### **Updated Categorization Labels**
+- **NEWS_GOV_TOP** → **'Gov+'** (Government Plus priority communications)
+- **HKMA_PRESS & HKMA_SPEECHES** → **'HKMA'** (Hong Kong Monetary Authority)
+- **All other feeds** maintain existing categorization as visual labels
+
+#### **Bulletin Design Features**
+- **Card-based layout** with left border accent for visual hierarchy
+- **Expandable content** with smooth collapse/expand animations
+- **Category badges** with color-coded labels
+- **Severity indicators** with traffic light color system
+- **Timestamp display** for recency awareness
+- **Load more functionality** with infinite scroll support
+- **Manual refresh button** for user-initiated updates
+
+### 5. **Enhanced Visual Design**
 
 **Category Color Coding:**
 ```typescript
@@ -83,13 +98,23 @@ const colors = {
 
 ## 🔧 **Technical Implementation**
 
-### 1. **Database Schema Updates**
+### 1. **Component Architecture Changes**
 
-**New Enum Values:**
-```sql
--- Add new categories to incident_category enum
-ALTER TYPE incident_category ADD VALUE 'top_signals';
-ALTER TYPE incident_category ADD VALUE 'environment';
+**New Government Bulletin Component:**
+```typescript
+// components/government-bulletin.tsx
+export default function GovernmentBulletin({
+  limit = 20,
+  autoRefresh = true,
+  refreshInterval = 2 * 60 * 1000,
+  showFilters = false
+}: GovernmentBulletinProps)
+```
+
+**Content Type System Update:**
+```typescript
+// Updated content types to include bulletin
+export type ContentType = 'headlines' | 'news' | 'bulletin';
 ```
 
 **Materialized View Updates:**
@@ -109,108 +134,126 @@ CASE
 END as display_priority
 ```
 
-### 2. **Government Feeds Categorization Logic**
+### 2. **Signals Page Simplification**
 
-**Updated Source Mapping:**
+**Removed Government Feed Loading:**
 ```typescript
-// Health feeds - content-based categorization
-if (slug.startsWith('chp_')) {
-  if (slug === 'chp_disease' || slug === 'chp_ncd' || slug === 'chp_guidelines') 
-    return 'environment';
-  if (text.includes('disease') || text.includes('virus') || text.includes('infection')) 
-    return 'environment';
-  return 'environment'; // Default for CHP sources
+// Simplified loadArticles function
+const loadArticles = async (pageNum: number) => {
+  // No articles to load since we removed government feeds from this page
+  setLoading(false)
+  setArticles([])
+  setHasMore(false)
 }
-
-// Financial feeds - content-based categorization  
-if (slug.startsWith('hkma_')) {
-  if (slug === 'hkma_press' || slug === 'hkma_speeches') 
-    return 'top_signals';
-  // ... other HKMA logic
-}
-
-// Government news
-if (slug === 'news_gov_top') return 'top_signals';
 ```
 
-### 3. **API Enhancements**
-
-**Enhanced Filtering Logic:**
+**Category-Specific Component Rendering:**
 ```typescript
-// Apply filters with fallback for backward compatibility
-if (category === "top_signals" || !category) {
-  // Include both new categorized data and legacy source-based data
-  query = query.or('category.eq.top_signals,source_slug.in.(hkma_press,hkma_speeches,news_gov_top)')
-} else if (category === "environment") {
-  // Include all CHP sources
-  query = query.or('category.eq.environment,source_slug.like.chp_%')
-} else if (category) {
-  query = query.eq('category', category)
-}
+// Clean category-specific rendering without government feeds
+{categoryFilter === "road" ? (
+  <JourneyTimeList showFilters={true} autoRefresh={true} />
+) : categoryFilter === "weather" ? (
+  <WeatherDashboard />
+) : null}
+```
+
+### 3. **Main Page Content Integration**
+
+**Three-Tab Content Selector:**
+```typescript
+// Updated ContentTypeSelector with 3-button layout
+<div className="relative flex">
+  <button onClick={() => onChange('headlines')}>Headlines</button>
+  <button onClick={() => onChange('news')}>News</button>
+  <button onClick={() => onChange('bulletin')}>Bulletin</button>
+</div>
+```
+
+**Content Rendering Logic:**
+```typescript
+// Main content rendering with bulletin integration
+{contentType === 'headlines' ? (
+  <TopicsFeed />
+) : contentType === 'news' ? (
+  <NewsFeedMasonry />
+) : contentType === 'bulletin' ? (
+  <GovernmentBulletin autoRefresh={true} refreshInterval={2 * 60 * 1000} />
+) : null}
 ```
 
 **Benefits:**
-- **Backward compatibility** with existing data
-- **Progressive enhancement** as new data gets properly categorized
-- **Robust filtering** that works with both old and new categorization
+- **Centralized government communications** in one location
+- **Consistent API usage** with existing signals endpoint
+- **Smooth user experience** with animated tab transitions
 
-### 4. **Frontend Updates**
+### 4. **Updated Label Mapping**
 
-**Default Category Change:**
+**Government Source Categorization:**
 ```typescript
-// Changed from "all" to "top_signals" as default
-const [categoryFilter, setCategoryFilter] = useState("top_signals")
-```
-
-**Category Parameter Handling:**
-```typescript
-// Always pass category parameter to API
-params.set("category", categoryFilter)
+const getCategoryLabel = (category: string, sourceSlug: string) => {
+  // Updated categorization as requested
+  if (sourceSlug === 'news_gov_top') return 'Gov+'
+  if (sourceSlug === 'hkma_press' || sourceSlug === 'hkma_speeches') return 'HKMA'
+  
+  // Keep existing categorizations as visual labels
+  const categoryMap = {
+    road: 'Road', rail: 'Rail', weather: 'Weather',
+    utility: 'Utility', health: 'Health', financial: 'Financial',
+    gov: 'Gov', ae: 'A&E', environment: 'Environment'
+  }
+  return categoryMap[category] || category.charAt(0).toUpperCase() + category.slice(1)
+}
 ```
 
 **Enhanced User Experience:**
-- **Immediate content loading** with Top Signals as default
-- **Smooth category switching** with maintained state
-- **Consistent visual feedback** across all categories
+- **Clear content separation** between services and government communications
+- **Focused category experience** on Signals page
+- **Centralized government content** on main page
 
 ## 🎨 **User Experience Improvements**
 
-### 1. **Focused Content Discovery**
+### 1. **Content Separation and Clarity**
 
-**Top Signals as Default:**
-- **Priority content first**: Users immediately see the most important government communications
-- **Curated experience**: Focus on HKMA and government top stories
-- **Reduced noise**: Filters out routine utility and rail content
+**Signals Page Focus:**
+- **Service-specific content**: Road journey times, weather data, hospital waiting times
+- **Real-time operational data**: Focus on current service status
+- **Streamlined categories**: Only 3 relevant service categories
+- **Reduced cognitive load**: Clear purpose and content expectations
 
-**Logical Content Grouping:**
-- **Environment**: All health-related content in one place
-- **Road**: Traffic and transportation incidents
-- **Weather**: Weather alerts and warnings
-- **A&E**: Hospital waiting times and emergency services
+**Main Page Government Bulletin:**
+- **Centralized government communications**: All 15+ feeds in one location
+- **Priority content access**: Government announcements easily discoverable
+- **Comprehensive coverage**: Complete government communication spectrum
+- **Modern bulletin design**: Enhanced readability and engagement
 
-### 2. **Streamlined Navigation**
+### 2. **Improved Information Architecture**
 
-**Reduced Cognitive Load:**
-- **Fewer navigation options** in bottom bar (4 instead of 5)
-- **Temporarily disabled less-used categories** (Rail, Utility)
-- **Clear category purposes** with descriptive naming
+**Clear Content Hierarchy:**
+- **Main page**: Headlines, News, and Government Bulletin (comprehensive)
+- **Signals page**: Service-specific status updates (focused)
+- **Logical separation**: Content type determines location
+- **User expectation alignment**: Content matches page purpose
 
-**Improved Accessibility:**
-- **Larger touch targets** with fewer buttons
-- **Better spacing** in category selector
-- **Consistent naming** across all interfaces
+**Enhanced Navigation Flow:**
+- **Three-tab main page**: Equal priority for all content types
+- **Simplified signals categories**: Only relevant service categories
+- **Consistent interaction patterns**: Similar behaviors across components
+- **Predictable content location**: Users know where to find specific information
 
-### 3. **Enhanced Visual Hierarchy**
+### 3. **Modern UI/UX Design**
 
-**Category Importance:**
-- **Top Signals**: Premium visual treatment with gradient
-- **Environment**: Health-focused green color scheme
-- **Clear visual differentiation** between categories
+**Government Bulletin Visual Design:**
+- **Card-based layout**: Clean, modern appearance with subtle shadows
+- **Left border accents**: Visual hierarchy and category identification
+- **Expandable content**: Smooth animations for detailed information
+- **Color-coded categories**: Gov+ (gradient), HKMA (blue), others (themed)
+- **Severity indicators**: Traffic light system for urgency levels
 
 **Content Presentation:**
-- **Priority-based sorting** within each category
-- **Consistent card design** across all categories
-- **Enhanced metadata display** for better context
+- **Minimal design principles**: Clean typography and generous whitespace
+- **Consistent interaction patterns**: Hover states and smooth transitions
+- **Responsive design**: Optimized for all screen sizes
+- **Accessibility focused**: Clear contrast and touch-friendly targets
 
 ## 📊 **Data Migration Strategy**
 
@@ -382,27 +425,29 @@ GROUP BY source_slug, category;
 
 ## 📝 **Summary**
 
-The signals page UI/UX updates successfully:
+The complete signals page restructuring and government bulletin implementation successfully:
 
-### **Achievements:**
-✅ **Streamlined navigation** - Removed redundant A&E button from footer
-✅ **Enhanced categorization** - Added Top Signals and Environment categories
-✅ **Improved user experience** - Top Signals as default with curated content
-✅ **Maintained functionality** - All existing features preserved
-✅ **Backward compatibility** - Smooth migration with fallback mechanisms
-✅ **Performance optimization** - Efficient database queries and indexing
+### **Major Achievements:**
+✅ **Complete content separation** - Government feeds moved to dedicated bulletin component
+✅ **Streamlined signals page** - Focused on service-specific information only
+✅ **New bulletin component** - Modern, minimal UI with comprehensive government feeds
+✅ **Enhanced main page** - Three-tab content selector with balanced layout
+✅ **Updated categorization** - Gov+ and HKMA labels for government sources
+✅ **Improved user experience** - Clear content hierarchy and logical information architecture
 
 ### **User Benefits:**
-- **Faster content discovery** with priority-based defaults
-- **Cleaner interface** with streamlined navigation
-- **Better content organization** with logical category grouping
-- **Enhanced visual design** with category-specific styling
-- **Improved accessibility** with larger touch targets
+- **Clear content discovery** - Know exactly where to find specific information
+- **Focused experience** - Signals page dedicated to service status only
+- **Comprehensive government view** - All 15+ feeds centralized in bulletin
+- **Modern interface design** - Clean, minimal UI with smooth interactions
+- **Better information architecture** - Logical separation of content types
+- **Enhanced readability** - Bulletin-style design for government communications
 
 ### **Technical Benefits:**
-- **Robust data migration** with incremental approach
-- **Efficient API design** with fallback mechanisms
-- **Scalable architecture** ready for future enhancements
-- **Comprehensive testing** ensuring reliability
+- **Clean component separation** - Focused responsibilities for each component
+- **Reusable bulletin component** - Modern design ready for future enhancements
+- **Maintained API compatibility** - No breaking changes to existing endpoints
+- **Improved code organization** - Clear separation of concerns
+- **Scalable architecture** - Ready for additional content types and features
 
-This implementation provides a solid foundation for the signals page with improved user experience, better content organization, and enhanced visual design while maintaining full backward compatibility and system performance.
+This major restructuring provides a cleaner, more focused user experience with better content organization while maintaining all existing functionality and preparing the platform for future enhancements.

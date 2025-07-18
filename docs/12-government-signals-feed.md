@@ -1,16 +1,16 @@
-# Government Signals Feed Implementation
+# Government Bulletin System Implementation
 
 ## Overview
 
-The Government Signals Feed is a comprehensive system that monitors and processes real-time government incident feeds, replacing the previous Perplexity news management system. This system provides automated incident monitoring with manual enrichment capabilities, delivering authoritative government information to users.
+The Government Bulletin System is a comprehensive implementation that monitors and processes real-time government incident feeds from 15+ official Hong Kong government sources. The system features a modern bulletin-style component on the main page, replacing the previous scattered government feed implementation across the signals page.
 
 ## 🎯 **Key Features**
 
-### 1. **Real-Time Government Monitoring**
-- **7 Official Government Feeds** from Transport Department, MTR, Hong Kong Observatory, and EMSD
+### 1. **Centralized Government Communications**
+- **15+ Official Government Feeds** from Transport Department, HKO, CHP, HKMA, and Hospital Authority
 - **Automated processing** every 2 minutes via cron jobs
-- **Content-based relevance scoring** for incident prioritization
-- **Geographic context** with PostGIS location data
+- **Modern bulletin-style UI** with card-based layout and expandable content
+- **Main page integration** through dedicated "Bulletin" tab
 
 ### 2. **Manual Enrichment Control**
 - **Admin-driven enrichment** instead of automatic processing
@@ -18,11 +18,11 @@ The Government Signals Feed is a comprehensive system that monitors and processe
 - **Cost control** through manual selection
 - **Quality assurance** through human review
 
-### 3. **Enhanced Research Capabilities**
-- **Additional source discovery** during enrichment
-- **Key facts extraction** (2-3 verified facts per incident)
-- **Reporting score** (1-10) for newsworthiness assessment
-- **Comprehensive fact-checking** with source verification
+### 3. **Updated Categorization System**
+- **Gov+ labeling** for NEWS_GOV_TOP priority communications  
+- **HKMA labeling** for Hong Kong Monetary Authority sources
+- **Visual category badges** with color-coded identification
+- **Comprehensive coverage** of all government communication types
 
 ## 📊 **System Architecture**
 
@@ -237,34 +237,53 @@ interface EnrichmentResult {
 
 ## 🎨 **User Interface**
 
-### 1. Public Signals Feed (`/app/signals/page.tsx`)
+### 1. Government Bulletin Component (`/components/government-bulletin.tsx`)
 
-**Features:**
-- **Category filtering** (Top Signals, Road, Weather, Environment, A&E)
-- **Default Top Signals view** highlighting priority government communications
-- **Real-time updates** (auto-refresh every 2 minutes)
-- **Both direct and enriched content** display
-- **Infinite scroll** for large datasets
-- **Responsive design** with mobile optimization
-- **Streamlined navigation** with optimized category selection
+**Modern Bulletin Design Features:**
+- **Card-based layout** with clean, minimal aesthetic
+- **Left border accents** for visual hierarchy and category identification
+- **Expandable content** with smooth collapse/expand animations
+- **Category badges** with updated Gov+ and HKMA labeling
+- **Severity indicators** using traffic light color system
+- **Timestamp display** for content recency awareness
+- **Load more functionality** with infinite scroll pagination
+- **Manual refresh button** for user-initiated updates
+- **Auto-refresh** every 2 minutes for real-time government updates
 
-**Content Display Logic:**
+### 2. Main Page Integration (`/app/page.tsx`)
+
+**Three-Tab Content Selector:**
+- **Headlines** - Curated topic-based content
+- **News** - Traditional news feed with masonry layout  
+- **Bulletin** - Government communications in bulletin format
+- **Equal priority** design with smooth animated transitions
+- **Centralized access** to all government feeds in one location
+
+**Bulletin Content Structure:**
 ```typescript
-// Smart content rendering based on enrichment status
-const title = isEnriched ? (article.enhanced_title || article.title) : article.title;
-const content = isEnriched && article.summary ? article.summary : article.lede;
-
-// Enhanced content indicators
-{(article.enrichment_status === 'enriched' || article.enrichment_status === 'ready') && (
-  <div className="flex items-center gap-2 mt-2">
-    {article.key_points && article.key_points.length > 0 && (
-      <span className="text-xs text-blue-600">• {article.key_points.length} key points</span>
+// Modern bulletin item with expandable content
+<Card className="hover:shadow-md transition-shadow duration-200 border-l-4 border-l-blue-500">
+  <CardContent className="p-4">
+    {/* Header with category badge, severity, and timestamp */}
+    <div className="flex items-start justify-between gap-3">
+      <Badge className={getCategoryColor(item.category, item.source_slug)}>
+        {getCategoryLabel(item.category, item.source_slug)}
+      </Badge>
+      <Button onClick={() => toggleExpanded(item.id)}>
+        {isExpanded ? <ChevronUp /> : <ChevronDown />}
+      </Button>
+    </div>
+    
+    {/* Title and expandable content */}
+    <h3>{displayTitle}</h3>
+    {isExpanded && displayContent && (
+      <div className="pt-2 border-t">
+        <p>{displayContent}</p>
+        {/* AI-Enhanced Content Display */}
+      </div>
     )}
-    {article.why_it_matters && (
-      <span className="text-xs text-green-600">• Impact analysis</span>
-    )}
-  </div>
-)}
+  </CardContent>
+</Card>
 ```
 
 ### 2. Admin Signals Management (`/app/admin/signals/page.tsx`)

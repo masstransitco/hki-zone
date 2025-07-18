@@ -93,6 +93,32 @@ export default function RootLayout({
 
 ### 2. Content Components
 
+#### Main Content Selector (`components/main-content-with-selector.tsx`)
+- Three-tab content selection (Headlines | News | Bulletin)
+- Dynamic content rendering based on selected type
+- State management for content type switching
+- Integrated government bulletin component
+
+#### Content Type Selector (`components/content-type-selector.tsx`)
+```typescript
+export type ContentType = 'headlines' | 'news' | 'bulletin';
+
+export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value, onChange }) => {
+  // Three-button layout with animated background pill
+  // Smooth transitions between Headlines, News, and Bulletin tabs
+  // Glass morphism effects and responsive design
+}
+```
+
+#### Government Bulletin (`components/government-bulletin.tsx`)
+- **Modern bulletin-style design** with card-based layout
+- **Expandable content** with smooth collapse/expand animations
+- **Updated categorization**: Gov+ for NEWS_GOV_TOP, HKMA for monetary authority
+- **All 15+ government feeds** consolidated in single component
+- **Auto-refresh functionality** every 2 minutes
+- **Load more with infinite scroll** pagination
+- **Severity indicators** with traffic light color system
+
 #### News Feed (`components/news-feed.tsx`)
 - Infinite scroll with intersection observer
 - Article cards with lazy loading
@@ -504,16 +530,43 @@ app/
 
 ### Page Components
 
-#### Home Page (`app/page.tsx`)
+#### Home Page (`app/page.tsx`) - Updated 2025
 ```typescript
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <NewsFeed />
+        <MainContentWithSelector />  {/* Updated: Three-tab content selector */}
       </main>
       <FooterNav />
+    </div>
+  )
+}
+```
+
+#### Signals Page (`app/signals/page.tsx`) - Restructured 2025
+```typescript
+// Simplified categories - government feeds moved to main page bulletin
+const CATEGORIES = [
+  { value: "road", label: "Road" },           // Journey Time data only
+  { value: "weather", label: "Weather" },     // Weather Dashboard only  
+  { value: "ae", label: "A&E" },             // Hospital waiting times
+]
+
+export default function SignalsPage() {
+  const [categoryFilter, setCategoryFilter] = useState("road")  // Road as default
+  
+  // Simplified rendering - no government feeds
+  return (
+    <div>
+      {categoryFilter === "road" ? (
+        <JourneyTimeList />  // Only journey time cards
+      ) : categoryFilter === "weather" ? (
+        <WeatherDashboard />  // Only weather dashboard
+      ) : categoryFilter === "ae" ? (
+        <AeHospitalsList />  // Hospital waiting times
+      ) : null}
     </div>
   )
 }

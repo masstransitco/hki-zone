@@ -9,8 +9,10 @@ This is a comprehensive documentation suite for the HKI News App (香港資訊),
 ### Understanding the Application
 The HKI News App is a Next.js 14 application that:
 - Aggregates news from major Hong Kong sources (HKFP, SingTao, HK01, ONCC, RTHK)
+- **Monitors 15+ government feeds** with real-time processing and modern bulletin interface
 - Enhances content using AI (Perplexity API, Anthropic Claude)
-- **Automatically selects and enhances articles into trilingual content (EN, zh-TW, zh-CN)**
+- **Features three-tab main page**: Headlines, News, and Government Bulletin
+- **Streamlined signals page**: Focus on service-specific information (Road, Weather, A&E)
 - Provides both public and admin interfaces
 - Uses Supabase for data persistence
 - Implements a unified content management system
@@ -153,6 +155,32 @@ The HKI News App is a Next.js 14 application that:
 - API integration for new bulk endpoints
 
 **When to Use**: When working with admin interface improvements, implementing batch operations, modernizing UI components, or enhancing content management workflows.
+
+### 12. [Government Bulletin System](./12-government-signals-feed.md) ⭐ *Updated Feature*
+**Purpose**: Complete guide to the restructured government communications system with centralized bulletin interface.
+
+**Key Information**:
+- Government bulletin component with modern minimal design
+- Three-tab main page integration (Headlines | News | Bulletin)
+- Streamlined signals page focusing on service-specific content
+- Updated categorization (Gov+ for NEWS_GOV_TOP, HKMA for monetary authority)
+- Real-time processing of 15+ government feeds
+- Expandable content with smooth animations
+- Auto-refresh functionality and infinite scroll
+
+**When to Use**: When working with government feed monitoring, implementing bulletin-style interfaces, or managing official communications display.
+
+### 16. [Signals Page UI Updates](./16-signals-page-ui-updates.md) ⭐ *Major Restructuring*
+**Purpose**: Documentation of the complete signals page restructuring and government feed separation.
+
+**Key Information**:
+- Complete removal of government feeds from signals page
+- Simplified category structure (Road, Weather, A&E only)
+- New government bulletin component creation
+- Main page three-tab content selector implementation
+- Modern UI/UX improvements and user experience enhancements
+
+**When to Use**: When understanding the signals page architecture changes or implementing similar content separation strategies.
 
 ## Quick Reference
 

@@ -9,6 +9,7 @@ import { analytics } from "@/lib/analytics"
 import { InlineSourcesBadge } from "./public-sources"
 import { useHydrationSafeDate } from "@/hooks/use-hydration-safe-date"
 import { useState, useEffect } from "react"
+import OutletFavicon from "./outlet-favicon"
 import type { Article } from "@/lib/types"
 
 // Custom time formatting for Perplexity articles (shows minutes instead of hours)
@@ -102,13 +103,13 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
             {article.isAiEnhanced && article.enhancementMetadata?.sources?.length ? (
               <InlineSourcesBadge sources={article.enhancementMetadata.sources} />
             ) : (
-              <Badge
-                variant="secondary"
-                className="text-xs px-2 py-1"
-              >
-                {article.source.replace(' (AI Enhanced)', '')}
-                {article.isAiEnhanced && ' + AI'}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <OutletFavicon 
+                  source={article.source} 
+                  size="sm" 
+                  showFallback={true}
+                />
+              </div>
             )}
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">

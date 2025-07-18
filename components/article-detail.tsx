@@ -10,6 +10,7 @@ import type { Article } from "@/lib/types"
 import ArticleDetailSkeleton from "./article-detail-skeleton"
 import PublicSources from "./public-sources"
 import AIEnhancedContent from "./ai-enhanced-content"
+import OutletFavicon from "./outlet-favicon"
 
 interface ArticleDetailProps {
   articleId: string
@@ -67,7 +68,7 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-6 leading-tight">{article.title}</h1>
 
         <div className="flex items-center justify-between text-footnote text-[rgb(var(--apple-gray-1))] mb-6">
-          <div>
+          <div className="flex items-center gap-2">
             {article.isAiEnhanced && article.enhancementMetadata?.sources?.length ? (
               <PublicSources 
                 sources={article.enhancementMetadata.sources}
@@ -78,10 +79,17 @@ export default function ArticleDetail({ articleId }: ArticleDetailProps) {
                 }
               />
             ) : (
-              <span className="text-subhead text-[rgb(var(--apple-blue))] font-medium">
-                {article.source.replace(' (AI Enhanced)', '')}
-                {article.isAiEnhanced && ' + AI Enhanced'}
-              </span>
+              <div className="flex items-center gap-2">
+                <OutletFavicon 
+                  source={article.source} 
+                  size="md" 
+                  showFallback={true}
+                />
+                <span className="text-subhead text-[rgb(var(--apple-blue))] font-medium">
+                  {article.source.replace(' (AI Enhanced)', '')}
+                  {article.isAiEnhanced && ' + AI Enhanced'}
+                </span>
+              </div>
             )}
           </div>
           <div className="flex items-center gap-1">

@@ -2,10 +2,13 @@
 
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
-import AeHospitalsList from "@/components/ae-hospitals-list"
+import WeatherDashboard from "@/components/weather-dashboard"
 import { ClientOnly } from "@/components/client-only"
+import { useLanguage } from "@/components/language-provider"
 
-export default function AePage() {
+export default function WeatherPage() {
+  const { language } = useLanguage()
+
   return (
     <div className="flex flex-col min-h-screen">
       <ClientOnly fallback={
@@ -16,16 +19,17 @@ export default function AePage() {
 
       <main className="flex-1 pb-20 pt-16 overscroll-contain">
         <div className="container mx-auto px-4 py-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Weather</h1>
+            <p className="text-muted-foreground">Current conditions and weather forecast</p>
+          </div>
+          
           <ClientOnly fallback={
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
             </div>
           }>
-            <AeHospitalsList 
-              showFilters={true}
-              autoRefresh={true}
-              refreshInterval={5 * 60 * 1000}
-            />
+            <WeatherDashboard language={language} />
           </ClientOnly>
         </div>
       </main>
