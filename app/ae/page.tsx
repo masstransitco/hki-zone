@@ -4,8 +4,11 @@ import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
 import AeHospitalsList from "@/components/ae-hospitals-list"
 import { ClientOnly } from "@/components/client-only"
+import { useLanguage } from "@/components/language-provider"
 
 export default function AePage() {
+  const { language } = useLanguage()
+  
   return (
     <div className="flex flex-col min-h-screen">
       <ClientOnly fallback={
@@ -25,6 +28,7 @@ export default function AePage() {
               showFilters={true}
               autoRefresh={true}
               refreshInterval={5 * 60 * 1000}
+              language={language}
             />
           </ClientOnly>
         </div>

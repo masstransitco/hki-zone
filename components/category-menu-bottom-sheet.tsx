@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { X } from "lucide-react"
 import Image from "next/image"
 import { useLanguage } from "@/components/language-provider"
 import { 
@@ -10,10 +9,8 @@ import {
   DrawerContent, 
   DrawerHeader, 
   DrawerTitle, 
-  DrawerDescription, 
-  DrawerClose 
+  DrawerDescription 
 } from "@/components/ui/drawer"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface CategoryMenuBottomSheetProps {
@@ -30,6 +27,16 @@ export default function CategoryMenuBottomSheet({
   const { t } = useLanguage()
 
   const categories = [
+    {
+      id: "drive",
+      label: "Drive",
+      description: "Car sharing service",
+      icon: "/menu-icons/drive.PNG",
+      href: "https://www.masstransitcar.com/",
+      isPlaceholder: false,
+      isNewFeature: true,
+      isExternal: true
+    },
     {
       id: "road",
       label: t("categories.roads.label"),
@@ -134,13 +141,19 @@ export default function CategoryMenuBottomSheet({
     }
   }, [isOpen])
 
-  const handleCategoryClick = (href: string, isPlaceholder: boolean) => {
+  const handleCategoryClick = (href: string, isPlaceholder: boolean, isExternal?: boolean) => {
     if (isPlaceholder) {
       // Do nothing for placeholder cards
       return
     }
     onClose()
-    router.push(href)
+    
+    if (isExternal) {
+      // Open external link in new window
+      window.open(href, '_blank', 'noopener,noreferrer')
+    } else {
+      router.push(href)
+    }
   }
 
   return (
@@ -167,16 +180,6 @@ export default function CategoryMenuBottomSheet({
         }}
       >
         <div className="relative px-6 pt-4 pb-2 shrink-0">
-          <DrawerClose asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="absolute right-6 top-4 h-10 w-10 p-0 hover:bg-muted"
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </Button>
-          </DrawerClose>
           
         </div>
         
@@ -190,7 +193,7 @@ export default function CategoryMenuBottomSheet({
               return (
                 <button
                   key={category.id}
-                  onClick={() => handleCategoryClick(category.href, category.isPlaceholder)}
+                  onClick={() => handleCategoryClick(category.href, category.isPlaceholder, category.isExternal)}
                   className={cn(
                     "flex flex-col items-center justify-center p-4 rounded-xl border transition-all duration-200 relative",
                     category.isPlaceholder ? "cursor-default" : "hover:bg-muted hover:shadow-md active:scale-[0.96]",
@@ -202,6 +205,11 @@ export default function CategoryMenuBottomSheet({
                   {category.isPlaceholder && (
                     <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs px-2 py-1 rounded-full z-10">
                       {t("categories.comingSoon")}
+                    </div>
+                  )}
+                  {category.isNewFeature && (
+                    <div className="absolute -top-1 -right-1 bg-green-500 text-white text-xs px-2 py-1 rounded-full z-10">
+                      New
                     </div>
                   )}
                   <div className="mb-3 w-10 h-10 flex items-center justify-center">

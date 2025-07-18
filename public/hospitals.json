@@ -1,0 +1,32 @@
+[
+  { "code": "AHNH",  "name_zh": "雅麗氏何妙齡那打素醫院",       "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "CGH",   "name_zh": "明愛醫院",                   "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "KWH",   "name_zh": "廣華醫院",                   "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "PMH",   "name_zh": "瑪嘉烈醫院",                 "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "QEH",   "name_zh": "伊利沙白醫院",               "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "QMH",   "name_zh": "瑪麗醫院",                   "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "RHTSK", "name_zh": "律敦治醫院",                 "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "TMH",   "name_zh": "屯門醫院",                   "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "UCH",   "name_zh": "基督教聯合醫院",             "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "WWH",   "name_zh": "仁濟醫院",                   "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "PYNEH", "name_zh": "東區尤德夫人那打素醫院",     "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "TKOH",  "name_zh": "將軍澳醫院",                 "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "NLTH",  "name_zh": "北大嶼山醫院",               "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "HKEH",  "name_zh": "香港眼科醫院",               "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "NDH",   "name_zh": "北區醫院",                   "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "PWH",   "name_zh": "威爾斯親王醫院",             "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "TSH",   "name_zh": "天水圍醫院",                 "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "POH",   "name_zh": "博愛醫院",                   "ownership": "public-HA", "ae_fee_hkd": 180 },
+  { "code": "SJH",   "name_zh": "聖約翰醫院",                 "ownership": "public-HA", "ae_fee_hkd": 180 },
+
+  { "code": "HKBH",  "name_zh": "香港浸信會醫院",             "ownership": "private",   "ae_fee_hkd": { 
+      "08:00-18:00": 400, 
+      "18:00-22:00": 700, 
+      "22:00-08:00": 1000 } },
+
+  { "code": "HKSH",  "name_zh": "香港養和醫院",               "ownership": "private",   "ae_fee_hkd": {
+      "09:00-19:00": 400,
+      "08:00-09:00": 500,
+      "19:00-00:00": 500,
+      "00:00-08:00": 700 } }
+]

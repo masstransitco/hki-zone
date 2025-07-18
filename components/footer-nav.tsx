@@ -13,7 +13,6 @@ import CategoryMenuBottomSheet from "./category-menu-bottom-sheet"
 
 const navItems = [
   { href: "/", icon: NewspaperTwoToneIcon, label: "Topics", labelKey: "nav.topics" },
-  { href: "/cars", icon: SellTwoToneIcon, label: "Cars", labelKey: "nav.cars" },
 ]
 
 export default function FooterNav() {
@@ -51,15 +50,31 @@ export default function FooterNav() {
             onClick={() => setIsBottomSheetOpen(true)}
             className={cn(
               "flex items-center justify-center p-3 rounded-lg transition-all duration-200 min-w-[48px] min-h-[48px] group",
-              "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900"
+              "text-stone-700 dark:text-stone-200 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800"
             )}
             aria-label="Open menu"
           >
             <AddBoxIcon className={cn(
               "w-5 h-5 transition-transform duration-200",
-              "group-hover:scale-105"
+              "group-hover:scale-110"
             )} />
           </button>
+
+          <Link
+            href="/cars"
+            className={cn(
+              "flex items-center justify-center p-3 rounded-lg transition-all duration-200 min-w-[48px] min-h-[48px] group",
+              pathname === "/cars" 
+                ? "text-stone-700 dark:text-stone-300 bg-stone-100 dark:bg-stone-800" 
+                : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-900"
+            )}
+            aria-label="Cars"
+          >
+            <SellTwoToneIcon className={cn(
+              "w-5 h-5 transition-transform duration-200",
+              pathname === "/cars" ? "scale-110" : "group-hover:scale-105"
+            )} />
+          </Link>
         </div>
       </nav>
       
