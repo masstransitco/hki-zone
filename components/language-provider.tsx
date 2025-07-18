@@ -133,6 +133,24 @@ const translations = {
     "error.failedToLoad": "Failed to load",
     "error.articleNotFound": "Article not found",
     "error.failedToFetch": "Failed to fetch",
+
+    // Category Menu
+    "categories.selectCategory": "Select Category",
+    "categories.roads.label": "Roads",
+    "categories.roads.description": "Traffic & journey times",
+    "categories.park.label": "Park",
+    "categories.park.description": "Parks & recreation",
+    "categories.police.label": "Police",
+    "categories.police.description": "Police stations & services",
+    "categories.ae.label": "A&E",
+    "categories.ae.description": "Hospital wait times",
+    "categories.weather.label": "Weather",
+    "categories.weather.description": "Current & forecast",
+    "categories.postbox.label": "Postbox",
+    "categories.postbox.description": "Postal services",
+    "categories.trashbin.label": "Trashbin",
+    "categories.trashbin.description": "Waste management",
+    "categories.comingSoon": "Coming Soon",
   },
   "zh-CN": {
     // Header
@@ -252,6 +270,24 @@ const translations = {
     "error.failedToLoad": "加载失败",
     "error.articleNotFound": "文章未找到",
     "error.failedToFetch": "获取失败",
+
+    // Category Menu
+    "categories.selectCategory": "选择分类",
+    "categories.roads.label": "道路",
+    "categories.roads.description": "交通与行程时间",
+    "categories.park.label": "公园",
+    "categories.park.description": "公园与娱乐",
+    "categories.police.label": "警察",
+    "categories.police.description": "警察局与服务",
+    "categories.ae.label": "急诊科",
+    "categories.ae.description": "医院等候时间",
+    "categories.weather.label": "天气",
+    "categories.weather.description": "当前与预报",
+    "categories.postbox.label": "邮箱",
+    "categories.postbox.description": "邮政服务",
+    "categories.trashbin.label": "垃圾桶",
+    "categories.trashbin.description": "废物管理",
+    "categories.comingSoon": "即将推出",
   },
   "zh-TW": {
     // Header
@@ -371,6 +407,24 @@ const translations = {
     "error.failedToLoad": "載入失敗",
     "error.articleNotFound": "文章未找到",
     "error.failedToFetch": "獲取失敗",
+
+    // Category Menu
+    "categories.selectCategory": "選擇分類",
+    "categories.roads.label": "道路",
+    "categories.roads.description": "交通與行程時間",
+    "categories.park.label": "公園",
+    "categories.park.description": "公園與娛樂",
+    "categories.police.label": "警察",
+    "categories.police.description": "警察局與服務",
+    "categories.ae.label": "急診科",
+    "categories.ae.description": "醫院等候時間",
+    "categories.weather.label": "天氣",
+    "categories.weather.description": "當前與預報",
+    "categories.postbox.label": "郵箱",
+    "categories.postbox.description": "郵政服務",
+    "categories.trashbin.label": "垃圾桶",
+    "categories.trashbin.description": "廢物管理",
+    "categories.comingSoon": "即將推出",
   },
 }
 
