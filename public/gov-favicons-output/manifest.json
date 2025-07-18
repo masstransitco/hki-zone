@@ -1,0 +1,329 @@
+{
+  "": {
+    "file": ".*"
+  },
+  "admwing": {
+    "file": "admwing.*"
+  },
+  "afcd": {
+    "file": "afcd.*"
+  },
+  "ams": {
+    "file": "ams.*"
+  },
+  "archsd": {
+    "file": "archsd.*"
+  },
+  "atf": {
+    "file": "atf.*"
+  },
+  "aud": {
+    "file": "aud.*"
+  },
+  "bd": {
+    "file": "bd.*"
+  },
+  "bjo": {
+    "file": "bjo.*"
+  },
+  "brandhk": {
+    "file": "brandhk.*"
+  },
+  "cad": {
+    "file": "cad.*"
+  },
+  "cas": {
+    "file": "cas.*"
+  },
+  "ccidahk": {
+    "file": "ccidahk.*"
+  },
+  "cedb": {
+    "file": "cedb.*"
+  },
+  "cedd": {
+    "file": "cedd.*"
+  },
+  "censtatd": {
+    "file": "censtatd.*"
+  },
+  "ceo": {
+    "file": "ceo.*"
+  },
+  "cepu": {
+    "file": "cepu.*"
+  },
+  "cmab": {
+    "file": "cmab.*"
+  },
+  "compag": {
+    "file": "compag.*"
+  },
+  "cpce": {
+    "file": "cpce.*"
+  },
+  "cr": {
+    "file": "cr.*"
+  },
+  "csb": {
+    "file": "csb.*"
+  },
+  "csd": {
+    "file": "csd.*"
+  },
+  "csi_ccidahk": {
+    "file": "csi_ccidahk.*"
+  },
+  "cso": {
+    "file": "cso.*"
+  },
+  "cstb": {
+    "file": "cstb.*"
+  },
+  "customs": {
+    "file": "customs.*"
+  },
+  "devb": {
+    "file": "devb.*"
+  },
+  "dh": {
+    "file": "dh.*"
+  },
+  "digitalpolicy": {
+    "file": "digitalpolicy.*"
+  },
+  "directory": {
+    "file": "directory.*"
+  },
+  "districtcouncils": {
+    "file": "districtcouncils.*"
+  },
+  "doj": {
+    "file": "doj.*"
+  },
+  "dsd": {
+    "file": "dsd.*"
+  },
+  "edb": {
+    "file": "edb.*"
+  },
+  "eeb": {
+    "file": "eeb.*"
+  },
+  "elderlycommission": {
+    "file": "elderlycommission.*"
+  },
+  "emsd": {
+    "file": "emsd.*"
+  },
+  "epd": {
+    "file": "epd.*"
+  },
+  "fehd": {
+    "file": "fehd.*"
+  },
+  "fpf_ccidahk": {
+    "file": "fpf_ccidahk.*"
+  },
+  "fso": {
+    "file": "fso.*"
+  },
+  "fstb": {
+    "file": "fstb.*"
+  },
+  "gfs": {
+    "file": "gfs.*"
+  },
+  "gld": {
+    "file": "gld.*"
+  },
+  "gov_hk": {
+    "file": "gov_hk.*"
+  },
+  "govtlab": {
+    "file": "govtlab.*"
+  },
+  "gpa": {
+    "file": "gpa.*"
+  },
+  "grs": {
+    "file": "grs.*"
+  },
+  "had": {
+    "file": "had.*"
+  },
+  "hb": {
+    "file": "hb.*"
+  },
+  "healthbureau": {
+    "file": "healthbureau.*"
+  },
+  "hkfsd": {
+    "file": "hkfsd.*"
+  },
+  "hkma": {
+    "file": "hkma.*"
+  },
+  "hkmpb": {
+    "file": "hkmpb.*"
+  },
+  "hko": {
+    "file": "hko.*"
+  },
+  "hkreform": {
+    "file": "hkreform.*"
+  },
+  "housingauthority": {
+    "file": "housingauthority.*"
+  },
+  "hyab": {
+    "file": "hyab.*"
+  },
+  "hyd": {
+    "file": "hyd.*"
+  },
+  "idt": {
+    "file": "idt.*"
+  },
+  "immd": {
+    "file": "immd.*"
+  },
+  "info": {
+    "file": "info.*"
+  },
+  "investhk": {
+    "file": "investhk.*"
+  },
+  "ipcc": {
+    "file": "ipcc.*"
+  },
+  "ipd": {
+    "file": "ipd.*"
+  },
+  "ird": {
+    "file": "ird.*"
+  },
+  "isd": {
+    "file": "isd.*"
+  },
+  "itc": {
+    "file": "itc.*"
+  },
+  "itib": {
+    "file": "itib.*"
+  },
+  "jsscs": {
+    "file": "jsscs.*"
+  },
+  "labour": {
+    "file": "labour.*"
+  },
+  "lad": {
+    "file": "lad.*"
+  },
+  "landreg": {
+    "file": "landreg.*"
+  },
+  "landsd": {
+    "file": "landsd.*"
+  },
+  "lcsd": {
+    "file": "lcsd.*"
+  },
+  "legco": {
+    "file": "legco.*"
+  },
+  "logisticshk": {
+    "file": "logisticshk.*"
+  },
+  "lwb": {
+    "file": "lwb.*"
+  },
+  "mardep": {
+    "file": "mardep.*"
+  },
+  "mmt": {
+    "file": "mmt.*"
+  },
+  "nd": {
+    "file": "nd.*"
+  },
+  "ofca": {
+    "file": "ofca.*"
+  },
+  "oge": {
+    "file": "oge.*"
+  },
+  "oro": {
+    "file": "oro.*"
+  },
+  "oso": {
+    "file": "oso.*"
+  },
+  "pland": {
+    "file": "pland.*"
+  },
+  "police": {
+    "file": "police.*"
+  },
+  "protocol": {
+    "file": "protocol.*"
+  },
+  "psc": {
+    "file": "psc.*"
+  },
+  "reo": {
+    "file": "reo.*"
+  },
+  "rvd": {
+    "file": "rvd.*"
+  },
+  "sb": {
+    "file": "sb.*"
+  },
+  "sciocs": {
+    "file": "sciocs.*"
+  },
+  "search": {
+    "file": "search.*"
+  },
+  "sfat": {
+    "file": "sfat.*"
+  },
+  "swd": {
+    "file": "swd.*"
+  },
+  "tcu": {
+    "file": "tcu.*"
+  },
+  "td": {
+    "file": "td.*"
+  },
+  "tid": {
+    "file": "tid.*"
+  },
+  "tlb": {
+    "file": "tlb.*"
+  },
+  "tourism": {
+    "file": "tourism.*"
+  },
+  "try": {
+    "file": "try.*"
+  },
+  "ugcs": {
+    "file": "ugcs.*"
+  },
+  "wfsfaa": {
+    "file": "wfsfaa.*"
+  },
+  "women": {
+    "file": "women.*"
+  },
+  "wsd": {
+    "file": "wsd.*"
+  },
+  "ydc": {
+    "file": "ydc.*"
+  }
+}

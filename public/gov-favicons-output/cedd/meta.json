@@ -1,0 +1,24 @@
+{
+  "slug": "cedd",
+  "url": "https://www.cedd.gov.hk/eng/",
+  "picked": {
+    "href": "https://www.cedd.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 4286,
+    "file": "cedd.ico"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.cedd.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 4286,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

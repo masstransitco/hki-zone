@@ -1,0 +1,35 @@
+{
+  "slug": "search",
+  "url": "https://www.search.gov.hk/search?ui_lang=en",
+  "picked": {
+    "href": "https://www.search.gov.hk/images/favicon.gif",
+    "ext": "gif",
+    "mime": "image/gif",
+    "bytes": 1406,
+    "file": "search.gif"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.search.gov.hk/images/favicon.gif",
+      "ok": true,
+      "ext": "gif",
+      "mime": "image/gif",
+      "bytes": 1406,
+      "file": "raw/icon-0.gif",
+      "error": null
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.search.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/vnd.microsoft.icon",
+      "bytes": 1150,
+      "file": "raw/icon-1.ico",
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "slug": "ccidahk",
+  "url": "https://www.ccidahk.gov.hk/en/index.html",
+  "picked": {
+    "href": "https://www.ccidahk.gov.hk/favicon.png",
+    "ext": "png",
+    "mime": "image/png",
+    "bytes": 35306,
+    "file": "ccidahk.png"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "shortcut icon",
+      "href": "https://www.ccidahk.gov.hk/favicon.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 35306,
+      "file": "raw/icon-0.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.ccidahk.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 35306,
+      "file": "raw/icon-1.ico",
+      "error": null
+    }
+  ]
+}

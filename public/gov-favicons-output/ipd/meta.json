@@ -1,0 +1,19 @@
+{
+  "slug": "ipd",
+  "url": "https://www.ipd.gov.hk/",
+  "picked": null,
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.ipd.gov.hk/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    }
+  ],
+  "notes": "No icon found"
+}

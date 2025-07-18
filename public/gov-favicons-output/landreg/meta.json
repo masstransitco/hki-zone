@@ -1,0 +1,35 @@
+{
+  "slug": "landreg",
+  "url": "https://www.landreg.gov.hk/",
+  "picked": {
+    "href": "https://www.google.com/s2/favicons?domain=www.landreg.gov.hk&sz=128",
+    "ext": "png",
+    "mime": "image/png",
+    "bytes": 2584,
+    "file": "landreg.png"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.landreg.gov.hk/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "google-s2",
+      "rel": "icon",
+      "href": "https://www.google.com/s2/favicons?domain=www.landreg.gov.hk&sz=128",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 2584,
+      "file": "raw/icon-1.png",
+      "error": null
+    }
+  ]
+}

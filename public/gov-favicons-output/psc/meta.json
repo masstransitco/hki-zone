@@ -1,0 +1,35 @@
+{
+  "slug": "psc",
+  "url": "https://www.psc.gov.hk/",
+  "picked": {
+    "href": "https://www.psc.gov.hk/images/logo.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 4286,
+    "file": "psc.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "shortcut icon",
+      "href": "https://www.psc.gov.hk/images/logo.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 4286,
+      "file": "raw/icon-0.ico",
+      "error": null
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.psc.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1406,
+      "file": "raw/icon-1.ico",
+      "error": null
+    }
+  ]
+}

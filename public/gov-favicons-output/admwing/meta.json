@@ -1,0 +1,24 @@
+{
+  "slug": "admwing",
+  "url": "https://www.admwing.gov.hk/eng/index.html",
+  "picked": {
+    "href": "https://www.admwing.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 1150,
+    "file": "admwing.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.admwing.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1150,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "slug": "epd",
+  "url": "https://www.epd.gov.hk/epd/english/top.html",
+  "picked": {
+    "href": "https://www.epd.gov.hk/epd/sites/default/files/favicon_6.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 32988,
+    "file": "epd.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "shortcut icon",
+      "href": "https://www.epd.gov.hk/epd/sites/default/files/favicon_6.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 32988,
+      "file": "raw/icon-0.ico",
+      "error": null
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.epd.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1406,
+      "file": "raw/icon-1.ico",
+      "error": null
+    }
+  ]
+}

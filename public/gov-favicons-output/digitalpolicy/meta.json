@@ -1,0 +1,90 @@
+{
+  "slug": "digitalpolicy",
+  "url": "https://www.digitalpolicy.gov.hk/en/",
+  "picked": {
+    "href": "https://www.digitalpolicy.gov.hk/public/img/favicon/apple-touch-icon.png",
+    "ext": "png",
+    "mime": "image/png",
+    "bytes": 28244,
+    "file": "digitalpolicy.png"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.digitalpolicy.gov.hk/public/img/favicon/apple-touch-icon.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 28244,
+      "file": "raw/icon-0.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.digitalpolicy.gov.hk/public/img/favicon/favicon-32x32.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 2265,
+      "file": "raw/icon-1.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.digitalpolicy.gov.hk/public/img/favicon/favicon-16x16.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 829,
+      "file": "raw/icon-2.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "shortcut icon",
+      "href": "https://www.digitalpolicy.gov.hk/public/img/favicon/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 15406,
+      "file": "raw/icon-3.ico",
+      "error": null
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.digitalpolicy.gov.hk/android-chrome-192x192.png",
+      "ok": false,
+      "ext": "png",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.digitalpolicy.gov.hk/android-chrome-512x512.png",
+      "ok": false,
+      "ext": "png",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.digitalpolicy.gov.hk/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    }
+  ]
+}

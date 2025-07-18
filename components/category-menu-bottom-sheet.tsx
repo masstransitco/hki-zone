@@ -50,8 +50,8 @@ export default function CategoryMenuBottomSheet({
       label: t("categories.park.label"),
       description: t("categories.park.description"),
       icon: "/menu-icons/park.PNG",
-      href: "/park",
-      isPlaceholder: true
+      href: "/parks",
+      isPlaceholder: false
     },
     {
       id: "police",
@@ -59,7 +59,7 @@ export default function CategoryMenuBottomSheet({
       description: t("categories.police.description"),
       icon: "/menu-icons/police.PNG",
       href: "/police",
-      isPlaceholder: true
+      isPlaceholder: false
     },
     {
       id: "ae",

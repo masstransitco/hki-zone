@@ -1,0 +1,35 @@
+{
+  "slug": "elderlycommission",
+  "url": "https://www.elderlycommission.gov.hk/",
+  "picked": {
+    "href": "https://www.elderlycommission.gov.hk/wp-content/uploads/2024/03/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 1406,
+    "file": "elderlycommission.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.elderlycommission.gov.hk/wp-content/uploads/2024/03/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1406,
+      "file": "raw/icon-0.ico",
+      "error": null
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.elderlycommission.gov.hk/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    }
+  ]
+}

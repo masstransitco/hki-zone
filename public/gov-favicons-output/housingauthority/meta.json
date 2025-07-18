@@ -1,0 +1,35 @@
+{
+  "slug": "housingauthority",
+  "url": "https://www.housingauthority.gov.hk/en",
+  "picked": {
+    "href": "https://www.housingauthority.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 1406,
+    "file": "housingauthority.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "shortcut icon",
+      "href": "https://www.housingauthority.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1406,
+      "file": "raw/icon-0.ico",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "shortcut icon",
+      "href": "https://www.housingauthority.gov.hk/images/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1406,
+      "file": "raw/icon-1.ico",
+      "error": null
+    }
+  ]
+}

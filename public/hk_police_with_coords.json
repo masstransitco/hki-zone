@@ -1,0 +1,632 @@
+[
+  {
+    "name": "Police Services Centre, Central District",
+    "address": "Shop 01-LG205, LG2/F, Block 01, TaiKwun, 10 Hollywood Road, Central, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Police Services Centre"
+    ],
+    "latitude": 22.281715,
+    "longitude": 114.155342
+  },
+  {
+    "name": "Central District",
+    "address": "2 Chung Kong Road, Sheung Wan, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.2886413,
+    "longitude": 114.1491554
+  },
+  {
+    "name": "Peak Sub-Division",
+    "address": "92 Peak Road, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.2643914,
+    "longitude": 114.1553085
+  },
+  {
+    "name": "Western Division",
+    "address": "280 Des Voeux Road West, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.287583,
+    "longitude": 114.1406181
+  },
+  {
+    "name": "Aberdeen Division",
+    "address": "4 Wong Chuk Hang Road, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.2480314,
+    "longitude": 114.1613971
+  },
+  {
+    "name": "Stanley Sub-Division",
+    "address": "77 Stanley Village Road, Stanley, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.21877,
+    "longitude": 114.2134109
+  },
+  {
+    "name": "Wan Chai Division",
+    "address": "1 Arsenal Street, Wan Chai, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.2784043,
+    "longitude": 114.1678803
+  },
+  {
+    "name": "Happy Valley Division",
+    "address": "60 Sing Woo Road, Happy Valley, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.2670321,
+    "longitude": 114.1869757
+  },
+  {
+    "name": "North Point Division",
+    "address": "343 Java Road, North Point, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.292097,
+    "longitude": 114.2090764
+  },
+  {
+    "name": "Shau Kei Wan Reporting Centre",
+    "address": "28 Shau Kei Wan Road, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Police Reporting Centre"
+    ],
+    "latitude": 22.2838435,
+    "longitude": 114.2200565
+  },
+  {
+    "name": "Chai Wan Division",
+    "address": "6 Lok Man Road, Chai Wan, Hong Kong",
+    "district": "Hong Kong Island",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.2683241,
+    "longitude": 114.2356025
+  },
+  {
+    "name": "Wong Tai Sin District",
+    "address": "2 Shatin Pass Road, Wong Tai Sin, Kowloon",
+    "district": "Kowloon East",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3392506,
+    "longitude": 114.1964249
+  },
+  {
+    "name": "Sai Kung Division",
+    "address": "1 Po Tung Road, Sai Kung, Kowloon",
+    "district": "Kowloon East",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.383349,
+    "longitude": 114.270445
+  },
+  {
+    "name": "Kwun Tong District",
+    "address": "9 Lei Yue Mun Road, Kwun Tong, Kowloon",
+    "district": "Kowloon East",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3047478,
+    "longitude": 114.234767
+  },
+  {
+    "name": "Tseung Kwan O District",
+    "address": "110 Po Lam Road North, Tseung Kwan O, Kowloon",
+    "district": "Kowloon East",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.324094,
+    "longitude": 114.261171
+  },
+  {
+    "name": "Sau Mau Ping Division",
+    "address": "200 Hong Ning Road, Sau Mau Ping, Kowloon",
+    "district": "Kowloon East",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3217353,
+    "longitude": 114.2250577
+  },
+  {
+    "name": "Ngau Tau Kok Division",
+    "address": "105 Concorde Road, Kai Tak, Kowloon",
+    "district": "Kowloon East",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3325869,
+    "longitude": 114.1992297
+  },
+  {
+    "name": "Kai Tak Cruise Terminal Police Reporting Centre",
+    "address": "2/F, Kai Tak Cruise Terminal, 33 Shing Fung Road, Kowloon",
+    "district": "Kowloon East",
+    "services": [
+      "Police Reporting Centre"
+    ],
+    "latitude": 22.303458,
+    "longitude": 114.21788
+  },
+  {
+    "name": "Tsim Sha Tsui Division",
+    "address": "213 Nathan Road, Kowloon",
+    "district": "Kowloon West",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3027866,
+    "longitude": 114.1711748
+  },
+  {
+    "name": "Yau Ma Tei Division",
+    "address": "3 Yau Cheung Road, Yau Ma Tei, Kowloon",
+    "district": "Kowloon West",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3102279,
+    "longitude": 114.1657629
+  },
+  {
+    "name": "West Kowloon Station Reporting Centre",
+    "address": "B1 Level, West Kowloon Station, 3 Austin Road West, Kowloon",
+    "district": "Kowloon West",
+    "services": [
+      "Police Reporting Centre"
+    ],
+    "latitude": 22.306463,
+    "longitude": 114.158822
+  },
+  {
+    "name": "Sham Shui Po Division",
+    "address": "37A Yen Chow Street, Kowloon",
+    "district": "Kowloon West",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3304171,
+    "longitude": 114.1590946
+  },
+  {
+    "name": "Cheung Sha Wan Division",
+    "address": "880 Lai Chi Kok Road, Kowloon",
+    "district": "Kowloon West",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3356171,
+    "longitude": 114.1463778
+  },
+  {
+    "name": "Mong Kok District",
+    "address": "142 Prince Edward Road West, Kowloon",
+    "district": "Kowloon West",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3238667,
+    "longitude": 114.1672118
+  },
+  {
+    "name": "Kowloon City Division",
+    "address": "202 Argyle Street, Kowloon",
+    "district": "Kowloon West",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3242992,
+    "longitude": 114.1851239
+  },
+  {
+    "name": "Hung Hom Division",
+    "address": "99 Princess Margaret Road, Kowloon",
+    "district": "Kowloon West",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3154965,
+    "longitude": 114.1777962
+  },
+  {
+    "name": "Kwai Chung Division",
+    "address": "999 Kwai Chung Road, Kwai Chung, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3569429,
+    "longitude": 114.1293284
+  },
+  {
+    "name": "Tsing Yi Division",
+    "address": "13 Tsing Yi Heung Sze Wui Road, Tsing Yi, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3514056,
+    "longitude": 114.1075295
+  },
+  {
+    "name": "Tsuen Wan District",
+    "address": "23-27 Tsuen King Circuit, Tsuen Wan, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3768416,
+    "longitude": 114.1100947
+  },
+  {
+    "name": "Sha Tin Division",
+    "address": "1 Wo Che Street, Sha Tin, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3869563,
+    "longitude": 114.1925979
+  },
+  {
+    "name": "Tin Sum Division",
+    "address": "2 Hin Keng Street, Sha Tin, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.366346,
+    "longitude": 114.1755034
+  },
+  {
+    "name": "Siu Lek Yuen Reporting Centre",
+    "address": "25-27 Yuen Shun Circuit, Siu Lek Yuen, Sha Tin, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Police Reporting Centre"
+    ],
+    "latitude": 22.3812231,
+    "longitude": 114.2073521
+  },
+  {
+    "name": "Ma On Shan Division",
+    "address": "200 Ma On Shan Road, Sha Tin, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.4038793,
+    "longitude": 114.2183732
+  },
+  {
+    "name": "Lantau North Division",
+    "address": "1 Shun Tung Road, Tung Chung, Lantau Island",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.289487,
+    "longitude": 113.941576
+  },
+  {
+    "name": "Lantau South (Mui Wo) Division",
+    "address": "1 Fu Kong Shan, Mui Wo, Lantau Island",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.264791,
+    "longitude": 113.982364
+  },
+  {
+    "name": "Hong Kong–Zhuhai–Macao Bridge HK Port Police Reporting Centre",
+    "address": "1/F Passenger Clearance Building, 33 Shun Fai Road, HK-Zhuhai-Macao Bridge HK Port, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Police Reporting Centre"
+    ],
+    "latitude": 22.302555,
+    "longitude": 113.944005
+  },
+  {
+    "name": "Penny's Bay Police Post",
+    "address": "Long Yan Road, Penny's Bay, Lantau Island",
+    "district": "New Territories South",
+    "services": [
+      "Police Post"
+    ],
+    "latitude": 22.31854,
+    "longitude": 114.04422
+  },
+  {
+    "name": "Airport District",
+    "address": "8 Catering Road West, Chek Lap Kok, New Territories",
+    "district": "New Territories South",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3025461,
+    "longitude": 113.9308845
+  },
+  {
+    "name": "Tai Po Division",
+    "address": "4 On Po Lane, Tai Po, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.4522398,
+    "longitude": 114.1731425
+  },
+  {
+    "name": "Sheung Shui Division",
+    "address": "8 Sha Tau Kok Road, Lung Yeuk Tau, Fanling, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.4949126,
+    "longitude": 114.1417047
+  },
+  {
+    "name": "Tuen Mun Division",
+    "address": "100 Pui To Road, Tuen Mun, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3948478,
+    "longitude": 113.9718858
+  },
+  {
+    "name": "Castle Peak Division",
+    "address": "12 Wu On Street, Tuen Mun, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3758074,
+    "longitude": 113.9670589
+  },
+  {
+    "name": "Yuen Long Division",
+    "address": "246 Castle Peak Road – Yuen Long, Yuen Long, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.4438765,
+    "longitude": 114.0228303
+  },
+  {
+    "name": "Tin Shui Wai Division",
+    "address": "11 Tin Yiu Road, Tin Shui Wai, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.4498357,
+    "longitude": 114.0022125
+  },
+  {
+    "name": "Shenzhen Bay Port Reporting Centre",
+    "address": "G/F Passenger Terminal Building, Shenzhen Bay Port (HK Port Area)",
+    "district": "New Territories North",
+    "services": [
+      "Police Reporting Centre"
+    ],
+    "latitude": 22.511645,
+    "longitude": 113.936382
+  },
+  {
+    "name": "Pat Heung Division",
+    "address": "Kam Tin Road, Pat Heung, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.4382095,
+    "longitude": 114.0970217
+  },
+  {
+    "name": "Lo Wu Control Point",
+    "address": "Lo Wu MTRC Building, Lo Wu",
+    "district": "New Territories North",
+    "services": [
+      "Control Point Police Reporting Centre"
+    ],
+    "latitude": 22.5416,
+    "longitude": 114.1135
+  },
+  {
+    "name": "Sha Tau Kok Division",
+    "address": "Shek Chung Au, Sha Tau Kok Road, Sha Tau Kok, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.5362189,
+    "longitude": 114.2108492
+  },
+  {
+    "name": "Lok Ma Chau Division",
+    "address": "100 Lok Ma Chau Road, Lok Ma Chau, Yuen Long, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.5115741,
+    "longitude": 114.0801883
+  },
+  {
+    "name": "Lok Ma Chau Spur Line Control Point",
+    "address": "LMC Station Terminal, Lok Ma Chau Road, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Control Point Police Reporting Centre"
+    ],
+    "latitude": 22.5093,
+    "longitude": 114.0497
+  },
+  {
+    "name": "Lok Ma Chau Boundary Control Point",
+    "address": "Lok Ma Chau Boundary Crossing Point, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Control Point Police Reporting Centre"
+    ],
+    "longitude": null,
+    "latitude": null
+  },
+  {
+    "name": "Ta Kwu Ling Division",
+    "address": "Ping Che Road, Ta Kwu Ling, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.5280214,
+    "longitude": 114.158646
+  },
+  {
+    "name": "Man Kam To Boundary Control Point",
+    "address": "G/F Man Kam To Boundary Control Point, Man Kam To Road, New Territories",
+    "district": "New Territories North",
+    "services": [
+      "Control Point Police Reporting Centre"
+    ],
+    "longitude": null,
+    "latitude": null
+  },
+  {
+    "name": "Heung Yuen Wai Boundary Control Point Police Reporting Centre",
+    "address": "1/F Passenger Terminal Building, Heung Yuen Wai Boundary Control Point",
+    "district": "New Territories North",
+    "services": [
+      "Police Reporting Centre"
+    ],
+    "longitude": null,
+    "latitude": null
+  },
+  {
+    "name": "Marine East Division",
+    "address": "1 Wa Yung Road, Tui Min Hoi, Sai Kung",
+    "district": "Marine Region",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.3752562,
+    "longitude": 114.2743528
+  },
+  {
+    "name": "Marine South Division",
+    "address": "28 Shum Wan Road, Aberdeen, Hong Kong",
+    "district": "Marine Region",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.2425408,
+    "longitude": 114.1637931
+  },
+  {
+    "name": "Marine West Division",
+    "address": "16 1/2-mile Stone, Castle Peak Road, New Territories",
+    "district": "Marine Region",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.37079,
+    "longitude": 113.9715
+  },
+  {
+    "name": "Marine North Division",
+    "address": "Ma Liu Shui Marine Police Base, Sha Tin",
+    "district": "Marine Region",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.4188,
+    "longitude": 114.2052
+  },
+  {
+    "name": "Cheung Chau Division",
+    "address": "4 Police Station Path, Cheung Chau",
+    "district": "Marine Region",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.2082537,
+    "longitude": 114.0304579
+  },
+  {
+    "name": "Lamma Island Police Post",
+    "address": "20 Yung Shue Wan Plaza Road, Lamma Island",
+    "district": "Marine Region",
+    "services": [
+      "Police Post"
+    ],
+    "latitude": 22.2246109,
+    "longitude": 114.1102627
+  },
+  {
+    "name": "Sok Kwu Wan Police Post",
+    "address": "2 Second Street, Sok Kwu Wan, Lamma Island",
+    "district": "Marine Region",
+    "services": [
+      "Police Post"
+    ],
+    "latitude": 22.2084,
+    "longitude": 114.1146
+  },
+  {
+    "name": "Peng Chau Police Post",
+    "address": "2C Wing On Side Street, Peng Chau",
+    "district": "Marine Region",
+    "services": [
+      "Police Post"
+    ],
+    "latitude": 22.2841333,
+    "longitude": 114.0386472
+  },
+  {
+    "name": "Marine Harbour Division",
+    "address": "Sai Wan Ho East Pier, Tai Hong Street, Sai Wan Ho, Hong Kong",
+    "district": "Marine Region",
+    "services": [
+      "Report Room"
+    ],
+    "latitude": 22.28442,
+    "longitude": 114.21623
+  }
+]
