@@ -238,6 +238,104 @@ GET /api/user/profile
 }
 ```
 
+### 8. Police Stations
+
+#### Get Police Stations
+```
+GET /api/police
+```
+
+**Purpose**: Retrieve filtered list of Hong Kong police stations with multilingual support
+
+**Parameters**:
+- `district` (optional): Filter by district (e.g., 'Hong Kong Island', 'Kowloon East')
+- `service` (optional): Filter by service type (e.g., 'Report Room', 'Police Post')
+- `search` (optional): Search by name, address, or district
+
+**Response Format**:
+```json
+{
+  "stations": [
+    {
+      "id": "string",
+      "name": "string",
+      "address": "string",
+      "district": "string",
+      "services": ["string"],
+      "latitude": number,
+      "longitude": number,
+      "hasCoordinates": boolean,
+      "primaryService": "string",
+      "serviceCount": number
+    }
+  ],
+  "total": number,
+  "metadata": {
+    "source": "hk_police_with_coords",
+    "last_updated": "string",
+    "districts_available": ["string"],
+    "services_available": ["string"],
+    "total_stations": number,
+    "stations_with_coordinates": number
+  }
+}
+```
+
+**Implementation Details**:
+- Data sourced from `/public/hk_police_with_coords.json`
+- 64 police stations across 6 districts
+- 5 service types with automatic classification
+- Server-side filtering for performance
+- Enhanced data with coordinate validation and service counting
+
+### 9. Parks & Recreation
+
+#### Get Parks
+```
+GET /api/parks
+```
+
+**Purpose**: Retrieve filtered list of Hong Kong parks with intelligent data processing
+
+**Parameters**:
+- `district` (optional): Filter by district (e.g., 'Hong Kong Island', 'Islands')
+- `type` (optional): Filter by park type (e.g., 'Public Park', 'Country Park')
+- `search` (optional): Search by name, address, or district
+
+**Response Format**:
+```json
+{
+  "parks": [
+    {
+      "id": "string",
+      "name": "string",
+      "address": "string",
+      "district": "string",
+      "type": "string",
+      "latitude": number,
+      "longitude": number,
+      "hasCoordinates": boolean
+    }
+  ],
+  "total": number,
+  "metadata": {
+    "source": "parks_hk",
+    "last_updated": "string",
+    "districts_available": ["string"],
+    "types_available": ["string"],
+    "total_parks": number,
+    "parks_with_coordinates": number
+  }
+}
+```
+
+**Implementation Details**:
+- Data sourced from `/public/parks_hk.json`
+- Intelligent address processing and district extraction
+- Automatic park name generation from addresses
+- 9 park type classifications based on keywords
+- Enhanced data with coordinate validation and type detection
+
 ---
 
 ## Admin API Endpoints

@@ -24,7 +24,8 @@ Panora.hk is a Next.js-based Hong Kong news aggregator that scrapes articles fro
 - **UI Components**: Extensive Radix UI component library
 - **Feature Components**: NewsFeeds, ArticleCards, SearchInterface
 - **Provider Components**: Theme, Language, Query providers
-- **Layout Components**: Header, Footer, Navigation
+- **Layout Components**: Header (centered logo), SideMenu (push animation), Footer, Navigation
+- **Navigation System**: Custom slide-out menu with Threads-style push effect
 
 ### 3. Business Logic Layer (`/lib`)
 - **Data Access**: Supabase client and database operations
@@ -94,10 +95,12 @@ articles (
 ## Key Features
 - **Multi-source Aggregation**: HKFP, SingTao, HK01, ONCC news sources
 - **AI-powered Summaries**: Automatic article summarization
+- **Modern Navigation**: Centered logo with slide-out side menu (push animation)
 - **Full-text Search**: PostgreSQL-based search with indexing
 - **Real-time Progress**: Live scraping status updates
-- **Responsive Design**: Mobile-optimized interface
-- **Theme Support**: Dark/light mode switching
+- **Responsive Design**: Mobile-optimized interface with touch-friendly interactions
+- **Theme Support**: Dark/light mode switching with system preference detection
+- **Accessibility**: Keyboard navigation and screen reader support
 - **Internationalization**: Multi-language support structure
 
 ## External Dependencies
