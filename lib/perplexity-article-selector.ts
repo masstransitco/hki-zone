@@ -43,17 +43,38 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 
   console.log(`Found ${candidateArticles.length} candidate articles`);
 
-  // 2. Create selection prompt for Perplexity
-  const selectionPrompt = createArticleSelectionPrompt(candidateArticles, count);
+  // 2. Get recently enhanced topics for deduplication
+  const recentlyEnhancedTopics = await getRecentlyEnhancedTopics();
+  console.log(`Found ${recentlyEnhancedTopics.length} recently enhanced topics for deduplication`);
+  
+  // Debug: Show the enhanced topics we're comparing against
+  if (recentlyEnhancedTopics.length > 0) {
+    console.log('📋 Recently enhanced topics to avoid duplicating:');
+    recentlyEnhancedTopics.forEach((topic, index) => {
+      console.log(`   ${index + 1}. "${topic.title?.substring(0, 60)}..."`);
+    });
+  }
 
-  // 3. Call Perplexity API for intelligent selection
+  // 3. Filter out articles with similar topics to recently enhanced ones
+  const deduplicatedArticles = await filterSimilarTopics(candidateArticles, recentlyEnhancedTopics);
+  console.log(`After topic deduplication: ${deduplicatedArticles.length} unique articles remaining`);
+
+  if (deduplicatedArticles.length === 0) {
+    console.log('⚠️ All candidate articles are similar to recently enhanced topics');
+    throw new Error('No unique articles found after topic deduplication');
+  }
+
+  // 4. Create selection prompt for Perplexity using deduplicated articles
+  const selectionPrompt = createArticleSelectionPrompt(deduplicatedArticles, count);
+
+  // 5. Call Perplexity API for intelligent selection
   const selectedIds = await callPerplexityForSelection(selectionPrompt);
 
-  // 4. Map selected IDs back to full article objects
+  // 6. Map selected IDs back to full article objects
   console.log(`DEBUG: Perplexity returned ${selectedIds.length} selections:`, selectedIds.map(s => ({ id: s.id, score: s.score })));
-  console.log(`DEBUG: Available candidate count: ${candidateArticles.length} articles`);
+  console.log(`DEBUG: Available deduplicated candidate count: ${deduplicatedArticles.length} articles`);
   
-  // Map sequential numbers (1, 2, 3...) back to candidate articles
+  // Map sequential numbers (1, 2, 3...) back to deduplicated candidate articles
   const selectedArticles = selectedIds
     .map(selection => {
       // Convert sequential ID to array index (1 -> 0, 2 -> 1, etc.)
@@ -64,12 +85,12 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
       
       const index = parseInt(selection.id) - 1; // Convert "1" to index 0, "2" to index 1, etc.
       
-      if (index < 0 || index >= candidateArticles.length) {
-        console.log(`DEBUG: Selection ID ${selection.id} out of range (1-${candidateArticles.length})`);
+      if (index < 0 || index >= deduplicatedArticles.length) {
+        console.log(`DEBUG: Selection ID ${selection.id} out of range (1-${deduplicatedArticles.length})`);
         return null;
       }
       
-      const article = candidateArticles[index];
+      const article = deduplicatedArticles[index];
       console.log(`DEBUG: Mapped selection ${selection.id} to article ${article.id} (${article.title.substring(0, 50)}...)`);
       
       return {
@@ -90,11 +111,11 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   if (selectedArticles.length === 0 && selectedIds.length > 0) {
     console.error('ERROR: Perplexity selections did not map to any candidate articles');
     console.error('Selected IDs:', selectedIds.map(s => s.id));
-    console.error('Valid range: 1 to', candidateArticles.length);
+    console.error('Valid range: 1 to', deduplicatedArticles.length);
     
     // Fallback: if no articles selected but we have candidates, pick the most recent ones
     console.log(`FALLBACK: Selecting ${count} most recent articles as fallback`);
-    const fallbackArticles = candidateArticles
+    const fallbackArticles = deduplicatedArticles
       .slice(0, count)
       .map((article, index) => ({
         ...article,
@@ -121,12 +142,15 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 
 async function getCandidateArticles(): Promise<CandidateArticle[]> {
   try {
-    // Get recent articles that haven't been AI enhanced and haven't been selected before
+    // Get recent scraped articles that haven't been AI enhanced and haven't been selected before
+    const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'ONCC', 'RTHK'];
+    
     const { data: articles, error } = await supabase
       .from('articles')
       .select('*')
       .is('is_ai_enhanced', false) // Only non-enhanced articles
       .is('selected_for_enhancement', false) // Only articles never selected before
+      .in('source', scrapedSources) // Only scraped sources (not AI-generated)
       .gte('created_at', getDateDaysAgo(7)) // Last 7 days
       .not('content', 'is', null) // Must have content
       .order('created_at', { ascending: false })
@@ -162,7 +186,8 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
       article.title.length > 10 // Reasonable title length
     );
 
-    console.log(`Filtered ${qualityArticles.length} quality articles from ${articles.length} candidates`);
+    console.log(`Filtered ${qualityArticles.length} quality scraped articles from ${articles.length} candidates`);
+    console.log(`Sources represented: ${[...new Set(qualityArticles.map(a => a.source))].join(', ')}`);
     
     return qualityArticles;
 
@@ -393,5 +418,210 @@ export async function getSelectionStatistics(): Promise<any> {
   } catch (error) {
     console.error('Error getting selection statistics:', error);
     return null;
+  }
+}
+
+// Get recently enhanced topics for deduplication
+async function getRecentlyEnhancedTopics(): Promise<Array<{ title: string, summary?: string, created_at: string }>> {
+  try {
+    const { data: recentEnhanced, error } = await supabase
+      .from('articles')
+      .select('title, summary, created_at')
+      .eq('is_ai_enhanced', true)
+      .gte('created_at', getDateDaysAgo(2)) // Last 48 hours
+      .order('created_at', { ascending: false })
+      .limit(20); // Check last 20 enhanced articles
+
+    if (error) throw error;
+
+    return recentEnhanced || [];
+  } catch (error) {
+    console.error('Error fetching recently enhanced topics:', error);
+    return []; // Return empty array on error to avoid blocking selection
+  }
+}
+
+// Filter out articles with similar topics to recently enhanced ones
+async function filterSimilarTopics(
+  candidateArticles: CandidateArticle[], 
+  recentlyEnhancedTopics: Array<{ title: string, summary?: string, created_at: string }>
+): Promise<CandidateArticle[]> {
+  
+  if (recentlyEnhancedTopics.length === 0) {
+    console.log('No recently enhanced topics to compare against');
+    return candidateArticles;
+  }
+
+  if (!process.env.PERPLEXITY_API_KEY) {
+    console.log('⚠️ Perplexity API key not available for topic deduplication, skipping...');
+    return candidateArticles;
+  }
+
+  try {
+    console.log('🔍 Using simple title-based similarity detection (temporary)...');
+    
+    // Temporary simple similarity check based on keywords
+    const typhoonKeywords = ['typhoon', '風球', '颱風', '台风', 'signal', '韋帕', 'wipha', '八號', '8號', 'no. 8', 'no.8'];
+    
+    // Check if any recently enhanced topics contain typhoon keywords
+    const hasTyphoonEnhanced = recentlyEnhancedTopics.some(topic => 
+      typhoonKeywords.some(keyword => 
+        topic.title?.toLowerCase().includes(keyword.toLowerCase())
+      )
+    );
+    
+    if (hasTyphoonEnhanced) {
+      console.log('⚠️ Found enhanced typhoon articles, filtering out typhoon candidates...');
+      
+      // Filter out typhoon-related candidate articles
+      const uniqueArticles = candidateArticles.filter(article => {
+        const isTyphoon = typhoonKeywords.some(keyword => 
+          article.title?.toLowerCase().includes(keyword.toLowerCase())
+        );
+        
+        if (isTyphoon) {
+          console.log(`   ⚠️ Filtered out typhoon article: "${article.title.substring(0, 50)}..."`);
+        }
+        
+        return !isTyphoon;
+      });
+      
+      console.log(`✅ Simple deduplication complete: ${candidateArticles.length} → ${uniqueArticles.length} unique articles`);
+      return uniqueArticles;
+    } else {
+      console.log('✅ No typhoon articles found in recently enhanced, keeping all candidates');
+      return candidateArticles;
+    }
+
+  } catch (error) {
+    console.error('Error in topic similarity detection:', error);
+    console.log('Proceeding without topic deduplication to avoid blocking selection...');
+    return candidateArticles; // Return all candidates if similarity detection fails
+  }
+}
+
+function createTopicSimilarityPrompt(
+  candidates: CandidateArticle[], 
+  recentTopics: Array<{ title: string, summary?: string, created_at: string }>
+): string {
+  
+  const candidateList = candidates.map((article, index) => ({
+    sequentialId: index + 1,
+    title: article.title,
+    summary: article.summary || article.content.substring(0, 150) + '...',
+    source: article.source,
+    category: article.category
+  }));
+
+  const recentTopicsList = recentTopics.map(topic => ({
+    title: topic.title,
+    summary: topic.summary || 'No summary available',
+    enhancedDate: new Date(topic.created_at).toLocaleDateString()
+  }));
+
+  return `You are an expert at identifying topic similarity in Hong Kong news articles. Your task is to identify which candidate articles cover the SAME or VERY SIMILAR topics as recently enhanced articles.
+
+RECENTLY ENHANCED TOPICS (to avoid duplicating):
+${recentTopicsList.map((topic, index) => `
+${index + 1}. "${topic.title}"
+   Summary: ${topic.summary}
+   Enhanced: ${topic.enhancedDate}
+---`).join('\n')}
+
+CANDIDATE ARTICLES (to check for similarity):
+${candidateList.map((article) => `
+ARTICLE_ID: ${article.sequentialId}
+Title: ${article.title}
+Source: ${article.source} | Category: ${article.category}
+Summary: ${article.summary}
+---`).join('\n')}
+
+SIMILARITY CRITERIA:
+- Same specific event (e.g., multiple articles about the same typhoon signal change)
+- Same specific incident (e.g., same accident, same arrest, same policy announcement)
+- Same specific government decision or policy
+- Same specific company news or financial development
+- Same specific sports event or entertainment news
+
+DO NOT consider similar if:
+- Different but related events (different typhoons, different accidents)
+- Same general topic but different specific stories (different housing projects, different tech developments)
+- Same category but unrelated content (different health news, different business news)
+
+CRITICAL INSTRUCTION: Return ONLY a JSON array containing the ARTICLE_ID numbers of candidate articles that are SIMILAR to recently enhanced topics.
+
+Return format:
+["1", "3", "7"]
+
+If no candidates are similar to recent topics, return an empty array: []
+
+Only include ARTICLE_ID numbers from the candidate list above.`;
+}
+
+async function callPerplexityForSimilarity(prompt: string): Promise<string[]> {
+  try {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.PERPLEXITY_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'sonar-pro',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at topic similarity detection. Return ONLY valid JSON arrays with article IDs that have similar topics to recently enhanced articles.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.2, // Low temperature for consistent similarity detection
+        top_p: 0.9,
+        max_tokens: 500
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Perplexity API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+    
+    // Parse the JSON response
+    let similarIds: string[];
+    try {
+      similarIds = JSON.parse(content);
+    } catch (error) {
+      console.error('Failed to parse Perplexity similarity response:', content);
+      return []; // Return empty array if parsing fails
+    }
+
+    // Validate that it's an array of strings
+    if (!Array.isArray(similarIds)) {
+      console.warn('Perplexity similarity response is not an array:', similarIds);
+      return [];
+    }
+
+    const validIds = similarIds.filter(id => typeof id === 'string' && /^\d+$/.test(id));
+    
+    if (validIds.length !== similarIds.length) {
+      console.warn(`Some similarity IDs were invalid. Using ${validIds.length} valid IDs.`);
+    }
+
+    console.log(`Found ${validIds.length} similar articles to filter out`);
+    return validIds;
+    
+  } catch (error) {
+    console.error('❌ Error calling Perplexity for similarity detection:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      status: error?.status,
+      response: error?.response
+    });
+    return []; // Return empty array on error to avoid blocking selection
   }
 }

@@ -1,0 +1,167 @@
+
+
+⸻
+
+1. What You’re Effectively Doing Today (Simplified)
+
+Step	Current State	Coupled?
+Article selection (which to process)	Perplexity / selector logic	Separate
+Base summary generation	Perplexity model	Single call
+Enhancement (context depth)	Perplexity enhancer (legacy / evolving)	Semi-separate
+Headline generation	Perplexity headline generator	Separate
+Citations	Mostly implicit (not fully structured)	Not formalized
+Translation (if any)	Another enhancer / trilingual script	Separate
+
+You already have multiple focused scripts – they just need consistent orchestration + schema outputs.
+
+
+3. Recommended Architecture (Lean 3–4 Stage)
+
+[1] Selection  →  [2] Extraction (facts/entities/time)  →  [3] Synthesis (summary + headline + base tags)
+                                             ↓
+                                   (optional risk/importance classifier)
+                                             ↓
+                               [4] Add Depth + Citations (RAG assembly)
+                                             ↓
+                               [5] On-demand Translation
+
+Stage Purposes
+
+Stage	Output	Model Tier	Frequency
+1 Select	Article id	Logic only	Hourly
+2 Extract	extraction.json (facts, entities, paragraphs, numbers)	Cheap (sonar-small / Haiku / tiny open model)	Hourly
+3 Synthesize	summary.json (summary, bullets, headline, tags, novelty, impact)	Mid (sonar-pro / DeepSeek-V3)	Hourly
+4 Depth + Citations	enriched.json (context blocks, citation map)	Same as Stage 3 or fallback	Only for high-priority
+5 Translation	translations.json (zh_hant, zh_hans)	Cheap translator model	Lazy / on-demand
+
+
+⸻
+
+4. Where Each Requested Output Should Live
+
+Output	Stage	Rationale
+Headline	Stage 3 (with summary)	Shares same condensed factual context
+Contextual depth (analytical paragraphs)	Stage 4	Only generate when needed (e.g., “priority” articles)
+Citations	Stage 4	Need retrieval over article sections (and possibly external sources)
+Translation	Stage 5	Defer; often not all languages are viewed immediately
+
+
+⸻
+
+5. Prompt Partitioning (Concise Sketches)
+
+Stage 2: Extraction Prompt (Cheap)
+
+Goal: atomic facts, entities, paragraph IDs → minimal JSON.
+
+System: “You extract atomic facts only; no summarization; output strict JSON.”
+User: Article metadata + trimmed paragraphs + schema instructions.
+
+Stage 3: Synthesis + Headline
+
+Input: extraction.json only (NOT the full raw article).
+Ask for:
+
+{
+  "lang_primary":"en",
+  "headline":"... (≤12 words)",
+  "summary":"... (≤55 words)",
+  "bullets":[],
+  "key_entities":{...},
+  "tags":[],
+  "novelty_score_1to5":3,
+  "impact_descriptor":"local",
+  "time_reference":"2025-07-19T05:00:00Z",
+  "confidence_notes":"",
+  "uncertain_facts":[]
+}
+
+Headline and summary created from curated facts → tighter, lower variance.
+
+Stage 4: Enrichment + Citations
+
+Input: extraction.json + summary.json + retrieved paragraph snippets (top-k by semantic relevance).
+Output:
+
+{
+  "contextual_paragraphs":[
+     {"id":"p3","purpose":"regulatory_background","text":"...","citations":["p3"]},
+     {"id":"p7","purpose":"historical_comparison","text":"...","citations":["p2","p7"]}
+  ],
+  "citation_map":{
+     "p2":"Exact original paragraph text...",
+     "p3":"..."
+  }
+}
+
+Keep contextual paragraphs optional—trigger only for categories (government, finance, public safety).
+
+Stage 5: Translation
+
+Input: headline, summary, bullets.
+Output bilingual JSON. Cache by hash of English block.
+
+⸻
+
+6. Cost Controls
+
+Lever	Implementation
+Skip Stage 4 for low-impact articles	Condition: novelty_score < 3 AND no risk flags
+Dynamic model choice	escalate to better model if entity count > N or tokens > threshold
+Paragraph hashing	Reuse extraction if article updated but unchanged paragraphs
+Translation lazy	Do not pre-translate; trigger when client requests a language
+Batch translation	Collect pending untranslated summaries into a single call every few minutes
+Compression	Limit Stage 3 input to top 12 candidate facts, not full paragraphs
+
+
+⸻
+
+7. Incremental Migration Plan
+
+Step	Change	Risk	Rollback
+1	Add Stage 2 extractor + store extraction_json	Low	Fall back to legacy summary
+2	Modify current summary step to read extraction instead of raw article	Medium	Toggle env flag USE_EXTRACTION
+3	Introduce new headline field (remove old generator)	Low	Keep old headline generator behind flag
+4	Add Stage 4 enrichment only for priority articles	Low	Feature flag ENABLE_ENRICHMENT
+5	Replace eager translation with lazy endpoint	Medium (UI)	Keep existing translation job in parallel
+6	Add DeepSeek routing (optional)	Medium	Switch flag MODEL_PROVIDER=perplexity
+
+
+⸻
+
+8. Simple Decision Heuristic (Pseudo)
+
+if (!article.extraction_json) runExtraction(article);
+const base = runSynthesis(article.extraction_json);
+
+save(base);
+
+if (shouldEnrich(base)) {
+  const enriched = runEnrichment(article.extraction_json, base);
+  save(enriched);
+}
+
+// Translations on demand
+// GET /api/article/{id}?lang=zh_hant triggers translation if missing
+
+
+⸻
+
+9. When Would a Single Call Make Sense?
+
+Only if:
+	•	Low volume prototype
+	•	No need for citations or multilingual
+	•	You accept higher per-article token cost
+
+But HKI’s roadmap (scaling, enrichment, multilingual) → modular wins.
+
+⸻
+
+10. Summary (Actionable)
+
+Adopt the 3–5 stage pipeline: Extraction → Synthesis (+headline) → (Conditional) Enrichment → Lazy Translation.
+This yields: lower tokens, better controllability, simpler retries, future model routing.
+
+⸻
+

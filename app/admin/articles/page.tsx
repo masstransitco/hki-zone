@@ -164,117 +164,104 @@ export default function ArticlesPage() {
 
   const handleBulkClone = async () => {
     if (selectedArticleIds.size === 0) {
-      alert('Please select articles to clone')
+      alert('Please select articles to enhance')
       return
     }
 
-    if (selectedArticleIds.size > 20) {
-      alert('Maximum 20 articles allowed per bulk operation')
+    if (selectedArticleIds.size > 10) {
+      alert('Maximum 10 articles allowed per bulk operation to prevent overload')
       return
     }
 
-    if (!confirm(`Clone ${selectedArticleIds.size} selected articles into all 3 languages (${selectedArticleIds.size * 3} total new articles)?\n\nThis will create:\n• ${selectedArticleIds.size} English versions\n• ${selectedArticleIds.size} Traditional Chinese versions\n• ${selectedArticleIds.size} Simplified Chinese versions\n\nEstimated time: ${Math.ceil(selectedArticleIds.size * 3 * 0.5)} minutes`)) {
+    if (!confirm(`Enhance ${selectedArticleIds.size} selected articles into all 3 languages (${selectedArticleIds.size * 3} total new articles)?\n\nThis will:\n1. Mark selected articles for enhancement\n2. Process them through the new enhancement pipeline\n3. Create trilingual versions with contextual enrichment\n\nEstimated time: ${Math.ceil(selectedArticleIds.size * 2)} minutes`)) {
       return
     }
 
     setIsBulkCloning(true)
+    let processedCount = 0
+    let successCount = 0
+    const results = []
+
     try {
-      const response = await fetch('/api/admin/articles/bulk-clone', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          articleIds: Array.from(selectedArticleIds),
-          options: {
-            searchDepth: 'medium',
-            recencyFilter: 'month',
-            maxTokens: 2000
+      // Step 1: Mark all selected articles for enhancement
+      console.log(`Marking ${selectedArticleIds.size} articles for enhancement...`)
+      
+      for (const articleId of selectedArticleIds) {
+        try {
+          const markResponse = await fetch('/api/admin/articles/mark-for-enhancement', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              articleId,
+              reason: 'Manual admin selection for bulk enhancement'
+            })
+          })
+
+          if (!markResponse.ok) {
+            console.warn(`Failed to mark article ${articleId} for enhancement`)
+            continue
           }
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to clone articles')
+        } catch (error) {
+          console.warn(`Error marking article ${articleId}:`, error)
+        }
       }
 
-      const { summary } = data
-      alert(`Bulk cloning completed!\n\n✅ Successfully cloned: ${summary.successfulClones}/${summary.targetClones} articles\n📊 Success rate: ${summary.successRate}%\n🌐 Language breakdown:\n  • English: ${summary.languageBreakdown.en}\n  • 繁體中文: ${summary.languageBreakdown['zh-TW']}\n  • 简体中文: ${summary.languageBreakdown['zh-CN']}\n💰 Total cost: $${summary.totalCost}`)
+      // Step 2: Process each article through the enhancement pipeline
+      console.log('Processing articles through enhancement pipeline...')
+      
+      for (const articleId of selectedArticleIds) {
+        processedCount++
+        try {
+          console.log(`Processing article ${processedCount}/${selectedArticleIds.size}...`)
+          
+          // Call the admin enhancement endpoint
+          const enhanceResponse = await fetch('/api/admin/articles/enhance-selected', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+
+          if (enhanceResponse.ok) {
+            const result = await enhanceResponse.json()
+            if (result.success) {
+              successCount++
+              results.push(result)
+            }
+          }
+
+          // Small delay between requests to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          
+        } catch (error) {
+          console.error(`Error processing article ${articleId}:`, error)
+        }
+      }
+
+      const totalEnhanced = results.reduce((sum, r) => sum + (r.totalSaved || 0), 0)
+      const estimatedCost = results.reduce((sum, r) => sum + parseFloat(r.estimatedCost || '0'), 0)
+
+      alert(`Bulk enhancement completed!\n\n✅ Successfully enhanced: ${successCount}/${selectedArticleIds.size} articles\n🌐 Total trilingual articles created: ${totalEnhanced}\n💰 Total estimated cost: $${estimatedCost.toFixed(4)}\n\nThe enhanced articles will appear in the list shortly.`)
       
       setSelectedArticleIds(new Set())
       handleRefresh()
     } catch (error) {
-      console.error('Bulk clone error:', error)
-      alert('Failed to clone articles: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      console.error('Bulk enhancement error:', error)
+      alert('Failed to enhance articles: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setIsBulkCloning(false)
     }
   }
 
-  const handleTrilingualAutoSelect = async () => {
-    try {
-      setIsProcessing(true)
-      setShowProgressModal(true)
-      setProcessProgress({
-        step: 'headlines',
-        currentArticle: 0,
-        totalArticles: 10,
-        currentLanguage: 'en',
-        completedByLanguage: {
-          english: 0,
-          traditionalChinese: 0,
-          simplifiedChinese: 0
-        },
-        estimatedTimeRemaining: 960, // 16 minutes
-        totalCost: 0
-      })
-
-      const response = await fetch('/api/admin/auto-select-headlines', {
-        method: 'POST'
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to start auto-selection')
-      }
-
-      const result = await response.json()
-      
-      // Update progress to complete
-      setProcessProgress({
-        ...processProgress,
-        step: 'complete',
-        completedByLanguage: {
-          english: result.articlesByLanguage.english,
-          traditionalChinese: result.articlesByLanguage.traditionalChinese,
-          simplifiedChinese: result.articlesByLanguage.simplifiedChinese
-        },
-        totalCost: parseFloat(result.estimatedCost)
-      })
-
-      // Refresh the article list after successful processing
-      setTimeout(() => {
-        handleRefresh()
-        setShowProgressModal(false)
-        setProcessProgress(null)
-      }, 3000)
-
-    } catch (error) {
-      console.error('Auto-select error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to run auto-selection')
-    } finally {
-      setIsProcessing(false)
-    }
-  }
 
   const handleSingleTrilingualAutoSelect = async () => {
     try {
       setIsProcessing(true)
       setShowProgressModal(true)
       setProcessProgress({
-        step: 'headlines',
+        step: 'selection',
         currentArticle: 0,
         totalArticles: 1,
         currentLanguage: 'en',
@@ -287,27 +274,56 @@ export default function ArticlesPage() {
         totalCost: 0
       })
 
-      const response = await fetch('/api/admin/auto-select-single', {
-        method: 'POST'
+      // Step 1: Select article using admin API
+      console.log('Step 1: AI selecting article with Perplexity...')
+      const selectResponse = await fetch('/api/admin/articles/select-article', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to start single article auto-selection')
+      if (!selectResponse.ok) {
+        const error = await selectResponse.json()
+        throw new Error(error.error || 'Failed to select article')
       }
 
-      const result = await response.json()
+      const selectResult = await selectResponse.json()
+      console.log('Article selected:', selectResult)
+
+      // Update progress - selection complete
+      setProcessProgress(prev => ({
+        ...prev,
+        step: 'enhancement',
+        currentArticle: 1
+      }))
+
+      // Step 2: Enhance selected article using admin endpoint
+      console.log('Step 2: Enhancing selected article...')
+      const enhanceResponse = await fetch('/api/admin/articles/enhance-selected', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!enhanceResponse.ok) {
+        const error = await enhanceResponse.json()
+        throw new Error(error.error || 'Failed to enhance selected article')
+      }
+
+      const result = await enhanceResponse.json()
       
       // Update progress to complete
       setProcessProgress({
         ...processProgress,
         step: 'complete',
         completedByLanguage: {
-          english: result.articlesByLanguage.english,
-          traditionalChinese: result.articlesByLanguage.traditionalChinese,
-          simplifiedChinese: result.articlesByLanguage.simplifiedChinese
+          english: result.articlesByLanguage?.english || 1,
+          traditionalChinese: result.articlesByLanguage?.traditionalChinese || 1,
+          simplifiedChinese: result.articlesByLanguage?.simplifiedChinese || 1
         },
-        totalCost: parseFloat(result.estimatedCost)
+        totalCost: parseFloat(result.estimatedCost || '0.075')
       })
 
       // Refresh the article list after successful processing
@@ -464,7 +480,7 @@ export default function ArticlesPage() {
                         ) : (
                           <Copy className="h-3 w-3 mr-1" />
                         )}
-                        Clone to 3 Languages
+                        Enhance to 3 Languages
                       </Button>
                       <Button
                         variant="destructive"
@@ -512,25 +528,7 @@ export default function ArticlesPage() {
                     ) : (
                       <>
                         <Sparkles className="mr-2 h-3 w-3" />
-                        AI Enhance (1→3)
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={handleTrilingualAutoSelect}
-                    disabled={isProcessing}
-                    size="sm"
-                    className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white h-8"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Languages className="mr-2 h-3 w-3" />
-                        AI Batch (10→30)
+                        AI Select & Enhance (1→3)
                       </>
                     )}
                   </Button>

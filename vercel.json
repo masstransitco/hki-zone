@@ -5,28 +5,16 @@
       "schedule": "*/30 * * * *"
     },
     {
-      "path": "/api/cron/collect-headlines",
-      "schedule": "0 8 * * *"
-    },
-    {
-      "path": "/api/cron/fetch-perplexity-news",
+      "path": "/api/cron/select-article",
       "schedule": "0 * * * *"
     },
     {
-      "path": "/api/cron/enrich-unified-articles",
+      "path": "/api/cron/enhance-selected",
       "schedule": "5 * * * *"
     },
     {
       "path": "/api/cron/scrape-cars",
       "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/cron/enrich-cars",
-      "schedule": "0 */2 * * *"
-    },
-    {
-      "path": "/api/cron/auto-enhance-single",
-      "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/fetch-gov-feeds",
