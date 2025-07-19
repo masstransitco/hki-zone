@@ -41,13 +41,14 @@ export default function HomePage() {
             <MainContent contentType={contentType} />
           </ClientOnly>
         </main>
-
-        <ClientOnly fallback={
-          <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe h-[76px]" />
-        }>
-          <FooterNav />
-        </ClientOnly>
       </div>
+
+      {/* Footer Nav - Fixed and outside push effect */}
+      <ClientOnly fallback={
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe h-[76px]" />
+      }>
+        <FooterNav />
+      </ClientOnly>
     </div>
   )
 }
