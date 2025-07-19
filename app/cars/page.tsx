@@ -1,39 +1,49 @@
-import { Suspense } from "react"
-import { Metadata } from "next"
+"use client"
+
+import { Suspense, useState } from "react"
 import Header from "@/components/header"
 import FooterNav from "@/components/footer-nav"
+import SideMenu from "@/components/side-menu"
 import CarsPageWithSelector from "@/components/cars-page-with-selector"
 import LoadingSkeleton from "@/components/loading-skeleton"
-
-export const metadata: Metadata = {
-  title: "Cars | Panora",
-  description: "Latest car listings and automotive news from Hong Kong. Find your perfect vehicle from trusted dealers.",
-  keywords: ["Hong Kong cars", "car listings", "automotive", "vehicles", "28car"],
-  openGraph: {
-    title: "Cars | Panora",
-    description: "Latest car listings and automotive news from Hong Kong",
-    type: "website",
-    siteName: "Panora",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Cars | Panora",
-    description: "Latest car listings and automotive news from Hong Kong",
-  },
-}
+import { ClientOnly } from "@/components/client-only"
 
 export default function CarsPage() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      <main className="flex-1 pb-20">
-        <div className="py-6">
-          <Suspense fallback={<CarsLoadingSkeleton />}>
-            <CarsPageWithSelector />
-          </Suspense>
-        </div>
-      </main>
-      <FooterNav />
+    <div className="flex flex-col min-h-screen">
+      <SideMenu isOpen={isMenuOpen} onOpenChange={setIsMenuOpen} />
+      
+      {/* Main App Content with Push Effect */}
+      <div 
+        className={`flex flex-col min-h-screen bg-background transition-transform duration-300 ease-in-out ${
+          isMenuOpen ? 'translate-x-80 max-sm:translate-x-[80vw]' : 'translate-x-0'
+        }`}
+      >
+        <ClientOnly fallback={
+          <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-minimal border-b border-border h-[57px]" />
+        }>
+          <Header isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} />
+        </ClientOnly>
+
+        <main className="flex-1 pb-20 pt-16">
+          <div className="py-6">
+            <ClientOnly fallback={<CarsLoadingSkeleton />}>
+              <Suspense fallback={<CarsLoadingSkeleton />}>
+                <CarsPageWithSelector />
+              </Suspense>
+            </ClientOnly>
+          </div>
+        </main>
+      </div>
+
+      {/* Footer Nav - Fixed and outside push effect */}
+      <ClientOnly fallback={
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe h-[76px]" />
+      }>
+        <FooterNav />
+      </ClientOnly>
     </div>
   )
 }

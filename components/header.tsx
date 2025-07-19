@@ -7,11 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 
 interface HeaderProps {
-  isMenuOpen: boolean
-  onMenuOpenChange: (open: boolean) => void
+  isMenuOpen?: boolean
+  onMenuOpenChange?: (open: boolean) => void
 }
 
-export default function Header({ isMenuOpen, onMenuOpenChange }: HeaderProps) {
+export default function Header({ isMenuOpen = false, onMenuOpenChange }: HeaderProps) {
   const { isVisible } = useHeaderVisibility()
 
   return (
@@ -27,7 +27,7 @@ export default function Header({ isMenuOpen, onMenuOpenChange }: HeaderProps) {
             size="sm"
             className="w-9 h-9 p-0 text-foreground hover:bg-muted"
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-            onClick={() => onMenuOpenChange(!isMenuOpen)}
+            onClick={() => onMenuOpenChange?.(!isMenuOpen)}
           >
             <div className="relative w-5 h-5">
               <Menu className={`h-5 w-5 absolute transition-all duration-200 ${isMenuOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'}`} />

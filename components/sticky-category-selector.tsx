@@ -14,7 +14,7 @@ export default function StickyCategorySelector({ value, onChange }: StickyCatego
 
   return (
     <div className={`sticky z-40 transition-all duration-300 ease-in-out ${
-      headerVisible ? 'top-16' : 'top-0'
+      headerVisible ? 'top-[57px]' : 'top-0'
     }`}>
       <div className="px-6 py-4">
         <ContentTypeSelector value={value} onChange={onChange} />

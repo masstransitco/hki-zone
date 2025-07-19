@@ -2,7 +2,11 @@
 
 ## Overview
 
-The Trilingual AI Enhancement feature is an automated content processing system that uses Perplexity AI to intelligently select the most newsworthy articles and enhance them into three languages: English, Traditional Chinese (繁體中文), and Simplified Chinese (简体中文). This system transforms 10 source articles into 30 enhanced articles through AI-powered selection, quality scoring, and multilingual enhancement.
+The Trilingual AI Enhancement feature is a streamlined automated content processing system that uses Perplexity AI to intelligently select the most newsworthy articles and enhance them into three languages: English, Traditional Chinese (繁體中文), and Simplified Chinese (简体中文). 
+
+**Updated Pipeline (January 2025)**: The system now processes 1 article per hour with topic deduplication, creating 3 enhanced versions through a two-stage process that runs every hour.
+
+> **📋 Current Status**: This system has been streamlined from bulk processing (10→30 articles) to focused hourly processing (1→3 articles) with intelligent topic deduplication. See [Streamlined Pipeline Update](./25-streamlined-article-pipeline-update.md) for complete migration details.
 
 ## Features
 
@@ -201,25 +205,24 @@ The trilingual enhancement feature is integrated into the admin articles page wi
 
 #### AI Auto-Selection Buttons
 - **Location**: Admin articles page (`/admin/articles`)
-- **AI Enhance (1→3)**: Single article auto-selection and trilingual enhancement
+- **AI Select & Enhance (1→3)**: Single article auto-selection and trilingual enhancement
   - **Visual Design**: Emerald to teal gradient styling
-  - **Function**: Automatically selects 1 best article and creates 3 language versions
-  - **Processing Time**: ~1-3 minutes
-  - **Cost**: ~$0.225 per operation
-- **AI Batch (10→30)**: Batch auto-selection and trilingual enhancement
-  - **Visual Design**: Purple to blue gradient styling  
-  - **Function**: Automatically selects 10 best articles and creates 30 language versions
-  - **Processing Time**: ~15-20 minutes
-  - **Cost**: ~$2.25 per operation
+  - **Function**: Uses new pipeline - AI selects 1 best article with topic deduplication and creates 3 language versions
+  - **Processing Time**: ~3-5 minutes
+  - **Cost**: ~$0.075 per operation
+  - **Updated**: Now uses `/api/admin/articles/select-article` + `/api/admin/articles/enhance-selected`
 - **States**: Loading state with spinner during processing
 
-#### Bulk Clone Functionality
+> **⚠️ Removed**: "AI Batch (10→30)" button has been removed as part of the streamlined pipeline update. Bulk processing is now handled through manual selection + "Enhance to 3 Languages".
+
+#### Manual Enhancement Functionality
 - **Location**: Article selection controls in admin articles page
-- **Button Text**: "Clone to 3 Languages"
+- **Button Text**: "Enhance to 3 Languages" (updated from "Clone to 3 Languages")
 - **Visual Design**: Emerald/blue gradient with copy icon
-- **Function**: Clone selected articles into all 3 languages
+- **Function**: Enhance manually selected articles into all 3 languages using new pipeline
 - **Selection Method**: Manual checkbox selection of specific articles
-- **Limits**: Maximum 20 articles per batch operation
+- **Limits**: Maximum 10 articles per batch operation (reduced from 20)
+- **Updated Process**: Uses mark-for-enhancement + enhancement pipeline instead of bulk-clone API
 - **Features**:
   - Appears when articles are selected via checkboxes
   - Comprehensive confirmation dialog with breakdown

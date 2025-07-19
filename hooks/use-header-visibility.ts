@@ -17,12 +17,16 @@ export function useHeaderVisibility() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
       
-      // Show header when scrolling up or at the top
-      if (currentScrollY < lastScrollY || currentScrollY < 10) {
+      // Show header only when very close to the top
+      if (currentScrollY < 10) {
         setIsVisible(true)
       } 
       // Hide header when scrolling down (only after scrolling past 100px)
       else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        setIsVisible(false)
+      }
+      // Keep header hidden when scrolling up but not at top
+      else if (currentScrollY >= 10) {
         setIsVisible(false)
       }
       

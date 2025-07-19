@@ -31,7 +31,7 @@ export default function HomePage() {
           <Header isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} />
         </ClientOnly>
         <ClientOnly fallback={
-          <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b border-border h-[73px]" />
+          <div className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b border-border h-[73px]" />
         }>
           <StickyCategorySelector value={contentType} onChange={setContentType} />
         </ClientOnly>

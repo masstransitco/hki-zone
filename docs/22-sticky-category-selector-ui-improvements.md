@@ -4,6 +4,8 @@
 
 This document outlines the UI improvements made to implement a sticky category selector and standardize feed positioning across the main app page. The improvements focus on modern UI practices, minimalist design principles, and enhanced user experience.
 
+**Updated (January 2025)**: Fixed synchronization issues with the push effect layout and refined header visibility timing for optimal user experience.
+
 ## Changes Made
 
 ### 1. Sticky Category Selector Implementation
@@ -22,7 +24,7 @@ This document outlines the UI improvements made to implement a sticky category s
 
 **Key Features:**
 - `position: sticky` with dynamic top positioning
-- `top-16` when header visible, `top-0` when header hidden
+- `top-[57px]` when header visible, `top-0` when header hidden
 - Shared state management with header via `useHeaderVisibility` hook
 - Smooth transitions: `transition-all duration-300 ease-in-out`
 
@@ -117,7 +119,7 @@ const handleScroll = () => {
 ### Dynamic Positioning
 ```tsx
 <div className={`sticky z-40 transition-all duration-300 ease-in-out ${
-  headerVisible ? 'top-16' : 'top-0'
+  headerVisible ? 'top-[57px]' : 'top-0'
 }`}>
 ```
 

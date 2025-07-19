@@ -130,18 +130,20 @@ The HKI News App is a Next.js 14 application that:
 
 **When to Use**: When working with the news feed layout, implementing masonry grids, or fixing infinite scroll issues.
 
-### 9. [Trilingual AI Enhancement System](./09-trilingual-ai-enhancement.md)
-**Purpose**: Comprehensive guide to the automated trilingual article enhancement system.
+### 9. [Trilingual AI Enhancement System](./09-trilingual-ai-enhancement.md) ⚠️ *Updated*
+**Purpose**: Comprehensive guide to the streamlined trilingual article enhancement system.
 
 **Key Information**:
-- AI-powered article selection using Perplexity API
+- **Updated Pipeline**: Streamlined hourly processing (1→3 articles) with topic deduplication
+- AI-powered article selection using Perplexity API with intelligent filtering
 - Trilingual processing (English, Traditional Chinese, Simplified Chinese)
-- Batch management and processing pipelines
-- API integration and authentication
-- Progress tracking and cost estimation
-- Admin interface integration
+- Cost optimization (68% reduction) and improved processing speed
+- **Legacy Migration**: Bulk processing (10→30) replaced with focused selection
+- Admin interface updates and new API endpoints
 
-**When to Use**: When working with AI enhancement features, implementing trilingual content, or managing automated processing workflows.
+**When to Use**: When working with AI enhancement features, implementing trilingual content, or managing the updated processing workflows.
+
+> **📋 Recent Update**: See [Streamlined Pipeline Update](./25-streamlined-article-pipeline-update.md) for complete migration details and legacy component status.
 
 ### 10. [Admin Interface Improvements](./10-admin-interface-improvements.md) ⭐ *New Feature*
 **Purpose**: Complete guide to the enhanced admin article management system with modern UI and batch operations.
@@ -207,6 +209,19 @@ The HKI News App is a Next.js 14 application that:
 - Performance considerations and responsive design
 
 **When to Use**: When working with header navigation components, implementing animated UI elements, updating theme systems, or enhancing visual comfort through color adjustments.
+
+### 25. [Streamlined Article Pipeline Update](./25-streamlined-article-pipeline-update.md) ⭐ *January 2025 Update*
+**Purpose**: Comprehensive documentation of the major pipeline update that streamlined article enhancement and removed legacy components.
+
+**Key Information**:
+- Complete migration from bulk processing (10→30) to focused hourly processing (1→3)
+- Topic deduplication implementation to prevent duplicate enhancements
+- Legacy component removal and temporary disabling
+- Updated admin interface with new API endpoints
+- Cron job optimization and cost reduction (68% savings)
+- Migration guide and troubleshooting for new pipeline
+
+**When to Use**: When understanding the current article enhancement pipeline, working with the new APIs, or migrating from legacy components.
 
 ## Quick Reference
 
@@ -377,14 +392,14 @@ const { data, isLoading, error } = useQuery({
 - **RTHK**: 香港電台 (Bilingual)
 - **28car**: Car listings with high-resolution image extraction
 
-### 4. Cron Job Schedule
-- News scraping: Every 30 minutes
-- **Car scraping: Every 15 minutes** (with high-res image extraction)
-- Headlines collection: Daily at 8 AM
-- Perplexity news: Every hour
-- Article enrichment: Every hour at 5 minutes past
-- **Single article trilingual enhancement: Every hour** ⭐ *New Feature*
-- Car AI enrichment: Every 2 hours
+### 4. Cron Job Schedule ⚠️ *Updated*
+- **News scraping**: Every 30 minutes
+- **Car scraping**: Every 15 minutes (with high-res image extraction)
+- **Article selection**: Every hour at :00 (NEW - AI selection with deduplication)
+- **Article enhancement**: Every hour at :05 (NEW - trilingual enhancement)
+- **Government feeds**: Every 2 minutes
+- ❌ **Headlines collection**: REMOVED (legacy bulk processing)
+- ❌ **Car AI enrichment**: TEMPORARILY DISABLED (being reworked)
 
 ### 5. Performance Optimizations
 - Infinite scroll for large datasets
@@ -407,17 +422,17 @@ const { data, isLoading, error } = useQuery({
 - **Mobile-responsive**: Touch-friendly interface with filter management
 - **Scalable architecture**: Ready for Typesense upgrade at high volume
 
-### 8. **Trilingual AI Article Enhancement** ⭐ *New Feature*
-- **Intelligent Selection**: Perplexity AI automatically selects articles from non-enhanced, non-selected content
+### 8. **Streamlined Article Enhancement Pipeline** ⚠️ *Updated*
+- **Intelligent Selection**: Perplexity AI selects 1 article per hour with topic deduplication
+- **Topic Deduplication**: Prevents enhancing similar articles (e.g., multiple typhoon stories)
 - **Selection Tracking**: Marks articles as `selected_for_enhancement = true` to prevent re-selection
 - **Quality Scoring**: Advanced scoring algorithm based on newsworthiness, impact, and enhancement potential
 - **Trilingual Processing**: Each article enhanced into English, Traditional Chinese, and Simplified Chinese
-- **Batch Operations**: Processes 10 → 30 articles (10×3 languages) in a single operation
-- **Rate Limiting**: Smart API rate limiting (1.5s between languages, 2s between articles)
+- **Hourly Processing**: Streamlined 1 → 3 articles (single article × 3 languages) per hour
+- **Cost Optimization**: 68% cost reduction (~$8/day vs. ~$25/day previously)
 - **Metadata Tracking**: Comprehensive trilingual batch tracking and relationship management
-- **Unique URLs**: Each language version gets a unique URL for proper database constraints
-- **Cost Estimation**: Real-time cost tracking and estimation for API usage
-- **UI Indicators**: Visual badges showing article selection status in admin interface
+- **Admin Interface**: Updated buttons and workflow for new pipeline
+- **Legacy Migration**: Bulk processing (10→30) replaced with focused hourly selection
 
 ## Troubleshooting Guide
 
