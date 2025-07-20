@@ -85,7 +85,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
     console.log(`   ${index + 1}. "${article.title.substring(0, 60)}..." (ID: ${article.id})`);
   });
   
-  const selectionPrompt = createArticleSelectionPrompt(deduplicatedArticles, count);
+  const selectionPrompt = createArticleSelectionPrompt(deduplicatedArticles, count, recentlyEnhancedTopics);
 
   // 5. Call Perplexity API for intelligent selection
   const selectedIds = await callPerplexityForSelection(selectionPrompt);
@@ -256,8 +256,14 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
         return false;
       }
       
-      // Accept all articles with reasonable headlines - let Perplexity judge content impact
-      console.log(`     ✅ Accepted "${article.title.substring(0, 50)}..." (${article.content_length} chars) - headline-based selection`);
+      // CRITICAL: Filter out articles with insufficient content to prevent AI hallucination
+      if (article.content_length < 100) {
+        console.log(`     ⚠️ Filtered "${article.title.substring(0, 50)}..." - insufficient content (${article.content_length} chars) may cause AI hallucination`);
+        return false;
+      }
+      
+      // Accept articles that pass all filters
+      console.log(`     ✅ Accepted "${article.title.substring(0, 50)}..." (${article.content_length} chars) - content meets minimum threshold`);
       return true;
     });
 
@@ -279,44 +285,194 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
   }
 }
 
-function createArticleSelectionPrompt(candidates: CandidateArticle[], count: number): string {
+// Analyze recently enhanced topics to provide diversity guidance
+function analyzeRecentTopics(recentlyEnhancedTopics: Array<{ title: string, summary?: string, created_at: string }>): {
+  analysis: string;
+  summary: string;
+  recommendations: string[];
+} {
+  if (!recentlyEnhancedTopics || recentlyEnhancedTopics.length === 0) {
+    return {
+      analysis: "No recently enhanced articles to analyze.",
+      summary: "Fresh start",
+      recommendations: ["Focus on high-impact news across all categories"]
+    };
+  }
+
+  // Categorize recent topics by type
+  const categories = {
+    weather: 0,
+    politics: 0,
+    technology: 0,
+    sports: 0,
+    health: 0,
+    business: 0,
+    lifestyle: 0,
+    entertainment: 0,
+    international: 0,
+    other: 0
+  };
+
+  const topicKeywords = {
+    weather: ['typhoon', 'wipha', '風球', '颱風', '台风', 'signal', 'weather', 'storm', '橙色預警', '深圳', 'warning', '暴雨'],
+    politics: ['陳茂波', 'government', '政府', 'policy', '政策', '行政長官', 'chief executive', 'legco', '立法會'],
+    technology: ['創科', 'innovation', 'tech', 'ai', '人工智能', 'startup', '科技', 'digital'],
+    sports: ['足球', 'football', 'soccer', '運動', 'sport', '比賽', 'match', '聯賽', 'league'],
+    health: ['健康', 'health', '醫療', 'medical', '癌症', 'cancer', '疫苗', 'vaccine'],
+    business: ['經濟', 'economy', 'business', '股票', 'stock', 'market', '銀行', 'bank', '金融'],
+    lifestyle: ['生活', 'lifestyle', '飲食', 'food', '旅遊', 'travel', '時尚', 'fashion'],
+    entertainment: ['娛樂', 'entertainment', '電影', 'movie', '音樂', 'music', '明星', 'celebrity'],
+    international: ['國際', 'international', '美國', 'america', '中國', 'china', '世界', 'world']
+  };
+
+  // Analyze each recent topic
+  recentlyEnhancedTopics.forEach(topic => {
+    const content = (topic.title + ' ' + (topic.summary || '')).toLowerCase();
+    let categorized = false;
+    
+    for (const [category, keywords] of Object.entries(topicKeywords)) {
+      if (keywords.some(keyword => content.includes(keyword.toLowerCase()))) {
+        categories[category as keyof typeof categories]++;
+        categorized = true;
+        break;
+      }
+    }
+    
+    if (!categorized) {
+      categories.other++;
+    }
+  });
+
+  // Generate recommendations based on analysis
+  const sortedCategories = Object.entries(categories)
+    .filter(([_, count]) => count > 0)
+    .sort(([_, a], [__, b]) => b - a);
+
+  const overRepresented = sortedCategories.slice(0, 2);
+  const underRepresented = Object.keys(categories).filter(cat => categories[cat as keyof typeof categories] === 0);
+
+  const recommendations = [];
+  
+  if (overRepresented.length > 0 && overRepresented[0][1] > 3) {
+    recommendations.push(`AVOID ${overRepresented[0][0].toUpperCase()} topics (${overRepresented[0][1]} recent articles)`);
+  }
+  
+  if (underRepresented.length > 0) {
+    const priorityCategories = underRepresented.slice(0, 3);
+    recommendations.push(`PRIORITIZE ${priorityCategories.join(', ').toUpperCase()} content for diversity`);
+  }
+  
+  recommendations.push("SEEK unique angles and fresh perspectives");
+  recommendations.push("BALANCE local Hong Kong focus with broader regional interest");
+
+  const analysis = `Recent Coverage Analysis (${recentlyEnhancedTopics.length} articles):
+${sortedCategories.map(([cat, count]) => `- ${cat.charAt(0).toUpperCase() + cat.slice(1)}: ${count} articles`).join('\n')}
+
+Coverage Gaps: ${underRepresented.length > 0 ? underRepresented.join(', ') : 'None identified'}
+Oversaturated: ${overRepresented.length > 0 && overRepresented[0][1] > 3 ? overRepresented[0][0] : 'None'}`;
+
+  const summary = sortedCategories.length > 0 
+    ? `${sortedCategories[0][0]} heavy (${sortedCategories[0][1]}), gaps in ${underRepresented.slice(0, 2).join(', ')}`
+    : "Balanced coverage";
+
+  return { analysis, summary, recommendations };
+}
+
+function createArticleSelectionPrompt(candidates: CandidateArticle[], count: number, recentlyEnhancedTopics: Array<{ title: string, summary?: string, created_at: string }> = []): string {
   // Create a concise summary of each article for Perplexity to evaluate
   // Use sequential numbers (1, 2, 3...) instead of UUIDs to avoid corruption
-  const articleSummaries = candidates.map((article, index) => ({
-    sequentialId: index + 1, // 1-based indexing for Perplexity
-    title: article.title,
-    source: article.source,
-    category: article.category,
-    summary: article.summary || article.content.substring(0, 200) + '...',
-    content_length: article.content_length,
-    has_summary: article.has_summary,
-    has_image: article.has_image,
-    published_hours_ago: Math.round((Date.now() - new Date(article.published_at).getTime()) / (1000 * 60 * 60))
-  }));
+  const articleSummaries = candidates.map((article, index) => {
+    // Generate a meaningful preview for the article
+    let preview = article.summary || '';
+    
+    if (!preview && article.content) {
+      // Skip past the title if it appears at the start of content
+      let contentStart = 0;
+      if (article.content.startsWith(article.title)) {
+        contentStart = article.title.length;
+      }
+      
+      // Get up to 400 characters for better context, skipping any initial whitespace
+      const contentForPreview = article.content.substring(contentStart).trim();
+      preview = contentForPreview.substring(0, 400);
+      
+      // If we have meaningful content, add ellipsis
+      if (preview.length > 0 && contentForPreview.length > 400) {
+        preview += '...';
+      }
+      
+      // If still no preview, use the first 400 chars of content
+      if (!preview || preview.length < 20) {
+        preview = article.content.substring(0, 400);
+        if (article.content.length > 400) {
+          preview += '...';
+        }
+      }
+    }
+    
+    return {
+      sequentialId: index + 1, // 1-based indexing for Perplexity
+      title: article.title,
+      source: article.source,
+      category: article.category,
+      summary: preview,
+      content_length: article.content_length,
+      has_summary: article.has_summary,
+      has_image: article.has_image,
+      published_hours_ago: Math.round((Date.now() - new Date(article.published_at).getTime()) / (1000 * 60 * 60))
+    };
+  });
 
+  // Analyze recently enhanced topics for diversity guidance
+  const recentTopicAnalysis = analyzeRecentTopics(recentlyEnhancedTopics);
+  
   // Debug logging: Show what Perplexity will see
   console.log(`📋 Prompt Preview - First 3 articles as they appear to Perplexity:`);
   articleSummaries.slice(0, 3).forEach(article => {
     console.log(`   ARTICLE_NUMBER: ${article.sequentialId}`);
     console.log(`   Title: ${article.title}`);
     console.log(`   Source: ${article.source} | Category: ${article.category}`);
-    console.log(`   Preview: ${article.summary.substring(0, 100)}...`);
+    console.log(`   Content Length: ${article.content_length} chars`);
+    console.log(`   Preview: ${article.summary.substring(0, 150)}...`);
+    if (article.content_length < 100) {
+      console.log(`   ⚠️ WARNING: Low content length may cause selection issues`);
+    }
     console.log(`   ---`);
   });
+  
+  console.log(`🎯 Topic Diversity Analysis for Selection:`);
+  console.log(`   Recently Enhanced: ${recentTopicAnalysis.summary}`);
+  console.log(`   Recommended Focus: ${recentTopicAnalysis.recommendations.join(', ')}`);
 
   return `You are an expert Hong Kong news editor tasked with selecting the ${count} most impactful and enhancement-worthy articles for AI processing.
 
-IMPORTANT: Focus on HEADLINES for selection - content will be enhanced with AI research during processing.
+**EDITORIAL MISSION**: Create a DIVERSE and ENGAGING collection of enhanced articles that serves Hong Kong readers across different interests and needs.
+
+**RECENTLY ENHANCED TOPIC ANALYSIS**:
+${recentTopicAnalysis.analysis}
+
+**DIVERSITY PRIORITIES**:
+${recentTopicAnalysis.recommendations.map(rec => `• ${rec}`).join('\n')}
+
+IMPORTANT: Use BOTH the headline AND the preview content to understand what each article is about. The preview provides essential context about the actual story content.
+
+CRITICAL INSTRUCTION TO PREVENT HALLUCINATION:
+- Base your selection reasoning SOLELY on the article information provided below
+- Do NOT use external knowledge about Hong Kong news or current events
+- Do NOT reference news stories that are not in the list below
+- If an article has minimal preview content, state that clearly in your reasoning
+- Your reasoning must directly relate to the specific article's title and preview text
 
 SELECTION CRITERIA (in order of importance):
-1. **News Impact**: High public interest, breaking news, significant developments affecting Hong Kong
-2. **Editorial Value**: Stories that would benefit from deeper analysis, context, and multilingual presentation
-3. **Headline Quality**: Clear, compelling headlines that indicate substantial news value
-4. **Source Diversity**: Balanced representation across major Hong Kong news sources
-5. **Topic Balance**: Mix of politics, business, weather/safety, lifestyle, health, entertainment
-6. **Recency**: Prefer more recent articles (published within last 24-48 hours)
+1. **TOPIC DIVERSITY**: Prioritize categories that are underrepresented in recent coverage to create a well-rounded collection
+2. **Editorial Value**: Stories that would benefit from deeper analysis, context, and multilingual presentation  
+3. **News Impact**: High public interest, breaking news, significant developments affecting Hong Kong
+4. **Fresh Perspectives**: Unique angles, human interest stories, emerging trends not yet covered
+5. **Headline Quality**: Clear, compelling headlines that indicate substantial news value
+6. **Source Diversity**: Balanced representation across major Hong Kong news sources
+7. **Reader Engagement**: Consider what would interest different demographics and reader segments
 
-NOTE: Content length is not a primary factor - focus on headline impact and editorial value. AI enhancement will add research and context regardless of original content length.
+NOTE: While content length is not the primary factor, ensure articles have sufficient preview content to understand the story. Articles with very low content (< 100 chars) may lack substance. AI enhancement works best with clear, substantive source material.
 
 AVAILABLE ARTICLES TO CHOOSE FROM:
 ${articleSummaries.map((article) => `
@@ -330,11 +486,12 @@ Preview: ${article.summary}
 `).join('\n')}
 
 SELECTION REQUIREMENTS:
-- Select exactly ${count} articles
-- Prioritize articles with high news impact and enhancement potential
+- Select exactly ${count} articles that will create the most DIVERSE and ENGAGING collection
+- AVOID over-represented categories identified in the analysis above
+- PRIORITIZE under-represented categories for better topic balance
 - Ensure source diversity (avoid selecting too many from same source)
-- Balance categories when possible
 - Consider both English and Chinese language articles
+- Think about reader value: "What would make this collection of enhanced articles most valuable to Hong Kong readers?"
 
 CRITICAL INSTRUCTION: Use the ARTICLE_NUMBER (simple numbers like 1, 2, 3) in your response.
 
@@ -354,7 +511,7 @@ Return ONLY a JSON array with exactly ${count} selections in this format:
 
 Use only the ARTICLE_NUMBER values (1, 2, 3, etc.) from the list above.
 
-Select the ${count} best articles that would create the most valuable AI-enhanced content for Hong Kong readers across English, Traditional Chinese, and Simplified Chinese.`;
+Select the ${count} articles that would create the most DIVERSE, VALUABLE, and ENGAGING collection of AI-enhanced content for Hong Kong readers. Think about variety, balance, and collective impact rather than just individual article strength.`;
 }
 
 async function callPerplexityForSelection(prompt: string): Promise<Array<{id: string, reason: string, score: number}>> {
@@ -370,7 +527,7 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
         messages: [
           {
             role: 'system',
-            content: 'You are an expert Hong Kong news editor. Analyze the provided articles and return ONLY valid JSON with your selections. Do not include any explanatory text outside the JSON.'
+            content: 'You are an expert Hong Kong news editor. Analyze the provided articles and return ONLY valid JSON with your selections. CRITICAL: Base your selection reasoning ONLY on the article titles and preview content provided. Do NOT use any external knowledge about Hong Kong news. If an article has minimal content, acknowledge that in your reasoning. Do not include any explanatory text outside the JSON.'
           },
           {
             role: 'user',
@@ -389,6 +546,9 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
 
     const data = await response.json();
     const content = data.choices[0].message.content;
+    
+    // Debug: Log raw response for reasoning validation
+    console.log(`🔍 Raw Perplexity Response for Validation:`, content.substring(0, 500) + '...');
     
     // Parse the JSON response
     let selections: Array<{id: string, reason: string, score: number}>;
@@ -421,6 +581,41 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
 
     console.log(`Perplexity selected ${validSelections.length} articles for enhancement`);
     
+    // Debug: Log the full response to understand what Perplexity returned
+    console.log(`📝 Full Perplexity selections:`, JSON.stringify(validSelections, null, 2));
+    
+    // Validate reasoning consistency (log warnings for mismatches)
+    validSelections.forEach((selection, index) => {
+      console.log(`🔍 Selection ${index + 1} Validation:`)
+      console.log(`   Selected ID: ${selection.id}`)
+      console.log(`   Selection Score: ${selection.score}`)
+      console.log(`   Reason Preview: "${selection.reason.substring(0, 100)}..."`)
+      
+      // Check for common hallucination indicators
+      const reasoningLower = selection.reason.toLowerCase()
+      const financialKeywords = ['hang seng', 'index', 'stock', 'market', '恆生指數', '股市', '股票']
+      const weatherKeywords = ['typhoon', 'wipha', '風球', '颱風', 'signal', 'weather', 'storm', '橙色預警']
+      
+      const containsFinancialKeywords = financialKeywords.some(keyword => reasoningLower.includes(keyword))
+      const containsWeatherKeywords = weatherKeywords.some(keyword => reasoningLower.includes(keyword))
+      
+      if (containsFinancialKeywords) {
+        console.warn(`⚠️ REASONING VALIDATION WARNING: Selection ${selection.id} reasoning mentions financial/stock market topics`)
+        console.warn(`   Verify this matches the actual article content`)
+      }
+      
+      if (containsWeatherKeywords) {
+        console.warn(`⚠️ REASONING VALIDATION WARNING: Selection ${selection.id} reasoning contains weather/typhoon keywords`)
+        console.warn(`   Many typhoon articles may already be enhanced - verify this is the correct topic`)
+      }
+      
+      // Additional warning if reason seems generic or possibly hallucinated
+      if (selection.reason.includes('business development') && selection.reason.includes('gap in') && selection.reason.includes('coverage')) {
+        console.warn(`⚠️ POSSIBLE HALLUCINATION: Selection reasoning appears to be generic/templated`)
+        console.warn(`   Double-check that the selected article actually matches the stated reason`)
+      }
+    })
+    
     return validSelections;
     
   } catch (error) {
@@ -445,7 +640,11 @@ async function markArticlesAsSelected(
   
   for (let i = 0; i < selectedArticles.length; i++) {
     const article = selectedArticles[i];
-    const selection = originalSelections[i];
+    // Find the matching selection based on the article's stored reason and score
+    const selection = originalSelections.find(sel => 
+      sel.reason === article.selection_reason && 
+      sel.score === article.priority_score
+    ) || originalSelections[i]; // Fallback to index if no match found
     
     try {
       const { error } = await supabase
@@ -608,7 +807,7 @@ function applyFallbackKeywordFiltering(
   
   // Extended keyword sets for common Hong Kong news topics
   const topicKeywords = {
-    typhoon: ['typhoon', '風球', '颱風', '台风', 'signal', '韋帕', 'wipha', '八號', '8號', 'no. 8', 'no.8', 'hurricane', 'storm'],
+    typhoon: ['typhoon', '風球', '颱風', '台风', 'signal', '韋帕', 'wipha', '八號', '8號', 'no. 8', 'no.8', 'hurricane', 'storm', '橙色預警', '黃色預警', '深圳', 'shenzhen', '預警生效', 'warning', '暴雨', 'heavy rain'],
     covid: ['covid', 'coronavirus', '新冠', '疫情', 'pandemic', 'vaccine', '疫苗', 'quarantine', 'isolation'],
     politics: ['chief executive', '行政長官', 'legco', '立法會', 'government', '政府', 'policy', '政策', 'election', '選舉'],
     economy: ['economy', '經濟', 'gdp', 'inflation', '通脹', 'stock', '股票', 'market', '市場', 'bank', '銀行'],
@@ -699,11 +898,14 @@ SIMILARITY CRITERIA:
 - Same specific government decision or policy
 - Same specific company news or financial development
 - Same specific sports event or entertainment news
+- **WEATHER EVENTS**: Any coverage of the same typhoon/storm system, even if focusing on different regions (Hong Kong, Shenzhen, Guangdong, etc.)
 
 DO NOT consider similar if:
 - Different but related events (different typhoons, different accidents)
 - Same general topic but different specific stories (different housing projects, different tech developments)
 - Same category but unrelated content (different health news, different business news)
+
+**SPECIAL WEATHER RULE**: If recently enhanced articles cover Typhoon Wipha (韋帕), consider ALL Wipha-related articles as similar, regardless of geographic focus (Hong Kong, Shenzhen, regional warnings, etc.)
 
 CRITICAL INSTRUCTION: Return ONLY a JSON array containing the ARTICLE_ID numbers of candidate articles that are SIMILAR to recently enhanced topics.
 

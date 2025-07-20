@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
 
     const selectedArticle = selectedArticles[0]
     
-    console.log(`✅ Admin selected article for enhancement:`)
+    console.log(`✅ AI selected article for enhancement:`)
     console.log(`   Title: ${selectedArticle.title}`)
     console.log(`   Source: ${selectedArticle.source}`)
     console.log(`   Reason: ${selectedArticle.selection_reason}`)
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Article selected for enhancement by admin request',
+      message: 'Article selected for enhancement by AI (Perplexity)',
       selectedCount: 1,
       method: 'admin_ai_selection',
       article: {

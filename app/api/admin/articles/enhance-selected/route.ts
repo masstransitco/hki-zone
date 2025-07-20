@@ -60,8 +60,10 @@ async function getSelectedArticleForEnhancement(): Promise<any | null> {
       created_at: article.created_at,
       image_url: article.image_url,
       author: article.author,
-      selection_reason: article.selection_metadata?.selection_reason || 'Admin selected for enhancement',
-      priority_score: article.selection_metadata?.priority_score || 80
+      selection_reason: article.selection_metadata?.selection_reason || 
+        (article.selection_metadata?.selection_method === 'perplexity_ai' ? 'AI-selected for enhancement' : 'Selected for enhancement'),
+      priority_score: article.selection_metadata?.priority_score || 80,
+      selection_metadata: article.selection_metadata // Include full metadata for debugging
     }
 
   } catch (error) {
@@ -103,6 +105,14 @@ export async function POST(request: NextRequest) {
       console.log(`📝 Processing selected article: "${selectedArticle.title}"`)
       console.log(`   Source: ${selectedArticle.source}`)
       console.log(`   Reason: ${selectedArticle.selection_reason}`)
+      
+      // Debug: Show selection method and metadata
+      const selectionMethod = selectedArticle.selection_metadata?.selection_method || 'unknown'
+      const selectionSession = selectedArticle.selection_metadata?.selection_session || 'unknown'
+      console.log(`🔍 Selection Debug Info:`)
+      console.log(`   Method: ${selectionMethod}`)
+      console.log(`   Session: ${selectionSession}`)
+      console.log(`   Score: ${selectedArticle.priority_score}`)
     } catch (error) {
       console.error('❌ Error finding selected article:', error)
       throw new Error(`Failed to find selected article: ${error instanceof Error ? error.message : 'Unknown error'}`)
