@@ -6,11 +6,11 @@
     },
     {
       "path": "/api/cron/select-article",
-      "schedule": "*/15 6-1 * * *"
+      "schedule": "*/15 22-17 * * *"
     },
     {
       "path": "/api/cron/enhance-selected",
-      "schedule": "5,20,35,50 6-1 * * *"
+      "schedule": "5,20,35,50 22-17 * * *"
     },
     {
       "path": "/api/cron/scrape-cars",
