@@ -241,8 +241,67 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
       console.log(`     - ${source}: ${data.count} articles, avg ${avgLength} chars`);
     });
 
+    // CRITICAL: Title-based deduplication to prevent same article from multiple URLs
+    console.log(`🔍 Title-based deduplication analysis:`);
+    const titleMap = new Map();
+    candidateArticles.forEach(article => {
+      const normalizedTitle = article.title.trim().toLowerCase();
+      if (!titleMap.has(normalizedTitle)) {
+        titleMap.set(normalizedTitle, []);
+      }
+      titleMap.get(normalizedTitle).push(article);
+    });
+
+    const duplicateTitles = Array.from(titleMap.entries()).filter(([title, articles]) => articles.length > 1);
+    console.log(`   • Found ${duplicateTitles.length} titles with multiple URLs`);
+    
+    if (duplicateTitles.length > 0) {
+      console.log(`   • Duplicate titles to resolve:`);
+      duplicateTitles.forEach(([title, articles]) => {
+        console.log(`     - "${title.substring(0, 50)}..." (${articles.length} versions)`);
+        articles.forEach((article, index) => {
+          console.log(`       ${index + 1}. Content: ${article.content_length} chars | URL: ${article.url.substring(0, 80)}...`);
+        });
+      });
+    }
+
+    // Deduplicate by title - keep the version with the most content
+    const deduplicatedCandidates = Array.from(titleMap.entries()).map(([title, articles]) => {
+      if (articles.length === 1) {
+        return articles[0];
+      }
+      
+      // Keep the article with the most content, or most recent if content is equal
+      const bestArticle = articles.reduce((best, current) => {
+        if (current.content_length > best.content_length) {
+          return current;
+        } else if (current.content_length === best.content_length) {
+          // If content length is equal, prefer more recent
+          return new Date(current.created_at) > new Date(best.created_at) ? current : best;
+        }
+        return best;
+      });
+      
+      const filtered = articles.filter(a => a.id !== bestArticle.id);
+      console.log(`   ⚠️ Removed ${filtered.length} duplicate(s) for "${title.substring(0, 40)}..."`);
+      filtered.forEach(article => {
+        console.log(`     - Removed: ${article.content_length} chars | ${article.url.substring(0, 60)}...`);
+      });
+      console.log(`     ✅ Kept: ${bestArticle.content_length} chars | ${bestArticle.url.substring(0, 60)}...`);
+      
+      return bestArticle;
+    });
+    
+    console.log(`📈 Title Deduplication Results:`);
+    console.log(`   • Before deduplication: ${candidateArticles.length} articles`);
+    console.log(`   • After deduplication: ${deduplicatedCandidates.length} articles`);
+    console.log(`   • Removed: ${candidateArticles.length - deduplicatedCandidates.length} duplicate titles`);
+
+    // Use deduplicated candidates for further filtering
+    const candidatesForQualityCheck = deduplicatedCandidates;
+
     // Headline-based selection - focus on title quality for Perplexity selection
-    const qualityArticles = candidateArticles.filter(article => {
+    const qualityArticles = candidatesForQualityCheck.filter(article => {
       // Only filter out articles with clearly problematic titles
       if (!article.title || article.title.length < 5) {
         console.log(`     ❌ Filtered "${article.title}" - title too short or missing`);
@@ -268,7 +327,7 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
     });
 
     console.log(`📈 Quality Filtering Results:`);
-    console.log(`   • Passed quality filters: ${qualityArticles.length} of ${candidateArticles.length} (${Math.round(qualityArticles.length/candidateArticles.length*100)}%)`);
+    console.log(`   • Passed quality filters: ${qualityArticles.length} of ${candidatesForQualityCheck.length} (${Math.round(qualityArticles.length/candidatesForQualityCheck.length*100)}%)`);
     console.log(`   • Sources represented: ${[...new Set(qualityArticles.map(a => a.source))].join(', ')}`);
     
     if (qualityArticles.length > 0) {
