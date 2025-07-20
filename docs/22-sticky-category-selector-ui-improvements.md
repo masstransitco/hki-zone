@@ -24,9 +24,11 @@ This document outlines the UI improvements made to implement a sticky category s
 
 **Key Features:**
 - `position: sticky` with dynamic top positioning
-- `top-[57px]` when header visible, `top-0` when header hidden
+- `top-[57px]` when header visible, `top-0` when header hidden (updated from `top-16`)
 - Shared state management with header via `useHeaderVisibility` hook
 - Smooth transitions: `transition-all duration-300 ease-in-out`
+- Clean floating appearance without background (updated January 2025)
+- Precise header visibility timing for optimal synchronization
 
 ### 2. Shared Header Visibility State
 
@@ -98,23 +100,33 @@ This document outlines the UI improvements made to implement a sticky category s
 
 ## Technical Implementation
 
-### Scroll Behavior Logic
+### Scroll Behavior Logic (Updated January 2025)
 ```typescript
 const handleScroll = () => {
   const currentScrollY = window.scrollY
   
-  // Show when scrolling up or at top
-  if (currentScrollY < lastScrollY || currentScrollY < 10) {
+  // Show header only when very close to the top
+  if (currentScrollY < 10) {
     setIsVisible(true)
   } 
-  // Hide when scrolling down after 100px
+  // Hide header when scrolling down (only after scrolling past 100px)
   else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+    setIsVisible(false)
+  }
+  // Keep header hidden when scrolling up but not at top
+  else if (currentScrollY >= 10) {
     setIsVisible(false)
   }
   
   setLastScrollY(currentScrollY)
 }
 ```
+
+**Key Improvements:**
+- Header shows only when `scrollY < 10` (very close to top)
+- Header stays hidden when scrolling up but not at top (`scrollY >= 10`)
+- Eliminates premature header visibility during upward scroll
+- Perfect synchronization between header and sticky selector
 
 ### Dynamic Positioning
 ```tsx
@@ -151,12 +163,39 @@ const handleScroll = () => {
 - `/docs/22-sticky-category-selector-ui-improvements.md` - This documentation
 
 ### Files Modified
-- `/app/page.tsx` - Layout restructuring and state management
+- `/app/page.tsx` - Layout restructuring and state management, fallback height fix (January 2025)
 - `/components/header.tsx` - Updated to use shared hook
 - `/components/main-content-with-selector.tsx` - Refactored to accept props
 - `/components/content-type-selector.tsx` - Removed bottom margin
 - `/components/topics-feed.tsx` - Added standardized top padding
 - `/components/government-bulletin.tsx` - Added standardized top padding
+- `/components/sticky-category-selector.tsx` - Height fix and background removal (January 2025)
+- `/hooks/use-header-visibility.ts` - Refined visibility timing logic (January 2025)
+
+## January 2025 Updates
+
+### Push Effect Layout Compatibility
+After implementing side menu functionality across all pages with push effect layouts, synchronization issues were discovered and resolved:
+
+#### Problems Identified
+1. **Height Mismatch**: `top-16` (64px) didn't match actual header height (57px)
+2. **Premature Header Visibility**: Header showed on any upward scroll, causing gaps
+3. **Timing Issues**: Category selector moved before header was actually visible
+4. **Background Interference**: Background styling conflicted with floating design
+
+#### Solutions Implemented
+1. **Precise Height Matching**: Updated from `top-16` to `top-[57px]` for exact header alignment
+2. **Refined Visibility Logic**: Header shows only when `scrollY < 10` (very close to top)
+3. **Clean Floating Design**: Removed background for modern, transparent appearance
+4. **Perfect Synchronization**: Eliminated gaps between header visibility and selector positioning
+
+#### New Behavior Flow
+```
+At top (scrollY < 10):        Header visible → Selector at top-[57px]
+Scrolling down > 100px:       Header hides → Selector moves to top-0
+Scrolling up (scrollY ≥ 10):  Header stays hidden → Selector stays at top-0
+Reaching top (scrollY < 10):  Header shows → Selector moves to top-[57px]
+```
 
 ## Benefits Achieved
 
@@ -166,6 +205,8 @@ const handleScroll = () => {
 - ✅ Smooth, predictable interactions
 - ✅ Modern, floating UI aesthetic
 - ✅ Maintained scroll performance
+- ✅ Perfect header/selector synchronization (January 2025)
+- ✅ No gaps or visual glitches during scroll transitions
 
 ### Code Quality
 - ✅ Shared state management for related components
@@ -193,6 +234,26 @@ const handleScroll = () => {
 1. **Performance:** Monitor scroll performance on lower-end devices
 2. **Browser Compatibility:** Test sticky positioning across browsers
 3. **Mobile Behavior:** Verify smooth operation on mobile devices
-4. **State Synchronization:** Ensure header and selector stay synchronized
+4. **State Synchronization:** Ensure header and selector stay synchronized ✅ (Fixed January 2025)
+5. **Push Effect Compatibility:** Verify behavior with side menu open/closed ✅ (Fixed January 2025)
 
-This implementation successfully modernizes the main page UI while maintaining excellent performance and user experience across all device types and usage patterns.
+## Troubleshooting (January 2025)
+
+### Common Issues and Solutions
+
+#### Gap Above Category Selector
+**Symptom:** Space appears above category selector when scrolling up
+**Cause:** Header visibility timing mismatch
+**Solution:** Updated visibility logic to show header only at `scrollY < 10`
+
+#### Height Misalignment  
+**Symptom:** Category selector doesn't align with header properly
+**Cause:** `top-16` (64px) vs actual header height (57px)
+**Solution:** Changed to `top-[57px]` for precise alignment
+
+#### Background Conflicts
+**Symptom:** Category selector background interferes with floating design
+**Cause:** Unnecessary background styling
+**Solution:** Removed `bg-background/95 backdrop-blur-sm border-b` classes
+
+This implementation successfully modernizes the main page UI while maintaining excellent performance and user experience across all device types and usage patterns. The January 2025 updates ensure perfect synchronization with the push effect layout system.

@@ -193,8 +193,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Mark original articles as selected to prevent re-selection by automated processes
-    console.log('Marking original articles as selected for enhancement...')
+    // Mark original articles as enhanced and selected to prevent re-selection by automated processes
+    console.log('Marking original articles as enhanced and selected for future prevention...')
     for (const [articleId, articleData] of processedArticles.entries()) {
       // Only mark articles that had at least one successful language enhancement
       if (articleData.successfulLanguages.length > 0) {
@@ -203,6 +203,7 @@ export async function POST(request: NextRequest) {
             .from('articles')
             .update({ 
               selected_for_enhancement: true,
+              is_ai_enhanced: true, // Mark as enhanced to prevent re-selection
               selection_metadata: {
                 selected_at: new Date().toISOString(),
                 selection_reason: 'Manual bulk clone selection',
@@ -212,17 +213,25 @@ export async function POST(request: NextRequest) {
                 languages_failed: articleData.failedLanguages,
                 success_count: articleData.successfulLanguages.length,
                 total_languages: languages.length
+              },
+              enhancement_metadata: {
+                enhanced_at: new Date().toISOString(),
+                trilingual_versions_created: articleData.successfulLanguages.length,
+                enhancement_method: 'bulk_manual',
+                languages_created: articleData.successfulLanguages,
+                languages_failed: articleData.failedLanguages,
+                bulk_enhanced: true
               }
             })
             .eq('id', articleId)
 
           if (error) {
-            console.error(`Failed to mark article ${articleId} as selected:`, error)
+            console.error(`Failed to mark article ${articleId} as enhanced:`, error)
           } else {
-            console.log(`✓ Marked article "${articleData.article.title}" as selected (${articleData.successfulLanguages.length}/${languages.length} languages successful)`)
+            console.log(`✓ Marked article "${articleData.article.title}" as enhanced (${articleData.successfulLanguages.length}/${languages.length} languages successful)`)
           }
         } catch (error) {
-          console.error(`Error marking article ${articleId} as selected:`, error)
+          console.error(`Error marking article ${articleId} as enhanced:`, error)
         }
       } else {
         console.log(`⚠ Skipping marking article "${articleData.article.title}" - no successful language enhancements`)

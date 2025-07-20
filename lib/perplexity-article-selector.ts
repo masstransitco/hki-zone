@@ -32,7 +32,8 @@ export interface SelectedArticle extends CandidateArticle {
 }
 
 export async function selectArticlesWithPerplexity(count: number = 10): Promise<SelectedArticle[]> {
-  console.log(`Starting Perplexity-assisted article selection for ${count} articles...`);
+  const sessionId = `selection_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+  console.log(`🚀 Starting Perplexity-assisted article selection for ${count} articles (Session: ${sessionId})`);
 
   // 1. Get candidate articles from database
   const candidateArticles = await getCandidateArticles();
@@ -41,30 +42,49 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
     throw new Error('No candidate articles found for selection');
   }
 
-  console.log(`Found ${candidateArticles.length} candidate articles`);
+  console.log(`📊 Selection Statistics (${sessionId}):`);
+  console.log(`   • Found ${candidateArticles.length} candidate articles`);
+  console.log(`   • Sources: ${[...new Set(candidateArticles.map(a => a.source))].join(', ')}`);
+  console.log(`   • Categories: ${[...new Set(candidateArticles.map(a => a.category))].join(', ')}`);
+  console.log(`   • Date range: ${candidateArticles[candidateArticles.length - 1]?.created_at?.substring(0, 10)} to ${candidateArticles[0]?.created_at?.substring(0, 10)}`);
 
   // 2. Get recently enhanced topics for deduplication
   const recentlyEnhancedTopics = await getRecentlyEnhancedTopics();
-  console.log(`Found ${recentlyEnhancedTopics.length} recently enhanced topics for deduplication`);
+  console.log(`🔍 Deduplication Check (${sessionId}):`);
+  console.log(`   • Found ${recentlyEnhancedTopics.length} recently enhanced topics for comparison`);
   
-  // Debug: Show the enhanced topics we're comparing against
+  // Enhanced logging: Show the enhanced topics we're comparing against
   if (recentlyEnhancedTopics.length > 0) {
     console.log('📋 Recently enhanced topics to avoid duplicating:');
     recentlyEnhancedTopics.forEach((topic, index) => {
-      console.log(`   ${index + 1}. "${topic.title?.substring(0, 60)}..."`);
+      const date = new Date(topic.created_at).toLocaleDateString();
+      console.log(`   ${index + 1}. [${date}] "${topic.title?.substring(0, 60)}..."`);
     });
   }
 
   // 3. Filter out articles with similar topics to recently enhanced ones
+  const beforeDedup = candidateArticles.length;
   const deduplicatedArticles = await filterSimilarTopics(candidateArticles, recentlyEnhancedTopics);
-  console.log(`After topic deduplication: ${deduplicatedArticles.length} unique articles remaining`);
+  const afterDedup = deduplicatedArticles.length;
+  const filteredCount = beforeDedup - afterDedup;
+  
+  console.log(`📈 Deduplication Results (${sessionId}):`);
+  console.log(`   • Before deduplication: ${beforeDedup} articles`);
+  console.log(`   • After deduplication: ${afterDedup} articles`);
+  console.log(`   • Filtered out: ${filteredCount} articles (${Math.round(filteredCount / beforeDedup * 100)}%)`);
+  console.log(`   • Deduplication effectiveness: ${filteredCount > 0 ? 'ACTIVE' : 'NO DUPLICATES FOUND'}`);
 
   if (deduplicatedArticles.length === 0) {
-    console.log('⚠️ All candidate articles are similar to recently enhanced topics');
+    console.log(`❌ Selection Failed (${sessionId}): All candidate articles are similar to recently enhanced topics`);
     throw new Error('No unique articles found after topic deduplication');
   }
 
   // 4. Create selection prompt for Perplexity using deduplicated articles
+  console.log(`🔍 First 5 articles being sent to Perplexity for selection:`);
+  deduplicatedArticles.slice(0, 5).forEach((article, index) => {
+    console.log(`   ${index + 1}. "${article.title.substring(0, 60)}..." (ID: ${article.id})`);
+  });
+  
   const selectionPrompt = createArticleSelectionPrompt(deduplicatedArticles, count);
 
   // 5. Call Perplexity API for intelligent selection
@@ -105,16 +125,16 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   
   // Mark selected articles to prevent re-selection in future runs
   if (selectedArticles.length > 0) {
-    await markArticlesAsSelected(selectedArticles, selectedIds);
+    await markArticlesAsSelected(selectedArticles, selectedIds, sessionId);
   }
   
   if (selectedArticles.length === 0 && selectedIds.length > 0) {
-    console.error('ERROR: Perplexity selections did not map to any candidate articles');
+    console.error(`❌ Selection Mapping Error (${sessionId}): Perplexity selections did not map to any candidate articles`);
     console.error('Selected IDs:', selectedIds.map(s => s.id));
     console.error('Valid range: 1 to', deduplicatedArticles.length);
     
     // Fallback: if no articles selected but we have candidates, pick the most recent ones
-    console.log(`FALLBACK: Selecting ${count} most recent articles as fallback`);
+    console.log(`🔄 Fallback Selection (${sessionId}): Selecting ${count} most recent articles`);
     const fallbackArticles = deduplicatedArticles
       .slice(0, count)
       .map((article, index) => ({
@@ -130,12 +150,21 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
         reason: 'Fallback selection',
         score: 75
       }));
-      await markArticlesAsSelected(fallbackArticles, fallbackSelections);
+      await markArticlesAsSelected(fallbackArticles, fallbackSelections, sessionId);
     }
     
-    console.log(`Fallback selected ${fallbackArticles.length} articles`);
+    console.log(`✅ Fallback Complete (${sessionId}): Selected ${fallbackArticles.length} articles`);
     return fallbackArticles;
   }
+
+  // Final selection summary
+  console.log(`✅ Selection Complete (${sessionId}):`);
+  console.log(`   • Successfully selected: ${selectedArticles.length} articles`);
+  console.log(`   • AI selection accuracy: ${Math.round(selectedArticles.length / selectedIds.length * 100)}%`);
+  console.log(`   • Selected articles:`);
+  selectedArticles.forEach((article, index) => {
+    console.log(`     ${index + 1}. [${article.source}] "${article.title.substring(0, 50)}..." (Score: ${article.priority_score})`);
+  });
   
   return selectedArticles;
 }
@@ -180,14 +209,67 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
       has_image: !!article.image_url
     }));
 
-    // Filter for quality - only articles with substantial content
-    const qualityArticles = candidateArticles.filter(article => 
-      article.content_length > 200 && // Minimum content length
-      article.title.length > 10 // Reasonable title length
-    );
+    // Enhanced quality filtering with detailed logging
+    console.log(`📊 Content Quality Analysis:`);
+    console.log(`   • Initial candidates: ${candidateArticles.length}`);
+    
+    // Analyze content lengths for logging
+    const contentLengths = candidateArticles.map(a => a.content_length).sort((a, b) => b - a);
+    console.log(`   • Content length range: ${contentLengths[0]} to ${contentLengths[contentLengths.length - 1]} characters`);
+    console.log(`   • Median content length: ${contentLengths[Math.floor(contentLengths.length / 2)]} characters`);
+    
+    // Count articles by content length thresholds
+    const over200 = candidateArticles.filter(a => a.content_length > 200).length;
+    const over100 = candidateArticles.filter(a => a.content_length > 100).length;
+    const over50 = candidateArticles.filter(a => a.content_length > 50).length;
+    
+    console.log(`   • Articles > 200 chars: ${over200} (${Math.round(over200/candidateArticles.length*100)}%)`);
+    console.log(`   • Articles > 100 chars: ${over100} (${Math.round(over100/candidateArticles.length*100)}%)`);
+    console.log(`   • Articles > 50 chars: ${over50} (${Math.round(over50/candidateArticles.length*100)}%)`);
+    
+    // Source distribution analysis
+    const sourceBreakdown = candidateArticles.reduce((acc: any, article) => {
+      if (!acc[article.source]) acc[article.source] = { count: 0, avgLength: 0, lengths: [] };
+      acc[article.source].count++;
+      acc[article.source].lengths.push(article.content_length);
+      return acc;
+    }, {});
+    
+    console.log(`   • Source breakdown:`);
+    Object.entries(sourceBreakdown).forEach(([source, data]: [string, any]) => {
+      const avgLength = Math.round(data.lengths.reduce((a: number, b: number) => a + b, 0) / data.lengths.length);
+      console.log(`     - ${source}: ${data.count} articles, avg ${avgLength} chars`);
+    });
 
-    console.log(`Filtered ${qualityArticles.length} quality scraped articles from ${articles.length} candidates`);
-    console.log(`Sources represented: ${[...new Set(qualityArticles.map(a => a.source))].join(', ')}`);
+    // Headline-based selection - focus on title quality for Perplexity selection
+    const qualityArticles = candidateArticles.filter(article => {
+      // Only filter out articles with clearly problematic titles
+      if (!article.title || article.title.length < 5) {
+        console.log(`     ❌ Filtered "${article.title}" - title too short or missing`);
+        return false;
+      }
+      
+      // Filter out obvious test/spam articles by title patterns
+      const titleLower = article.title.toLowerCase();
+      if (titleLower.includes('test') || titleLower.includes('測試') || titleLower === 'title') {
+        console.log(`     ❌ Filtered "${article.title}" - appears to be test content`);
+        return false;
+      }
+      
+      // Accept all articles with reasonable headlines - let Perplexity judge content impact
+      console.log(`     ✅ Accepted "${article.title.substring(0, 50)}..." (${article.content_length} chars) - headline-based selection`);
+      return true;
+    });
+
+    console.log(`📈 Quality Filtering Results:`);
+    console.log(`   • Passed quality filters: ${qualityArticles.length} of ${candidateArticles.length} (${Math.round(qualityArticles.length/candidateArticles.length*100)}%)`);
+    console.log(`   • Sources represented: ${[...new Set(qualityArticles.map(a => a.source))].join(', ')}`);
+    
+    if (qualityArticles.length > 0) {
+      console.log(`   • Average content length: ${Math.round(qualityArticles.reduce((sum, a) => sum + a.content_length, 0) / qualityArticles.length)} characters`);
+    }
+    
+    // Note: No fallback needed - headline-based selection should provide sufficient candidates
     
     return qualityArticles;
 
@@ -212,15 +294,29 @@ function createArticleSelectionPrompt(candidates: CandidateArticle[], count: num
     published_hours_ago: Math.round((Date.now() - new Date(article.published_at).getTime()) / (1000 * 60 * 60))
   }));
 
+  // Debug logging: Show what Perplexity will see
+  console.log(`📋 Prompt Preview - First 3 articles as they appear to Perplexity:`);
+  articleSummaries.slice(0, 3).forEach(article => {
+    console.log(`   ARTICLE_NUMBER: ${article.sequentialId}`);
+    console.log(`   Title: ${article.title}`);
+    console.log(`   Source: ${article.source} | Category: ${article.category}`);
+    console.log(`   Preview: ${article.summary.substring(0, 100)}...`);
+    console.log(`   ---`);
+  });
+
   return `You are an expert Hong Kong news editor tasked with selecting the ${count} most impactful and enhancement-worthy articles for AI processing.
 
+IMPORTANT: Focus on HEADLINES for selection - content will be enhanced with AI research during processing.
+
 SELECTION CRITERIA (in order of importance):
-1. **News Impact**: High public interest, breaking news, significant developments
-2. **Enhancement Potential**: Articles that would benefit from deeper analysis, context, and multilingual presentation
-3. **Content Quality**: Well-written, substantial content (>300 characters preferred)
+1. **News Impact**: High public interest, breaking news, significant developments affecting Hong Kong
+2. **Editorial Value**: Stories that would benefit from deeper analysis, context, and multilingual presentation
+3. **Headline Quality**: Clear, compelling headlines that indicate substantial news value
 4. **Source Diversity**: Balanced representation across major Hong Kong news sources
-5. **Category Balance**: Mix of politics, business, tech, lifestyle, health, entertainment
+5. **Topic Balance**: Mix of politics, business, weather/safety, lifestyle, health, entertainment
 6. **Recency**: Prefer more recent articles (published within last 24-48 hours)
+
+NOTE: Content length is not a primary factor - focus on headline impact and editorial value. AI enhancement will add research and context regardless of original content length.
 
 AVAILABLE ARTICLES TO CHOOSE FROM:
 ${articleSummaries.map((article) => `
@@ -342,9 +438,10 @@ function getDateDaysAgo(days: number): string {
 // Mark selected articles to prevent re-selection in future runs
 async function markArticlesAsSelected(
   selectedArticles: SelectedArticle[], 
-  originalSelections: Array<{id: string, reason: string, score: number}>
+  originalSelections: Array<{id: string, reason: string, score: number}>,
+  sessionId: string
 ): Promise<void> {
-  console.log(`Marking ${selectedArticles.length} articles as selected to prevent re-selection...`);
+  console.log(`🔐 Marking ${selectedArticles.length} articles as selected to prevent re-selection (${sessionId})...`);
   
   for (let i = 0; i < selectedArticles.length; i++) {
     const article = selectedArticles[i];
@@ -360,20 +457,28 @@ async function markArticlesAsSelected(
             selection_reason: article.selection_reason,
             priority_score: article.priority_score,
             perplexity_selection_id: selection?.id || `${i + 1}`,
-            selection_session: Date.now() // To group selections from same session
+            selection_session: sessionId, // Track session for grouping and debugging
+            selection_method: 'perplexity_ai',
+            deduplication_stats: {
+              candidates_before_dedup: selectedArticles.length + i, // approximation for logging
+              candidates_after_dedup: selectedArticles.length,
+              ai_powered_dedup: process.env.PERPLEXITY_API_KEY ? true : false
+            }
           }
         })
         .eq('id', article.id);
       
       if (error) {
-        console.error(`Failed to mark article ${article.id} as selected:`, error);
+        console.error(`❌ Failed to mark article ${article.id} as selected:`, error);
       } else {
-        console.log(`✓ Marked article "${article.title}" as selected`);
+        console.log(`   ✓ [${sessionId}] Marked "${article.title.substring(0, 40)}..." as selected`);
       }
     } catch (error) {
-      console.error(`Error marking article ${article.id} as selected:`, error);
+      console.error(`❌ Error marking article ${article.id} as selected:`, error);
     }
   }
+  
+  console.log(`✅ Article marking complete (${sessionId}): ${selectedArticles.length} articles marked as selected`);
 }
 
 // Helper function to get selection statistics
@@ -428,12 +533,13 @@ async function getRecentlyEnhancedTopics(): Promise<Array<{ title: string, summa
       .from('articles')
       .select('title, summary, created_at')
       .eq('is_ai_enhanced', true)
-      .gte('created_at', getDateDaysAgo(2)) // Last 48 hours
+      .gte('created_at', getDateDaysAgo(7)) // Extended to 7 days to match candidate selection window
       .order('created_at', { ascending: false })
-      .limit(20); // Check last 20 enhanced articles
+      .limit(50); // Increased limit to account for longer time window
 
     if (error) throw error;
 
+    console.log(`📊 Deduplication check: Found ${recentEnhanced?.length || 0} enhanced articles in last 7 days`);
     return recentEnhanced || [];
   } catch (error) {
     console.error('Error fetching recently enhanced topics:', error);
@@ -453,51 +559,102 @@ async function filterSimilarTopics(
   }
 
   if (!process.env.PERPLEXITY_API_KEY) {
-    console.log('⚠️ Perplexity API key not available for topic deduplication, skipping...');
-    return candidateArticles;
+    console.log('⚠️ Perplexity API key not available for topic deduplication, using fallback keyword filtering...');
+    return applyFallbackKeywordFiltering(candidateArticles, recentlyEnhancedTopics);
   }
 
   try {
-    console.log('🔍 Using simple title-based similarity detection (temporary)...');
+    console.log('🔍 Using AI-powered topic similarity detection via Perplexity...');
     
-    // Temporary simple similarity check based on keywords
-    const typhoonKeywords = ['typhoon', '風球', '颱風', '台风', 'signal', '韋帕', 'wipha', '八號', '8號', 'no. 8', 'no.8'];
+    // Use AI-powered similarity detection for comprehensive topic coverage
+    const similarityPrompt = createTopicSimilarityPrompt(candidateArticles, recentlyEnhancedTopics);
+    const similarArticleIds = await callPerplexityForSimilarity(similarityPrompt);
     
-    // Check if any recently enhanced topics contain typhoon keywords
-    const hasTyphoonEnhanced = recentlyEnhancedTopics.some(topic => 
-      typhoonKeywords.some(keyword => 
-        topic.title?.toLowerCase().includes(keyword.toLowerCase())
-      )
-    );
-    
-    if (hasTyphoonEnhanced) {
-      console.log('⚠️ Found enhanced typhoon articles, filtering out typhoon candidates...');
-      
-      // Filter out typhoon-related candidate articles
-      const uniqueArticles = candidateArticles.filter(article => {
-        const isTyphoon = typhoonKeywords.some(keyword => 
-          article.title?.toLowerCase().includes(keyword.toLowerCase())
-        );
-        
-        if (isTyphoon) {
-          console.log(`   ⚠️ Filtered out typhoon article: "${article.title.substring(0, 50)}..."`);
-        }
-        
-        return !isTyphoon;
-      });
-      
-      console.log(`✅ Simple deduplication complete: ${candidateArticles.length} → ${uniqueArticles.length} unique articles`);
-      return uniqueArticles;
-    } else {
-      console.log('✅ No typhoon articles found in recently enhanced, keeping all candidates');
+    if (similarArticleIds.length === 0) {
+      console.log('✅ No similar topics found, keeping all candidate articles');
       return candidateArticles;
     }
+    
+    console.log(`🔍 AI detected ${similarArticleIds.length} similar articles to filter out`);
+    
+    // Filter out articles identified as similar by AI
+    const uniqueArticles = candidateArticles.filter((article, index) => {
+      const sequentialId = (index + 1).toString(); // Convert to 1-based string
+      const isSimilar = similarArticleIds.includes(sequentialId);
+      
+      if (isSimilar) {
+        console.log(`   ⚠️ AI filtered out similar article: "${article.title.substring(0, 60)}..."`);
+      }
+      
+      return !isSimilar;
+    });
+    
+    console.log(`✅ AI-powered deduplication complete: ${candidateArticles.length} → ${uniqueArticles.length} unique articles`);
+    return uniqueArticles;
 
   } catch (error) {
-    console.error('Error in topic similarity detection:', error);
-    console.log('Proceeding without topic deduplication to avoid blocking selection...');
-    return candidateArticles; // Return all candidates if similarity detection fails
+    console.error('❌ Error in AI topic similarity detection:', error);
+    console.log('📋 Falling back to keyword-based filtering...');
+    return applyFallbackKeywordFiltering(candidateArticles, recentlyEnhancedTopics);
   }
+}
+
+// Fallback keyword-based filtering for when AI is unavailable
+function applyFallbackKeywordFiltering(
+  candidateArticles: CandidateArticle[], 
+  recentlyEnhancedTopics: Array<{ title: string, summary?: string, created_at: string }>
+): CandidateArticle[] {
+  console.log('🔍 Using fallback keyword-based similarity detection...');
+  
+  // Extended keyword sets for common Hong Kong news topics
+  const topicKeywords = {
+    typhoon: ['typhoon', '風球', '颱風', '台风', 'signal', '韋帕', 'wipha', '八號', '8號', 'no. 8', 'no.8', 'hurricane', 'storm'],
+    covid: ['covid', 'coronavirus', '新冠', '疫情', 'pandemic', 'vaccine', '疫苗', 'quarantine', 'isolation'],
+    politics: ['chief executive', '行政長官', 'legco', '立法會', 'government', '政府', 'policy', '政策', 'election', '選舉'],
+    economy: ['economy', '經濟', 'gdp', 'inflation', '通脹', 'stock', '股票', 'market', '市場', 'bank', '銀行'],
+    property: ['property', '物業', 'housing', '房屋', 'hdb', '公屋', 'price', '價格', 'rent', '租金'],
+    transport: ['mtr', '港鐵', 'airport', '機場', 'traffic', '交通', 'delay', '延誤', 'service', '服務']
+  };
+  
+  // Check which topic categories have been recently enhanced
+  const enhancedTopics = new Set<string>();
+  
+  for (const topic of recentlyEnhancedTopics) {
+    const title = topic.title?.toLowerCase() || '';
+    const summary = topic.summary?.toLowerCase() || '';
+    const content = title + ' ' + summary;
+    
+    for (const [category, keywords] of Object.entries(topicKeywords)) {
+      if (keywords.some(keyword => content.includes(keyword.toLowerCase()))) {
+        enhancedTopics.add(category);
+      }
+    }
+  }
+  
+  if (enhancedTopics.size === 0) {
+    console.log('✅ No matching topic categories found in recently enhanced articles');
+    return candidateArticles;
+  }
+  
+  console.log(`📋 Found enhanced topic categories: ${Array.from(enhancedTopics).join(', ')}`);
+  
+  // Filter out candidate articles that match enhanced topic categories
+  const uniqueArticles = candidateArticles.filter(article => {
+    const articleContent = (article.title + ' ' + (article.summary || '')).toLowerCase();
+    
+    for (const category of enhancedTopics) {
+      const keywords = topicKeywords[category as keyof typeof topicKeywords];
+      if (keywords.some(keyword => articleContent.includes(keyword.toLowerCase()))) {
+        console.log(`   ⚠️ Filtered out ${category} article: "${article.title.substring(0, 50)}..."`);
+        return false;
+      }
+    }
+    
+    return true;
+  });
+  
+  console.log(`✅ Keyword-based deduplication complete: ${candidateArticles.length} → ${uniqueArticles.length} unique articles`);
+  return uniqueArticles;
 }
 
 function createTopicSimilarityPrompt(
