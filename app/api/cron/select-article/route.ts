@@ -11,7 +11,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const now = new Date()
+    const utcTime = now.toISOString()
+    const hkTime = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', ' HKT')
+    
     console.log('🔍 Starting article selection process...')
+    console.log(`⏰ Execution time: ${utcTime} (UTC) / ${hkTime}`)
 
     // Select 1 best article from scraped sources for enhancement
     const selectedArticles = await selectArticlesWithPerplexity(1)

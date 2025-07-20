@@ -167,6 +167,37 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to save articles: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
 
+    // 4. Mark original article as enhanced to prevent re-selection
+    try {
+      console.log('🔐 Marking original article as enhanced...')
+      const { error: markError } = await supabase
+        .from('articles')
+        .update({ 
+          is_ai_enhanced: true,
+          enhancement_metadata: {
+            enhanced_at: new Date().toISOString(),
+            trilingual_versions_created: savedArticles.length,
+            batch_id: batchId,
+            processing_time_ms: Date.now() - startTime,
+            estimated_cost: calculateTrilingualCost(trilingualArticles),
+            enhancement_method: 'admin_trilingual',
+            enhanced_article_ids: savedArticles.map(a => a.id),
+            admin_triggered: true
+          }
+        })
+        .eq('id', selectedArticle.id)
+
+      if (markError) {
+        console.error('❌ Failed to mark original article as enhanced:', markError)
+        // Don't throw here - enhancement succeeded even if marking failed
+      } else {
+        console.log(`✅ Marked original article "${selectedArticle.title}" as enhanced`)
+      }
+    } catch (error) {
+      console.error('❌ Error marking original article as enhanced:', error)
+      // Don't throw here - enhancement succeeded even if marking failed
+    }
+
     const processingTime = Date.now() - startTime
     const estimatedCost = calculateTrilingualCost(trilingualArticles)
 

@@ -174,6 +174,21 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
     // Get recent scraped articles that haven't been AI enhanced and haven't been selected before
     const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'ONCC', 'RTHK'];
     
+    // First, get recently selected article titles to avoid re-selecting similar content
+    const { data: recentlySelected } = await supabase
+      .from('articles')
+      .select('title, selection_metadata')
+      .eq('selected_for_enhancement', true)
+      .gte('created_at', getDateDaysAgo(3)) // Check last 3 days
+      .order('created_at', { ascending: false })
+      .limit(100);
+      
+    const recentTitles = new Set((recentlySelected || []).map(a => 
+      a.title.trim().toLowerCase().replace(/\s+/g, ' ').substring(0, 50)
+    ));
+    
+    console.log(`📋 Found ${recentTitles.size} recently selected article titles to avoid`);
+    
     const { data: articles, error } = await supabase
       .from('articles')
       .select('*')
@@ -192,22 +207,32 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
     }
 
     // Transform and enrich articles with metadata
-    const candidateArticles: CandidateArticle[] = articles.map(article => ({
-      id: article.id,
-      title: article.title,
-      summary: article.summary,
-      content: article.content,
-      url: article.url,
-      source: article.source,
-      category: article.category || 'general',
-      published_at: article.published_at,
-      created_at: article.created_at,
-      image_url: article.image_url,
-      author: article.author,
-      content_length: article.content?.length || 0,
-      has_summary: !!(article.summary && article.summary.length > 50),
-      has_image: !!article.image_url
-    }));
+    const candidateArticles: CandidateArticle[] = articles
+      .map(article => ({
+        id: article.id,
+        title: article.title,
+        summary: article.summary,
+        content: article.content,
+        url: article.url,
+        source: article.source,
+        category: article.category || 'general',
+        published_at: article.published_at,
+        created_at: article.created_at,
+        image_url: article.image_url,
+        author: article.author,
+        content_length: article.content?.length || 0,
+        has_summary: !!(article.summary && article.summary.length > 50),
+        has_image: !!article.image_url
+      }))
+      .filter(article => {
+        // Filter out articles with similar titles to recently selected ones
+        const normalizedTitle = article.title.trim().toLowerCase().replace(/\s+/g, ' ').substring(0, 50);
+        if (recentTitles.has(normalizedTitle)) {
+          console.log(`     ⚠️ Filtered "${article.title.substring(0, 50)}..." - similar article recently selected`);
+          return false;
+        }
+        return true;
+      });
 
     // Enhanced quality filtering with detailed logging
     console.log(`📊 Content Quality Analysis:`);
@@ -245,7 +270,14 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
     console.log(`🔍 Title-based deduplication analysis:`);
     const titleMap = new Map();
     candidateArticles.forEach(article => {
-      const normalizedTitle = article.title.trim().toLowerCase();
+      // Normalize title more aggressively
+      const normalizedTitle = article.title
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, ' ')  // Normalize whitespace
+        .replace(/[^\w\s\u4e00-\u9fff]/g, '') // Remove special chars but keep Chinese
+        .substring(0, 50); // Use first 50 chars to catch minor variations
+        
       if (!titleMap.has(normalizedTitle)) {
         titleMap.set(normalizedTitle, []);
       }
@@ -299,6 +331,34 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
 
     // Use deduplicated candidates for further filtering
     const candidatesForQualityCheck = deduplicatedCandidates;
+    
+    // Additional URL-based deduplication
+    console.log(`🔗 URL-based deduplication analysis:`);
+    const urlMap = new Map();
+    candidatesForQualityCheck.forEach(article => {
+      // Normalize URL for comparison
+      const normalizedUrl = article.url
+        .toLowerCase()
+        .replace(/^https?:\/\/(www\.)?/, '') // Remove protocol and www
+        .replace(/\/$/, '') // Remove trailing slash
+        .replace(/[?#].*$/, ''); // Remove query params and fragments
+        
+      if (!urlMap.has(normalizedUrl)) {
+        urlMap.set(normalizedUrl, []);
+      }
+      urlMap.get(normalizedUrl).push(article);
+    });
+    
+    const duplicateUrls = Array.from(urlMap.entries()).filter(([url, articles]) => articles.length > 1);
+    if (duplicateUrls.length > 0) {
+      console.log(`   • Found ${duplicateUrls.length} duplicate URLs after normalization`);
+      duplicateUrls.forEach(([url, articles]) => {
+        console.log(`     - URL: ${url}`);
+        articles.forEach(article => {
+          console.log(`       ${article.id}: ${article.title.substring(0, 40)}...`);
+        });
+      });
+    }
 
     // Headline-based selection - focus on title quality for Perplexity selection
     const qualityArticles = candidatesForQualityCheck.filter(article => {

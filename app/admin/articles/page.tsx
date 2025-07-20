@@ -181,10 +181,12 @@ export default function ArticlesPage() {
     let processedCount = 0
     let successCount = 0
     const results = []
+    const errors = []
 
     try {
       // Step 1: Mark all selected articles for enhancement
       console.log(`Marking ${selectedArticleIds.size} articles for enhancement...`)
+      let markedCount = 0
       
       for (const articleId of selectedArticleIds) {
         try {
@@ -199,14 +201,25 @@ export default function ArticlesPage() {
             })
           })
 
-          if (!markResponse.ok) {
-            console.warn(`Failed to mark article ${articleId} for enhancement`)
-            continue
+          if (markResponse.ok) {
+            markedCount++
+          } else {
+            const errorData = await markResponse.json()
+            errors.push(`Article ${articleId}: ${errorData.error}`)
+            console.warn(`Failed to mark article ${articleId}:`, errorData.error)
+            
+            // Skip already selected/enhanced articles
+            if (errorData.error?.includes('already')) {
+              continue
+            }
           }
         } catch (error) {
           console.warn(`Error marking article ${articleId}:`, error)
+          errors.push(`Article ${articleId}: Network error`)
         }
       }
+      
+      console.log(`Marked ${markedCount}/${selectedArticleIds.size} articles for enhancement`)
 
       // Step 2: Process each article through the enhancement pipeline
       console.log('Processing articles through enhancement pipeline...')
@@ -243,7 +256,15 @@ export default function ArticlesPage() {
       const totalEnhanced = results.reduce((sum, r) => sum + (r.totalSaved || 0), 0)
       const estimatedCost = results.reduce((sum, r) => sum + parseFloat(r.estimatedCost || '0'), 0)
 
-      alert(`Bulk enhancement completed!\n\n✅ Successfully enhanced: ${successCount}/${selectedArticleIds.size} articles\n🌐 Total trilingual articles created: ${totalEnhanced}\n💰 Total estimated cost: $${estimatedCost.toFixed(4)}\n\nThe enhanced articles will appear in the list shortly.`)
+      let message = `Bulk enhancement completed!\n\n✅ Successfully enhanced: ${successCount}/${selectedArticleIds.size} articles\n🌐 Total trilingual articles created: ${totalEnhanced}\n💰 Total estimated cost: $${estimatedCost.toFixed(4)}`
+      
+      if (errors.length > 0) {
+        message += `\n\n⚠️ Errors encountered:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n... and ${errors.length - 5} more errors` : ''}`
+      }
+      
+      message += '\n\nThe enhanced articles will appear in the list shortly.'
+      
+      alert(message)
       
       setSelectedArticleIds(new Set())
       handleRefresh()

@@ -217,7 +217,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const now = new Date()
+    const utcTime = now.toISOString()
+    const hkTime = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', ' HKT')
+    
     console.log('🚀 Starting enhancement of selected article...')
+    console.log(`⏰ Execution time: ${utcTime} (UTC) / ${hkTime}`)
     const startTime = Date.now()
     const batchId = generateBatchId()
 

@@ -22,7 +22,71 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Marking article ${articleId} for enhancement...`)
+    
+    // First, get the article details to check for duplicates
+    const { data: targetArticle, error: fetchError } = await supabase
+      .from('articles')
+      .select('id, title, source, selected_for_enhancement, is_ai_enhanced')
+      .eq('id', articleId)
+      .single()
+      
+    if (fetchError || !targetArticle) {
+      return NextResponse.json(
+        { error: 'Article not found' },
+        { status: 404 }
+      )
+    }
+    
+    // Check if already selected or enhanced
+    if (targetArticle.selected_for_enhancement) {
+      return NextResponse.json(
+        { error: 'Article is already marked for enhancement' },
+        { status: 400 }
+      )
+    }
+    
+    if (targetArticle.is_ai_enhanced) {
+      return NextResponse.json(
+        { error: 'Article has already been enhanced' },
+        { status: 400 }
+      )
+    }
+    
+    // Check for recently selected similar titles
+    const normalizedTitle = targetArticle.title.trim().toLowerCase().replace(/\s+/g, ' ').substring(0, 50)
+    
+    const { data: recentlySelected } = await supabase
+      .from('articles')
+      .select('id, title, selection_metadata')
+      .eq('selected_for_enhancement', true)
+      .neq('id', articleId)
+      .gte('created_at', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()) // Last 3 days
+      
+    if (recentlySelected && recentlySelected.length > 0) {
+      const duplicateFound = recentlySelected.find(article => {
+        const otherTitle = article.title.trim().toLowerCase().replace(/\s+/g, ' ').substring(0, 50)
+        return otherTitle === normalizedTitle
+      })
+      
+      if (duplicateFound) {
+        console.warn(`⚠️ Similar article already selected: "${duplicateFound.title}"`)
+        return NextResponse.json(
+          { 
+            error: 'Similar article was recently selected',
+            duplicate: {
+              id: duplicateFound.id,
+              title: duplicateFound.title,
+              selectedAt: duplicateFound.selection_metadata?.selected_at
+            }
+          },
+          { status: 400 }
+        )
+      }
+    }
 
+    // Generate standardized session ID
+    const sessionId = `admin_selection_${Date.now()}_${Math.random().toString(36).substring(7)}`
+    
     // Update the article to mark it for enhancement
     const { data, error } = await supabase
       .from('articles')
@@ -33,7 +97,7 @@ export async function POST(request: NextRequest) {
           selection_reason: reason,
           priority_score: 80,
           selection_method: 'manual_admin',
-          selection_session: Date.now()
+          selection_session: sessionId
         }
       })
       .eq('id', articleId)
