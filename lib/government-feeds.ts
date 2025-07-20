@@ -639,16 +639,30 @@ class GovernmentFeeds {
   }
 
   /**
-   * Refresh the materialized view
+   * Refresh the materialized view with error handling
    */
   private async refreshMaterializedView(): Promise<void> {
     try {
+      console.log('🔄 Refreshing materialized view incidents_public...')
+      
       const { error } = await supabase.rpc('refresh_incidents_public')
-      if (error) {
-        console.error('Error refreshing materialized view:', error)
+      
+      if (error?.code === '55000' && error.message?.includes('cannot refresh materialized view')) {
+        console.warn('⚠️ Materialized view refresh failed: Missing unique index for concurrent refresh')
+        console.warn('   This error is non-critical - the view may refresh later or can be refreshed manually')
+        console.warn('   To fix permanently: CREATE UNIQUE INDEX ON incidents_public (id) or modify refresh to non-concurrent')
+        // Don't throw - this error doesn't prevent incident processing from working
+        return
+      } else if (error) {
+        console.error('❌ Error refreshing materialized view:', error)
+        // Don't throw - view refresh failures shouldn't stop incident processing
+        return
       }
+      
+      console.log('✅ Materialized view refresh successful')
     } catch (error) {
-      console.error('Error calling refresh function:', error)
+      console.error('❌ Error calling refresh function:', error)
+      // Don't throw - view refresh failures shouldn't stop incident processing
     }
   }
 
