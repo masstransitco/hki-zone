@@ -92,19 +92,21 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   const selectedIds = await callPerplexityForSelection(selectionPrompt);
 
   // 6. Map selected IDs back to full article objects
-  console.log(`DEBUG: Perplexity returned ${selectedIds.length} selections:`, selectedIds.map(s => ({ id: s.id, score: s.score })));
+  console.log(`DEBUG: Perplexity returned ${selectedIds.length} selections`);
   console.log(`DEBUG: Available deduplicated candidate count: ${deduplicatedArticles.length} articles`);
   
-  // Map sequential numbers (1, 2, 3...) back to deduplicated candidate articles
+  // Map sequential numbers (01, 02, 03...) back to deduplicated candidate articles
   const selectedArticles = selectedIds
     .map(selection => {
-      // Convert sequential ID to array index (1 -> 0, 2 -> 1, etc.)
-      if (!/^\d+$/.test(selection.id)) {
+      // Remove leading zeros from ID
+      const numericId = selection.id.replace(/^0+/, '') || '0';
+      
+      if (!/^\d+$/.test(numericId)) {
         console.log(`DEBUG: Invalid selection ID format: ${selection.id} (expected number)`);
         return null;
       }
       
-      const index = parseInt(selection.id) - 1; // Convert "1" to index 0, "2" to index 1, etc.
+      const index = parseInt(numericId) - 1; // Convert "1" to index 0, "2" to index 1, etc.
       
       if (index < 0 || index >= deduplicatedArticles.length) {
         console.log(`DEBUG: Selection ID ${selection.id} out of range (1-${deduplicatedArticles.length})`);
@@ -114,9 +116,13 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
       const article = deduplicatedArticles[index];
       console.log(`DEBUG: Mapped selection ${selection.id} to article ${article.id} (${article.title.substring(0, 50)}...)`);
       
+      // Generate selection reason from rubric scores
+      const scoreBreakdown = `I:${selection.I || 0} N:${selection.N || 0} D:${selection.D || 0} S:${selection.S || 0} U:${selection.U || 0}`;
+      const reason = `Selected with score ${selection.score} (${scoreBreakdown}) - High ${selection.I >= 4 ? 'impact' : selection.U >= 4 ? 'underserved topic' : selection.N >= 4 ? 'novelty' : 'value'} for HK readers`;
+      
       return {
         ...article,
-        selection_reason: selection.reason,
+        selection_reason: reason,
         priority_score: selection.score
       };
     })
@@ -148,7 +154,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
     if (fallbackArticles.length > 0) {
       const fallbackSelections = fallbackArticles.map((_, index) => ({
         id: `fallback-${index + 1}`,
-        reason: 'Fallback selection',
+        I: 3, N: 3, D: 3, S: 3, U: 3, // Average scores for fallback
         score: 75
       }));
       await markArticlesAsSelected(fallbackArticles, fallbackSelections, sessionId);
@@ -405,6 +411,72 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
   }
 }
 
+// Convert recent topics to CSV format for better LLM parsing
+function analyzeRecentTopicsAsCSV(recentlyEnhancedTopics: Array<{ title: string, summary?: string, created_at: string }>): string {
+  if (!recentlyEnhancedTopics || recentlyEnhancedTopics.length === 0) {
+    return '#RECENT_COVERAGE,General,0,Politics,0,Business,0,Technology,0,Sports,0,Health,0,Lifestyle,0,Weather,0';
+  }
+
+  // Categorize recent topics by type
+  const categories: Record<string, number> = {
+    'General': 0,
+    'Politics': 0,
+    'Business': 0,
+    'Technology': 0,
+    'Sports': 0,
+    'Health': 0,
+    'Lifestyle': 0,
+    'Weather': 0,
+    'Crime': 0,
+    'Education': 0,
+    'Transport': 0,
+    'Housing': 0
+  };
+
+  const categoryKeywords: Record<string, string[]> = {
+    'Weather': ['typhoon', 'wipha', '風球', '颱風', '台风', 'signal', 'weather', 'storm', '橙色預警', '深圳', 'warning', '暴雨'],
+    'Politics': ['陳茂波', 'government', '政府', 'policy', '政策', '行政長官', 'chief executive', 'legco', '立法會'],
+    'Technology': ['創科', 'innovation', 'tech', 'ai', '人工智能', 'startup', '科技', 'digital'],
+    'Sports': ['足球', 'football', 'soccer', '運動', 'sport', '比賽', 'match', '聯賽', 'league'],
+    'Health': ['健康', 'health', '醫療', 'medical', '癌症', 'cancer', '疫苗', 'vaccine'],
+    'Business': ['經濟', 'economy', 'business', '股票', 'stock', 'market', '銀行', 'bank', '金融'],
+    'Lifestyle': ['生活', 'lifestyle', '飲食', 'food', '旅遊', 'travel', '時尚', 'fashion'],
+    'Crime': ['警察', 'police', '罪案', 'crime', '逮捕', 'arrest', '偷竊', 'theft'],
+    'Education': ['教育', 'education', '學校', 'school', '大學', 'university', '學生', 'student'],
+    'Transport': ['交通', 'transport', '港鐵', 'mtr', '巴士', 'bus', '機場', 'airport'],
+    'Housing': ['房屋', 'housing', '樓價', 'property', '公屋', 'public housing', '租金', 'rent']
+  };
+
+  // Count topics
+  recentlyEnhancedTopics.forEach(topic => {
+    const content = (topic.title + ' ' + (topic.summary || '')).toLowerCase();
+    let categorized = false;
+    
+    for (const [category, keywords] of Object.entries(categoryKeywords)) {
+      if (keywords.some(keyword => content.includes(keyword.toLowerCase()))) {
+        categories[category]++;
+        categorized = true;
+        break;
+      }
+    }
+    
+    if (!categorized) {
+      categories['General']++;
+    }
+  });
+
+  // Create CSV format
+  const csvParts = ['#RECENT_COVERAGE'];
+  Object.entries(categories)
+    .filter(([_, count]) => count > 0)
+    .sort(([_, a], [__, b]) => b - a)
+    .forEach(([category, count]) => {
+      csvParts.push(`${category},${count}`);
+    });
+
+  return csvParts.join(',');
+}
+
 // Analyze recently enhanced topics to provide diversity guidance
 function analyzeRecentTopics(recentlyEnhancedTopics: Array<{ title: string, summary?: string, created_at: string }>): {
   analysis: string;
@@ -499,142 +571,64 @@ Oversaturated: ${overRepresented.length > 0 && overRepresented[0][1] > 3 ? overR
 }
 
 function createArticleSelectionPrompt(candidates: CandidateArticle[], count: number, recentlyEnhancedTopics: Array<{ title: string, summary?: string, created_at: string }> = []): string {
-  // Create a concise summary of each article for Perplexity to evaluate
-  // Use sequential numbers (1, 2, 3...) instead of UUIDs to avoid corruption
-  const articleSummaries = candidates.map((article, index) => {
-    // Generate a meaningful preview for the article
-    let preview = article.summary || '';
+  // Create compact one-liner format for each article
+  const articleRows = candidates.map((article, index) => {
+    const id = String(index + 1).padStart(2, '0');
+    const category = (article.category || 'General').substring(0, 12).padEnd(12);
+    const source = article.source.substring(0, 8).padEnd(8);
+    const wordCount = Math.round(article.content_length / 5) + 'w'; // Approximate word count
+    const hasImg = article.has_image ? 'Y' : 'N';
+    const title = article.title.substring(0, 60) + (article.title.length > 60 ? '...' : '');
     
-    if (!preview && article.content) {
-      // Skip past the title if it appears at the start of content
-      let contentStart = 0;
-      if (article.content.startsWith(article.title)) {
-        contentStart = article.title.length;
-      }
-      
-      // Get up to 400 characters for better context, skipping any initial whitespace
-      const contentForPreview = article.content.substring(contentStart).trim();
-      preview = contentForPreview.substring(0, 400);
-      
-      // If we have meaningful content, add ellipsis
-      if (preview.length > 0 && contentForPreview.length > 400) {
-        preview += '...';
-      }
-      
-      // If still no preview, use the first 400 chars of content
-      if (!preview || preview.length < 20) {
-        preview = article.content.substring(0, 400);
-        if (article.content.length > 400) {
-          preview += '...';
-        }
-      }
-    }
-    
-    return {
-      sequentialId: index + 1, // 1-based indexing for Perplexity
-      title: article.title,
-      source: article.source,
-      category: article.category,
-      summary: preview,
-      content_length: article.content_length,
-      has_summary: article.has_summary,
-      has_image: article.has_image,
-      published_hours_ago: Math.round((Date.now() - new Date(article.published_at).getTime()) / (1000 * 60 * 60))
-    };
+    return `[${id}] | ${category} | ${source} | ${wordCount.padStart(5)} | img:${hasImg} | "${title}"`;
   });
 
-  // Analyze recently enhanced topics for diversity guidance
-  const recentTopicAnalysis = analyzeRecentTopics(recentlyEnhancedTopics);
+  // Analyze recently enhanced topics and create CSV format
+  const topicCounts = analyzeRecentTopicsAsCSV(recentlyEnhancedTopics);
   
-  // Debug logging: Show what Perplexity will see
-  console.log(`📋 Prompt Preview - First 3 articles as they appear to Perplexity:`);
-  articleSummaries.slice(0, 3).forEach(article => {
-    console.log(`   ARTICLE_NUMBER: ${article.sequentialId}`);
-    console.log(`   Title: ${article.title}`);
-    console.log(`   Source: ${article.source} | Category: ${article.category}`);
-    console.log(`   Content Length: ${article.content_length} chars`);
-    console.log(`   Preview: ${article.summary.substring(0, 150)}...`);
-    if (article.content_length < 100) {
-      console.log(`   ⚠️ WARNING: Low content length may cause selection issues`);
-    }
-    console.log(`   ---`);
-  });
-  
-  console.log(`🎯 Topic Diversity Analysis for Selection:`);
-  console.log(`   Recently Enhanced: ${recentTopicAnalysis.summary}`);
-  console.log(`   Recommended Focus: ${recentTopicAnalysis.recommendations.join(', ')}`);
+  // Debug logging
+  console.log(`📋 Compact format preview - First 3 articles:`);
+  articleRows.slice(0, 3).forEach(row => console.log(`   ${row}`));
+  console.log(`📊 Recent coverage: ${topicCounts}`);
 
-  return `You are an expert Hong Kong news editor tasked with selecting the ${count} most impactful and enhancement-worthy articles for AI processing.
+  return `SYSTEM: You are HKI's **Front-Page Curator**. Select stories that maximize *reader value* and *topic diversity* for Hong Kong audiences.
 
-**EDITORIAL MISSION**: Create a DIVERSE and ENGAGING collection of enhanced articles that serves Hong Kong readers across different interests and needs.
+SCORING RUBRIC (rate each 1-5, then calculate total):
+A. Impact on HK (I) - How directly this affects HK residents/economy/policy
+B. Novelty/Un-dup (N) - How fresh/unique vs recent coverage  
+C. Depth of source (D) - Word count & content richness
+D. Source diversity (S) - Variety across your final selection
+E. Under-served topic (U) - Fills gap in recent coverage
 
-**RECENTLY ENHANCED TOPIC ANALYSIS**:
-${recentTopicAnalysis.analysis}
+Formula: I×4 + N×3 + D×2 + S×1 + U×5 = Score (0-100)
 
-**DIVERSITY PRIORITIES**:
-${recentTopicAnalysis.recommendations.map(rec => `• ${rec}`).join('\n')}
+RECENT TOPIC COVERAGE (last 24h):
+${topicCounts}
+Prioritize categories with the lowest counts above.
 
-IMPORTANT: Use BOTH the headline AND the preview content to understand what each article is about. The preview provides essential context about the actual story content.
+AVAILABLE ARTICLES:
+ID  | Category     | Source   | Words | Img | Title
+${articleRows.join('\n')}
 
-CRITICAL INSTRUCTION TO PREVENT HALLUCINATION:
-- Base your selection reasoning SOLELY on the article information provided below
-- Do NOT use external knowledge about Hong Kong news or current events
-- Do NOT reference news stories that are not in the list below
-- If an article has minimal preview content, state that clearly in your reasoning
-- Your reasoning must directly relate to the specific article's title and preview text
+TASK: Select exactly ${count} articles with the highest scores.
 
-SELECTION CRITERIA (in order of importance):
-1. **TOPIC DIVERSITY**: Prioritize categories that are underrepresented in recent coverage to create a well-rounded collection
-2. **Editorial Value**: Stories that would benefit from deeper analysis, context, and multilingual presentation  
-3. **News Impact**: High public interest, breaking news, significant developments affecting Hong Kong
-4. **Fresh Perspectives**: Unique angles, human interest stories, emerging trends not yet covered
-5. **Headline Quality**: Clear, compelling headlines that indicate substantial news value
-6. **Source Diversity**: Balanced representation across major Hong Kong news sources
-7. **Reader Engagement**: Consider what would interest different demographics and reader segments
+HARD RULES (reject if violated):
+• At least 3 distinct sources across final set (if possible)
+• No more than 1 article per category unless unavoidable  
+• All IDs must exist in the list above
+• Every selection must score ≥70
+• Return ONLY the JSON array - no extra text
 
-NOTE: While content length is not the primary factor, ensure articles have sufficient preview content to understand the story. Articles with very low content (< 100 chars) may lack substance. AI enhancement works best with clear, substantive source material.
-
-AVAILABLE ARTICLES TO CHOOSE FROM:
-${articleSummaries.map((article) => `
-ARTICLE_NUMBER: ${article.sequentialId}
-Title: ${article.title}
-Source: ${article.source} | Category: ${article.category}
-Content: ${article.content_length} chars | Has Summary: ${article.has_summary} | Has Image: ${article.has_image}
-Published: ${article.published_hours_ago} hours ago
-Preview: ${article.summary}
----
-`).join('\n')}
-
-SELECTION REQUIREMENTS:
-- Select exactly ${count} articles that will create the most DIVERSE and ENGAGING collection
-- AVOID over-represented categories identified in the analysis above
-- PRIORITIZE under-represented categories for better topic balance
-- Ensure source diversity (avoid selecting too many from same source)
-- Consider both English and Chinese language articles
-- Think about reader value: "What would make this collection of enhanced articles most valuable to Hong Kong readers?"
-
-CRITICAL INSTRUCTION: Use the ARTICLE_NUMBER (simple numbers like 1, 2, 3) in your response.
-
-Return ONLY a JSON array with exactly ${count} selections in this format:
+OUTPUT FORMAT:
 [
-  {
-    "id": "1",
-    "reason": "Brief explanation why this article was selected",
-    "score": 85
-  },
-  {
-    "id": "3", 
-    "reason": "Brief explanation why this article was selected",
-    "score": 82
-  }
+  {"id":"01", "I":5, "N":4, "D":3, "S":4, "U":5, "score":86},
+  {"id":"03", "I":4, "N":5, "D":4, "S":3, "U":4, "score":79}
 ]
 
-Use only the ARTICLE_NUMBER values (1, 2, 3, etc.) from the list above.
-
-Select the ${count} articles that would create the most DIVERSE, VALUABLE, and ENGAGING collection of AI-enhanced content for Hong Kong readers. Think about variety, balance, and collective impact rather than just individual article strength.`;
+Select ${count} articles now:`;
 }
 
-async function callPerplexityForSelection(prompt: string): Promise<Array<{id: string, reason: string, score: number}>> {
+async function callPerplexityForSelection(prompt: string): Promise<Array<{id: string, I?: number, N?: number, D?: number, S?: number, U?: number, score: number}>> {
   try {
     const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
@@ -647,7 +641,7 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
         messages: [
           {
             role: 'system',
-            content: 'You are an expert Hong Kong news editor. Analyze the provided articles and return ONLY valid JSON with your selections. CRITICAL: Base your selection reasoning ONLY on the article titles and preview content provided. Do NOT use any external knowledge about Hong Kong news. If an article has minimal content, acknowledge that in your reasoning. Do not include any explanatory text outside the JSON.'
+            content: 'You are HKI\'s Front-Page Curator. Score each article using the rubric (I×4 + N×3 + D×2 + S×1 + U×5). Return ONLY a JSON array with scored selections. No extra text.'
           },
           {
             role: 'user',
@@ -671,7 +665,7 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
     console.log(`🔍 Raw Perplexity Response for Validation:`, content.substring(0, 500) + '...');
     
     // Parse the JSON response
-    let selections: Array<{id: string, reason: string, score: number}>;
+    let selections: Array<{id: string, I?: number, N?: number, D?: number, S?: number, U?: number, score: number}>;
     try {
       selections = JSON.parse(content);
     } catch (error) {
@@ -688,53 +682,25 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
       throw new Error('Perplexity did not select any articles');
     }
 
-    // Validate each selection has required fields
+    // Validate each selection has required fields and meets minimum score
     const validSelections = selections.filter(selection => 
       selection.id && 
-      selection.reason && 
-      typeof selection.score === 'number'
+      typeof selection.score === 'number' &&
+      selection.score >= 70 // Minimum score threshold
     );
 
     if (validSelections.length !== selections.length) {
-      console.warn(`Some selections were invalid. Using ${validSelections.length} valid selections.`);
+      console.warn(`Filtered out ${selections.length - validSelections.length} selections (below score threshold or invalid).`);
     }
 
     console.log(`Perplexity selected ${validSelections.length} articles for enhancement`);
     
-    // Debug: Log the full response to understand what Perplexity returned
-    console.log(`📝 Full Perplexity selections:`, JSON.stringify(validSelections, null, 2));
-    
-    // Validate reasoning consistency (log warnings for mismatches)
-    validSelections.forEach((selection, index) => {
-      console.log(`🔍 Selection ${index + 1} Validation:`)
-      console.log(`   Selected ID: ${selection.id}`)
-      console.log(`   Selection Score: ${selection.score}`)
-      console.log(`   Reason Preview: "${selection.reason.substring(0, 100)}..."`)
-      
-      // Check for common hallucination indicators
-      const reasoningLower = selection.reason.toLowerCase()
-      const financialKeywords = ['hang seng', 'index', 'stock', 'market', '恆生指數', '股市', '股票']
-      const weatherKeywords = ['typhoon', 'wipha', '風球', '颱風', 'signal', 'weather', 'storm', '橙色預警']
-      
-      const containsFinancialKeywords = financialKeywords.some(keyword => reasoningLower.includes(keyword))
-      const containsWeatherKeywords = weatherKeywords.some(keyword => reasoningLower.includes(keyword))
-      
-      if (containsFinancialKeywords) {
-        console.warn(`⚠️ REASONING VALIDATION WARNING: Selection ${selection.id} reasoning mentions financial/stock market topics`)
-        console.warn(`   Verify this matches the actual article content`)
-      }
-      
-      if (containsWeatherKeywords) {
-        console.warn(`⚠️ REASONING VALIDATION WARNING: Selection ${selection.id} reasoning contains weather/typhoon keywords`)
-        console.warn(`   Many typhoon articles may already be enhanced - verify this is the correct topic`)
-      }
-      
-      // Additional warning if reason seems generic or possibly hallucinated
-      if (selection.reason.includes('business development') && selection.reason.includes('gap in') && selection.reason.includes('coverage')) {
-        console.warn(`⚠️ POSSIBLE HALLUCINATION: Selection reasoning appears to be generic/templated`)
-        console.warn(`   Double-check that the selected article actually matches the stated reason`)
-      }
-    })
+    // Debug: Log the scored selections
+    console.log(`📝 Scored selections:`, validSelections.map(s => ({
+      id: s.id,
+      scores: `I:${s.I || '?'} N:${s.N || '?'} D:${s.D || '?'} S:${s.S || '?'} U:${s.U || '?'}`,
+      total: s.score
+    })));
     
     return validSelections;
     
@@ -759,7 +725,7 @@ function getDateHoursAgo(hours: number): string {
 // Mark selected articles to prevent re-selection in future runs
 async function markArticlesAsSelected(
   selectedArticles: SelectedArticle[], 
-  originalSelections: Array<{id: string, reason: string, score: number}>,
+  originalSelections: Array<{id: string, I?: number, N?: number, D?: number, S?: number, U?: number, score: number}>,
   sessionId: string
 ): Promise<void> {
   console.log(`🔐 Marking ${selectedArticles.length} articles as selected to prevent re-selection (${sessionId})...`);

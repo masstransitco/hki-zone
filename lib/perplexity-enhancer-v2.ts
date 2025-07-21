@@ -310,21 +310,23 @@ Rubric (enforce strictly):
 3. Key Points – exactly 5 bullets, ≤25 words each, format: • **fact** — context, every bullet cited
 4. Why It Matters – exactly 2 sentences, HK-centric, cited
 5. Citations – use only the numbered sources supplied; no new URLs
-Respond in English.`,
-        structure: `# ENHANCED TITLE: [8-12 words, active verb, no punctuation]
+Respond in English.
+
+IMPORTANT: After "# ENHANCED TITLE:" write the actual title on the same line or the very next line.`,
+        structure: `# ENHANCED TITLE: [Write your 8-12 word title here]
 
 ## SUMMARY
-[Sentence 1: Main development] [1] [Sentence 2: Context or impact] [2]
+[First sentence about main development] [1] [Second sentence about context or impact] [2]
 
 ## KEY POINTS
-• **[Bold fact ≤8 words]** — [context ≤17 words] [1]
-• **[Bold fact ≤8 words]** — [context ≤17 words] [2]
-• **[Bold fact ≤8 words]** — [context ≤17 words] [3]
-• **[Bold fact ≤8 words]** — [context ≤17 words] [4]
-• **[Bold fact ≤8 words]** — [context ≤17 words] [5]
+• **[Fact 1]** — [context 1] [1]
+• **[Fact 2]** — [context 2] [2]
+• **[Fact 3]** — [context 3] [3]
+• **[Fact 4]** — [context 4] [4]
+• **[Fact 5]** — [context 5] [5]
 
 ## WHY IT MATTERS
-[Sentence 1: Hong Kong impact] [2] [Sentence 2: Future implications] [4]`
+[First sentence about Hong Kong impact] [2] [Second sentence about future implications] [4]`
       },
       'zh-TW': {
         instruction: `您是 **HKI 高級新聞編輯**。
@@ -334,21 +336,23 @@ Respond in English.`,
 3. 重點 – 恰好5條，每條≤25字，格式：• **事實** — 背景，每條引用
 4. 重要性 – 恰好2句，以香港為中心，引用
 5. 引用 – 僅使用提供的編號來源；不得新增網址
-請用繁體中文回應。`,
-        structure: `# 增強標題：[8-12字，主動動詞，無標點]
+請用繁體中文回應。
+
+重要：在「# 增強標題：」後直接寫出實際標題。`,
+        structure: `# 增強標題：[在此寫出您的8-12字標題]
 
 ## 摘要
-[第1句：主要發展] [1] [第2句：背景或影響] [2]
+[第一句關於主要發展] [1] [第二句關於背景或影響] [2]
 
 ## 重點
-• **[粗體事實≤8字]** — [背景≤17字] [1]
-• **[粗體事實≤8字]** — [背景≤17字] [2]
-• **[粗體事實≤8字]** — [背景≤17字] [3]
-• **[粗體事實≤8字]** — [背景≤17字] [4]
-• **[粗體事實≤8字]** — [背景≤17字] [5]
+• **[事實1]** — [背景1] [1]
+• **[事實2]** — [背景2] [2]
+• **[事實3]** — [背景3] [3]
+• **[事實4]** — [背景4] [4]
+• **[事實5]** — [背景5] [5]
 
 ## 重要性
-[第1句：對香港影響] [2] [第2句：未來影響] [4]`
+[第一句關於對香港影響] [2] [第二句關於未來影響] [4]`
       },
       'zh-CN': {
         instruction: `您是 **HKI 高级新闻编辑**。
@@ -358,21 +362,23 @@ Respond in English.`,
 3. 重点 – 恰好5条，每条≤25字，格式：• **事实** — 背景，每条引用
 4. 重要性 – 恰好2句，以香港为中心，引用
 5. 引用 – 仅使用提供的编号来源；不得新增网址
-请用简体中文回应。`,
-        structure: `# 增强标题：[8-12字，主动动词，无标点]
+请用简体中文回应。
+
+重要：在“# 增强标题：”后直接写出实际标题。`,
+        structure: `# 增强标题：[在此写出您的8-12字标题]
 
 ## 摘要
-[第1句：主要发展] [1] [第2句：背景或影响] [2]
+[第一句关于主要发展] [1] [第二句关于背景或影响] [2]
 
 ## 重点
-• **[粗体事实≤8字]** — [背景≤17字] [1]
-• **[粗体事实≤8字]** — [背景≤17字] [2]
-• **[粗体事实≤8字]** — [背景≤17字] [3]
-• **[粗体事实≤8字]** — [背景≤17字] [4]
-• **[粗体事实≤8字]** — [背景≤17字] [5]
+• **[事实1]** — [背景1] [1]
+• **[事实2]** — [背景2] [2]
+• **[事实3]** — [背景3] [3]
+• **[事实4]** — [背景4] [4]
+• **[事实5]** — [背景5] [5]
 
 ## 重要性
-[第1句：对香港影响] [2] [第2句：未来影响] [4]`
+[第一句关于对香港影响] [2] [第二句关于未来影响] [4]`
       }
     }
 
@@ -501,11 +507,16 @@ Requirements:
           title = line.replace('# 增強標題：', '').trim()
         }
         
-        // If title is empty or just whitespace, check the next line
-        if ((!title || title.length === 0) && i + 1 < lines.length) {
+        // Remove bracket placeholders if they exist
+        title = title.replace(/^\[.*?\]$/, '').trim()
+        
+        // If title is empty or still contains placeholder text, check the next line
+        if ((!title || title.length === 0 || title.includes('[')) && i + 1 < lines.length) {
           const nextLine = lines[i + 1]
           if (nextLine && !nextLine.startsWith('#') && nextLine.trim().length > 0) {
             title = nextLine.trim()
+            // Remove any remaining brackets
+            title = title.replace(/\[|\]/g, '').trim()
           }
         }
         currentSection = 'title'
