@@ -43,10 +43,11 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   }
 
   console.log(`📊 Selection Statistics (${sessionId}):`);
-  console.log(`   • Found ${candidateArticles.length} candidate articles`);
+  console.log(`   • Found ${candidateArticles.length} candidate articles from last 6 hours`);
   console.log(`   • Sources: ${[...new Set(candidateArticles.map(a => a.source))].join(', ')}`);
   console.log(`   • Categories: ${[...new Set(candidateArticles.map(a => a.category))].join(', ')}`);
-  console.log(`   • Date range: ${candidateArticles[candidateArticles.length - 1]?.created_at?.substring(0, 10)} to ${candidateArticles[0]?.created_at?.substring(0, 10)}`);
+  console.log(`   • Date range: ${candidateArticles[candidateArticles.length - 1]?.created_at?.substring(0, 16)} to ${candidateArticles[0]?.created_at?.substring(0, 16)}`);
+  console.log(`   • Time window: Last 6 hours (recent news priority)`);
 
   // 2. Get recently enhanced topics for deduplication
   const recentlyEnhancedTopics = await getRecentlyEnhancedTopics();
@@ -195,7 +196,7 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
       .is('is_ai_enhanced', false) // Only non-enhanced articles
       .is('selected_for_enhancement', false) // Only articles never selected before
       .in('source', scrapedSources) // Only scraped sources (not AI-generated)
-      .gte('created_at', getDateDaysAgo(7)) // Last 7 days
+      .gte('created_at', getDateHoursAgo(6)) // Last 6 hours - focus on recent news
       .not('content', 'is', null) // Must have content
       .order('created_at', { ascending: false })
       .limit(50); // Get up to 50 candidates for Perplexity to choose from
@@ -749,6 +750,12 @@ function getDateDaysAgo(days: number): string {
   return date.toISOString();
 }
 
+function getDateHoursAgo(hours: number): string {
+  const date = new Date();
+  date.setHours(date.getHours() - hours);
+  return date.toISOString();
+}
+
 // Mark selected articles to prevent re-selection in future runs
 async function markArticlesAsSelected(
   selectedArticles: SelectedArticle[], 
@@ -813,14 +820,14 @@ export async function getSelectionStatistics(): Promise<any> {
       .select('id', { count: 'exact' })
       .is('is_ai_enhanced', false)
       .is('selected_for_enhancement', false)
-      .gte('created_at', getDateDaysAgo(7));
+      .gte('created_at', getDateHoursAgo(6));
 
     const { data: bySource, error: sourceError } = await supabase
       .from('articles')
       .select('source')
       .is('is_ai_enhanced', false)
       .is('selected_for_enhancement', false)
-      .gte('created_at', getDateDaysAgo(7));
+      .gte('created_at', getDateHoursAgo(6));
 
     if (totalError || recentError || sourceError) {
       throw new Error('Failed to get statistics');
@@ -835,7 +842,8 @@ export async function getSelectionStatistics(): Promise<any> {
       totalCandidates: total?.length || 0,
       recentCandidates: recent?.length || 0,
       sourceBreakdown,
-      lastWeekOnly: true
+      timeWindow: '6 hours',
+      lastWeekOnly: false
     };
 
   } catch (error) {
