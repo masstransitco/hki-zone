@@ -36,9 +36,14 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   console.log(`🚀 Starting Perplexity-assisted article selection for ${count} articles (Session: ${sessionId})`);
 
   // 1. Get candidate articles from database
+  console.log(`🔍 Fetching candidate articles...`);
   const candidateArticles = await getCandidateArticles();
   
   if (candidateArticles.length === 0) {
+    console.log(`❌ No candidate articles found. Checking why...`);
+    // Debug: Check what's available in the database
+    const debugInfo = await debugArticleAvailability();
+    console.log('Debug info:', debugInfo);
     throw new Error('No candidate articles found for selection');
   }
 
@@ -195,7 +200,7 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
       .from('articles')
       .select('title, selection_metadata')
       .eq('selected_for_enhancement', true)
-      .gte('created_at', getDateDaysAgo(3)) // Check last 3 days
+      .gte('created_at', getDateDaysAgo(1)) // Check last 1 day only to avoid being too restrictive
       .order('created_at', { ascending: false })
       .limit(100);
       
@@ -205,11 +210,35 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
     
     console.log(`📋 Found ${recentTitles.size} recently selected article titles to avoid`);
     
+    // First, get articles that have been selected but not enhanced for over 4 hours
+    const fourHoursAgo = getDateHoursAgo(4);
+    const { data: staleSelections } = await supabase
+      .from('articles')
+      .select('id')
+      .eq('selected_for_enhancement', true)
+      .eq('is_ai_enhanced', false)
+      .lt('selection_metadata->selected_at', fourHoursAgo)
+      .limit(20);
+    
+    if (staleSelections && staleSelections.length > 0) {
+      console.log(`🔄 Found ${staleSelections.length} stale selections (selected >4 hours ago but not enhanced)`);
+      // Reset these articles to allow re-selection
+      const staleIds = staleSelections.map(a => a.id);
+      await supabase
+        .from('articles')
+        .update({ 
+          selected_for_enhancement: false,
+          selection_metadata: null 
+        })
+        .in('id', staleIds);
+      console.log(`   ✅ Reset stale selections to allow re-selection`);
+    }
+
     const { data: articles, error } = await supabase
       .from('articles')
       .select('*')
       .is('is_ai_enhanced', false) // Only non-enhanced articles
-      .is('selected_for_enhancement', false) // Only articles never selected before
+      .is('selected_for_enhancement', false) // Only articles never selected before (or reset)
       .in('source', scrapedSources) // Only scraped sources (not AI-generated)
       .gte('created_at', getDateHoursAgo(6)) // Last 6 hours - focus on recent news
       .not('content', 'is', null) // Must have content
@@ -1104,4 +1133,49 @@ async function callPerplexityForSimilarity(prompt: string): Promise<string[]> {
     });
     return []; // Return empty array on error to avoid blocking selection
   }
+}
+
+// Debug function to understand why no articles are available
+async function debugArticleAvailability() {
+  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK'];
+  const sixHoursAgo = getDateHoursAgo(6);
+  
+  const { count: totalCount } = await supabase
+    .from('articles')
+    .select('*', { count: 'exact', head: true })
+    .in('source', scrapedSources)
+    .gte('created_at', sixHoursAgo);
+    
+  const { count: withContentCount } = await supabase
+    .from('articles')
+    .select('*', { count: 'exact', head: true })
+    .in('source', scrapedSources)
+    .gte('created_at', sixHoursAgo)
+    .not('content', 'is', null);
+    
+  const { count: notSelectedCount } = await supabase
+    .from('articles')
+    .select('*', { count: 'exact', head: true })
+    .in('source', scrapedSources)
+    .gte('created_at', sixHoursAgo)
+    .not('content', 'is', null)
+    .eq('selected_for_enhancement', false);
+    
+  const { count: notEnhancedCount } = await supabase
+    .from('articles')
+    .select('*', { count: 'exact', head: true })
+    .in('source', scrapedSources)
+    .gte('created_at', sixHoursAgo)
+    .not('content', 'is', null)
+    .eq('selected_for_enhancement', false)
+    .eq('is_ai_enhanced', false);
+  
+  return {
+    sixHoursAgo,
+    totalInLastSixHours: totalCount,
+    withContent: withContentCount,
+    notSelected: notSelectedCount,
+    notEnhanced: notEnhancedCount,
+    sources: scrapedSources
+  };
 }
