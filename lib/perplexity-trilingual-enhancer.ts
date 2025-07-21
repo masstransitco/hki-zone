@@ -109,7 +109,7 @@ async function enhanceArticleInAllLanguages(
       language: 'en',
       searchDepth: 'high',
       recencyFilter: 'week',
-      maxTokens: 2000
+      maxTokens: 1200
     }
   );
   
@@ -155,7 +155,7 @@ async function enhanceArticleInAllLanguages(
       language: 'zh-TW',
       searchDepth: 'high',
       recencyFilter: 'week',
-      maxTokens: 2000
+      maxTokens: 1200
     }
   );
   
@@ -201,7 +201,7 @@ async function enhanceArticleInAllLanguages(
       language: 'zh-CN',
       searchDepth: 'high',
       recencyFilter: 'week',
-      maxTokens: 2000
+      maxTokens: 1200
     }
   );
   

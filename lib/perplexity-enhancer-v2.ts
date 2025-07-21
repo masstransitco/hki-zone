@@ -303,55 +303,76 @@ class PerplexityEnhancerV2 {
 
     const languageInstructions = {
       'en': {
-        instruction: 'Please create a concise, bite-sized enhanced version of this Hong Kong news article based on the research provided. Write your response in English.',
-        structure: `# ENHANCED TITLE: [Create a compelling, clear title that captures the enhanced story]
+        instruction: `You are an **HKI Senior News Editor**.
+Rubric (enforce strictly):
+1. Title – 8-12 words, active verb, no colons/commas/punctuation
+2. Summary – exactly 2 sentences, ≤35 words each
+3. Key Points – exactly 5 bullets, ≤25 words each, format: • **fact** — context, every bullet cited
+4. Why It Matters – exactly 2 sentences, HK-centric, cited
+5. Citations – use only the numbered sources supplied; no new URLs
+Respond in English.`,
+        structure: `# ENHANCED TITLE: [8-12 words, active verb, no punctuation]
 
 ## SUMMARY
-[Write a 2-3 sentence executive summary of the key developments]
+[Sentence 1: Main development] [1] [Sentence 2: Context or impact] [2]
 
 ## KEY POINTS
-• [Bullet point 1: Most important fact or development with context]
-• [Bullet point 2: Second key point with relevant background]
-• [Bullet point 3: Third significant point with implications]
-• [Bullet point 4: Fourth important detail with expert perspective]
-• [Bullet point 5: Fifth key point if relevant, otherwise omit]
+• **[Bold fact ≤8 words]** — [context ≤17 words] [1]
+• **[Bold fact ≤8 words]** — [context ≤17 words] [2]
+• **[Bold fact ≤8 words]** — [context ≤17 words] [3]
+• **[Bold fact ≤8 words]** — [context ≤17 words] [4]
+• **[Bold fact ≤8 words]** — [context ≤17 words] [5]
 
 ## WHY IT MATTERS
-[Write 2-3 sentences explaining the broader significance and impact on Hong Kong, including potential implications for residents, economy, or policy]`
+[Sentence 1: Hong Kong impact] [2] [Sentence 2: Future implications] [4]`
       },
       'zh-TW': {
-        instruction: '請根據所提供的研究資料，為這篇香港新聞文章創建一個簡潔的增強版本。請用繁體中文回應。',
-        structure: `# 增強標題：[創建一個引人注目、清晰的標題，概括增強後的故事]
+        instruction: `您是 **HKI 高級新聞編輯**。
+嚴格遵循規範：
+1. 標題 – 8-12字，主動動詞，無標點符號
+2. 摘要 – 恰好2句，每句≤35字
+3. 重點 – 恰好5條，每條≤25字，格式：• **事實** — 背景，每條引用
+4. 重要性 – 恰好2句，以香港為中心，引用
+5. 引用 – 僅使用提供的編號來源；不得新增網址
+請用繁體中文回應。`,
+        structure: `# 增強標題：[8-12字，主動動詞，無標點]
 
 ## 摘要
-[寫一個2-3句的執行摘要，概述主要發展]
+[第1句：主要發展] [1] [第2句：背景或影響] [2]
 
 ## 重點
-• [重點1：最重要的事實或發展，附上背景]
-• [重點2：第二個關鍵點，附上相關背景]
-• [重點3：第三個重要點，附上影響分析]
-• [重點4：第四個重要細節，附上專家觀點]
-• [重點5：第五個關鍵點，如相關則包含，否則省略]
+• **[粗體事實≤8字]** — [背景≤17字] [1]
+• **[粗體事實≤8字]** — [背景≤17字] [2]
+• **[粗體事實≤8字]** — [背景≤17字] [3]
+• **[粗體事實≤8字]** — [背景≤17字] [4]
+• **[粗體事實≤8字]** — [背景≤17字] [5]
 
 ## 重要性
-[寫2-3句話解釋對香港的廣泛意義和影響，包括對居民、經濟或政策的潛在影響]`
+[第1句：對香港影響] [2] [第2句：未來影響] [4]`
       },
       'zh-CN': {
-        instruction: '请根据所提供的研究资料，为这篇香港新闻文章创建一个简洁的增强版本。请用简体中文回应。',
-        structure: `# 增强标题：[创建一个引人注目、清晰的标题，概括增强后的故事]
+        instruction: `您是 **HKI 高级新闻编辑**。
+严格遵循规范：
+1. 标题 – 8-12字，主动动词，无标点符号
+2. 摘要 – 恰好2句，每句≤35字
+3. 重点 – 恰好5条，每条≤25字，格式：• **事实** — 背景，每条引用
+4. 重要性 – 恰好2句，以香港为中心，引用
+5. 引用 – 仅使用提供的编号来源；不得新增网址
+请用简体中文回应。`,
+        structure: `# 增强标题：[8-12字，主动动词，无标点]
 
 ## 摘要
-[写一个2-3句的执行摘要，概述主要发展]
+[第1句：主要发展] [1] [第2句：背景或影响] [2]
 
 ## 重点
-• [重点1：最重要的事实或发展，附上背景]
-• [重点2：第二个关键点，附上相关背景]
-• [重点3：第三个重要点，附上影响分析]
-• [重点4：第四个重要细节，附上专家观点]
-• [重点5：第五个关键点，如相关则包含，否则省略]
+• **[粗体事实≤8字]** — [背景≤17字] [1]
+• **[粗体事实≤8字]** — [背景≤17字] [2]
+• **[粗体事实≤8字]** — [背景≤17字] [3]
+• **[粗体事实≤8字]** — [背景≤17字] [4]
+• **[粗体事实≤8字]** — [背景≤17字] [5]
 
 ## 重要性
-[写2-3句话解释对香港的广泛意义和影响，包括对居民、经济或政策的潜在影响]`
+[第1句：对香港影响] [2] [第2句：未来影响] [4]`
       }
     }
 
@@ -370,6 +391,8 @@ ${searchResults.join('\n\n---\n\n')}
 VERIFIED SOURCES:
 ${sourcesList}
 
+CRITICAL: Use ONLY these numbered sources above. Do not invent new URLs or reference sources not listed here.
+
 Please rewrite this into a structured, concise format with the following EXACT structure:
 
 ${langConfig.structure}
@@ -385,9 +408,9 @@ Requirements:
 
   private getSystemPrompt(language: 'en' | 'zh-TW' | 'zh-CN' = 'en'): string {
     const systemPrompts = {
-      'en': 'You are a professional news analyst. Provide accurate, well-sourced information with clear citations. Include image descriptions and visual content when available. Respond in English.',
-      'zh-TW': '您是一位專業的新聞分析師。提供準確、來源可靠的資訊，並清楚引用。如果有圖片描述和視覺內容，請包含在內。請用繁體中文回應。',
-      'zh-CN': '您是一位专业的新闻分析师。提供准确、来源可靠的信息，并清楚引用。如果有图片描述和视觉内容，请包含在内。请用简体中文回应。'
+      'en': 'You are an HKI Senior News Editor. Produce fact-checked copy for Hong Kong audiences. Cite sources with [n]. Follow the exact rubric provided.',
+      'zh-TW': '您是HKI高級新聞編輯。為香港讀者製作經事實核查的內容。使用[n]引用來源。嚴格遵循提供的規範。',
+      'zh-CN': '您是HKI高级新闻编辑。为香港读者制作经事实核查的内容。使用[n]引用来源。严格遵循提供的规范。'
     }
     return systemPrompts[language]
   }
