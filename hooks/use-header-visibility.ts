@@ -1,53 +1,52 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export function useHeaderVisibility() {
   const [isVisible, setIsVisible] = useState(true)
-  const [lastScrollY, setLastScrollY] = useState(0)
-  const [mounted, setMounted] = useState(false)
+  const lastScrollY = useRef(0)
+  const ticking = useRef(false)
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    if (!mounted) return
-
     const handleScroll = () => {
-      const currentScrollY = window.scrollY
+      const currentScrollY = window.scrollY || window.pageYOffset || 0
       
-      // Show header only when very close to the top
+      // Always show header when at the very top
       if (currentScrollY < 10) {
         setIsVisible(true)
       } 
-      // Hide header when scrolling down (only after scrolling past 100px)
-      else if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      // Hide header when scrolling down (only after passing threshold)
+      else if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
         setIsVisible(false)
       }
-      // Keep header hidden when scrolling up but not at top
-      else if (currentScrollY >= 10) {
-        setIsVisible(false)
+      // Show header when scrolling up
+      else if (currentScrollY < lastScrollY.current) {
+        setIsVisible(true)
       }
       
-      setLastScrollY(currentScrollY)
+      lastScrollY.current = currentScrollY
     }
 
-    // Add throttling to improve performance
-    let ticking = false
     const throttledHandleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
           handleScroll()
-          ticking = false
+          ticking.current = false
         })
-        ticking = true
+        ticking.current = true
       }
     }
 
+    // Listen to window scroll
     window.addEventListener('scroll', throttledHandleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', throttledHandleScroll)
-  }, [lastScrollY, mounted])
+    
+    // Force initial check
+    handleScroll()
 
-  return { isVisible, mounted }
+    return () => {
+      window.removeEventListener('scroll', throttledHandleScroll)
+    }
+  }, [])
+
+  return { isVisible }
 }

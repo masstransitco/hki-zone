@@ -13,10 +13,10 @@ export default function StickyCategorySelector({ value, onChange }: StickyCatego
   const { isVisible: headerVisible } = useHeaderVisibility();
 
   return (
-    <div className={`sticky z-40 transition-all duration-300 ease-in-out ${
+    <div className={`sticky z-[90] bg-background/95 backdrop-blur-sm border-b border-border transition-all duration-300 ease-in-out ${
       headerVisible ? 'top-[57px]' : 'top-0'
     }`}>
-      <div className="px-6 py-4">
+      <div className="px-4 py-3">
         <ContentTypeSelector value={value} onChange={onChange} />
       </div>
     </div>

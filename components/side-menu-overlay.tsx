@@ -16,9 +16,6 @@ interface SideMenuProps {
 
 export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
   const menuRef = React.useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = React.useState(false)
-  const [dragX, setDragX] = React.useState(0)
-  const touchStartX = React.useRef(0)
 
   // Use swipe gesture for menu dismissal
   useSwipeGesture(menuRef, {
@@ -38,80 +35,29 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onOpenChange])
 
-  React.useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-      // Prevent iOS bounce
-      document.body.style.position = 'fixed'
-      document.body.style.width = '100%'
-    } else {
-      document.body.style.overflow = ''
-      document.body.style.position = ''
-      document.body.style.width = ''
-    }
-    
-    return () => {
-      document.body.style.overflow = ''
-      document.body.style.position = ''
-      document.body.style.width = ''
-    }
-  }, [isOpen])
-
-  // Handle touch drag for visual feedback
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-    setIsDragging(true)
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging) return
-    const currentX = e.touches[0].clientX
-    const deltaX = currentX - touchStartX.current
-    if (deltaX < 0) {
-      setDragX(Math.max(deltaX, -100))
-    }
-  }
-
-  const handleTouchEnd = () => {
-    setIsDragging(false)
-    if (dragX < -50) {
-      onOpenChange(false)
-    }
-    setDragX(0)
-  }
+  if (!isOpen) return null
 
   return (
     <>
       {/* Backdrop */}
-      {isOpen && (
-        <div 
-          className={cn(
-            "fixed inset-0 z-[95] bg-black/20 backdrop-blur-sm transition-opacity duration-300",
-            isDragging ? "transition-none" : ""
-          )}
-          style={{
-            opacity: isDragging ? 1 - Math.abs(dragX) / 200 : 1
-          }}
-          onClick={() => onOpenChange(false)}
-        />
-      )}
+      <div 
+        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-in fade-in-0 duration-200"
+        onClick={() => onOpenChange(false)}
+        aria-hidden="true"
+      />
       
       {/* Side Menu */}
       <div
         ref={menuRef}
         className={cn(
-          "fixed left-0 top-0 h-full w-80 max-w-[80vw] z-[96] bg-background border-r border-border shadow-lg",
-          "flex flex-col gap-6 p-6 transition-transform ease-out",
-          isOpen ? "translate-x-0" : "-translate-x-full",
-          isDragging ? "duration-0" : "duration-300"
+          "fixed left-0 top-0 h-full w-80 max-w-[85vw] z-50",
+          "bg-background border-r border-border shadow-2xl",
+          "flex flex-col gap-6 p-6",
+          "animate-in slide-in-from-left-full duration-200"
         )}
-        style={{
-          transform: isOpen ? `translateX(${dragX}px)` : 'translateX(-100%)',
-          willChange: 'transform'
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
       >
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">

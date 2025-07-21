@@ -65,9 +65,9 @@ export default function TopicsFeed() {
   }
 
   return (
-    <div className="pt-6 pb-4">
+    <div className="pt-6 pb-4 isolate">
       {/* Responsive grid layout: mobile 1col, tablet 2col, desktop 3col, large 4col */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 isolate">
         {articles.map((article) => (
           <ArticleCard 
             key={article.id} 

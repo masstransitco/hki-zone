@@ -98,6 +98,50 @@
     touch-action: pan-x pan-y;
   }
 
+  /* Sticky header with scroll-based visibility */
+  @supports (animation-timeline: scroll()) {
+    .sticky-header {
+      animation: header-scroll linear both;
+      animation-timeline: scroll();
+      animation-range: 0 150px;
+    }
+
+    @keyframes header-scroll {
+      to {
+        transform: translateY(calc(-100% + 60px));
+      }
+    }
+  }
+
+  /* Fallback for browsers without scroll-timeline support */
+  @supports not (animation-timeline: scroll()) {
+    .sticky-header {
+      transition: transform 0.3s ease-out;
+    }
+  }
+
+  /* Reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Focus visible styles for better keyboard navigation */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  /* Remove focus outline for mouse users */
+  :focus:not(:focus-visible) {
+    @apply outline-none;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;

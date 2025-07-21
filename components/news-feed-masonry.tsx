@@ -225,9 +225,9 @@ export default function NewsFeedMasonry() {
   }
 
   return (
-    <div className="w-full py-6">
+    <div className="w-full py-6 isolate">
       {/* Masonry news feed container */}
-      <div ref={feedRef} className="news-feed">
+      <div ref={feedRef} className="news-feed isolate">
         {articles.map((article) => {
           const aspectRatio = getRandomAspectRatio(article.id)
           return (

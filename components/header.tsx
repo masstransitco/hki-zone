@@ -16,22 +16,25 @@ export default function Header({ isMenuOpen = false, onMenuOpenChange }: HeaderP
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-minimal border-b border-border transition-transform duration-300 ease-in-out ${
+      className={`fixed top-0 left-0 right-0 z-[100] bg-background/95 backdrop-blur-sm border-b border-border transition-transform duration-300 ease-in-out ${
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
+      style={{
+        transform: isVisible ? 'translateY(0)' : 'translateY(-100%)'
+      }}
     >
       <div className="flex items-center justify-between px-4 py-3">
         <div className="flex items-center">
           <Button
             variant="ghost"
             size="sm"
-            className="w-9 h-9 p-0 text-foreground hover:bg-muted"
+            className="w-11 h-11 p-0 text-foreground hover:bg-muted touch-manipulation"
             aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             onClick={() => onMenuOpenChange?.(!isMenuOpen)}
           >
-            <div className="relative w-5 h-5">
-              <Menu className={`h-5 w-5 absolute transition-all duration-200 ${isMenuOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'}`} />
-              <X className={`h-5 w-5 absolute transition-all duration-200 ${isMenuOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'}`} />
+            <div className="relative w-6 h-6">
+              <Menu className={`h-6 w-6 absolute transition-all duration-200 ${isMenuOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100'}`} />
+              <X className={`h-6 w-6 absolute transition-all duration-200 ${isMenuOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'}`} />
             </div>
           </Button>
         </div>

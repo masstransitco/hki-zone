@@ -1,54 +1,90 @@
 "use client"
 
-import { useState } from "react"
-import Header from "@/components/header"
+import { useState, useRef } from "react"
+import UnifiedHeader from "@/components/unified-header"
 import FooterNav from "@/components/footer-nav"
 import MainContent from "@/components/main-content-with-selector"
-import StickyCategorySelector from "@/components/sticky-category-selector"
-import DatabaseStatus from "@/components/database-status"
-import LoadingSkeleton from "@/components/loading-skeleton"
-import SideMenu from "@/components/side-menu"
-import { ClientOnly } from "@/components/client-only"
+import SideMenu from "@/components/side-menu-overlay"
 import { ContentType } from "@/components/content-type-selector"
+import { useEdgeSwipe, useSwipeGesture } from "@/hooks/use-swipe-gesture"
+
+const contentTypes: ContentType[] = ['headlines', 'news', 'bulletin'];
 
 export default function HomePage() {
   const [contentType, setContentType] = useState<ContentType>('headlines')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  // Enable edge swipe to open menu
+  useEdgeSwipe({
+    onSwipeFromLeft: () => setIsMenuOpen(true),
+    edgeWidth: 30,
+    enabled: !isMenuOpen
+  })
+
+  const handleContentTypeChange = (newType: ContentType) => {
+    setContentType(newType)
+    // Announce content change to screen readers
+    const announcement = `Now showing ${newType} content`
+    const liveRegion = document.getElementById('content-change-announcement')
+    if (liveRegion) {
+      liveRegion.textContent = announcement
+    }
+  }
+
+  // Handle content swipe gestures
+  const handleSwipeLeft = () => {
+    const currentIndex = contentTypes.indexOf(contentType)
+    const nextIndex = (currentIndex + 1) % contentTypes.length
+    handleContentTypeChange(contentTypes[nextIndex])
+  }
+
+  const handleSwipeRight = () => {
+    const currentIndex = contentTypes.indexOf(contentType)
+    const prevIndex = (currentIndex - 1 + contentTypes.length) % contentTypes.length
+    handleContentTypeChange(contentTypes[prevIndex])
+  }
+
+  // Enable swipe gestures on scroll container
+  useSwipeGesture(scrollContainerRef, {
+    onSwipeLeft: handleSwipeLeft,
+    onSwipeRight: handleSwipeRight,
+    threshold: 60,
+    enabled: !isMenuOpen
+  })
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
+      {/* Side menu as pure overlay */}
       <SideMenu isOpen={isMenuOpen} onOpenChange={setIsMenuOpen} />
       
-      {/* Main App Content with Push Effect */}
-      <div 
-        className={`flex flex-col min-h-screen transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? 'translate-x-80 max-sm:translate-x-[80vw]' : 'translate-x-0'
-        }`}
-      >
-        <ClientOnly fallback={
-          <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-minimal border-b border-border h-[57px]" />
-        }>
-          <Header isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} />
-        </ClientOnly>
-        <ClientOnly fallback={
-          <div className="sticky top-[57px] z-40 bg-background/95 backdrop-blur-sm border-b border-border h-[73px]" />
-        }>
-          <StickyCategorySelector value={contentType} onChange={setContentType} />
-        </ClientOnly>
+      {/* Screen reader announcements */}
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        <span id="content-change-announcement"></span>
+      </div>
 
-        <main className="flex-1 pb-20 pt-[73px] overscroll-contain">
-          <ClientOnly fallback={<LoadingSkeleton />}>
-            <MainContent contentType={contentType} />
-          </ClientOnly>
+      {/* Single scroll container for entire app */}
+      <div 
+        ref={scrollContainerRef}
+        className="fixed inset-0 flex flex-col overflow-y-auto overflow-x-hidden"
+      >
+        {/* Unified sticky header with category selector */}
+        <UnifiedHeader 
+          isMenuOpen={isMenuOpen}
+          onMenuOpenChange={setIsMenuOpen}
+          contentType={contentType}
+          onContentTypeChange={handleContentTypeChange}
+          scrollContainerRef={scrollContainerRef}
+        />
+
+        {/* Main content area */}
+        <main className="flex-1 pb-24">
+          <MainContent contentType={contentType} />
         </main>
       </div>
 
-      {/* Footer Nav - Fixed and outside push effect */}
-      <ClientOnly fallback={
-        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe h-[76px]" />
-      }>
-        <FooterNav />
-      </ClientOnly>
-    </div>
+      {/* Fixed bottom navigation */}
+      <FooterNav />
+    </>
   )
 }

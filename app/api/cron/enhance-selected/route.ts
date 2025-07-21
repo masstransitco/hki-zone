@@ -25,15 +25,15 @@ function calculateTrilingualCost(enhancedArticles: any[]): number {
 
 async function getSelectedArticleForEnhancement(): Promise<any | null> {
   try {
-    console.log('   🔍 Simple test: Finding any article marked for enhancement...')
+    console.log('   🔍 Finding article marked for enhancement...')
     
-    // Simplest possible query - just find any article marked for enhancement
+    // Check for backlog - if multiple articles are pending, prioritize oldest selection
     const { data: articles, error } = await supabase
       .from('articles')
       .select('*')
       .eq('selected_for_enhancement', true)
       .is('is_ai_enhanced', false)
-      .order('created_at', { ascending: false })
+      .order('selection_metadata->selected_at', { ascending: true }) // Process oldest selection first
       .limit(1)
 
     if (error) {
