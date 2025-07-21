@@ -81,9 +81,18 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   }
 
   // 4. Create selection prompt for Perplexity using deduplicated articles
-  console.log(`🔍 First 5 articles being sent to Perplexity for selection:`);
+  console.log(`🔍 First 5 articles being sent to Perplexity for selection (newest first):`);
   deduplicatedArticles.slice(0, 5).forEach((article, index) => {
-    console.log(`   ${index + 1}. "${article.title.substring(0, 60)}..." (ID: ${article.id})`);
+    const timeAgo = getTimeAgo(new Date(article.created_at));
+    console.log(`   ${index + 1}. [${timeAgo}] "${article.title.substring(0, 60)}..." (ID: ${article.id})`);
+  });
+  
+  // Add debug to show last 5 articles
+  console.log(`📅 Last 5 articles in the list (oldest):`);
+  deduplicatedArticles.slice(-5).forEach((article, index) => {
+    const timeAgo = getTimeAgo(new Date(article.created_at));
+    const actualIndex = deduplicatedArticles.length - 5 + index;
+    console.log(`   ${actualIndex + 1}. [${timeAgo}] "${article.title.substring(0, 60)}..." (ID: ${article.id})`);
   });
   
   const selectionPrompt = createArticleSelectionPrompt(deduplicatedArticles, count, recentlyEnhancedTopics);
@@ -179,7 +188,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 async function getCandidateArticles(): Promise<CandidateArticle[]> {
   try {
     // Get recent scraped articles that haven't been AI enhanced and haven't been selected before
-    const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'ONCC', 'RTHK'];
+    const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK'];  // Fixed: ONCC is stored as 'on.cc' in database
     
     // First, get recently selected article titles to avoid re-selecting similar content
     const { data: recentlySelected } = await supabase
@@ -578,9 +587,10 @@ function createArticleSelectionPrompt(candidates: CandidateArticle[], count: num
     const source = article.source.substring(0, 8).padEnd(8);
     const wordCount = Math.round(article.content_length / 5) + 'w'; // Approximate word count
     const hasImg = article.has_image ? 'Y' : 'N';
+    const timeAgo = getTimeAgo(new Date(article.created_at)).padEnd(7); // Add time info
     const title = article.title.substring(0, 60) + (article.title.length > 60 ? '...' : '');
     
-    return `[${id}] | ${category} | ${source} | ${wordCount.padStart(5)} | img:${hasImg} | "${title}"`;
+    return `[${id}] | ${timeAgo} | ${category} | ${source} | ${wordCount.padStart(5)} | img:${hasImg} | "${title}"`;
   });
 
   // Analyze recently enhanced topics and create CSV format
@@ -602,12 +612,14 @@ E. Under-served topic (U) - Fills gap in recent coverage
 
 Formula: I×4 + N×3 + D×2 + S×1 + U×5 = Score (0-100)
 
+FRESHNESS PRIORITY: Articles are listed newest first. When scores are tied, ALWAYS select newer articles (lower ID numbers = fresher news).
+
 RECENT TOPIC COVERAGE (last 24h):
 ${topicCounts}
 Prioritize categories with the lowest counts above.
 
-AVAILABLE ARTICLES:
-ID  | Category     | Source   | Words | Img | Title
+AVAILABLE ARTICLES (ordered newest to oldest):
+ID  | Time    | Category     | Source   | Words | Img | Title
 ${articleRows.join('\n')}
 
 TASK: Select exactly ${count} articles with the highest scores.
@@ -718,8 +730,24 @@ function getDateDaysAgo(days: number): string {
 
 function getDateHoursAgo(hours: number): string {
   const date = new Date();
-  date.setHours(date.getHours() - hours);
+  date.setTime(date.getTime() - (hours * 60 * 60 * 1000)); // Use setTime instead of setHours to handle date boundaries correctly
   return date.toISOString();
+}
+
+function getTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  
+  if (diffMins < 60) {
+    return `${diffMins}m ago`;
+  } else if (diffMins < 1440) {
+    const hours = Math.floor(diffMins / 60);
+    return `${hours}h ago`;
+  } else {
+    const days = Math.floor(diffMins / 1440);
+    return `${days}d ago`;
+  }
 }
 
 // Mark selected articles to prevent re-selection in future runs
