@@ -134,13 +134,23 @@ export async function GET(request: NextRequest) {
         .is('deleted_at', null)
         .order("created_at", { ascending: false })
       
+      // CRITICAL FIX: Exclude source articles that have enhanced versions
+      // Only show articles that either:
+      // 1. Have an original_article_id (are enhanced versions), OR
+      // 2. Don't have any enhanced versions pointing to them (standalone enhanced articles)
+      
+      // For now, prioritize articles with original_article_id (properly linked enhanced articles)
+      // This will exclude the source articles that are incorrectly marked as enhanced
+      query = query.not('original_article_id', 'is', null)
+      
       // Filter by language using only metadata (since language column doesn't exist)
       if (language && language !== "en") {
         // For non-English languages, check metadata language
         query = query.eq('enhancement_metadata->>language', language)
       } else {
-        // For English, include articles where metadata shows 'en' OR metadata language is null/missing
-        query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null`)
+        // For English, only include articles explicitly marked as English
+        // Remove the null fallback that was including source articles
+        query = query.eq('enhancement_metadata->>language', 'en')
       }
       
       const { data: articles, error } = await query.range(page * limit, (page + 1) * limit - 1)

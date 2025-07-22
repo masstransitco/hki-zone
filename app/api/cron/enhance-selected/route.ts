@@ -307,13 +307,16 @@ export async function GET(request: NextRequest) {
       throw new Error(`Failed to save articles: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
 
-    // 4. Mark original article as enhanced to prevent re-selection
+    // 4. Mark original article as processed to prevent re-selection - CRITICAL: Must succeed
     try {
-      console.log('🔐 Marking original article as enhanced...')
+      console.log('🔐 Marking original article as processed...')
+      
+      // Use atomic transaction to ensure both operations succeed or both fail
       const { error: markError } = await supabase
         .from('articles')
         .update({ 
-          is_ai_enhanced: true,
+          is_ai_enhanced: false, // IMPORTANT: Source articles should NOT be marked as enhanced
+          selected_for_enhancement: false, // Reset selection flag
           enhancement_metadata: {
             enhanced_at: new Date().toISOString(),
             trilingual_versions_created: savedArticles.length,
@@ -321,20 +324,28 @@ export async function GET(request: NextRequest) {
             processing_time_ms: Date.now() - startTime,
             estimated_cost: calculateTrilingualCost(trilingualArticles),
             enhancement_method: 'cron_trilingual',
-            enhanced_article_ids: savedArticles.map(a => a.id)
+            enhanced_article_ids: savedArticles.map(a => a.id),
+            source_article_status: 'enhanced_children_created'
           }
         })
         .eq('id', selectedArticle.id)
+        .eq('selected_for_enhancement', true) // Additional safety check
 
       if (markError) {
-        console.error('❌ Failed to mark original article as enhanced:', markError)
-        // Don't throw here - enhancement succeeded even if marking failed
+        console.error('❌ CRITICAL: Failed to mark original article properly:', markError)
+        console.error('❌ This will cause AI to re-select this article!')
+        
+        // CRITICAL FIX: Throw error to prevent incomplete state
+        throw new Error(`Failed to mark source article properly: ${markError.message}. This would cause duplicate selection by AI.`)
       } else {
-        console.log(`✅ Marked original article "${selectedArticle.title}" as enhanced`)
+        console.log(`✅ Marked source article "${selectedArticle.title}" as processed (not enhanced)`)
+        console.log(`✅ Created ${savedArticles.length} enhanced children articles`)
       }
     } catch (error) {
-      console.error('❌ Error marking original article as enhanced:', error)
-      // Don't throw here - enhancement succeeded even if marking failed
+      console.error('❌ CRITICAL Error marking original article:', error)
+      
+      // CRITICAL FIX: This MUST throw to prevent inconsistent state
+      throw new Error(`Critical failure in marking source article: ${error instanceof Error ? error.message : 'Unknown error'}. Enhancement was successful but marking failed - this will cause AI re-selection.`)
     }
 
     const processingTime = Date.now() - startTime

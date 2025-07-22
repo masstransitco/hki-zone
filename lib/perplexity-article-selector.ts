@@ -234,6 +234,7 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
       console.log(`   ✅ Reset stale selections to allow re-selection`);
     }
 
+    // Enhanced candidate selection with additional safety checks
     const { data: articles, error } = await supabase
       .from('articles')
       .select('*')
@@ -242,8 +243,9 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
       .in('source', scrapedSources) // Only scraped sources (not AI-generated)
       .gte('created_at', getDateHoursAgo(6)) // Last 6 hours - focus on recent news
       .not('content', 'is', null) // Must have content
+      .is('enhancement_metadata->source_article_status', null) // Exclude already processed source articles
       .order('created_at', { ascending: false })
-      .limit(50); // Get up to 50 candidates for Perplexity to choose from
+      .limit(50) // Get up to 50 candidates for Perplexity to choose from
 
     if (error) throw error;
 
@@ -276,6 +278,13 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
           console.log(`     ⚠️ Filtered "${article.title.substring(0, 50)}..." - similar article recently selected`);
           return false;
         }
+        
+        // Additional safety check: exclude articles that may have enhancement metadata indicating processing
+        if (article.enhancement_metadata?.source_article_status === 'enhanced_children_created') {
+          console.log(`     ⚠️ Filtered "${article.title.substring(0, 50)}..." - already processed (has enhanced children)`);
+          return false;
+        }
+        
         return true;
       });
 
