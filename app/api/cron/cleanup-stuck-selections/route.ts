@@ -132,7 +132,8 @@ async function analyzeStuckPatterns(stuckArticles: any[]) {
   }
 }
 
-export async function POST(request: NextRequest) {
+// Main cleanup logic
+async function runCleanup(request: NextRequest) {
   try {
     // Enhanced authentication for cron jobs
     const authHeader = request.headers.get('authorization')
@@ -225,7 +226,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function POST(request: NextRequest) {
+  return runCleanup(request)
+}
+
+export async function GET(request: NextRequest) {
+  // Check if this is a Vercel cron request
+  const userAgent = request.headers.get('user-agent')
+  const isVercelCron = userAgent === 'vercel-cron/1.0'
+  
+  // If it's a Vercel cron request, run the cleanup logic
+  if (isVercelCron) {
+    console.log('🚀 GET request detected as Vercel cron - running cleanup logic')
+    return runCleanup(request)
+  }
+  
+  // Otherwise, return statistics
   try {
     // Return statistics about stuck selections (for monitoring)
     const stuckArticles = await findStuckSelections(4)

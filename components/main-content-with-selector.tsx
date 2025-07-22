@@ -43,7 +43,7 @@ export default function MainContent({ contentType }: MainContentProps) {
         return <TopicsFeed />;
       case 'news':
         return (
-          <div className="-mx-6">
+          <div className="relative -mx-6 overflow-hidden">
             <NewsFeedMasonry />
           </div>
         );

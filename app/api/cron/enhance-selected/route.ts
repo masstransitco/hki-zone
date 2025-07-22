@@ -173,7 +173,8 @@ export async function GET(request: NextRequest) {
   // Check if this is a cron request (has auth headers) vs stats request (no auth)
   const authHeader = request.headers.get('authorization')
   const userAgent = request.headers.get('user-agent')
-  const isCronRequest = userAgent === 'vercel-cron/1.0' || authHeader === `Bearer ${process.env.CRON_SECRET}`
+  const isVercelCron = userAgent === 'vercel-cron/1.0'
+  const isCronRequest = isVercelCron || authHeader === `Bearer ${process.env.CRON_SECRET}`
   
   if (!isCronRequest) {
     // Return stats for non-cron requests

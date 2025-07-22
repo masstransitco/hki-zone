@@ -331,6 +331,9 @@
   column-count: 2;
   column-gap: 12px;
   padding: 0 16px;
+  max-width: 100vw; /* Prevent horizontal overflow */
+  overflow-x: hidden; /* Hide any overflow */
+  box-sizing: border-box;
 }
 
 /* CSS Grid masonry for browsers that support it */
@@ -341,6 +344,8 @@
     grid-auto-rows: masonry;
     grid-gap: 12px;
     column-count: unset; /* Disable columns when using grid */
+    max-width: 100vw; /* Maintain viewport constraint */
+    overflow-x: hidden;
   }
 }
 

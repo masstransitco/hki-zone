@@ -95,7 +95,19 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  // Check if this is a cron request or status check
+  const authHeader = request.headers.get('authorization')
+  const userAgent = request.headers.get('user-agent')
+  const isVercelCron = userAgent === 'vercel-cron/1.0'
+  
+  // If it's a Vercel cron request, run the selection logic
+  if (isVercelCron) {
+    console.log('🚀 GET request detected as Vercel cron - running selection logic')
+    return POST(request)
+  }
+  
+  // Otherwise, return statistics for monitoring
   try {
     console.log('📊 Getting selection statistics...')
     

@@ -49,10 +49,12 @@ export default function NewsFeedMasonry() {
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [isPullRefreshing, setIsPullRefreshing] = useState(false)
+  const [isMasonryReady, setIsMasonryReady] = useState(false) // Track masonry initialization
   const feedRef = useRef<HTMLDivElement>(null)
   const masonryRef = useRef<any>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const touchStartY = useRef(0)
+  const cleanupFnRef = useRef<(() => void) | null>(null)
 
   const handleReadMore = (articleId: string) => {
     setSelectedArticleId(articleId)
@@ -116,132 +118,188 @@ export default function NewsFeedMasonry() {
     }
   }
 
-  // Streamlined masonry initialization
+  // Streamlined masonry initialization with proper cleanup
   useEffect(() => {
     if (!feedRef.current) return
     
-    // Check if we need JavaScript masonry
-    // Only use JS if neither CSS Grid masonry nor CSS columns work properly
-    const needsJSMasonry = () => {
-      // Force JS masonry for iOS Chrome due to CSS columns rendering issues
-      const isIOSChrome = /CriOS/.test(navigator.userAgent)
-      if (isIOSChrome) {
-        console.log('iOS Chrome detected, forcing JavaScript masonry')
-        return true
-      }
-      
-      // Test if CSS columns are working properly
-      const testElement = feedRef.current
-      if (!testElement) return false
-      
-      const computedStyle = window.getComputedStyle(testElement)
-      const columnCount = computedStyle.columnCount
-      
-      // If browser doesn't support multi-column or it's not working, use JS
-      return columnCount === 'auto' || parseInt(columnCount) === 1
+    setIsMasonryReady(false) // Reset ready state
+    
+    // Clean up any existing masonry instance first
+    if (masonryRef.current) {
+      masonryRef.current.destroy()
+      masonryRef.current = null
     }
     
-    if (!needsJSMasonry()) return // CSS is handling it fine
-
-    // Dynamic import for JavaScript fallback
-    (async () => {
-      try {
-        if (!feedRef.current) return
-        
-        // Add class to enable JavaScript masonry
-        feedRef.current.classList.add("js-masonry")
-        
-        const [{ default: Masonry }, { default: imagesLoaded }] = await Promise.all([
-          import("masonry-layout"),
-          import("imagesloaded")
-        ])
-
-        if (!feedRef.current) return
-
-        // Simplified spacing configuration
-        const getConfig = () => {
-          const width = window.innerWidth
-          
-          if (width >= 1280) return { columns: 5, gap: 24, padding: 0 }
-          if (width >= 1024) return { columns: 4, gap: 24, padding: 0 }
-          if (width >= 768) return { columns: 3, gap: 20, padding: 24 }
-          if (width >= 640) return { columns: 2, gap: 16, padding: 20 }
-          return { columns: 2, gap: 12, padding: 16 } // 2-column minimum
+    // Run any stored cleanup function
+    if (cleanupFnRef.current) {
+      cleanupFnRef.current()
+      cleanupFnRef.current = null
+    }
+    
+    // Reset any JS masonry classes and styles
+    if (feedRef.current) {
+      feedRef.current.classList.remove("js-masonry")
+      feedRef.current.style.padding = ""
+      feedRef.current.style.maxWidth = ""
+      feedRef.current.style.overflow = ""
+    }
+    
+    // Small delay to ensure DOM is stable after content switch
+    const initTimeout = setTimeout(() => {
+      if (!feedRef.current) return
+      
+      // Check if we need JavaScript masonry
+      // Only use JS if neither CSS Grid masonry nor CSS columns work properly
+      const needsJSMasonry = () => {
+        // Force JS masonry for iOS Chrome due to CSS columns rendering issues
+        const isIOSChrome = /CriOS/.test(navigator.userAgent)
+        if (isIOSChrome) {
+          console.log('iOS Chrome detected, forcing JavaScript masonry')
+          return true
         }
+        
+        // Test if CSS columns are working properly
+        const testElement = feedRef.current
+        if (!testElement) return false
+        
+        const computedStyle = window.getComputedStyle(testElement)
+        const columnCount = computedStyle.columnCount
+        
+        // If browser doesn't support multi-column or it's not working, use JS
+        return columnCount === 'auto' || parseInt(columnCount) === 1
+      }
+      
+      if (!needsJSMasonry()) {
+        setIsMasonryReady(true) // CSS masonry is ready
+        return // CSS is handling it fine
+      }
 
-        // Calculate column width
-        const getColumnWidth = () => {
-          const container = feedRef.current
-          if (!container) return 300 // fallback
+      // Dynamic import for JavaScript fallback
+      (async () => {
+        try {
+          if (!feedRef.current) return
           
+          // Add class to enable JavaScript masonry
+          feedRef.current.classList.add("js-masonry")
+          
+          const [{ default: Masonry }, { default: imagesLoaded }] = await Promise.all([
+            import("masonry-layout"),
+            import("imagesloaded")
+          ])
+
+          if (!feedRef.current) return
+
+          // Simplified spacing configuration with viewport overflow fix
+          const getConfig = () => {
+            const width = window.innerWidth
+            
+            if (width >= 1280) return { columns: 5, gap: 24, padding: 8 } // Reduced padding
+            if (width >= 1024) return { columns: 4, gap: 24, padding: 8 }
+            if (width >= 768) return { columns: 3, gap: 20, padding: 8 }
+            if (width >= 640) return { columns: 2, gap: 16, padding: 8 }
+            return { columns: 2, gap: 12, padding: 8 } // 2-column minimum with safe padding
+          }
+
+          // Calculate column width with proper container bounds checking
+          const getColumnWidth = () => {
+            const container = feedRef.current
+            if (!container) return 300 // fallback
+            
+            const config = getConfig()
+            // Use offsetWidth for actual rendered width, accounting for parent constraints
+            const containerWidth = Math.min(container.offsetWidth, window.innerWidth) - (config.padding * 2)
+            const columnWidth = Math.floor((containerWidth - (config.gap * (config.columns - 1))) / config.columns)
+            
+            // Ensure minimum column width to prevent layout breaks
+            return Math.max(columnWidth, 150)
+          }
+
+          // Initialize Masonry with overflow-safe config
           const config = getConfig()
-          const containerWidth = container.offsetWidth - (config.padding * 2)
-          return (containerWidth - (config.gap * (config.columns - 1))) / config.columns
-        }
+          
+          // Apply padding with viewport bounds check
+          const safeMaxWidth = window.innerWidth - 16 // Leave some margin
+          feedRef.current.style.padding = `0 ${config.padding}px`
+          feedRef.current.style.maxWidth = `${safeMaxWidth}px`
+          feedRef.current.style.overflow = 'hidden'
+          
+          masonryRef.current = new Masonry(feedRef.current, {
+            itemSelector: ".news-card",
+            columnWidth: getColumnWidth(),
+            gutter: config.gap,
+            percentPosition: false,
+            horizontalOrder: true,
+            transitionDuration: 0, // Disable animations for better performance
+            resize: false,
+            fitWidth: true // Prevent horizontal overflow
+          })
 
-        // Initialize Masonry with streamlined config
-        const config = getConfig()
-        
-        // Apply padding
-        feedRef.current.style.padding = `0 ${config.padding}px`
-        
-        masonryRef.current = new Masonry(feedRef.current, {
-          itemSelector: ".news-card",
-          columnWidth: getColumnWidth(),
-          gutter: config.gap,
-          percentPosition: false,
-          horizontalOrder: true,
-          transitionDuration: 0, // Disable animations for better performance
-          resize: false
-        })
+          // Re-layout when images load
+          imagesLoaded(feedRef.current, () => {
+            if (masonryRef.current) {
+              masonryRef.current.layout()
+            }
+          })
 
-        // Re-layout when images load
-        imagesLoaded(feedRef.current, () => {
-          if (masonryRef.current) {
+          // Enhanced resize handler with bounds checking
+          const handleResize = () => {
+            if (!masonryRef.current || !feedRef.current) return
+            
+            const config = getConfig()
+            const safeMaxWidth = window.innerWidth - 16
+            
+            feedRef.current.style.padding = `0 ${config.padding}px`
+            feedRef.current.style.maxWidth = `${safeMaxWidth}px`
+            
+            masonryRef.current.option({ 
+              columnWidth: getColumnWidth(),
+              gutter: config.gap
+            })
             masonryRef.current.layout()
           }
-        })
 
-        // Simplified resize handler
-        const handleResize = () => {
-          if (!masonryRef.current || !feedRef.current) return
-          
-          const config = getConfig()
-          
-          feedRef.current.style.padding = `0 ${config.padding}px`
-          
-          masonryRef.current.option({ 
-            columnWidth: getColumnWidth(),
-            gutter: config.gap
-          })
-          masonryRef.current.layout()
-        }
+          // Debounce resize handler to improve performance
+          let resizeTimeout: NodeJS.Timeout
+          const debouncedResize = () => {
+            clearTimeout(resizeTimeout)
+            resizeTimeout = setTimeout(handleResize, 100)
+          }
 
-        // Debounce resize handler to improve performance
-        let resizeTimeout: NodeJS.Timeout
-        const debouncedResize = () => {
-          clearTimeout(resizeTimeout)
-          resizeTimeout = setTimeout(handleResize, 100)
+          window.addEventListener('resize', debouncedResize)
+          
+          // Store cleanup function
+          cleanupFnRef.current = () => {
+            window.removeEventListener('resize', debouncedResize)
+            clearTimeout(resizeTimeout)
+          }
+          
+          setIsMasonryReady(true) // Mark masonry as ready
+        } catch (error) {
+          console.error("Failed to load masonry:", error)
         }
-
-        window.addEventListener('resize', debouncedResize)
-        
-        // Store cleanup function
-        return () => {
-          window.removeEventListener('resize', debouncedResize)
-          clearTimeout(resizeTimeout)
-        }
-      } catch (error) {
-        console.error("Failed to load masonry:", error)
-      }
-    })()
+      })()
+    }, 100) // Small delay for DOM stability
 
     return () => {
+      clearTimeout(initTimeout)
+      if (cleanupFnRef.current) {
+        cleanupFnRef.current()
+        cleanupFnRef.current = null
+      }
       if (masonryRef.current) {
         masonryRef.current.destroy()
+        masonryRef.current = null
       }
+      // Reset container styles on cleanup
+      if (feedRef.current) {
+        feedRef.current.classList.remove("js-masonry")
+        feedRef.current.style.padding = ""
+        feedRef.current.style.maxWidth = ""
+        feedRef.current.style.overflow = ""
+      }
+      setIsMasonryReady(false)
     }
-  }, [])
+  }, []) // Keep empty dependency to run once on mount
 
   // Re-layout masonry when new items are added
   useEffect(() => {
