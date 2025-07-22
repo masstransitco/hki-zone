@@ -44,7 +44,7 @@ export default function MainContent({ contentType }: MainContentProps) {
       case 'news':
         return (
           <div className="relative -mx-6 overflow-hidden">
-            <NewsFeedMasonry />
+            <NewsFeedMasonry key={`news-feed-${Date.now()}`} />
           </div>
         );
       case 'bulletin':

@@ -336,6 +336,12 @@
   box-sizing: border-box;
 }
 
+/* When JavaScript masonry is active, disable CSS columns */
+.news-feed.js-masonry {
+  column-count: unset !important;
+  column-gap: unset !important;
+}
+
 /* CSS Grid masonry for browsers that support it */
 @supports (grid-template-rows: masonry) {
   .news-feed {

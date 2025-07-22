@@ -142,31 +142,47 @@ export default function NewsFeedMasonry() {
       feedRef.current.style.padding = ""
       feedRef.current.style.maxWidth = ""
       feedRef.current.style.overflow = ""
+      feedRef.current.style.margin = ""
     }
     
     // Small delay to ensure DOM is stable after content switch
     const initTimeout = setTimeout(() => {
       if (!feedRef.current) return
       
-      // Check if we need JavaScript masonry
-      // Only use JS if neither CSS Grid masonry nor CSS columns work properly
+      // Check if CSS columns are working properly
       const needsJSMasonry = () => {
-        // Force JS masonry for iOS Chrome due to CSS columns rendering issues
-        const isIOSChrome = /CriOS/.test(navigator.userAgent)
-        if (isIOSChrome) {
-          console.log('iOS Chrome detected, forcing JavaScript masonry')
-          return true
-        }
-        
-        // Test if CSS columns are working properly
         const testElement = feedRef.current
-        if (!testElement) return false
+        if (!testElement) return true // Fallback to JS if no element
         
+        // Force layout recalculation
+        void testElement.offsetHeight
+        
+        // Check computed styles
         const computedStyle = window.getComputedStyle(testElement)
         const columnCount = computedStyle.columnCount
         
-        // If browser doesn't support multi-column or it's not working, use JS
-        return columnCount === 'auto' || parseInt(columnCount) === 1
+        console.log('CSS column detection:', { 
+          columnCount, 
+          columnGap: computedStyle.columnGap,
+          display: computedStyle.display,
+          width: testElement.offsetWidth
+        })
+        
+        // iOS Chrome needs JS masonry
+        const isIOSChrome = /CriOS/.test(navigator.userAgent)
+        if (isIOSChrome) {
+          console.log('iOS Chrome detected, using JS masonry')
+          return true
+        }
+        
+        // Check if CSS columns are properly applied
+        if (!columnCount || columnCount === 'auto' || parseInt(columnCount) < 2) {
+          console.log('CSS columns not working (columnCount:', columnCount, '), using JS masonry')
+          return true
+        }
+        
+        console.log('CSS columns working properly, using CSS layout')
+        return false
       }
       
       if (!needsJSMasonry()) {
@@ -193,11 +209,12 @@ export default function NewsFeedMasonry() {
           const getConfig = () => {
             const width = window.innerWidth
             
-            if (width >= 1280) return { columns: 5, gap: 24, padding: 8 } // Reduced padding
+            // Enforce minimum 2 columns always
+            if (width >= 1280) return { columns: 5, gap: 24, padding: 8 }
             if (width >= 1024) return { columns: 4, gap: 24, padding: 8 }
             if (width >= 768) return { columns: 3, gap: 20, padding: 8 }
             if (width >= 640) return { columns: 2, gap: 16, padding: 8 }
-            return { columns: 2, gap: 12, padding: 8 } // 2-column minimum with safe padding
+            return { columns: 2, gap: 12, padding: 8 } // Force 2-column minimum even on mobile
           }
 
           // Calculate column width with proper container bounds checking
@@ -216,23 +233,39 @@ export default function NewsFeedMasonry() {
 
           // Initialize Masonry with overflow-safe config
           const config = getConfig()
+          const columnWidth = getColumnWidth()
+          
+          console.log('Masonry initialization config:', { 
+            columns: config.columns, 
+            gap: config.gap, 
+            padding: config.padding,
+            columnWidth,
+            containerWidth: feedRef.current.offsetWidth
+          })
           
           // Apply padding with viewport bounds check
           const safeMaxWidth = window.innerWidth - 16 // Leave some margin
           feedRef.current.style.padding = `0 ${config.padding}px`
           feedRef.current.style.maxWidth = `${safeMaxWidth}px`
           feedRef.current.style.overflow = 'hidden'
+          feedRef.current.style.margin = '0 auto' // Center the masonry container
+          
+          // Ensure we have items to layout
+          const items = feedRef.current.querySelectorAll('.news-card')
+          console.log(`Found ${items.length} news cards to layout`)
           
           masonryRef.current = new Masonry(feedRef.current, {
             itemSelector: ".news-card",
-            columnWidth: getColumnWidth(),
+            columnWidth: columnWidth,
             gutter: config.gap,
             percentPosition: false,
             horizontalOrder: true,
             transitionDuration: 0, // Disable animations for better performance
             resize: false,
-            fitWidth: true // Prevent horizontal overflow
+            fitWidth: false // CRITICAL: Set to false to prevent single-column collapse
           })
+          
+          console.log('Masonry instance created:', masonryRef.current)
 
           // Re-layout when images load
           imagesLoaded(feedRef.current, () => {
@@ -250,6 +283,7 @@ export default function NewsFeedMasonry() {
             
             feedRef.current.style.padding = `0 ${config.padding}px`
             feedRef.current.style.maxWidth = `${safeMaxWidth}px`
+            feedRef.current.style.margin = '0 auto' // Ensure centering on resize too
             
             masonryRef.current.option({ 
               columnWidth: getColumnWidth(),
@@ -278,7 +312,7 @@ export default function NewsFeedMasonry() {
           console.error("Failed to load masonry:", error)
         }
       })()
-    }, 100) // Small delay for DOM stability
+    }, 300) // Increased delay to ensure CSS is applied after transitions
 
     return () => {
       clearTimeout(initTimeout)
@@ -296,6 +330,7 @@ export default function NewsFeedMasonry() {
         feedRef.current.style.padding = ""
         feedRef.current.style.maxWidth = ""
         feedRef.current.style.overflow = ""
+        feedRef.current.style.margin = ""
       }
       setIsMasonryReady(false)
     }
@@ -303,14 +338,27 @@ export default function NewsFeedMasonry() {
 
   // Re-layout masonry when new items are added
   useEffect(() => {
-    if (masonryRef.current && data) {
+    if (masonryRef.current && data && isMasonryReady) {
+      console.log('Re-laying out masonry with new data')
       // Small delay to ensure DOM is updated
       setTimeout(() => {
-        masonryRef.current.reloadItems()
-        masonryRef.current.layout()
+        if (masonryRef.current) {
+          const items = feedRef.current?.querySelectorAll('.news-card')
+          console.log(`Re-layout: Found ${items?.length || 0} news cards`)
+          
+          masonryRef.current.reloadItems()
+          masonryRef.current.layout()
+          
+          // Force a second layout after a brief delay for stubborn cases
+          setTimeout(() => {
+            if (masonryRef.current) {
+              masonryRef.current.layout()
+            }
+          }, 50)
+        }
       }, 100)
     }
-  }, [data])
+  }, [data, isMasonryReady])
 
   // Infinite scroll trigger
   useEffect(() => {
