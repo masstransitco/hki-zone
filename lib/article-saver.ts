@@ -60,6 +60,9 @@ export async function saveEnhancedArticles(
           image_url: article.image_url,
           published_at: new Date().toISOString(),
           
+          // CRITICAL FIX: Map source_article_id to database original_article_id field
+          original_article_id: article.source_article_id || null,
+          
           // Enhancement metadata (store additional fields here as JSON)
           enhancement_metadata: {
             ...article.enhancement_metadata,
@@ -83,6 +86,16 @@ export async function saveEnhancedArticles(
             }
           }
         };
+        
+        // CRITICAL VALIDATION: Ensure original_article_id is set when source_article_id exists
+        if (article.source_article_id && !baseArticleData.original_article_id) {
+          throw new Error(`CRITICAL: Failed to set original_article_id for enhanced article: ${article.title}. This would create an orphaned article invisible in topics feed.`);
+        }
+        
+        // Log the mapping for verification
+        if (article.source_article_id) {
+          console.log(`✓ Mapping source_article_id ${article.source_article_id} → original_article_id for: ${article.title}`);
+        }
         
         // Insert the article - try with language field first, fallback if it doesn't exist
         let { data, error } = await supabase
