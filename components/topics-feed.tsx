@@ -1,10 +1,8 @@
 "use client"
 
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useInView } from "react-intersection-observer"
-import { RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import ArticleCard from "./article-card"
 import ArticleBottomSheet from "./article-bottom-sheet"
 import LoadingSkeleton from "./loading-skeleton"
@@ -24,6 +22,9 @@ export default function TopicsFeed() {
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [isManualRefreshing, setIsManualRefreshing] = useState(false)
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false)
+  const touchStartY = useRef(0)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const handleReadMore = (articleId: string) => {
     setSelectedArticleId(articleId)
@@ -50,10 +51,9 @@ export default function TopicsFeed() {
     retry: 2,
   })
 
-  // Handle manual refresh functionality
-  const handleManualRefresh = async () => {
-    setIsManualRefreshing(true)
-    console.log(`Manual refresh triggered for language: ${language}`)
+  // Handle refresh functionality
+  const handleRefresh = useCallback(async () => {
+    console.log(`Refresh triggered for language: ${language}`)
     
     try {
       // Reset the entire query to get fresh data from page 0
@@ -64,11 +64,35 @@ export default function TopicsFeed() {
       // Also refetch to ensure we get the latest data
       await refetch()
       
-      console.log(`Manual refresh completed for language: ${language}`)
+      console.log(`Refresh completed for language: ${language}`)
     } catch (error) {
-      console.error("Manual refresh failed:", error)
-    } finally {
-      setIsManualRefreshing(false)
+      console.error("Refresh failed:", error)
+    }
+  }, [queryClient, language, refetch])
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchMove = async (e: React.TouchEvent) => {
+    if (!scrollRef.current) return
+    
+    const touchY = e.touches[0].clientY
+    const pullDistance = touchY - touchStartY.current
+    const scrollTop = scrollRef.current.scrollTop
+    
+    // Only trigger pull-to-refresh when at the top of the scroll and pulling down
+    if (scrollTop === 0 && pullDistance > 100 && !isPullRefreshing && !isManualRefreshing) {
+      setIsPullRefreshing(true)
+      setIsManualRefreshing(true)
+      
+      try {
+        await handleRefresh()
+      } finally {
+        setIsPullRefreshing(false)
+        setIsManualRefreshing(false)
+      }
     }
   }
 
@@ -92,38 +116,25 @@ export default function TopicsFeed() {
         <p className="text-stone-600 dark:text-neutral-400 mb-4">
           {t("topics.noAiArticlesDescription")}
         </p>
-        <Button 
-          onClick={handleManualRefresh} 
-          disabled={isManualRefreshing}
-          variant="outline"
-          size="sm"
-          className="inline-flex items-center gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isManualRefreshing ? 'animate-spin' : ''}`} />
-          {isManualRefreshing ? 'Refreshing...' : 'Check for New Articles'}
-        </Button>
+        <div className="text-sm text-stone-600 dark:text-neutral-400">
+          {isPullRefreshing ? 'Refreshing...' : 'Pull down to refresh'}
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="pt-6 pb-4 isolate">
-      {/* Header with refresh button */}
-      <div className="flex items-center justify-between mb-4 px-2">
-        <div className="text-sm text-stone-600 dark:text-neutral-400">
-          {articles.length} AI-enhanced articles
+    <div 
+      ref={scrollRef}
+      className="pt-6 pb-4 isolate overflow-auto h-full"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+    >
+      {isPullRefreshing && (
+        <div className="flex justify-center py-2 mb-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-stone-600 dark:border-neutral-400"></div>
         </div>
-        <Button 
-          onClick={handleManualRefresh} 
-          disabled={isManualRefreshing || isLoading}
-          variant="ghost"
-          size="sm"
-          className="inline-flex items-center gap-2 text-stone-600 hover:text-stone-900 dark:text-neutral-400 dark:hover:text-neutral-100"
-        >
-          <RefreshCw className={`h-4 w-4 ${isManualRefreshing ? 'animate-spin' : ''}`} />
-          {isManualRefreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
-      </div>
+      )}
 
       {/* Responsive grid layout: mobile 1col, tablet 2col, desktop 3col, large 4col */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 isolate">

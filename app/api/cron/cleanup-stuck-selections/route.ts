@@ -134,11 +134,17 @@ async function analyzeStuckPatterns(stuckArticles: any[]) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify this is a legitimate cron request
+    // Enhanced authentication for cron jobs
     const authHeader = request.headers.get('authorization')
     const userAgent = request.headers.get('user-agent')
     
-    if (userAgent !== 'vercel-cron/1.0' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const isVercelCron = userAgent === 'vercel-cron/1.0'
+    const isValidSecret = process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`
+    
+    console.log(`🔐 Cleanup Authentication: isVercelCron=${isVercelCron}, isValidSecret=${isValidSecret}`)
+    
+    if (!isVercelCron && !isValidSecret) {
+      console.log(`❌ CLEANUP UNAUTHORIZED: userAgent=${userAgent}, hasSecret=${!!process.env.CRON_SECRET}`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

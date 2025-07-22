@@ -212,8 +212,14 @@ export async function GET(request: NextRequest) {
   
   // Main enhancement logic (same as before) for cron requests
   try {
-    // Verify this is a legitimate cron request
-    if (userAgent !== 'vercel-cron/1.0' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    // Enhanced authentication for cron jobs  
+    const isVercelCron = userAgent === 'vercel-cron/1.0'
+    const isValidSecret = process.env.CRON_SECRET && authHeader === `Bearer ${process.env.CRON_SECRET}`
+    
+    console.log(`🔐 Authentication: isVercelCron=${isVercelCron}, isValidSecret=${isValidSecret}`)
+    
+    if (!isVercelCron && !isValidSecret) {
+      console.log(`❌ UNAUTHORIZED: userAgent=${userAgent}, hasSecret=${!!process.env.CRON_SECRET}`)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

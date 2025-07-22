@@ -1,7 +1,7 @@
 "use client"
 
-import { useInfiniteQuery } from "@tanstack/react-query"
-import { useEffect, useState, useRef } from "react"
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { useInView } from "react-intersection-observer"
 import ArticleCard from "./article-card"
 import ArticleBottomSheet from "./article-bottom-sheet"
@@ -45,10 +45,14 @@ function getRandomAspectRatio(articleId: string): AspectRatio {
 export default function NewsFeedMasonry() {
   const { ref, inView } = useInView({ rootMargin: "600px" })
   const { t } = useLanguage()
+  const queryClient = useQueryClient()
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false)
   const feedRef = useRef<HTMLDivElement>(null)
   const masonryRef = useRef<any>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const touchStartY = useRef(0)
 
   const handleReadMore = (articleId: string) => {
     setSelectedArticleId(articleId)
@@ -62,12 +66,55 @@ export default function NewsFeedMasonry() {
     }
   }
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error } = useInfiniteQuery({
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } = useInfiniteQuery({
     queryKey: ["articles"],
     queryFn: fetchArticles,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
   })
+
+  // Handle refresh functionality
+  const handleRefresh = useCallback(async () => {
+    console.log('Refresh triggered for news feed')
+    
+    try {
+      // Reset the entire query to get fresh data from page 0
+      await queryClient.resetQueries({ 
+        queryKey: ["articles"] 
+      })
+      
+      // Also refetch to ensure we get the latest data
+      await refetch()
+      
+      console.log('Refresh completed for news feed')
+    } catch (error) {
+      console.error("Refresh failed:", error)
+    }
+  }, [queryClient, refetch])
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const handleTouchMove = async (e: React.TouchEvent) => {
+    if (!scrollRef.current) return
+    
+    const touchY = e.touches[0].clientY
+    const pullDistance = touchY - touchStartY.current
+    const scrollTop = scrollRef.current.scrollTop
+    
+    // Only trigger pull-to-refresh when at the top of the scroll and pulling down
+    if (scrollTop === 0 && pullDistance > 100 && !isPullRefreshing) {
+      setIsPullRefreshing(true)
+      
+      try {
+        await handleRefresh()
+      } finally {
+        setIsPullRefreshing(false)
+      }
+    }
+  }
 
   // Streamlined masonry initialization
   useEffect(() => {
@@ -225,7 +272,17 @@ export default function NewsFeedMasonry() {
   }
 
   return (
-    <div className="w-full py-6 isolate">
+    <div 
+      ref={scrollRef}
+      className="w-full py-6 isolate overflow-auto h-full"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+    >
+      {isPullRefreshing && (
+        <div className="flex justify-center py-2 mb-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-neutral-600 dark:border-neutral-400"></div>
+        </div>
+      )}
       {/* Masonry news feed container */}
       <div ref={feedRef} className="news-feed isolate">
         {articles.map((article) => {

@@ -3,20 +3,42 @@ import { selectArticlesWithPerplexity } from '@/lib/perplexity-article-selector'
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify this is a legitimate cron request
-    const authHeader = request.headers.get('authorization')
-    const userAgent = request.headers.get('user-agent')
-    
-    if (userAgent !== 'vercel-cron/1.0' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
+    // Enhanced logging for production debugging
     const now = new Date()
     const utcTime = now.toISOString()
     const hkTime = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString().replace('Z', ' HKT')
     
-    console.log('🔍 Starting article selection process...')
+    console.log('🔍 ARTICLE SELECTION CRON JOB STARTED')
     console.log(`⏰ Execution time: ${utcTime} (UTC) / ${hkTime}`)
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'unknown'}`)
+    console.log(`📍 Vercel Region: ${process.env.VERCEL_REGION || 'unknown'}`)
+    
+    // Enhanced authentication for cron jobs
+    const authHeader = request.headers.get('authorization')
+    const userAgent = request.headers.get('user-agent')
+    
+    // Allow Vercel cron requests (primary method)
+    const isVercelCron = userAgent === 'vercel-cron/1.0'
+    
+    // Allow manual requests with valid secret (backup method)
+    const isValidSecret = process.env.CRON_SECRET && 
+                          authHeader === `Bearer ${process.env.CRON_SECRET}`
+    
+    console.log(`🔐 Request verification:`)
+    console.log(`   User-Agent: ${userAgent || 'none'}`)
+    console.log(`   Auth Header: ${authHeader ? 'Bearer [REDACTED]' : 'none'}`)
+    console.log(`   CRON_SECRET configured: ${process.env.CRON_SECRET ? 'Yes' : 'No'}`)
+    console.log(`   Is Vercel Cron: ${isVercelCron}`)
+    console.log(`   Is Valid Secret: ${isValidSecret}`)
+    
+    // Allow either method
+    if (!isVercelCron && !isValidSecret) {
+      console.log(`❌ UNAUTHORIZED: userAgent=${userAgent}, hasSecret=${!!process.env.CRON_SECRET}`)
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    console.log(`✅ Authentication: ${isVercelCron ? 'Vercel Cron' : 'Secret Auth'}`)
+    console.log('🎯 Starting article selection with Perplexity...')
 
     // Select 1 best article from scraped sources for enhancement
     const selectedArticles = await selectArticlesWithPerplexity(1)
@@ -54,12 +76,19 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ Error in article selection:', error)
+    console.error('❌ CRITICAL ERROR in article selection:', error)
+    console.error('❌ Error type:', typeof error)
+    console.error('❌ Error name:', error?.constructor?.name || 'unknown')
+    console.error('❌ Error message:', error instanceof Error ? error.message : String(error))
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'no stack trace')
+    
     return NextResponse.json(
       { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error occurred',
-        selectedCount: 0
+        selectedCount: 0,
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'unknown'
       }, 
       { status: 500 }
     )
@@ -68,21 +97,34 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    console.log('📊 Getting selection statistics...')
+    
     // Get statistics about available articles for selection
     const { getSelectionStatistics } = await import('@/lib/perplexity-article-selector')
     const stats = await getSelectionStatistics()
     
+    console.log('✅ Selection statistics retrieved:', JSON.stringify(stats, null, 2))
+    
     return NextResponse.json({
       configured: true,
       message: 'Article selection endpoint is ready',
-      candidateStats: stats
+      candidateStats: stats,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'unknown',
+      cronSecret: process.env.CRON_SECRET ? 'configured' : 'missing',
+      supabaseConfigured: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'yes' : 'no'
     })
   } catch (error) {
-    console.error('Error getting selection statistics:', error)
+    console.error('❌ Error getting selection statistics:', error)
+    console.error('❌ Error details:', error instanceof Error ? error.stack : error)
+    
     return NextResponse.json(
       { 
         configured: false, 
-        error: 'Failed to get statistics' 
+        error: 'Failed to get statistics',
+        errorMessage: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'unknown'
       }, 
       { status: 500 }
     )
