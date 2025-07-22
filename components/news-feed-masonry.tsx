@@ -99,21 +99,28 @@ export default function NewsFeedMasonry() {
     touchStartY.current = e.touches[0].clientY
   }
 
-  const handleTouchMove = async (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // Don't handle touch moves when bottom sheet is open
+    if (isBottomSheetOpen) {
+      e.stopPropagation()
+      return
+    }
+    
     if (!scrollRef.current) return
     
     const touchY = e.touches[0].clientY
     const pullDistance = touchY - touchStartY.current
     const scrollTop = scrollRef.current.scrollTop
     
-    // Only trigger pull-to-refresh when at the top of the scroll and pulling down
-    if (scrollTop === 0 && pullDistance > 100 && !isPullRefreshing) {
-      setIsPullRefreshing(true)
+    // Check if we should handle pull-to-refresh
+    if (scrollTop === 0 && pullDistance > 0) {
+      // For React events, we need to persist the event
+      e.persist?.()
       
-      try {
-        await handleRefresh()
-      } finally {
-        setIsPullRefreshing(false)
+      // Handle pull-to-refresh
+      if (pullDistance > 100 && !isPullRefreshing) {
+        setIsPullRefreshing(true)
+        handleRefresh().finally(() => setIsPullRefreshing(false))
       }
     }
   }
@@ -367,6 +374,44 @@ export default function NewsFeedMasonry() {
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
+  // Add touch event listeners with passive: false to allow preventDefault
+  useEffect(() => {
+    const scrollElement = scrollRef.current
+    if (!scrollElement) return
+
+    const preventPullToRefresh = (e: TouchEvent) => {
+      // Don't handle any touch events when bottom sheet is open
+      if (isBottomSheetOpen) {
+        e.stopPropagation()
+        return
+      }
+      
+      const scrollTop = scrollElement.scrollTop
+      
+      // Get current touch position
+      const touch = e.touches[0]
+      if (!touch) return
+      
+      const touchY = touch.clientY
+      const pullDistance = touchY - touchStartY.current
+      
+      // Prevent default only when at top and pulling down
+      if (scrollTop <= 0 && pullDistance > 0) {
+        if (e.cancelable) {
+          e.preventDefault()
+        }
+      }
+    }
+
+    // Add event listener with passive: false
+    scrollElement.addEventListener('touchmove', preventPullToRefresh, { passive: false })
+    
+    return () => {
+      scrollElement.removeEventListener('touchmove', preventPullToRefresh)
+    }
+  }, [isBottomSheetOpen])
+
+  // Conditional returns must come after all hooks
   if (isLoading) return <LoadingSkeleton />
   if (error) return (
     <div className="p-8 text-center text-red-600 dark:text-red-400">
@@ -388,6 +433,16 @@ export default function NewsFeedMasonry() {
     <div 
       ref={scrollRef}
       className="w-full py-6 isolate overflow-auto h-full"
+      style={{ 
+        overscrollBehaviorY: 'contain', 
+        WebkitOverflowScrolling: 'touch',
+        // Disable scroll and interaction when bottom sheet is open
+        ...(isBottomSheetOpen && {
+          overflow: 'hidden',
+          touchAction: 'none',
+          pointerEvents: 'none'
+        })
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
     >

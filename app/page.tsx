@@ -67,6 +67,7 @@ export default function HomePage() {
       <div 
         ref={scrollContainerRef}
         className="fixed inset-0 flex flex-col overflow-y-auto overflow-x-hidden"
+        style={{ overscrollBehaviorY: 'contain' }}
       >
         {/* Unified sticky header with category selector */}
         <UnifiedHeader 

@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Disable browser pull-to-refresh on touch devices */
+html {
+  overscroll-behavior-y: contain;
+}
+
+body {
+  overscroll-behavior-y: contain;
+  overflow: hidden; /* Prevent body scroll */
+}
+
 @layer base {
   :root {
     /* Sophisticated white and warm gray color system */

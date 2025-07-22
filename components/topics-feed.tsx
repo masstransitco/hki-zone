@@ -75,26 +75,69 @@ export default function TopicsFeed() {
     touchStartY.current = e.touches[0].clientY
   }
 
-  const handleTouchMove = async (e: React.TouchEvent) => {
+  const handleTouchMove = (e: React.TouchEvent) => {
+    // Don't handle touch moves when bottom sheet is open
+    if (isBottomSheetOpen) {
+      e.stopPropagation()
+      return
+    }
+    
     if (!scrollRef.current) return
     
     const touchY = e.touches[0].clientY
     const pullDistance = touchY - touchStartY.current
     const scrollTop = scrollRef.current.scrollTop
     
-    // Only trigger pull-to-refresh when at the top of the scroll and pulling down
-    if (scrollTop === 0 && pullDistance > 100 && !isPullRefreshing && !isManualRefreshing) {
-      setIsPullRefreshing(true)
-      setIsManualRefreshing(true)
-      
-      try {
-        await handleRefresh()
-      } finally {
-        setIsPullRefreshing(false)
-        setIsManualRefreshing(false)
+    // Check if we should handle pull-to-refresh
+    if (scrollTop === 0 && pullDistance > 0) {
+      // Handle pull-to-refresh
+      if (pullDistance > 100 && !isPullRefreshing && !isManualRefreshing) {
+        setIsPullRefreshing(true)
+        setIsManualRefreshing(true)
+        handleRefresh().finally(() => {
+          setIsPullRefreshing(false)
+          setIsManualRefreshing(false)
+        })
       }
     }
   }
+  
+  // Add touch event listeners with passive: false to allow preventDefault
+  useEffect(() => {
+    const scrollElement = scrollRef.current
+    if (!scrollElement) return
+
+    const preventPullToRefresh = (e: TouchEvent) => {
+      // Don't handle any touch events when bottom sheet is open
+      if (isBottomSheetOpen) {
+        e.stopPropagation()
+        return
+      }
+      
+      const scrollTop = scrollElement.scrollTop
+      
+      // Get current touch position
+      const touch = e.touches[0]
+      if (!touch) return
+      
+      const touchY = touch.clientY
+      const pullDistance = touchY - touchStartY.current
+      
+      // Prevent default only when at top and pulling down
+      if (scrollTop <= 0 && pullDistance > 0) {
+        if (e.cancelable) {
+          e.preventDefault()
+        }
+      }
+    }
+
+    // Add event listener with passive: false
+    scrollElement.addEventListener('touchmove', preventPullToRefresh, { passive: false })
+    
+    return () => {
+      scrollElement.removeEventListener('touchmove', preventPullToRefresh)
+    }
+  }, [isBottomSheetOpen])
 
   useEffect(() => {
     if (inView && hasNextPage) {
@@ -109,15 +152,37 @@ export default function TopicsFeed() {
 
   if (articles.length === 0) {
     return (
-      <div className="p-6 text-center">
-        <h3 className="text-lg font-semibold text-stone-900 dark:text-neutral-50 mb-2">
-          {t("topics.noAiArticles")}
-        </h3>
-        <p className="text-stone-600 dark:text-neutral-400 mb-4">
-          {t("topics.noAiArticlesDescription")}
-        </p>
-        <div className="text-sm text-stone-600 dark:text-neutral-400">
-          {isPullRefreshing ? 'Refreshing...' : 'Pull down to refresh'}
+      <div 
+        ref={scrollRef}
+        className="pt-6 pb-4 isolate overflow-auto h-full"
+        style={{ 
+          overscrollBehaviorY: 'contain', 
+          WebkitOverflowScrolling: 'touch',
+          // Disable scroll and interaction when bottom sheet is open
+          ...(isBottomSheetOpen && {
+            overflow: 'hidden',
+            touchAction: 'none',
+            pointerEvents: 'none'
+          })
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+      >
+        {isPullRefreshing && (
+          <div className="flex justify-center py-2 mb-4 transition-all duration-300 ease-out">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-stone-600 dark:border-neutral-400"></div>
+          </div>
+        )}
+        <div className="p-6 text-center">
+          <h3 className="text-lg font-semibold text-stone-900 dark:text-neutral-50 mb-2">
+            {t("topics.noAiArticles")}
+          </h3>
+          <p className="text-stone-600 dark:text-neutral-400 mb-4">
+            {t("topics.noAiArticlesDescription")}
+          </p>
+          <div className="text-sm text-stone-600 dark:text-neutral-400">
+            {!isPullRefreshing && 'Pull down to refresh'}
+          </div>
         </div>
       </div>
     )
@@ -127,6 +192,16 @@ export default function TopicsFeed() {
     <div 
       ref={scrollRef}
       className="pt-6 pb-4 isolate overflow-auto h-full"
+      style={{ 
+        overscrollBehaviorY: 'contain', 
+        WebkitOverflowScrolling: 'touch',
+        // Disable scroll and interaction when bottom sheet is open
+        ...(isBottomSheetOpen && {
+          overflow: 'hidden',
+          touchAction: 'none',
+          pointerEvents: 'none'
+        })
+      }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
     >
