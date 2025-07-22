@@ -46,7 +46,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
   return (
     <div className="relative flex justify-center" role="tablist" aria-label="Content type selector">
       {/* Minimalist pill container */}
-      <div ref={containerRef} className="inline-flex gap-1 p-1 bg-neutral-100/50 dark:bg-neutral-800/30 rounded-full touch-manipulation">
+      <div ref={containerRef} className="inline-flex gap-1 p-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-full touch-manipulation">
         {/* Discover button */}
         <button
           role="tab"
@@ -59,8 +59,8 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
           onTouchStart={() => setIsPressed('headlines')}
           className={`relative px-5 py-2 text-sm font-normal rounded-full transition-all duration-200 ease-out touch-manipulation ${
             value === 'headlines'
-              ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
-              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+              ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'headlines' ? 'scale-[0.97]' : ''}`}
         >
           Discover
@@ -78,8 +78,8 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
           onTouchStart={() => setIsPressed('news')}
           className={`relative px-5 py-2 text-sm font-normal rounded-full transition-all duration-200 ease-out touch-manipulation ${
             value === 'news'
-              ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
-              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+              ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'news' ? 'scale-[0.97]' : ''}`}
         >
           News
@@ -97,8 +97,8 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
           onTouchStart={() => setIsPressed('bulletin')}
           className={`relative px-5 py-2 text-sm font-normal rounded-full transition-all duration-200 ease-out touch-manipulation ${
             value === 'bulletin'
-              ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 shadow-sm'
-              : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+              ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'bulletin' ? 'scale-[0.97]' : ''}`}
         >
           Gov
