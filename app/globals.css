@@ -410,6 +410,17 @@
   margin-bottom: 12px; /* Space between cards vertically */
   box-sizing: border-box;
   overflow: hidden;
+  
+  /* iOS Chrome specific fixes */
+  -webkit-column-break-inside: avoid;
+  -webkit-transform: translateZ(0); /* Force hardware acceleration */
+  backface-visibility: hidden; /* Prevent rendering glitches */
+  
+  /* Ensure minimum height to prevent collapse */
+  min-height: 100px;
+  
+  /* Force block layout context */
+  contain: layout;
 }
 
 /* Remove margin from last card in each column */
@@ -535,6 +546,29 @@
 .news-card * {
   max-width: 100%;
   box-sizing: border-box;
+}
+
+/* iOS Chrome specific workarounds */
+@supports (-webkit-overflow-scrolling: touch) {
+  /* Force GPU acceleration for iOS Chrome */
+  .news-card {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+  }
+  
+  /* Ensure images render properly in iOS Chrome */
+  .news-card img {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  
+  /* Fix for iOS Chrome column layout rendering */
+  .news-feed {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
 }
 
 /* Ensure masonry container fills full width */

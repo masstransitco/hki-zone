@@ -123,6 +123,13 @@ export default function NewsFeedMasonry() {
     // Check if we need JavaScript masonry
     // Only use JS if neither CSS Grid masonry nor CSS columns work properly
     const needsJSMasonry = () => {
+      // Force JS masonry for iOS Chrome due to CSS columns rendering issues
+      const isIOSChrome = /CriOS/.test(navigator.userAgent)
+      if (isIOSChrome) {
+        console.log('iOS Chrome detected, forcing JavaScript masonry')
+        return true
+      }
+      
       // Test if CSS columns are working properly
       const testElement = feedRef.current
       if (!testElement) return false
