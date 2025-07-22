@@ -13,6 +13,10 @@
       "schedule": "5,20,35,50 * * * *"
     },
     {
+      "path": "/api/cron/cleanup-stuck-selections",
+      "schedule": "10,40 * * * *"
+    },
+    {
       "path": "/api/cron/scrape-cars",
       "schedule": "*/15 * * * *"
     },
