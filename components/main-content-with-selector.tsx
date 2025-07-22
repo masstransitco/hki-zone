@@ -33,19 +33,19 @@ export default function MainContent({ contentType }: MainContentProps) {
   }, [contentType]);
 
   return (
-    <div className="relative px-6 pb-2 min-h-[500px] isolate">
+    <div className="relative px-6 pb-2 h-full isolate">
       {/* Headlines content */}
       <div
         role="tabpanel"
         id="headlines-panel"
         aria-labelledby="headlines-tab"
         className={cn(
-          "transition-all duration-200 ease-out isolate",
+          "transition-all duration-200 ease-out isolate h-full",
           contentType === 'headlines' ? "block" : "hidden",
           isTransitioning && contentType === 'headlines' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
         )}
       >
-        <div className="relative -mx-6 overflow-hidden">
+        <div className="relative -mx-6 h-full">
           <TopicsFeed />
         </div>
       </div>
@@ -56,12 +56,12 @@ export default function MainContent({ contentType }: MainContentProps) {
         id="news-panel"
         aria-labelledby="news-tab"
         className={cn(
-          "transition-all duration-200 ease-out isolate",
+          "transition-all duration-200 ease-out isolate h-full",
           contentType === 'news' ? "block" : "hidden",
           isTransitioning && contentType === 'news' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
         )}
       >
-        <div className="relative -mx-6 overflow-hidden">
+        <div className="relative -mx-6 h-full">
           <NewsFeedMasonry />
         </div>
       </div>

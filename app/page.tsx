@@ -63,12 +63,8 @@ export default function HomePage() {
         <span id="content-change-announcement"></span>
       </div>
 
-      {/* Single scroll container for entire app */}
-      <div 
-        ref={scrollContainerRef}
-        className="fixed inset-0 flex flex-col overflow-y-auto overflow-x-hidden"
-        style={{ overscrollBehaviorY: 'contain' }}
-      >
+      {/* App container without scroll */}
+      <div className="fixed inset-0 flex flex-col">
         {/* Unified sticky header with category selector */}
         <UnifiedHeader 
           isMenuOpen={isMenuOpen}
@@ -79,7 +75,7 @@ export default function HomePage() {
         />
 
         {/* Main content area */}
-        <main className="flex-1 pb-24">
+        <main className="flex-1 min-h-0 overflow-hidden">
           <MainContent contentType={contentType} />
         </main>
       </div>

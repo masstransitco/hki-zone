@@ -7,6 +7,8 @@ import ArticleCard from "./article-card"
 import ArticleBottomSheet from "./article-bottom-sheet"
 import LoadingSkeleton from "./loading-skeleton"
 import { useLanguage } from "./language-provider"
+import PullRefreshIndicator from "./pull-refresh-indicator"
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import type { Article } from "@/lib/types"
 
 async function fetchArticles({ pageParam = 0 }): Promise<{ articles: Article[]; nextPage: number | null }> {
@@ -48,13 +50,10 @@ export default function NewsFeedMasonry() {
   const queryClient = useQueryClient()
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
-  const [isPullRefreshing, setIsPullRefreshing] = useState(false)
   const [isMasonryReady, setIsMasonryReady] = useState(false) // Track masonry initialization
   const [isVisible, setIsVisible] = useState(true)
   const feedRef = useRef<HTMLDivElement>(null)
   const masonryRef = useRef<any>(null)
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const touchStartY = useRef(0)
   const cleanupFnRef = useRef<(() => void) | null>(null)
   const visibilityCheckInterval = useRef<NodeJS.Timeout | null>(null)
 
@@ -79,7 +78,8 @@ export default function NewsFeedMasonry() {
 
   // Handle refresh functionality
   const handleRefresh = useCallback(async () => {
-    console.log('Refresh triggered for news feed')
+    console.log('🔄 [NEWS-FEED] Refresh START')
+    console.log(`📊 Current articles count: ${data?.pages.flatMap(p => p.articles).length || 0}`)
     
     try {
       // Reset the entire query to get fresh data from page 0
@@ -90,42 +90,25 @@ export default function NewsFeedMasonry() {
       // Also refetch to ensure we get the latest data
       await refetch()
       
-      console.log('Refresh completed for news feed')
+      console.log('✅ [NEWS-FEED] Refresh COMPLETED')
+      console.log(`📊 New articles count: ${data?.pages.flatMap(p => p.articles).length || 0}`)
     } catch (error) {
-      console.error("Refresh failed:", error)
+      console.error("❌ [NEWS-FEED] Refresh FAILED:", error)
     }
-  }, [queryClient, refetch])
+  }, [queryClient, refetch, data])
 
-  // Pull-to-refresh handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartY.current = e.touches[0].clientY
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    // Don't handle touch moves when bottom sheet is open
-    if (isBottomSheetOpen) {
-      e.stopPropagation()
-      return
-    }
-    
-    if (!scrollRef.current) return
-    
-    const touchY = e.touches[0].clientY
-    const pullDistance = touchY - touchStartY.current
-    const scrollTop = scrollRef.current.scrollTop
-    
-    // Check if we should handle pull-to-refresh
-    if (scrollTop === 0 && pullDistance > 0) {
-      // For React events, we need to persist the event
-      e.persist?.()
-      
-      // Handle pull-to-refresh
-      if (pullDistance > 100 && !isPullRefreshing) {
-        setIsPullRefreshing(true)
-        handleRefresh().finally(() => setIsPullRefreshing(false))
-      }
-    }
-  }
+  // Use the clean pull-to-refresh hook
+  const {
+    scrollRef,
+    pullDistance,
+    isRefreshing,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd
+  } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    enabled: !isBottomSheetOpen
+  })
 
   // Check if component is visible in the DOM
   useEffect(() => {
@@ -456,42 +439,6 @@ export default function NewsFeedMasonry() {
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage])
 
-  // Add touch event listeners with passive: false to allow preventDefault
-  useEffect(() => {
-    const scrollElement = scrollRef.current
-    if (!scrollElement) return
-
-    const preventPullToRefresh = (e: TouchEvent) => {
-      // Don't handle any touch events when bottom sheet is open
-      if (isBottomSheetOpen) {
-        e.stopPropagation()
-        return
-      }
-      
-      const scrollTop = scrollElement.scrollTop
-      
-      // Get current touch position
-      const touch = e.touches[0]
-      if (!touch) return
-      
-      const touchY = touch.clientY
-      const pullDistance = touchY - touchStartY.current
-      
-      // Prevent default only when at top and pulling down
-      if (scrollTop <= 0 && pullDistance > 0) {
-        if (e.cancelable) {
-          e.preventDefault()
-        }
-      }
-    }
-
-    // Add event listener with passive: false
-    scrollElement.addEventListener('touchmove', preventPullToRefresh, { passive: false })
-    
-    return () => {
-      scrollElement.removeEventListener('touchmove', preventPullToRefresh)
-    }
-  }, [isBottomSheetOpen])
 
   // Conditional returns must come after all hooks
   if (isLoading) return <LoadingSkeleton />
@@ -512,29 +459,29 @@ export default function NewsFeedMasonry() {
   }
 
   return (
-    <div 
-      ref={scrollRef}
-      className="w-full isolate overflow-auto h-full"
-      style={{ 
-        overscrollBehaviorY: 'contain', 
-        WebkitOverflowScrolling: 'touch',
-        // Disable scroll and interaction when bottom sheet is open
-        ...(isBottomSheetOpen && {
-          overflow: 'hidden',
-          touchAction: 'none',
-          pointerEvents: 'none'
-        })
-      }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-    >
-      {isPullRefreshing && (
-        <div className="flex justify-center py-2 mb-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-neutral-600 dark:border-neutral-400"></div>
-        </div>
-      )}
-      {/* Masonry news feed container */}
-      <div ref={feedRef} className="news-feed isolate">
+    <div className="relative h-full overflow-hidden">
+      <PullRefreshIndicator 
+        pullDistance={pullDistance} 
+        isRefreshing={isRefreshing} 
+      />
+      
+      <div 
+        ref={scrollRef}
+        className="w-full isolate overflow-auto h-full"
+        style={{ 
+          overscrollBehaviorY: 'contain', 
+          WebkitOverflowScrolling: 'touch',
+          transform: `translateY(${Math.min(pullDistance, 150)}px)`,
+          transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out',
+          ...(isBottomSheetOpen && {
+            overflow: 'hidden',
+            touchAction: 'none',
+            pointerEvents: 'none'
+          })
+        }}
+      >
+        {/* Masonry news feed container */}
+        <div ref={feedRef} className="news-feed isolate">
         {articles.map((article) => {
           const aspectRatio = getRandomAspectRatio(article.id)
           return (
@@ -557,6 +504,7 @@ export default function NewsFeedMasonry() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-600 dark:border-neutral-400"></div>
           </div>
         )}
+      </div>
       </div>
 
       {/* Article detail bottom sheet */}
