@@ -255,16 +255,16 @@ export default function NewsFeedMasonry() {
 
           if (!feedRef.current) return
 
-          // Simplified spacing configuration with viewport overflow fix
+          // Compact spacing configuration matching topics feed
           const getConfig = () => {
             const width = window.innerWidth
             
-            // Enforce minimum 2 columns always
-            if (width >= 1280) return { columns: 5, gap: 24, padding: 8 }
-            if (width >= 1024) return { columns: 4, gap: 24, padding: 8 }
-            if (width >= 768) return { columns: 3, gap: 20, padding: 8 }
-            if (width >= 640) return { columns: 2, gap: 16, padding: 8 }
-            return { columns: 2, gap: 12, padding: 8 } // Force 2-column minimum even on mobile
+            // Enforce minimum 2 columns always with compact gaps
+            if (width >= 1280) return { columns: 5, gap: 22, padding: 1 } // lg gap
+            if (width >= 1024) return { columns: 4, gap: 22, padding: 1 } // lg gap  
+            if (width >= 768) return { columns: 3, gap: 18, padding: 1 } // md gap
+            if (width >= 640) return { columns: 2, gap: 18, padding: 1 } // md gap
+            return { columns: 2, gap: 4, padding: 1 } // mobile gap-1 (4px)
           }
 
           // Calculate column width with proper container bounds checking
