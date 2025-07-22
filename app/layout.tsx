@@ -7,6 +7,7 @@ import { LanguageProvider } from "@/components/language-provider"
 import { QueryProvider } from "@/components/query-provider"
 import { Analytics } from "@vercel/analytics/react"
 import { WebsiteStructuredData } from "@/components/structured-data"
+import { ServiceWorkerCleanup } from "@/components/service-worker-cleanup"
 // import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
 const inter = Inter({ 
@@ -97,6 +98,7 @@ export default function RootLayout({
           <LanguageProvider>
             <QueryProvider>
               <WebsiteStructuredData />
+              <ServiceWorkerCleanup />
               {/* <ServiceWorkerRegister /> */}
               {children}
               <Analytics />

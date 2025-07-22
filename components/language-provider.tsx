@@ -9,6 +9,7 @@ interface LanguageContextType {
   language: Language
   setLanguage: (language: Language) => void
   t: (key: string) => string
+  onLanguageChange?: (oldLang: Language, newLang: Language) => void
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
@@ -1149,6 +1150,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // Always start with English to ensure SSR consistency
   const [language, setLanguageState] = useState<Language>("en")
   const [mounted, setMounted] = useState(false)
+  const [onLanguageChange, setOnLanguageChange] = useState<((oldLang: Language, newLang: Language) => void) | undefined>()
 
   useEffect(() => {
     setMounted(true)
@@ -1160,9 +1162,17 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const setLanguage = (newLanguage: Language) => {
+    const previousLanguage = language
     setLanguageState(newLanguage)
+    
     if (typeof window !== 'undefined') {
       localStorage.setItem("panora-language", newLanguage)
+      
+      // Call the language change handler if it exists
+      if (previousLanguage !== newLanguage && mounted && onLanguageChange) {
+        console.log(`Language changed from ${previousLanguage} to ${newLanguage}, calling change handler`)
+        onLanguageChange(previousLanguage, newLanguage)
+      }
     }
   }
 
@@ -1173,7 +1183,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, onLanguageChange: setOnLanguageChange }}>
       {children}
     </LanguageContext.Provider>
   )

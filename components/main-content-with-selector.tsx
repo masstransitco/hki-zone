@@ -6,6 +6,7 @@ import TopicsFeed from './topics-feed';
 import NewsFeedMasonry from './news-feed-masonry';
 import GovernmentBulletin from './government-bulletin';
 import { cn } from '@/lib/utils';
+import { useCacheInvalidation } from '@/hooks/use-cache-invalidation';
 
 interface MainContentProps {
   contentType: ContentType;
@@ -15,6 +16,9 @@ export default function MainContent({ contentType }: MainContentProps) {
   const [isTransitioning, setIsTransitioning] = React.useState(false);
   const [displayContent, setDisplayContent] = React.useState<ContentType>(contentType);
   const prevContentType = React.useRef(contentType);
+  
+  // Initialize cache invalidation for language changes
+  useCacheInvalidation();
 
   React.useEffect(() => {
     if (prevContentType.current !== contentType) {

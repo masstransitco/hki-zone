@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import { useLanguage } from "@/components/language-provider"
 import { 
   Settings as SettingsIcon, 
   Bell, 
@@ -23,12 +24,12 @@ import {
 } from "lucide-react"
 
 export default function SettingsPage() {
+  const { language, setLanguage } = useLanguage()
   const [settings, setSettings] = useState({
     theme: "system",
     autoScrape: true,
     scrapeInterval: "30",
     notifications: true,
-    language: "en",
     timeZone: "Asia/Hong_Kong",
     maxArticlesPerSource: "50",
     retentionDays: "30"
@@ -108,7 +109,7 @@ export default function SettingsPage() {
                 Select your preferred language
               </p>
             </div>
-            <Select value={settings.language} onValueChange={(value) => handleSettingChange("language", value)}>
+            <Select value={language} onValueChange={(value) => setLanguage(value as "en" | "zh-CN" | "zh-TW")}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>

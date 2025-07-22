@@ -3,6 +3,24 @@ import { getArticles, checkDatabaseSetup, supabase } from "@/lib/supabase"
 
 export const dynamic = 'force-dynamic'
 
+// Helper function to add cache control headers
+function addCacheHeaders(response: NextResponse, articles: any[] = []) {
+  // Determine freshness based on latest article
+  const latestArticleTime = articles.length > 0 
+    ? Math.max(...articles.map(a => new Date(a.publishedAt || a.created_at || 0).getTime()))
+    : Date.now()
+  
+  const lastModified = new Date(latestArticleTime).toUTCString()
+  const etag = `"topics-${articles.length}-${latestArticleTime}"`
+  
+  // Set cache headers - short cache to ensure fresh data
+  response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, stale-while-revalidate=60')
+  response.headers.set('Last-Modified', lastModified)
+  response.headers.set('ETag', etag)
+  
+  return response
+}
+
 // Mock AI-enhanced articles as fallback
 const mockAiArticles = [
   {
@@ -115,12 +133,14 @@ export async function GET(request: NextRequest) {
       const endIndex = startIndex + limit
       const paginatedArticles = filteredMockArticles.slice(startIndex, endIndex)
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         articles: paginatedArticles,
         nextPage: endIndex < filteredMockArticles.length ? page + 1 : null,
         usingMockData: true,
         debug: "Database setup check failed",
       })
+      
+      return addCacheHeaders(response, paginatedArticles)
     }
 
     console.log("Fetching AI-enhanced articles from database...")
@@ -184,12 +204,15 @@ export async function GET(request: NextRequest) {
 
         console.log("Returning real AI-enhanced articles from database")
         console.log("Article IDs being returned:", transformedArticles.map(a => a.id))
-        return NextResponse.json({
+        
+        const response = NextResponse.json({
           articles: transformedArticles,
           nextPage: transformedArticles.length === limit ? page + 1 : null,
           usingMockData: false,
           debug: "Using real database data",
         })
+        
+        return addCacheHeaders(response, transformedArticles)
       }
     } catch (queryError) {
       console.error("Database query failed:", queryError)
@@ -202,12 +225,14 @@ export async function GET(request: NextRequest) {
       article.language === language
     )
     
-    return NextResponse.json({
+    const response = NextResponse.json({
       articles: filteredMockArticles.slice(0, limit),
       nextPage: null,
       usingMockData: true,
       debug: "No AI-enhanced articles found in database",
     })
+    
+    return addCacheHeaders(response, filteredMockArticles.slice(0, limit))
 
   } catch (error) {
     console.error("Error fetching AI-enhanced articles:", error)
@@ -226,12 +251,14 @@ export async function GET(request: NextRequest) {
     const endIndex = startIndex + limit
     const paginatedArticles = filteredMockArticles.slice(startIndex, endIndex)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       articles: paginatedArticles,
       nextPage: endIndex < filteredMockArticles.length ? page + 1 : null,
       usingMockData: true,
       error: "Database connection failed, using mock data",
       debug: error instanceof Error ? error.message : "Unknown error",
     })
+    
+    return addCacheHeaders(response, paginatedArticles)
   }
 }
