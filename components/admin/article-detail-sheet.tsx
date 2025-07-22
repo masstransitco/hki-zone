@@ -54,7 +54,8 @@ import {
   Maximize2,
   Edit,
   Save,
-  X
+  X,
+  Wand2
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { Article } from "@/lib/types"
@@ -70,6 +71,7 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   
   // Form state for editing
   const [editForm, setEditForm] = useState({
@@ -195,6 +197,44 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
         category: article.category || 'General',
         language: article.language || 'en',
       })
+    }
+  }
+
+  const handleGenerateAIImage = async () => {
+    if (!article || !article.imageUrl) {
+      toast.error('No image URL available for generation')
+      return
+    }
+
+    setIsGeneratingImage(true)
+    try {
+      const response = await fetch('/api/admin/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: article.imageUrl,
+          articleId: article.id
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate AI image')
+      }
+
+      toast.success(data.message || 'Generic scene generated and article updated successfully!')
+      // Refresh the page to show the updated image
+      window.location.reload()
+    } catch (error) {
+      console.error('AI image generation error:', error)
+      toast.error('Failed to generate generic scene', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      })
+    } finally {
+      setIsGeneratingImage(false)
     }
   }
 
@@ -505,6 +545,22 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Re-scrape
                 </Button>
+                <Button 
+                  variant="outline"
+                  onClick={handleGenerateAIImage}
+                  disabled={isGeneratingImage || !article.imageUrl}
+                  className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200 text-purple-700 hover:from-purple-100 hover:to-blue-100"
+                >
+                  {isGeneratingImage ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4 mr-2" />
+                  )}
+                  {isGeneratingImage ? 'Generating...' : 'Generate Generic Scene'}
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3">
                 <Button 
                   variant="destructive"
                   onClick={() => setShowDeleteDialog(true)}

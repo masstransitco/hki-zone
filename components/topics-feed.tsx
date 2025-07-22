@@ -43,8 +43,8 @@ export default function TopicsFeed() {
     queryFn: ({ pageParam }) => fetchTopicsArticles({ pageParam, language }),
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
-    // PERFORMANCE FIX: Reduce stale time from 60s to 30s for fresher content
-    staleTime: 30 * 1000, // 30 seconds instead of default 60s
+    // No stale time - always fetch fresh data since articles update every minute
+    staleTime: 0, // Always consider data stale to get fresh articles
     // Enable background refetch to detect new articles
     refetchOnWindowFocus: true,
     // Retry on failure to handle temporary network issues

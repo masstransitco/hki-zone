@@ -13,8 +13,8 @@ function addCacheHeaders(response: NextResponse, articles: any[] = []) {
   const lastModified = new Date(latestArticleTime).toUTCString()
   const etag = `"topics-${articles.length}-${latestArticleTime}"`
   
-  // Set cache headers - short cache to ensure fresh data
-  response.headers.set('Cache-Control', 'public, max-age=30, s-maxage=30, stale-while-revalidate=60')
+  // No caching - articles update every minute, always serve fresh data
+  response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
   response.headers.set('Last-Modified', lastModified)
   response.headers.set('ETag', etag)
   
@@ -168,9 +168,9 @@ export async function GET(request: NextRequest) {
         // For non-English languages, check metadata language
         query = query.eq('enhancement_metadata->>language', language)
       } else {
-        // For English, only include articles explicitly marked as English
-        // Remove the null fallback that was including source articles
-        query = query.eq('enhancement_metadata->>language', 'en')
+        // For English, include articles marked as English OR with null/missing metadata
+        // This catches new articles that haven't been fully processed yet
+        query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null,enhancement_metadata.is.null`)
       }
       
       const { data: articles, error } = await query.range(page * limit, (page + 1) * limit - 1)
