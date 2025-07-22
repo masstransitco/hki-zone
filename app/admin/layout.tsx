@@ -17,15 +17,17 @@ export default function AdminLayout({
   return (
     <LanguageProvider>
       <QueryProvider>
-        <SidebarProvider>
-          <AdminSidebar />
-          <SidebarInset>
-            <AdminHeader />
-            <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-              {children}
-            </div>
-          </SidebarInset>
-        </SidebarProvider>
+        <div className="fixed inset-0 flex">
+          <SidebarProvider>
+            <AdminSidebar />
+            <SidebarInset className="overflow-y-auto">
+              <AdminHeader />
+              <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+                {children}
+              </div>
+            </SidebarInset>
+          </SidebarProvider>
+        </div>
       </QueryProvider>
     </LanguageProvider>
   )

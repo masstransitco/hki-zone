@@ -50,11 +50,13 @@ export default function NewsFeedMasonry() {
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const [isPullRefreshing, setIsPullRefreshing] = useState(false)
   const [isMasonryReady, setIsMasonryReady] = useState(false) // Track masonry initialization
+  const [isVisible, setIsVisible] = useState(true)
   const feedRef = useRef<HTMLDivElement>(null)
   const masonryRef = useRef<any>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const touchStartY = useRef(0)
   const cleanupFnRef = useRef<(() => void) | null>(null)
+  const visibilityCheckInterval = useRef<NodeJS.Timeout | null>(null)
 
   const handleReadMore = (articleId: string) => {
     setSelectedArticleId(articleId)
@@ -124,6 +126,47 @@ export default function NewsFeedMasonry() {
       }
     }
   }
+
+  // Check if component is visible in the DOM
+  useEffect(() => {
+    const checkVisibility = () => {
+      if (!feedRef.current) return
+      
+      const rect = feedRef.current.getBoundingClientRect()
+      const isNowVisible = rect.width > 0 && rect.height > 0 && feedRef.current.offsetParent !== null
+      
+      if (isNowVisible && !isVisible) {
+        console.log('NewsFeedMasonry became visible, triggering layout recalculation')
+        setIsVisible(true)
+        
+        // Force masonry layout recalculation for iOS Chrome
+        if (masonryRef.current && /CriOS/.test(navigator.userAgent)) {
+          setTimeout(() => {
+            if (masonryRef.current) {
+              masonryRef.current.layout()
+              // Double layout for stubborn iOS Chrome
+              setTimeout(() => {
+                if (masonryRef.current) {
+                  masonryRef.current.layout()
+                }
+              }, 100)
+            }
+          }, 300)
+        }
+      } else if (!isNowVisible && isVisible) {
+        setIsVisible(false)
+      }
+    }
+    
+    // Check visibility periodically
+    visibilityCheckInterval.current = setInterval(checkVisibility, 500)
+    
+    return () => {
+      if (visibilityCheckInterval.current) {
+        clearInterval(visibilityCheckInterval.current)
+      }
+    }
+  }, [isVisible])
 
   // Streamlined masonry initialization with proper cleanup
   useEffect(() => {
@@ -230,7 +273,29 @@ export default function NewsFeedMasonry() {
             if (!container) return 300 // fallback
             
             const config = getConfig()
-            // Use offsetWidth for actual rendered width, accounting for parent constraints
+            
+            // iOS Chrome specific: Wait for proper dimensions
+            if (/CriOS/.test(navigator.userAgent)) {
+              // Force a layout reflow to get accurate dimensions
+              void container.offsetHeight
+              
+              // Use parent container width if available
+              const parentWidth = container.parentElement?.offsetWidth || window.innerWidth
+              const containerWidth = Math.min(container.offsetWidth || parentWidth, parentWidth) - (config.padding * 2)
+              
+              // Extra check for iOS Chrome
+              if (containerWidth < 100) {
+                console.log('iOS Chrome: Invalid container width detected, using fallback')
+                const fallbackWidth = window.innerWidth - 32 - (config.padding * 2)
+                const columnWidth = Math.floor((fallbackWidth - (config.gap * (config.columns - 1))) / config.columns)
+                return Math.max(columnWidth, 150)
+              }
+              
+              const columnWidth = Math.floor((containerWidth - (config.gap * (config.columns - 1))) / config.columns)
+              return Math.max(columnWidth, 150)
+            }
+            
+            // Standard calculation for other browsers
             const containerWidth = Math.min(container.offsetWidth, window.innerWidth) - (config.padding * 2)
             const columnWidth = Math.floor((containerWidth - (config.gap * (config.columns - 1))) / config.columns)
             
@@ -238,7 +303,7 @@ export default function NewsFeedMasonry() {
             return Math.max(columnWidth, 150)
           }
 
-          // Initialize Masonry with overflow-safe config
+          // Initialize Masonry
           const config = getConfig()
           const columnWidth = getColumnWidth()
           
@@ -247,7 +312,8 @@ export default function NewsFeedMasonry() {
             gap: config.gap, 
             padding: config.padding,
             columnWidth,
-            containerWidth: feedRef.current.offsetWidth
+            containerWidth: feedRef.current.offsetWidth,
+            isIOSChrome: /CriOS/.test(navigator.userAgent)
           })
           
           // Apply padding with viewport bounds check
@@ -261,16 +327,32 @@ export default function NewsFeedMasonry() {
           const items = feedRef.current.querySelectorAll('.news-card')
           console.log(`Found ${items.length} news cards to layout`)
           
-          masonryRef.current = new Masonry(feedRef.current, {
-            itemSelector: ".news-card",
-            columnWidth: columnWidth,
-            gutter: config.gap,
-            percentPosition: false,
-            horizontalOrder: true,
-            transitionDuration: 0, // Disable animations for better performance
-            resize: false,
-            fitWidth: false // CRITICAL: Set to false to prevent single-column collapse
-          })
+          // iOS Chrome specific: Multiple initialization attempts
+          const createMasonryInstance = () => {
+            if (!feedRef.current) return
+            
+            masonryRef.current = new Masonry(feedRef.current, {
+              itemSelector: ".news-card",
+              columnWidth: columnWidth,
+              gutter: config.gap,
+              percentPosition: false,
+              horizontalOrder: true,
+              transitionDuration: 0, // Disable animations for better performance
+              resize: false,
+              fitWidth: false // CRITICAL: Set to false to prevent single-column collapse
+            })
+            
+            // iOS Chrome: Force immediate layout
+            if (/CriOS/.test(navigator.userAgent)) {
+              setTimeout(() => {
+                if (masonryRef.current) {
+                  masonryRef.current.layout()
+                }
+              }, 50)
+            }
+          }
+          
+          createMasonryInstance()
           
           console.log('Masonry instance created:', masonryRef.current)
 
@@ -319,7 +401,7 @@ export default function NewsFeedMasonry() {
           console.error("Failed to load masonry:", error)
         }
       })()
-    }, 300) // Increased delay to ensure CSS is applied after transitions
+    }, /CriOS/.test(navigator.userAgent) ? 500 : 300) // Extra delay for iOS Chrome
 
     return () => {
       clearTimeout(initTimeout)

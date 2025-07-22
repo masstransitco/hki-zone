@@ -14,7 +14,6 @@ interface MainContentProps {
 
 export default function MainContent({ contentType }: MainContentProps) {
   const [isTransitioning, setIsTransitioning] = React.useState(false);
-  const [displayContent, setDisplayContent] = React.useState<ContentType>(contentType);
   const prevContentType = React.useRef(contentType);
   
   // Initialize cache invalidation for language changes
@@ -24,52 +23,61 @@ export default function MainContent({ contentType }: MainContentProps) {
     if (prevContentType.current !== contentType) {
       setIsTransitioning(true);
       
-      // Fade out current content
+      // Fade transition
       setTimeout(() => {
-        setDisplayContent(contentType);
-        // Fade in new content
-        setTimeout(() => {
-          setIsTransitioning(false);
-        }, 50);
-      }, 200);
+        setIsTransitioning(false);
+      }, 250);
       
       prevContentType.current = contentType;
     }
   }, [contentType]);
 
-  const renderContent = () => {
-    switch (displayContent) {
-      case 'headlines':
-        return (
-          <div className="relative -mx-6 overflow-hidden">
-            <TopicsFeed />
-          </div>
-        );
-      case 'news':
-        return (
-          <div className="relative -mx-6 overflow-hidden">
-            <NewsFeedMasonry key={`news-feed-${Date.now()}`} />
-          </div>
-        );
-      case 'bulletin':
-        return <GovernmentBulletin autoRefresh={true} refreshInterval={2 * 60 * 1000} />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <div className="relative px-6 pb-2 min-h-[500px] isolate">
+      {/* Headlines content */}
       <div
         role="tabpanel"
-        id={`${displayContent}-panel`}
-        aria-labelledby={`${displayContent}-tab`}
+        id="headlines-panel"
+        aria-labelledby="headlines-tab"
         className={cn(
           "transition-all duration-200 ease-out isolate",
-          isTransitioning ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
+          contentType === 'headlines' ? "block" : "hidden",
+          isTransitioning && contentType === 'headlines' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
         )}
       >
-        {renderContent()}
+        <div className="relative -mx-6 overflow-hidden">
+          <TopicsFeed />
+        </div>
+      </div>
+
+      {/* News content */}
+      <div
+        role="tabpanel"
+        id="news-panel"
+        aria-labelledby="news-tab"
+        className={cn(
+          "transition-all duration-200 ease-out isolate",
+          contentType === 'news' ? "block" : "hidden",
+          isTransitioning && contentType === 'news' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
+        )}
+      >
+        <div className="relative -mx-6 overflow-hidden">
+          <NewsFeedMasonry />
+        </div>
+      </div>
+
+      {/* Bulletin content */}
+      <div
+        role="tabpanel"
+        id="bulletin-panel"
+        aria-labelledby="bulletin-tab"
+        className={cn(
+          "transition-all duration-200 ease-out isolate",
+          contentType === 'bulletin' ? "block" : "hidden",
+          isTransitioning && contentType === 'bulletin' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
+        )}
+      >
+        <GovernmentBulletin autoRefresh={true} refreshInterval={2 * 60 * 1000} />
       </div>
       
       {/* Loading shimmer during transition */}
