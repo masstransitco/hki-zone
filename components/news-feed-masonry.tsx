@@ -432,7 +432,7 @@ export default function NewsFeedMasonry() {
   return (
     <div 
       ref={scrollRef}
-      className="w-full py-6 isolate overflow-auto h-full"
+      className="w-full isolate overflow-auto h-full"
       style={{ 
         overscrollBehaviorY: 'contain', 
         WebkitOverflowScrolling: 'touch',
@@ -469,7 +469,7 @@ export default function NewsFeedMasonry() {
       </div>
 
       {/* Infinite scroll sentinel */}
-      <div ref={ref} className="h-10 mt-8 px-6">
+      <div ref={ref} className="h-10 mt-8">
         {isFetchingNextPage && (
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-600 dark:border-neutral-400"></div>

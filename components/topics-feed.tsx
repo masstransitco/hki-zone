@@ -154,7 +154,7 @@ export default function TopicsFeed() {
     return (
       <div 
         ref={scrollRef}
-        className="pt-6 pb-4 isolate overflow-auto h-full"
+        className="isolate overflow-auto h-full"
         style={{ 
           overscrollBehaviorY: 'contain', 
           WebkitOverflowScrolling: 'touch',
@@ -191,7 +191,7 @@ export default function TopicsFeed() {
   return (
     <div 
       ref={scrollRef}
-      className="pt-6 pb-4 isolate overflow-auto h-full"
+      className="isolate overflow-auto h-full"
       style={{ 
         overscrollBehaviorY: 'contain', 
         WebkitOverflowScrolling: 'touch',
@@ -212,7 +212,7 @@ export default function TopicsFeed() {
       )}
 
       {/* Responsive grid layout: mobile 1col, tablet 2col, desktop 3col, large 4col */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 isolate">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 md:gap-[18px] lg:gap-[22px] isolate px-[1px]">
         {articles.map((article) => (
           <ArticleCard 
             key={article.id} 

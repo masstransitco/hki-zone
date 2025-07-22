@@ -40,7 +40,11 @@ export default function MainContent({ contentType }: MainContentProps) {
   const renderContent = () => {
     switch (displayContent) {
       case 'headlines':
-        return <TopicsFeed />;
+        return (
+          <div className="relative -mx-6 overflow-hidden">
+            <TopicsFeed />
+          </div>
+        );
       case 'news':
         return (
           <div className="relative -mx-6 overflow-hidden">
@@ -55,7 +59,7 @@ export default function MainContent({ contentType }: MainContentProps) {
   };
 
   return (
-    <div className="relative px-6 pt-4 pb-2 min-h-[500px] isolate">
+    <div className="relative px-6 pb-2 min-h-[500px] isolate">
       <div
         role="tabpanel"
         id={`${displayContent}-panel`}
