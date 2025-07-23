@@ -206,7 +206,33 @@ export default function MarketplaceCarsFeed() {
   }, [setScrollPosition])
   
   if (isLoading) {
-    return <LoadingSkeleton variant="card" count={12} />
+    return (
+      <div className="relative h-full">
+        <div className="h-full overflow-auto">
+          {/* Spacer for fixed header and category selector */}
+          <div className="h-[116px] w-full" aria-hidden="true" />
+          
+          <div className="space-y-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-20">
+            {/* Search bar placeholder */}
+            <div className="h-10" />
+            
+            {/* Loading skeleton grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[4/3] bg-neutral-200 dark:bg-neutral-700 rounded-lg"></div>
+                  <div className="mt-3 space-y-2">
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
+                    <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
   
   return (
@@ -234,7 +260,7 @@ export default function MarketplaceCarsFeed() {
           }}
         >
           {/* Spacer for fixed header and category selector */}
-          <div className="h-[113px] w-full" aria-hidden="true" />
+          <div className="h-[116px] w-full" aria-hidden="true" />
           
           <div className="space-y-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-20">
             {/* Clean search bar with toggle */}
@@ -296,8 +322,25 @@ export default function MarketplaceCarsFeed() {
       
       {/* Load more */}
       {hasNextPage && !isSearchActive && (
-        <div ref={ref} className="flex justify-center py-8">
-          {isFetchingNextPage && <LoadingSpinner size="lg" />}
+        <div ref={ref} className="py-8">
+          {isFetchingNextPage && (
+            <div className={cn(
+              isGridView 
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"
+                : "space-y-4"
+            )}>
+              {Array.from({ length: isGridView ? 10 : 5 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[4/3] bg-neutral-200 dark:bg-neutral-700 rounded-lg"></div>
+                  <div className="mt-3 space-y-2">
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
+                    <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

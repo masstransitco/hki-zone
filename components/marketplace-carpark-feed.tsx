@@ -8,12 +8,15 @@ import PullRefreshIndicator from './pull-refresh-indicator';
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useHeaderVisibility } from '@/contexts/header-visibility';
 import { LoadingSpinner } from './loading-spinner';
+import { useInView } from 'react-intersection-observer';
 
 export default function MarketplaceCarparkFeed() {
   const [district, setDistrict] = React.useState<DistrictKey>('ALL');
   const { items, loading, error, done, loadMore, refresh } = useCarparkListings({ district, pageSize: 20 });
   const { setScrollPosition } = useHeaderVisibility();
   const ticking = React.useRef(false);
+  const { ref, inView } = useInView();
+  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
   
   // Handle refresh functionality
   const handleRefresh = React.useCallback(async () => {
@@ -34,6 +37,20 @@ export default function MarketplaceCarparkFeed() {
     onRefresh: handleRefresh,
     enabled: true
   });
+
+  // Handle infinite scroll
+  React.useEffect(() => {
+    if (inView && !loading && !done && !isInitialLoad) {
+      loadMore();
+    }
+  }, [inView, loading, done, loadMore, isInitialLoad]);
+
+  // Track initial load completion
+  React.useEffect(() => {
+    if (!loading && items.length > 0) {
+      setIsInitialLoad(false);
+    }
+  }, [loading, items.length]);
 
   // Track scroll position for header visibility
   React.useEffect(() => {
@@ -70,6 +87,37 @@ export default function MarketplaceCarparkFeed() {
     }
   }, [setScrollPosition]);
 
+  // Show proper loading skeleton on initial load
+  if (isInitialLoad && loading) {
+    return (
+      <div className="relative h-full">
+        <div className="h-full overflow-auto">
+          {/* Spacer for fixed header and category selector */}
+          <div className="h-[116px] w-full" aria-hidden="true" />
+          
+          <div className="space-y-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-20">
+            {/* District filter placeholder */}
+            <div className="h-10 w-48 bg-neutral-200 dark:bg-neutral-700 rounded-lg animate-pulse" />
+            
+            {/* Loading skeleton grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {Array.from({ length: 15 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[3/2] bg-neutral-200 dark:bg-neutral-700 rounded-lg"></div>
+                  <div className="p-3 space-y-2">
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                    <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
+                    <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-full">
       <PullRefreshIndicator 
@@ -95,7 +143,7 @@ export default function MarketplaceCarparkFeed() {
           }}
         >
           {/* Spacer for fixed header and category selector */}
-          <div className="h-[113px] w-full" aria-hidden="true" />
+          <div className="h-[116px] w-full" aria-hidden="true" />
           
           <div className="space-y-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-20">
             <DistrictFilter value={district} onChange={setDistrict} />
@@ -113,13 +161,6 @@ export default function MarketplaceCarparkFeed() {
               ))}
             </div>
 
-            {/* Loading State */}
-            {loading && (
-              <div className="flex justify-center py-8">
-                <LoadingSpinner size="lg" />
-              </div>
-            )}
-
             {/* Empty State */}
             {!loading && items.length === 0 && !error && (
               <div className="text-center py-20">
@@ -133,16 +174,23 @@ export default function MarketplaceCarparkFeed() {
               </div>
             )}
 
-            {/* Load More */}
+            {/* Infinite scroll trigger */}
             {!done && items.length > 0 && (
-              <div className="flex justify-center py-8">
-                <button
-                  onClick={loadMore}
-                  disabled={loading}
-                  className="px-6 py-2 text-sm font-medium text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors disabled:opacity-50"
-                >
-                  {loading ? <LoadingSpinner size="sm" /> : 'Load More'}
-                </button>
+              <div ref={ref} className="py-8">
+                {loading && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="aspect-[3/2] bg-neutral-200 dark:bg-neutral-700 rounded-lg"></div>
+                        <div className="p-3 space-y-2">
+                          <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-3/4"></div>
+                          <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/2"></div>
+                          <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/4"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

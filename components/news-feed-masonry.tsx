@@ -490,7 +490,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
     return (
       <div className="relative h-full overflow-hidden">
         <div className="h-full overflow-auto">
-          <div className="h-[110px] w-full" aria-hidden="true" />
+          <div className="h-[113px] w-full" aria-hidden="true" />
           <div className="news-feed isolate">
             <LoadingSkeleton variant="masonry" count={15} />
           </div>
@@ -502,7 +502,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
   if (error) return (
     <div className="relative h-full overflow-hidden">
       <div className="h-full overflow-auto">
-        <div className="h-[110px] w-full" aria-hidden="true" />
+        <div className="h-[113px] w-full" aria-hidden="true" />
         <div className="p-8 text-center text-red-600 dark:text-red-400">
           {t("error.failedToLoad")} articles
         </div>
@@ -550,7 +550,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
           }}
         >
         {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
-        <div className="h-[110px] w-full" aria-hidden="true" />
+        <div className="h-[113px] w-full" aria-hidden="true" />
         
         {/* Masonry news feed container */}
         <div ref={feedRef} className="news-feed isolate">
@@ -569,14 +569,29 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
         })}
       </div>
 
-      {/* Infinite scroll sentinel */}
-      <div ref={ref} className="h-10 mt-8">
-        {isFetchingNextPage && (
-          <div className="flex items-center justify-center">
-            <LoadingSpinner size="lg" />
-          </div>
-        )}
-      </div>
+      {/* Infinite scroll sentinel - separate from loading content */}
+      <div ref={ref} className="h-10 mt-8" />
+      
+      {/* Loading skeleton for infinite scroll */}
+      {isFetchingNextPage && (
+        <div 
+          ref={feedRef} 
+          className="news-feed columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto"
+        >
+          {Array.from({ length: 6 }).map((_, i) => {
+            // Vary heights for masonry effect
+            const heights = ['h-48', 'h-64', 'h-52', 'h-56', 'h-60', 'h-44'];
+            const height = heights[i % heights.length];
+            
+            return (
+              <div key={i} className="news-card break-inside-avoid mb-4">
+                <div className={`animate-pulse ${height} bg-neutral-200 dark:bg-neutral-700 rounded-lg`}>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       </div>
       </div>
 

@@ -49,5 +49,12 @@ export function useCarparkListings({ district = 'ALL', pageSize = 20 }: UseCarpa
     load(true);
   }, [district]);
 
-  return { items, loading, error, done, loadMore: () => load(false) };
+  return { 
+    items, 
+    loading, 
+    error, 
+    done, 
+    loadMore: () => load(false),
+    refresh: () => load(true)
+  };
 }

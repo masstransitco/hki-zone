@@ -240,7 +240,7 @@ export default function GovernmentBulletin({
     return (
       <div className="relative h-full overflow-hidden">
         <div className="h-full overflow-auto">
-          <div className="h-[110px] w-full" aria-hidden="true" />
+          <div className="h-[113px] w-full" aria-hidden="true" />
           <div className="pt-6 px-6">
             <div className="mb-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
@@ -282,7 +282,7 @@ export default function GovernmentBulletin({
           }}
         >
         {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
-        <div className="h-[110px] w-full" aria-hidden="true" />
+        <div className="h-[113px] w-full" aria-hidden="true" />
         
         <div className="pt-6 space-y-4 px-6">
           {/* Header with refresh button */}

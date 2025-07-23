@@ -138,7 +138,7 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
     return (
       <div className="relative h-full overflow-hidden">
         <div className="h-full overflow-auto">
-          <div className="h-[110px] w-full" aria-hidden="true" />
+          <div className="h-[113px] w-full" aria-hidden="true" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 md:gap-[18px] lg:gap-[22px] isolate px-[1px]">
             <LoadingSkeleton variant="card" count={12} />
           </div>
@@ -237,7 +237,7 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
           }}
         >
         {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
-        <div className="h-[110px] w-full" aria-hidden="true" />
+        <div className="h-[113px] w-full" aria-hidden="true" />
         
         {/* Responsive grid layout: mobile 1col, tablet 2col, desktop 3col, large 4col */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 md:gap-[18px] lg:gap-[22px] isolate px-[1px]">
@@ -250,10 +250,19 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
           ))}
         </div>
 
-        <div ref={ref} className="h-10">
+        <div ref={ref}>
           {isFetchingNextPage && (
-            <div className="flex items-center justify-center py-4">
-              <LoadingSpinner size="lg" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 md:gap-[18px] lg:gap-[22px] isolate px-[1px] pb-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="aspect-[3/2] bg-neutral-200 dark:bg-neutral-700 rounded-lg mb-3"></div>
+                  <div className="space-y-2 px-1">
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-full"></div>
+                    <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-4/5"></div>
+                    <div className="h-3 bg-neutral-200 dark:bg-neutral-700 rounded w-1/3 mt-3"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
