@@ -6,11 +6,14 @@ import { DistrictFilter } from './carparks/DistrictFilter';
 import { CarparkCard } from './carparks/CarparkCard';
 import PullRefreshIndicator from './pull-refresh-indicator';
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
+import { useHeaderVisibility } from '@/contexts/header-visibility';
 import { LoadingSpinner } from './loading-spinner';
 
 export default function MarketplaceCarparkFeed() {
   const [district, setDistrict] = React.useState<DistrictKey>('ALL');
   const { items, loading, error, done, loadMore, refresh } = useCarparkListings({ district, pageSize: 20 });
+  const { setScrollPosition } = useHeaderVisibility();
+  const ticking = React.useRef(false);
   
   // Handle refresh functionality
   const handleRefresh = React.useCallback(async () => {
@@ -31,6 +34,41 @@ export default function MarketplaceCarparkFeed() {
     onRefresh: handleRefresh,
     enabled: true
   });
+
+  // Track scroll position for header visibility
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const element = scrollRef.current
+      if (!element) return
+
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          setScrollPosition(element.scrollTop)
+          ticking.current = false
+        })
+        ticking.current = true
+      }
+    }
+
+    const checkInterval = setInterval(() => {
+      const element = scrollRef.current
+      if (element) {
+        clearInterval(checkInterval)
+        element.addEventListener('scroll', handleScroll, { passive: true })
+        // Initial check
+        setScrollPosition(element.scrollTop)
+      }
+    }, 100)
+
+    return () => {
+      clearInterval(checkInterval)
+      const element = scrollRef.current
+      if (element) {
+        element.removeEventListener('scroll', handleScroll)
+      }
+      ticking.current = false
+    }
+  }, [setScrollPosition]);
 
   return (
     <div className="relative h-full">

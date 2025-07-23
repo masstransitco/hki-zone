@@ -23,9 +23,7 @@ export default function MarketplaceContent({ category }: MarketplaceContentProps
           category === 'cars' ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
-        <div className="h-full">
-          <MarketplaceCarsFeed />
-        </div>
+        <MarketplaceCarsFeed />
       </div>
 
       {/* Car Parks content */}
@@ -38,9 +36,7 @@ export default function MarketplaceContent({ category }: MarketplaceContentProps
           category === 'carparks' ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
-        <div className="h-full">
-          <MarketplaceCarparkFeed />
-        </div>
+        <MarketplaceCarparkFeed />
       </div>
     </div>
   );

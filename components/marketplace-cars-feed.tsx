@@ -1,7 +1,7 @@
 "use client"
 
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useInView } from "react-intersection-observer"
 import { Search, Grid3X3, List } from "lucide-react"
 import { LoadingSpinner } from "./loading-spinner"
@@ -10,6 +10,7 @@ import CarBottomSheet from "./car-bottom-sheet"
 import CarSearch from "./car-search"
 import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
+import { useHeaderVisibility } from "@/contexts/header-visibility"
 import { parseCarSpecs, getFormattedSpecString } from "../utils/car-specs-parser"
 import { cn } from "@/lib/utils"
 
@@ -111,6 +112,8 @@ export default function MarketplaceCarsFeed() {
   const [isSearchActive, setIsSearchActive] = useState(false)
   const [isGridView, setIsGridView] = useState(true)
   const [isSearchVisible, setIsSearchVisible] = useState(false)
+  const { setScrollPosition } = useHeaderVisibility()
+  const ticking = useRef(false)
   
   const {
     data,
@@ -166,6 +169,41 @@ export default function MarketplaceCarsFeed() {
   }, [])
   
   const displayCars = isSearchActive ? searchResults : (data?.pages.flatMap(page => page.articles) ?? [])
+  
+  // Track scroll position for header visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      const element = scrollRef.current
+      if (!element) return
+
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          setScrollPosition(element.scrollTop)
+          ticking.current = false
+        })
+        ticking.current = true
+      }
+    }
+
+    const checkInterval = setInterval(() => {
+      const element = scrollRef.current
+      if (element) {
+        clearInterval(checkInterval)
+        element.addEventListener('scroll', handleScroll, { passive: true })
+        // Initial check
+        setScrollPosition(element.scrollTop)
+      }
+    }, 100)
+
+    return () => {
+      clearInterval(checkInterval)
+      const element = scrollRef.current
+      if (element) {
+        element.removeEventListener('scroll', handleScroll)
+      }
+      ticking.current = false
+    }
+  }, [setScrollPosition])
   
   if (isLoading) {
     return <LoadingSkeleton variant="card" count={12} />

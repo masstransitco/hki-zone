@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, useState, useRef } from "react"
-import Header from "@/components/header"
+import UnifiedHeader from "@/components/unified-header"
 import FooterNav from "@/components/footer-nav"
 import SideMenu from "@/components/side-menu-overlay"
 import StickyMarketplaceSelector from "@/components/sticky-marketplace-selector"
@@ -53,7 +53,7 @@ export default function MarketplacePage() {
         </main>
 
         {/* Fixed header */}
-        <Header isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} />
+        <UnifiedHeader isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} />
 
         {/* Sticky category selector */}
         <StickyMarketplaceSelector 
