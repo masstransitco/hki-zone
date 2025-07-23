@@ -9,6 +9,7 @@ const OUTLET_NAMES = {
   rthk: "RTHK",
   '28car': "28car",
   am730: "AM730",
+  scmp: "SCMP",
 }
 
 export async function POST(

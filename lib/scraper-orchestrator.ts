@@ -11,6 +11,7 @@ const { withContent: scrapeOnccWithContent } = require("./scrapers/oncc")
 const { withContent: scrapeRTHKWithContent } = require("./scrapers/rthk")
 const { scrape28CarWithContent } = require("./scrapers/28car")
 const { scrapeAM730 } = require("./scrapers/am730")
+const { scrapeSCMP } = require("./scrapers/scmp")
 
 const OUTLET_SCRAPERS = {
   hkfp: scrapeHKFPWithContent,
@@ -20,6 +21,7 @@ const OUTLET_SCRAPERS = {
   rthk: scrapeRTHKWithContent,
   '28car': scrape28CarWithContent,
   am730: scrapeAM730,
+  scmp: scrapeSCMP,
 }
 
 const OUTLET_NAMES = {
@@ -30,6 +32,7 @@ const OUTLET_NAMES = {
   rthk: "RTHK",
   '28car': "28car",
   am730: "AM730",
+  scmp: "SCMP",
 }
 
 // Separate news scrapers from car scrapers for runAllScrapers
@@ -41,6 +44,7 @@ const NEWS_OUTLET_SCRAPERS = {
   oncc: scrapeOnccWithContent,
   rthk: scrapeRTHKWithContent,
   am730: scrapeAM730,
+  scmp: scrapeSCMP,
 }
 
 // Individual scraper function with progress tracking
@@ -426,6 +430,7 @@ export async function runAllScrapers(withProgress = false) {
         ONCC: allArticles.filter((a) => a.source === "ONCC").length,
         RTHK: allArticles.filter((a) => a.source === "RTHK").length,
         AM730: allArticles.filter((a) => a.source === "am730").length,
+        SCMP: allArticles.filter((a) => a.source === "scmp").length,
       },
       database: {
         before: initialStats,
@@ -462,6 +467,8 @@ function getCategoryFromSource(source: string): string {
       return "cars"
     case "am730":
       return "Local"
+    case "scmp":
+      return "International"
     default:
       return "General"
   }

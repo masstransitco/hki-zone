@@ -196,14 +196,38 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
     }
   }, [isVisible])
 
-  // Streamlined masonry initialization with proper cleanup
+  // Streamlined masonry initialization with proper cleanup and reactivation support
   useEffect(() => {
-    if (!feedRef.current) return
+    if (!feedRef.current || !isActive) {
+      // If component is not active, cleanup and return
+      if (!isActive) {
+        console.log('NewsFeedMasonry: Component inactive, cleaning up masonry')
+        if (masonryRef.current) {
+          masonryRef.current.destroy()
+          masonryRef.current = null
+        }
+        if (cleanupFnRef.current) {
+          cleanupFnRef.current()
+          cleanupFnRef.current = null
+        }
+        if (feedRef.current) {
+          feedRef.current.classList.remove("js-masonry")
+          feedRef.current.style.padding = ""
+          feedRef.current.style.maxWidth = ""
+          feedRef.current.style.overflow = ""
+          feedRef.current.style.margin = ""
+        }
+        setIsMasonryReady(false)
+      }
+      return
+    }
     
+    console.log('NewsFeedMasonry: Initializing masonry (active:', isActive, ')')
     setIsMasonryReady(false) // Reset ready state
     
     // Clean up any existing masonry instance first
     if (masonryRef.current) {
+      console.log('NewsFeedMasonry: Destroying existing masonry instance')
       masonryRef.current.destroy()
       masonryRef.current = null
     }
@@ -225,7 +249,36 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
     
     // Small delay to ensure DOM is stable after content switch
     const initTimeout = setTimeout(() => {
-      if (!feedRef.current) return
+      if (!feedRef.current || !isActive) return
+      
+      console.log('NewsFeedMasonry: Starting masonry initialization timeout')
+      
+      // Force dimension recalculation when reactivating
+      if (feedRef.current) {
+        // Force reflow to ensure accurate dimensions
+        void feedRef.current.offsetHeight
+        void feedRef.current.offsetWidth
+        
+        // Validate container dimensions
+        const containerWidth = feedRef.current.offsetWidth
+        const containerHeight = feedRef.current.offsetHeight
+        
+        console.log('NewsFeedMasonry: Container dimensions:', { containerWidth, containerHeight })
+        
+        if (containerWidth === 0 || containerHeight === 0) {
+          console.warn('NewsFeedMasonry: Invalid container dimensions detected, retrying...')
+          // Retry after a short delay if dimensions are invalid
+          setTimeout(() => {
+            if (feedRef.current && isActive) {
+              void feedRef.current.offsetHeight
+              console.log('NewsFeedMasonry: Retry dimensions:', {
+                width: feedRef.current.offsetWidth,
+                height: feedRef.current.offsetHeight
+              })
+            }
+          }, 100)
+        }
+      }
       
       // Check if CSS columns are working properly
       const needsJSMasonry = () => {
@@ -271,7 +324,9 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
       // Dynamic import for JavaScript fallback
       (async () => {
         try {
-          if (!feedRef.current) return
+          if (!feedRef.current || !isActive) return
+          
+          console.log('NewsFeedMasonry: Loading JavaScript masonry fallback')
           
           // Add class to enable JavaScript masonry
           feedRef.current.classList.add("js-masonry")
@@ -281,7 +336,10 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
             import("imagesloaded")
           ])
 
-          if (!feedRef.current) return
+          if (!feedRef.current || !isActive) {
+            console.log('NewsFeedMasonry: Component no longer active after library load, aborting')
+            return
+          }
 
           // Compact spacing configuration matching topics feed
           const getConfig = () => {
@@ -357,7 +415,16 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
           
           // iOS Chrome specific: Multiple initialization attempts
           const createMasonryInstance = () => {
-            if (!feedRef.current) return
+            if (!feedRef.current || !isActive) {
+              console.log('NewsFeedMasonry: Cannot create masonry instance - inactive or no container')
+              return
+            }
+            
+            console.log('NewsFeedMasonry: Creating masonry instance with config:', {
+              columnWidth,
+              gap: config.gap,
+              itemCount: feedRef.current.querySelectorAll('.news-card').length
+            })
             
             masonryRef.current = new Masonry(feedRef.current, {
               itemSelector: ".news-card",
@@ -451,15 +518,15 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
       }
       setIsMasonryReady(false)
     }
-  }, []) // Keep empty dependency to run once on mount
+  }, [isActive]) // Re-initialize when component becomes active/inactive
 
-  // Re-layout masonry when new items are added
+  // Re-layout masonry when new items are added (only when active)
   useEffect(() => {
-    if (masonryRef.current && data && isMasonryReady) {
-      console.log('Re-laying out masonry with new data')
+    if (masonryRef.current && data && isMasonryReady && isActive) {
+      console.log('Re-laying out masonry with new data (active:', isActive, ')')
       // Small delay to ensure DOM is updated
       setTimeout(() => {
-        if (masonryRef.current) {
+        if (masonryRef.current && isActive) {
           const items = feedRef.current?.querySelectorAll('.news-card')
           console.log(`Re-layout: Found ${items?.length || 0} news cards`)
           
@@ -468,14 +535,14 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
           
           // Force a second layout after a brief delay for stubborn cases
           setTimeout(() => {
-            if (masonryRef.current) {
+            if (masonryRef.current && isActive) {
               masonryRef.current.layout()
             }
           }, 50)
         }
       }, 100)
     }
-  }, [data, isMasonryReady])
+  }, [data, isMasonryReady, isActive])
 
   // Infinite scroll trigger
   useEffect(() => {
