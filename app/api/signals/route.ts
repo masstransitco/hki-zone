@@ -9,6 +9,49 @@ const supabase = createClient(
 
 export const dynamic = 'force-dynamic'
 
+/**
+ * Check if the materialized view is stale by comparing latest timestamps
+ * Returns true if we should use raw incidents table instead
+ */
+async function checkMaterializedViewStaleness(): Promise<boolean> {
+  try {
+    // Get latest timestamp from materialized view
+    const { data: publicData, error: publicError } = await supabase
+      .from('incidents_public')
+      .select('source_updated_at')
+      .order('source_updated_at', { ascending: false })
+      .limit(1)
+    
+    // Get latest timestamp from raw incidents
+    const { data: rawData, error: rawError } = await supabase
+      .from('incidents')
+      .select('source_updated_at')
+      .order('source_updated_at', { ascending: false })
+      .limit(1)
+    
+    if (publicError || rawError || !publicData[0] || !rawData[0]) {
+      console.warn('Error checking view staleness, falling back to raw data:', publicError || rawError)
+      return true // Use raw data as fallback
+    }
+    
+    const publicLatest = new Date(publicData[0].source_updated_at)
+    const rawLatest = new Date(rawData[0].source_updated_at)
+    const stalenessHours = (rawLatest.getTime() - publicLatest.getTime()) / (1000 * 60 * 60)
+    
+    // Consider stale if difference is more than 2 hours
+    const isStale = stalenessHours > 2
+    
+    if (isStale) {
+      console.warn(`Materialized view is stale by ${stalenessHours.toFixed(2)} hours, using raw data`)
+    }
+    
+    return isStale
+  } catch (error) {
+    console.error('Error checking materialized view staleness:', error)
+    return true // Use raw data as fallback on error
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -24,17 +67,36 @@ export async function GET(request: NextRequest) {
       category, status, search, page, limit, severity, source 
     })
 
+    // Check if materialized view is stale and fall back to raw data if needed
+    const useRawData = await checkMaterializedViewStaleness()
+    const tableName = useRawData ? 'incidents' : 'incidents_public'
+    
+    console.log(`Using ${tableName} for data (materialized view ${useRawData ? 'is stale' : 'is fresh'})`)
+
     // Build query - exclude A&E data (hospital authority feeds) from signals
     let query = supabase
-      .from('incidents_public')
-      .select('*')
+      .from(tableName)
+      .select(useRawData ? `
+        id, source_slug, title, body, category, severity, 
+        starts_at, source_updated_at, enrichment_status, enriched_title,
+        enriched_summary, enriched_content, key_points, why_it_matters,
+        key_facts, reporting_score, additional_sources, sources,
+        enrichment_metadata, created_at, updated_at, image_url,
+        relevance_score
+      ` : '*')
       .not('source_slug', 'like', 'ha_%')
+    
+    // Apply 7-day filter when using raw data (to match materialized view behavior)
+    if (useRawData) {
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      query = query.gte('source_updated_at', sevenDaysAgo)
+    }
 
-    // Apply filters
+    // Apply filters - now show ALL government content chronologically by default
     if (category === "top_signals" || !category) {
-      // For top_signals (default) or no category, show only top signals
-      // Include both category-based and source-based filtering for backward compatibility
-      query = query.or('category.eq.top_signals,source_slug.in.(hkma_press,hkma_speeches,news_gov_top)')
+      // Show all government feeds chronologically (removed restriction to only certain sources)
+      // This includes all 15+ active government feeds: HKMA, CHP, TD, HKO, news_gov_top, etc.
+      query = query.not('source_slug', 'eq', 'null') // Show all government content
     } else if (category === "environment") {
       // For environment category, include both category-based and source-based filtering
       // Include all CHP sources: chp_disease, chp_press, chp_ncd, chp_guidelines
@@ -47,7 +109,7 @@ export async function GET(request: NextRequest) {
     if (status && status !== "all") {
       query = query.eq('enrichment_status', status)
     }
-    // Show all incidents regardless of enrichment status for public view
+    // Show all incidents regardless of enrichment status for public view, including pending
 
     if (severity) {
       const severityNum = parseInt(severity)
@@ -68,17 +130,17 @@ export async function GET(request: NextRequest) {
     // Apply pagination and ordering
     const startIndex = page * limit
     
-    // Try to order by relevance_score, fallback to ai_score if column doesn't exist
+    // Order chronologically with latest published first, then by relevance
     try {
       query = query
-        .order('relevance_score', { ascending: false })
         .order('source_updated_at', { ascending: false })
+        .order('relevance_score', { ascending: false })
         .range(startIndex, startIndex + limit)
     } catch (error) {
       // Fallback to ai_score if relevance_score doesn't exist
       query = query
-        .order('ai_score', { ascending: false })
         .order('source_updated_at', { ascending: false })
+        .order('ai_score', { ascending: false })
         .range(startIndex, startIndex + limit)
     }
 

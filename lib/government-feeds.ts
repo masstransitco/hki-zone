@@ -649,12 +649,14 @@ class GovernmentFeeds {
       
       if (error?.code === '55000' && error.message?.includes('cannot refresh materialized view')) {
         console.warn('⚠️ Materialized view refresh failed: Missing unique index for concurrent refresh')
-        console.warn('   This error is non-critical - the view may refresh later or can be refreshed manually')
+        console.warn('   This error is non-critical - the public API will automatically fall back to raw data')
+        console.warn('   Users will still see fresh data via the staleness detection mechanism')
         console.warn('   To fix permanently: CREATE UNIQUE INDEX ON incidents_public (id) or modify refresh to non-concurrent')
         // Don't throw - this error doesn't prevent incident processing from working
         return
       } else if (error) {
         console.error('❌ Error refreshing materialized view:', error)
+        console.warn('   This error is non-critical - the public API will automatically fall back to raw data')
         // Don't throw - view refresh failures shouldn't stop incident processing
         return
       }
@@ -662,6 +664,7 @@ class GovernmentFeeds {
       console.log('✅ Materialized view refresh successful')
     } catch (error) {
       console.error('❌ Error calling refresh function:', error)
+      console.warn('   This error is non-critical - the public API will automatically fall back to raw data')
       // Don't throw - view refresh failures shouldn't stop incident processing
     }
   }

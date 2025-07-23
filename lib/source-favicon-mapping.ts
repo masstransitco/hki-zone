@@ -47,7 +47,11 @@ export const SOURCE_FAVICON_MAP: SourceFaviconMapping = {
   
   "oriental": "oriental.png",
   "Oriental Daily News": "oriental.png",
-  "ONCC": "oriental.png",
+  
+  "on.cc": "oncc.png",
+  "On.cc": "oncc.png", 
+  "ON.CC": "oncc.png",
+  "ONCC": "oncc.png",
   
   "standard": "standard.png",
   "The Standard HK": "standard.png",
@@ -125,6 +129,7 @@ export function getFaviconForSource(source: string): string | null {
     "singtao": "singtao.png",
     "mingpao": "mingpao.jpg",
     "oriental": "oriental.png",
+    "oncc": "oncc.png",
     "standard": "standard.png",
     "scmp": "scmp.png",
     "now": "nownews.png",

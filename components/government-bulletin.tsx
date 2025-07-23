@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useInView } from "react-intersection-observer"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ import {
   ChevronUp,
   RefreshCw
 } from "lucide-react"
+import Image from "next/image"
 import { format } from "date-fns"
 import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
@@ -33,6 +35,47 @@ interface BulletinItem {
   key_points?: string[]
   why_it_matters?: string
   created_at: string
+}
+
+// Map source slugs to their government favicon paths
+const getSourceFavicon = (sourceSlug: string): string => {
+  const faviconMap: { [key: string]: string } = {
+    // HKMA - Hong Kong Monetary Authority
+    'hkma_press': '/gov-favicons-output/hkma.jpg',
+    'hkma_speeches': '/gov-favicons-output/hkma.jpg',
+    'hkma_guidelines': '/gov-favicons-output/hkma.jpg',
+    'hkma_circulars': '/gov-favicons-output/hkma.jpg',
+    
+    // Government news
+    'news_gov_top': '/gov-favicons-output/gov_hk.ico',
+    
+    // Transport Department
+    'td_notices': '/gov-favicons-output/td/raw/td.png',
+    'td_press': '/gov-favicons-output/td/raw/td.png',
+    'td_special': '/gov-favicons-output/td/raw/td.png',
+    
+    // Hong Kong Observatory
+    'hko_warn': '/gov-favicons-output/hko.ico',
+    'hko_eq': '/gov-favicons-output/hko.ico',
+    'hko_felt_earthquake': '/gov-favicons-output/hko.ico',
+    
+    // Centre for Health Protection
+    'chp_press': '/gov-favicons-output/dh.ico',
+    'chp_disease': '/gov-favicons-output/dh.ico',
+    'chp_ncd': '/gov-favicons-output/dh.ico',
+    'chp_guidelines': '/gov-favicons-output/dh.ico',
+    
+    // Hospital Authority
+    'ha_ae_waiting': '/gov-favicons-output/healthbureau.ico',
+    
+    // Utilities
+    'emsd_util': '/gov-favicons-output/emsd.ico',
+    
+    // MTR - fallback to government icon
+    'mtr_rail': '/gov-favicons-output/gov_hk.ico'
+  }
+  
+  return faviconMap[sourceSlug] || '/gov-favicons-output/gov_hk.ico'
 }
 
 interface GovernmentBulletinProps {
@@ -59,6 +102,12 @@ export default function GovernmentBulletin({
   const [loadingMore, setLoadingMore] = useState(false)
   const { setScrollPosition } = useHeaderVisibility()
   const tickingRef = useRef(false)
+  
+  // Infinite scroll trigger
+  const { ref: loadMoreRef, inView } = useInView({
+    threshold: 0.1,
+    rootMargin: '100px'
+  })
 
   useEffect(() => {
     loadBulletinItems(0)
@@ -72,6 +121,13 @@ export default function GovernmentBulletin({
       return () => clearInterval(interval)
     }
   }, [autoRefresh, refreshInterval])
+
+  // Infinite scroll effect
+  useEffect(() => {
+    if (inView && hasMore && !loadingMore && !loading) {
+      handleLoadMore()
+    }
+  }, [inView, hasMore, loadingMore, loading])
 
   const loadBulletinItems = async (pageNum: number) => {
     try {
@@ -177,11 +233,48 @@ export default function GovernmentBulletin({
   }
 
   const getCategoryLabel = (category: string, sourceSlug: string) => {
-    // Updated categorization as requested
-    if (sourceSlug === 'news_gov_top') return 'Gov+'
-    if (sourceSlug === 'hkma_press' || sourceSlug === 'hkma_speeches') return 'HKMA'
+    // Enhanced categorization for all government feeds
+    const sourceLabels: { [key: string]: string } = {
+      // HKMA feeds
+      'hkma_press': 'HKMA',
+      'hkma_speeches': 'HKMA',
+      'hkma_guidelines': 'HKMA',
+      'hkma_circulars': 'HKMA',
+      
+      // Government news
+      'news_gov_top': 'Gov+',
+      
+      // Transport Department
+      'td_notices': 'Transport',
+      'td_press': 'Transport',
+      'td_special': 'Transport',
+      
+      // Hong Kong Observatory
+      'hko_warn': 'Weather',
+      'hko_eq': 'Weather',
+      'hko_felt_earthquake': 'Weather',
+      
+      // Centre for Health Protection
+      'chp_press': 'Health',
+      'chp_disease': 'Health',
+      'chp_ncd': 'Health',
+      'chp_guidelines': 'Health',
+      
+      // Hospital Authority
+      'ha_ae_waiting': 'Hospital',
+      
+      // Utilities
+      'emsd_util': 'Utility',
+      
+      // MTR
+      'mtr_rail': 'Rail'
+    }
     
-    // Keep existing categorizations as visual labels
+    if (sourceLabels[sourceSlug]) {
+      return sourceLabels[sourceSlug]
+    }
+    
+    // Fallback to category-based labels
     const categoryMap: { [key: string]: string } = {
       road: 'Road',
       rail: 'Rail',
@@ -198,28 +291,9 @@ export default function GovernmentBulletin({
     return categoryMap[category] || category.charAt(0).toUpperCase() + category.slice(1)
   }
 
-  const getCategoryColor = (category: string, sourceSlug: string) => {
-    // Special handling for updated categories
-    if (sourceSlug === 'news_gov_top') {
-      return "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 dark:bg-gradient-to-r dark:from-amber-900/20 dark:to-orange-900/20 dark:text-amber-400"
-    }
-    if (sourceSlug === 'hkma_press' || sourceSlug === 'hkma_speeches') {
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400"
-    }
-
-    const colors: { [key: string]: string } = {
-      road: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
-      rail: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-      weather: "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400",
-      utility: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
-      health: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
-      financial: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400",
-      gov: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400",
-      ae: "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400",
-      top_signals: "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 dark:bg-gradient-to-r dark:from-amber-900/20 dark:to-orange-900/20 dark:text-amber-400",
-      environment: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400"
-    }
-    return colors[category] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+  const getCategoryColor = () => {
+    // Match the newsfeed/topics color system - neutral stone colors
+    return "bg-stone-100 text-stone-600 dark:bg-neutral-800 dark:text-neutral-400"
   }
 
   const getSeverityColor = (severity: number) => {
@@ -242,14 +316,6 @@ export default function GovernmentBulletin({
         <div className="h-full overflow-auto">
           <div className="h-[113px] w-full" aria-hidden="true" />
           <div className="pt-6 px-6">
-            <div className="mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Government Bulletin
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Latest updates from Hong Kong government sources
-              </p>
-            </div>
             <LoadingSkeleton variant="bulletin" count={5} />
           </div>
         </div>
@@ -285,26 +351,6 @@ export default function GovernmentBulletin({
         <div className="h-[113px] w-full" aria-hidden="true" />
         
         <div className="pt-6 space-y-4 px-6">
-          {/* Header with refresh button */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                Government Bulletin
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Latest updates from Hong Kong government sources
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="h-8 w-8"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
 
       {/* Bulletin List */}
       <div className="space-y-2">
@@ -324,80 +370,93 @@ export default function GovernmentBulletin({
             return (
               <Card 
                 key={item.id} 
-                className="hover:shadow-md transition-shadow duration-200 border-l-4 border-l-blue-500"
+                className="group hover:shadow-lg hover:shadow-stone-200/30 dark:hover:shadow-neutral-900/40 transition-all duration-200 border-stone-200/60 dark:border-neutral-700/60 bg-stone-50/95 dark:bg-neutral-900/95 backdrop-blur-sm cursor-pointer"
               >
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    {/* Header row */}
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Badge 
-                          variant="outline" 
-                          className={getCategoryColor(item.category, item.source_slug)}
-                        >
-                          {getCategoryLabel(item.category, item.source_slug)}
-                        </Badge>
+                <CardContent className="p-3">
+                  <div className="space-y-4">
+                    {/* Main content area with source logo and title */}
+                    <div className="flex items-start gap-3">
+                      {/* Source favicon - primary visual identifier */}
+                      <div className="flex-shrink-0 mt-0.5">
+                        <Image 
+                          src={getSourceFavicon(item.source_slug)}
+                          alt={`${item.source_slug} favicon`}
+                          width={20}
+                          height={20}
+                          className="object-contain"
+                          onError={(e) => {
+                            // Fallback to default gov icon if specific favicon fails
+                            e.currentTarget.src = '/gov-favicons-output/gov_hk.ico'
+                          }}
+                        />
+                      </div>
+                      
+                      {/* Content area */}
+                      <div className="flex-1 min-w-0">
+                        {/* Title */}
+                        <h3 className="font-semibold text-stone-900 dark:text-neutral-50 leading-tight mb-2 group-hover:text-stone-800 dark:group-hover:text-neutral-100">
+                          {displayTitle}
+                        </h3>
                         
-                        <div className="flex items-center gap-1">
-                          <AlertTriangle className={`h-3 w-3 ${getSeverityColor(item.severity)}`} />
-                          <span className={`text-xs ${getSeverityColor(item.severity)}`}>
-                            {item.severity}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(item.source_updated_at)}
-                          </span>
+                        {/* Metadata row */}
+                        <div className="flex items-center gap-3 text-xs text-stone-500 dark:text-neutral-400">
+                          <Badge 
+                            variant="outline" 
+                            className={getCategoryColor()}
+                          >
+                            {getCategoryLabel(item.category, item.source_slug)}
+                          </Badge>
+                          
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            <span>{formatDate(item.source_updated_at)}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            <AlertTriangle className={`h-3 w-3 ${getSeverityColor(item.severity)}`} />
+                            <span className={getSeverityColor(item.severity)}>
+                              {item.severity}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       
-                      {displayContent && (
+                      {/* Expand button */}
+                      {(displayContent && displayContent.trim().length > 0) && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleExpanded(item.id)}
-                          className="h-6 w-6 p-0 flex-shrink-0"
+                          className="h-8 w-8 p-0 flex-shrink-0 text-stone-400 hover:text-stone-600 dark:text-neutral-500 dark:hover:text-neutral-300"
                         >
                           {isExpanded ? (
-                            <ChevronUp className="h-3 w-3" />
+                            <ChevronUp className="h-4 w-4" />
                           ) : (
-                            <ChevronDown className="h-3 w-3" />
+                            <ChevronDown className="h-4 w-4" />
                           )}
                         </Button>
                       )}
                     </div>
 
-                    {/* Title */}
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 leading-snug">
-                      {displayTitle}
-                    </h3>
-
-                    {/* Source */}
-                    <div className="text-xs text-muted-foreground">
-                      <strong>Source:</strong> {item.source_slug.toUpperCase()}
-                    </div>
-
                     {/* Expandable content */}
-                    {isExpanded && displayContent && (
-                      <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
-                        <p className="text-sm text-muted-foreground leading-relaxed">
+                    {isExpanded && displayContent && displayContent.trim().length > 0 && (
+                      <div className="pt-3 mt-1 border-t border-stone-200/60 dark:border-neutral-700/60">
+                        <p className="text-sm text-stone-600 dark:text-neutral-300 leading-relaxed">
                           {displayContent}
                         </p>
                         
-                        {/* AI-Enhanced Content */}
+                        {/* AI-Enhanced Content - only for enriched items */}
                         {isEnriched && (
-                          <div className="mt-3 space-y-2">
+                          <div className="mt-4 space-y-3">
                             {item.key_points && item.key_points.length > 0 && (
                               <div>
-                                <h4 className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-1">
+                                <h4 className="text-xs font-medium text-stone-700 dark:text-neutral-300 mb-2">
                                   Key Points:
                                 </h4>
-                                <ul className="text-xs text-muted-foreground space-y-1">
+                                <ul className="text-xs text-stone-600 dark:text-neutral-400 space-y-1">
                                   {item.key_points.map((point, index) => (
-                                    <li key={index} className="flex items-start gap-1">
-                                      <span className="text-blue-600">•</span>
+                                    <li key={index} className="flex items-start gap-2">
+                                      <span className="text-stone-400 mt-1">•</span>
                                       <span>{point}</span>
                                     </li>
                                   ))}
@@ -407,10 +466,10 @@ export default function GovernmentBulletin({
                             
                             {item.why_it_matters && (
                               <div>
-                                <h4 className="text-xs font-medium text-green-700 dark:text-green-400 mb-1">
+                                <h4 className="text-xs font-medium text-stone-700 dark:text-neutral-300 mb-2">
                                   Why It Matters:
                                 </h4>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-stone-600 dark:text-neutral-400">
                                   {item.why_it_matters}
                                 </p>
                               </div>
@@ -419,6 +478,7 @@ export default function GovernmentBulletin({
                         )}
                       </div>
                     )}
+                    
                   </div>
                 </CardContent>
               </Card>
@@ -427,24 +487,15 @@ export default function GovernmentBulletin({
         )}
       </div>
 
-      {/* Load More */}
+      {/* Infinite scroll trigger */}
       {hasMore && (
-        <div className="flex justify-center pt-4">
-          <Button
-            variant="outline"
-            onClick={handleLoadMore}
-            disabled={loadingMore}
-            className="w-full max-w-xs"
-          >
-            {loadingMore ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Loading more...
-              </>
-            ) : (
-              'Load More Bulletins'
-            )}
-          </Button>
+        <div ref={loadMoreRef} className="flex justify-center pt-4 h-20">
+          {loadingMore && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span className="text-sm">Loading more...</span>
+            </div>
+          )}
         </div>
       )}
         </div>
