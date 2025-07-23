@@ -129,17 +129,19 @@ async function ArticlePageContent({ articleId }: { articleId: string }) {
 
 export default function ArticlePage({ params }: ArticlePageProps) {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+    <div className="relative">
+      <div className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b">
         <div className="flex items-center justify-between p-4">
           <BackButton />
           <ShareButton articleId={params.id} title="" url="" />
         </div>
       </div>
 
-      <Suspense fallback={<LoadingSkeleton />}>
-        <ArticlePageContent articleId={params.id} />
-      </Suspense>
+      <div className="pt-[57px]">
+        <Suspense fallback={<LoadingSkeleton />}>
+          <ArticlePageContent articleId={params.id} />
+        </Suspense>
+      </div>
     </div>
   )
 }

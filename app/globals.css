@@ -9,7 +9,7 @@ html {
 
 body {
   overscroll-behavior-y: contain;
-  overflow: hidden; /* Prevent body scroll */
+  /* Allow natural scrolling on all pages */
 }
 
 @layer base {
@@ -190,10 +190,20 @@ body {
   background-clip: content-box;
 }
 
-/* Smooth transitions */
-* {
-  transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+/* Animation Variables */
+@layer base {
+  :root {
+    --animation-fast: 150ms;
+    --animation-base: 200ms;
+    --animation-slow: 300ms;
+    --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --easing-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --easing-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
 }
+
+/* Remove global transitions for better performance */
+/* Apply transitions only where needed */
 
 /* Logo and wordmark styling */
 .logo-wordmark {

@@ -13,24 +13,8 @@ interface MainContentProps {
 }
 
 export default function MainContent({ contentType }: MainContentProps) {
-  const [isTransitioning, setIsTransitioning] = React.useState(false);
-  const prevContentType = React.useRef(contentType);
-  
   // Initialize cache invalidation for language changes
   useCacheInvalidation();
-
-  React.useEffect(() => {
-    if (prevContentType.current !== contentType) {
-      setIsTransitioning(true);
-      
-      // Fade transition
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 250);
-      
-      prevContentType.current = contentType;
-    }
-  }, [contentType]);
 
   return (
     <div className="relative pb-2 h-full isolate bg-transparent">
@@ -40,9 +24,8 @@ export default function MainContent({ contentType }: MainContentProps) {
         id="headlines-panel"
         aria-labelledby="headlines-tab"
         className={cn(
-          "transition-all duration-200 ease-out isolate h-full",
-          contentType === 'headlines' ? "block" : "hidden pointer-events-none",
-          isTransitioning && contentType === 'headlines' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
+          "absolute inset-0 transition-opacity duration-200 ease-out isolate",
+          contentType === 'headlines' ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
         <div className="relative h-full">
@@ -58,9 +41,8 @@ export default function MainContent({ contentType }: MainContentProps) {
         id="news-panel"
         aria-labelledby="news-tab"
         className={cn(
-          "transition-all duration-200 ease-out isolate h-full",
-          contentType === 'news' ? "block" : "hidden",
-          isTransitioning && contentType === 'news' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
+          "absolute inset-0 transition-opacity duration-200 ease-out isolate",
+          contentType === 'news' ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
         <div className="relative h-full">
@@ -76,9 +58,8 @@ export default function MainContent({ contentType }: MainContentProps) {
         id="bulletin-panel"
         aria-labelledby="bulletin-tab"
         className={cn(
-          "transition-all duration-200 ease-out isolate h-full",
-          contentType === 'bulletin' ? "block" : "hidden",
-          isTransitioning && contentType === 'bulletin' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
+          "absolute inset-0 transition-opacity duration-200 ease-out isolate",
+          contentType === 'bulletin' ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         )}
       >
         <GovernmentBulletin 
@@ -87,17 +68,6 @@ export default function MainContent({ contentType }: MainContentProps) {
           isActive={contentType === 'bulletin'}
         />
       </div>
-      
-      {/* Loading shimmer during transition */}
-      {isTransitioning && (
-        <div className="absolute inset-0 flex items-start justify-center pt-20">
-          <div className="flex gap-2">
-            <div className="w-2 h-2 bg-stone-300 dark:bg-stone-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-            <div className="w-2 h-2 bg-stone-300 dark:bg-stone-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-            <div className="w-2 h-2 bg-stone-300 dark:bg-stone-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

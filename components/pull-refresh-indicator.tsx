@@ -19,22 +19,24 @@ export default function PullRefreshIndicator({
   const willRefresh = pullDistance >= threshold
 
   return (
-    <div className="absolute top-0 left-0 right-0 flex justify-center pointer-events-none z-40 -translate-y-16">
+    <div className="fixed top-28 left-0 right-0 flex justify-center pointer-events-none z-40">
       <AnimatePresence>
         {isVisible && (
           <motion.div
-            className="mt-4"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
+            initial={{ opacity: 0, scale: 0.8, y: -20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: -20 }}
+            transition={{ 
+              duration: 0.2,
+              ease: [0.4, 0, 0.2, 1]
+            }}
           >
             <motion.div
               className={`
-                rounded-full p-3 shadow-lg border
+                rounded-full p-3 shadow-minimal backdrop-blur-sm border
                 ${willRefresh 
-                  ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' 
-                  : 'bg-white dark:bg-neutral-800 border-stone-200 dark:border-neutral-700'
+                  ? 'bg-neutral-50/90 dark:bg-neutral-900/90 border-neutral-300 dark:border-neutral-700' 
+                  : 'bg-white/90 dark:bg-neutral-800/90 border-neutral-200 dark:border-neutral-700'
                 }
               `}
               animate={{
@@ -56,29 +58,15 @@ export default function PullRefreshIndicator({
                   className={`
                     w-5 h-5 transition-colors duration-200
                     ${willRefresh 
-                      ? 'text-blue-600 dark:text-blue-400' 
-                      : 'text-stone-400 dark:text-neutral-500'
+                      ? 'text-neutral-700 dark:text-neutral-300' 
+                      : 'text-neutral-400 dark:text-neutral-500'
                     }
                   `}
                 />
               </motion.div>
             </motion.div>
             
-            {/* Pull hint text */}
-            <motion.p
-              className="text-xs text-stone-500 dark:text-neutral-400 text-center mt-2"
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: progress > 0.2 ? progress : 0,
-              }}
-            >
-              {isRefreshing 
-                ? "Refreshing..." 
-                : willRefresh 
-                  ? "Release to refresh" 
-                  : "Pull to refresh"
-              }
-            </motion.p>
+            {/* Pull hint text - removed for cleaner UI */}
           </motion.div>
         )}
       </AnimatePresence>

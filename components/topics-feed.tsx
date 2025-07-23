@@ -10,6 +10,7 @@ import { useLanguage } from "./language-provider"
 import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
+import { LoadingSpinner } from "./loading-spinner"
 import type { Article } from "@/lib/types"
 
 async function fetchTopicsArticles({ pageParam = 0, language = "en" }): Promise<{ articles: Article[]; nextPage: number | null }> {
@@ -133,8 +134,29 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
     }
   }, [inView, hasNextPage, fetchNextPage])
 
-  if (isLoading) return <LoadingSkeleton />
-  if (error) return <div className="p-4 text-center text-destructive" suppressHydrationWarning>{t("error.failedToLoad")} AI-enhanced articles</div>
+  if (isLoading) {
+    return (
+      <div className="relative h-full overflow-hidden">
+        <div className="h-full overflow-auto">
+          <div className="h-[110px] w-full" aria-hidden="true" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 md:gap-[18px] lg:gap-[22px] isolate px-[1px]">
+            <LoadingSkeleton variant="card" count={12} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
+  if (error) return (
+    <div className="relative h-full overflow-hidden">
+      <div className="h-full overflow-auto">
+        <div className="h-[110px] w-full" aria-hidden="true" />
+        <div className="p-4 text-center text-destructive" suppressHydrationWarning>
+          {t("error.failedToLoad")} AI-enhanced articles
+        </div>
+      </div>
+    </div>
+  )
 
   const articles = data?.pages.flatMap((page) => page.articles) ?? []
 
@@ -229,7 +251,11 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
         </div>
 
         <div ref={ref} className="h-10">
-          {isFetchingNextPage && <LoadingSkeleton />}
+          {isFetchingNextPage && (
+            <div className="flex items-center justify-center py-4">
+              <LoadingSpinner size="lg" />
+            </div>
+          )}
         </div>
         </div>
       </div>

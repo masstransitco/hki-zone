@@ -16,6 +16,7 @@ import { format } from "date-fns"
 import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
+import LoadingSkeleton from "./loading-skeleton"
 
 interface BulletinItem {
   id: string
@@ -237,14 +238,22 @@ export default function GovernmentBulletin({
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="ml-2 text-muted-foreground">Loading bulletin...</span>
+      <div className="relative h-full overflow-hidden">
+        <div className="h-full overflow-auto">
+          <div className="h-[110px] w-full" aria-hidden="true" />
+          <div className="pt-6 px-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Government Bulletin
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Latest updates from Hong Kong government sources
+              </p>
+            </div>
+            <LoadingSkeleton variant="bulletin" count={5} />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     )
   }
 

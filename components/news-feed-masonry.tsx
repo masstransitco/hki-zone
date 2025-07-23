@@ -10,6 +10,7 @@ import { useLanguage } from "./language-provider"
 import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
+import { LoadingSpinner } from "./loading-spinner"
 import type { Article } from "@/lib/types"
 
 async function fetchArticles({ pageParam = 0 }): Promise<{ articles: Article[]; nextPage: number | null }> {
@@ -485,10 +486,27 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
 
 
   // Conditional returns must come after all hooks
-  if (isLoading) return <LoadingSkeleton />
+  if (isLoading) {
+    return (
+      <div className="relative h-full overflow-hidden">
+        <div className="h-full overflow-auto">
+          <div className="h-[110px] w-full" aria-hidden="true" />
+          <div className="news-feed isolate">
+            <LoadingSkeleton variant="masonry" count={15} />
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
   if (error) return (
-    <div className="p-8 text-center text-red-600 dark:text-red-400">
-      {t("error.failedToLoad")} articles
+    <div className="relative h-full overflow-hidden">
+      <div className="h-full overflow-auto">
+        <div className="h-[110px] w-full" aria-hidden="true" />
+        <div className="p-8 text-center text-red-600 dark:text-red-400">
+          {t("error.failedToLoad")} articles
+        </div>
+      </div>
     </div>
   )
 
@@ -555,7 +573,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
       <div ref={ref} className="h-10 mt-8">
         {isFetchingNextPage && (
           <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-600 dark:border-neutral-400"></div>
+            <LoadingSpinner size="lg" />
           </div>
         )}
       </div>

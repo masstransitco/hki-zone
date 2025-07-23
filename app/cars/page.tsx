@@ -12,22 +12,18 @@ export default function CarsPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <>
       <SideMenu isOpen={isMenuOpen} onOpenChange={setIsMenuOpen} />
       
-      {/* Main App Content with Push Effect */}
-      <div 
-        className={`flex flex-col min-h-screen bg-background transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? 'translate-x-80 max-sm:translate-x-[80vw]' : 'translate-x-0'
-        }`}
-      >
+      {/* Main App Content */}
+      <div className="relative">
         <ClientOnly fallback={
           <header className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-minimal border-b border-border h-[57px]" />
         }>
           <Header isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} />
         </ClientOnly>
 
-        <main className="flex-1 pb-20 pt-16">
+        <main className="pt-[57px] pb-[76px]">
           <div className="py-6">
             <ClientOnly fallback={<CarsLoadingSkeleton />}>
               <Suspense fallback={<CarsLoadingSkeleton />}>
@@ -38,13 +34,13 @@ export default function CarsPage() {
         </main>
       </div>
 
-      {/* Footer Nav - Fixed and outside push effect */}
+      {/* Footer Nav - Fixed */}
       <ClientOnly fallback={
         <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe h-[76px]" />
       }>
         <FooterNav />
       </ClientOnly>
-    </div>
+    </>
   )
 }
 
