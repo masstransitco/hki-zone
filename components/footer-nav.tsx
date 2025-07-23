@@ -90,30 +90,30 @@ export default function FooterNav() {
           </button>
 
           <Link
-            href="/cars"
-            onMouseDown={() => handlePress('/cars')}
-            onTouchStart={() => handlePress('/cars')}
+            href="/marketplace"
+            onMouseDown={() => handlePress('/marketplace')}
+            onTouchStart={() => handlePress('/marketplace')}
             className={cn(
               "relative flex items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-[52px] min-h-[52px] group touch-manipulation",
               "before:absolute before:inset-0 before:rounded-xl before:transition-all before:duration-300",
-              pathname === "/cars" 
+              pathname === "/marketplace" 
                 ? "text-stone-800 dark:text-stone-200 before:bg-stone-200/80 dark:before:bg-stone-700/80 before:scale-100" 
                 : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 before:bg-stone-100 dark:before:bg-stone-800 before:scale-0 hover:before:scale-100",
-              pressedItem === '/cars' && "scale-95"
+              pressedItem === '/marketplace' && "scale-95"
             )}
-            aria-label="Cars"
-            aria-current={pathname === "/cars" ? "page" : undefined}
+            aria-label="Marketplace"
+            aria-current={pathname === "/marketplace" ? "page" : undefined}
           >
             <span className={cn(
               "relative z-10 flex flex-col items-center gap-1",
               "transition-transform duration-200",
-              pathname === "/cars" ? "translate-y-[-2px]" : ""
+              pathname === "/marketplace" ? "translate-y-[-2px]" : ""
             )}>
               <SellTwoToneIcon className={cn(
                 "w-6 h-6 transition-all duration-300",
-                pathname === "/cars" ? "scale-110 drop-shadow-sm" : "group-hover:scale-105"
+                pathname === "/marketplace" ? "scale-110 drop-shadow-sm" : "group-hover:scale-105"
               )} />
-              {pathname === "/cars" && (
+              {pathname === "/marketplace" && (
                 <span className="absolute -bottom-2 w-1 h-1 bg-stone-600 dark:bg-stone-300 rounded-full animate-pulse" />
               )}
             </span>
