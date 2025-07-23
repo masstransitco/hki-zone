@@ -10,6 +10,7 @@ const { scrapeHK01WithContent } = require("./scrapers/hk01")
 const { withContent: scrapeOnccWithContent } = require("./scrapers/oncc")
 const { withContent: scrapeRTHKWithContent } = require("./scrapers/rthk")
 const { scrape28CarWithContent } = require("./scrapers/28car")
+const { scrapeAM730 } = require("./scrapers/am730")
 
 const OUTLET_SCRAPERS = {
   hkfp: scrapeHKFPWithContent,
@@ -18,6 +19,7 @@ const OUTLET_SCRAPERS = {
   oncc: scrapeOnccWithContent,
   rthk: scrapeRTHKWithContent,
   '28car': scrape28CarWithContent,
+  am730: scrapeAM730,
 }
 
 const OUTLET_NAMES = {
@@ -27,6 +29,7 @@ const OUTLET_NAMES = {
   oncc: "ONCC",
   rthk: "RTHK",
   '28car': "28car",
+  am730: "AM730",
 }
 
 // Separate news scrapers from car scrapers for runAllScrapers
@@ -37,6 +40,7 @@ const NEWS_OUTLET_SCRAPERS = {
   hk01: scrapeHK01WithContent,
   oncc: scrapeOnccWithContent,
   rthk: scrapeRTHKWithContent,
+  am730: scrapeAM730,
 }
 
 // Individual scraper function with progress tracking
@@ -119,10 +123,22 @@ export async function runSingleScraper(outletKey: string, withProgress = false) 
     let savedCount = 0
     for (const article of articles) {
       try {
+        // Validate article has required fields before saving
+        const title = article.title || article.headline
+        if (!title || title.trim().length < 3) {
+          console.warn(`⚠️ Skipping article with invalid title: ${article.url}`)
+          continue
+        }
+
+        if (!article.url) {
+          console.warn(`⚠️ Skipping article with missing URL`)
+          continue
+        }
+
         // For cars, save to unified table with images array and specs
         if (outletKey === '28car') {
           const { article: saved, error } = await saveUnifiedArticle({
-            title: article.title,
+            title: title,
             content: article.content || "",
             summary: article.summary || "",
             lede: article.summary,
@@ -151,11 +167,23 @@ export async function runSingleScraper(outletKey: string, withProgress = false) 
           })
           if (!error && saved) savedCount++
         } else {
-          const saved = await saveArticle(article)
-          if (saved) savedCount++
+          const saved = await saveArticle({
+            title: title,
+            content: article.content || article.body || "",
+            summary: article.summary,
+            ai_summary: article.ai_summary || article.summary,
+            url: article.url,
+            source: article.source,
+            author: article.author,
+            published_at: article.publishDate || article.date || new Date().toISOString(),
+            image_url: article.imageUrl || article.coverImg,
+            category: getCategoryFromSource(article.source),
+          })
+          if (saved && !saved.skipped) savedCount++
         }
       } catch (error) {
-        console.error(`💥 Failed to save article: ${article.title}`, error)
+        const articleTitle = article.title || article.headline || 'Unknown'
+        console.error(`💥 Failed to save article: ${articleTitle}`, error)
       }
     }
 
@@ -328,16 +356,30 @@ export async function runAllScrapers(withProgress = false) {
 
     for (const article of summarizedArticles) {
       try {
+        // Validate article has required fields before saving
+        const title = article.title || article.headline
+        if (!title || title.trim().length < 3) {
+          console.warn(`⚠️ Skipping article with invalid title: ${article.url}`)
+          saveErrors++
+          continue
+        }
+
+        if (!article.url) {
+          console.warn(`⚠️ Skipping article with missing URL`)
+          saveErrors++
+          continue
+        }
+
         const saved = await saveArticle({
-          title: article.title,
-          content: article.content || "",
+          title: title,
+          content: article.content || article.body || "",
           summary: article.summary,
           ai_summary: article.ai_summary || article.summary,
           url: article.url,
           source: article.source,
           author: article.author,
-          published_at: article.publishDate || new Date().toISOString(),
-          image_url: article.imageUrl,
+          published_at: article.publishDate || article.date || new Date().toISOString(),
+          image_url: article.imageUrl || article.coverImg,
           images: article.images, // Add images array for cars
           category: getCategoryFromSource(article.source),
         })
@@ -348,7 +390,7 @@ export async function runAllScrapers(withProgress = false) {
           savedArticles.push(saved)
         }
       } catch (error) {
-        console.error(`❌ Error saving article "${article.title}":`, error.message)
+        console.error(`❌ Error saving article "${article.title || article.headline || 'Unknown'}":`, error.message)
         saveErrors++
       }
     }
@@ -383,6 +425,7 @@ export async function runAllScrapers(withProgress = false) {
         HK01: allArticles.filter((a) => a.source === "HK01").length,
         ONCC: allArticles.filter((a) => a.source === "ONCC").length,
         RTHK: allArticles.filter((a) => a.source === "RTHK").length,
+        AM730: allArticles.filter((a) => a.source === "am730").length,
       },
       database: {
         before: initialStats,
@@ -417,6 +460,8 @@ function getCategoryFromSource(source: string): string {
       return "News"
     case "28car":
       return "cars"
+    case "am730":
+      return "Local"
     default:
       return "General"
   }

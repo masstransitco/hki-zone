@@ -1,7 +1,7 @@
 "use client"
 
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useInView } from "react-intersection-observer"
 import ArticleCard from "./article-card"
 import ArticleBottomSheet from "./article-bottom-sheet"
@@ -9,6 +9,7 @@ import LoadingSkeleton from "./loading-skeleton"
 import { useLanguage } from "./language-provider"
 import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
+import { useHeaderVisibility } from "@/contexts/header-visibility"
 import type { Article } from "@/lib/types"
 
 async function fetchTopicsArticles({ pageParam = 0, language = "en" }): Promise<{ articles: Article[]; nextPage: number | null }> {
@@ -17,12 +18,18 @@ async function fetchTopicsArticles({ pageParam = 0, language = "en" }): Promise<
   return response.json()
 }
 
-export default function TopicsFeed() {
+interface TopicsFeedProps {
+  isActive?: boolean
+}
+
+export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
   const { ref, inView } = useInView()
   const { t, language } = useLanguage()
   const queryClient = useQueryClient()
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
+  const { setScrollPosition } = useHeaderVisibility()
+  const ticking = useRef(false)
 
   const handleReadMore = (articleId: string) => {
     setSelectedArticleId(articleId)
@@ -83,6 +90,43 @@ export default function TopicsFeed() {
     enabled: !isBottomSheetOpen
   })
 
+  // Handle scroll events for header visibility
+  useEffect(() => {
+    if (!isActive) return
+
+    const handleScroll = () => {
+      const element = scrollRef.current
+      if (!element) return
+
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          setScrollPosition(element.scrollTop)
+          ticking.current = false
+        })
+        ticking.current = true
+      }
+    }
+
+    const checkInterval = setInterval(() => {
+      const element = scrollRef.current
+      if (element) {
+        clearInterval(checkInterval)
+        element.addEventListener('scroll', handleScroll, { passive: true })
+        // Initial check
+        setScrollPosition(element.scrollTop)
+      }
+    }, 100)
+
+    return () => {
+      clearInterval(checkInterval)
+      const element = scrollRef.current
+      if (element) {
+        element.removeEventListener('scroll', handleScroll)
+      }
+      ticking.current = false
+    }
+  }, [isActive, setScrollPosition])
+
   useEffect(() => {
     if (inView && hasNextPage) {
       fetchNextPage()
@@ -102,21 +146,28 @@ export default function TopicsFeed() {
           isRefreshing={isRefreshing} 
         />
         
+        {/* Pull-to-refresh transform wrapper */}
         <div 
-          ref={scrollRef}
-          className="isolate overflow-auto h-full"
+          className="h-full"
           style={{ 
-            overscrollBehaviorY: 'contain', 
-            WebkitOverflowScrolling: 'touch',
             transform: `translateY(${Math.min(pullDistance, 150)}px)`,
-            transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out',
-            ...(isBottomSheetOpen && {
-              overflow: 'hidden',
-              touchAction: 'none',
-              pointerEvents: 'none'
-            })
+            transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out'
           }}
         >
+          {/* Actual scroll container */}
+          <div 
+            ref={scrollRef}
+            className="isolate overflow-auto h-full"
+            style={{ 
+              overscrollBehaviorY: 'contain', 
+              WebkitOverflowScrolling: 'touch',
+              ...(isBottomSheetOpen && {
+                overflow: 'hidden',
+                touchAction: 'none',
+                pointerEvents: 'none'
+              })
+            }}
+          >
           <div className="p-6 text-center">
             <h3 className="text-lg font-semibold text-stone-900 dark:text-neutral-50 mb-2">
               {t("topics.noAiArticles")}
@@ -127,6 +178,7 @@ export default function TopicsFeed() {
             <div className="text-sm text-stone-600 dark:text-neutral-400">
               Pull down to refresh
             </div>
+          </div>
           </div>
         </div>
       </div>
@@ -140,21 +192,31 @@ export default function TopicsFeed() {
         isRefreshing={isRefreshing} 
       />
       
+      {/* Pull-to-refresh transform wrapper */}
       <div 
-        ref={scrollRef}
-        className="isolate overflow-auto h-full"
+        className="h-full"
         style={{ 
-          overscrollBehaviorY: 'contain', 
-          WebkitOverflowScrolling: 'touch',
           transform: `translateY(${Math.min(pullDistance, 150)}px)`,
-          transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out',
-          ...(isBottomSheetOpen && {
-            overflow: 'hidden',
-            touchAction: 'none',
-            pointerEvents: 'none'
-          })
+          transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out'
         }}
       >
+        {/* Actual scroll container */}
+        <div 
+          ref={scrollRef}
+          className="isolate overflow-auto h-full"
+          style={{ 
+            overscrollBehaviorY: 'contain', 
+            WebkitOverflowScrolling: 'touch',
+            ...(isBottomSheetOpen && {
+              overflow: 'hidden',
+              touchAction: 'none',
+              pointerEvents: 'none'
+            })
+          }}
+        >
+        {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
+        <div className="h-[110px] w-full" aria-hidden="true" />
+        
         {/* Responsive grid layout: mobile 1col, tablet 2col, desktop 3col, large 4col */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 md:gap-[18px] lg:gap-[22px] isolate px-[1px]">
           {articles.map((article) => (
@@ -168,6 +230,7 @@ export default function TopicsFeed() {
 
         <div ref={ref} className="h-10">
           {isFetchingNextPage && <LoadingSkeleton />}
+        </div>
         </div>
       </div>
 

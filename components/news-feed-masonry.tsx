@@ -9,6 +9,7 @@ import LoadingSkeleton from "./loading-skeleton"
 import { useLanguage } from "./language-provider"
 import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
+import { useHeaderVisibility } from "@/contexts/header-visibility"
 import type { Article } from "@/lib/types"
 
 async function fetchArticles({ pageParam = 0 }): Promise<{ articles: Article[]; nextPage: number | null }> {
@@ -44,7 +45,11 @@ function getRandomAspectRatio(articleId: string): AspectRatio {
   return ASPECT_RATIOS[0].class // fallback
 }
 
-export default function NewsFeedMasonry() {
+interface NewsFeedMasonryProps {
+  isActive?: boolean
+}
+
+export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProps) {
   const { ref, inView } = useInView({ rootMargin: "600px" })
   const { t } = useLanguage()
   const queryClient = useQueryClient()
@@ -56,6 +61,8 @@ export default function NewsFeedMasonry() {
   const masonryRef = useRef<any>(null)
   const cleanupFnRef = useRef<(() => void) | null>(null)
   const visibilityCheckInterval = useRef<NodeJS.Timeout | null>(null)
+  const { setScrollPosition } = useHeaderVisibility()
+  const tickingRef = useRef(false)
 
   const handleReadMore = (articleId: string) => {
     setSelectedArticleId(articleId)
@@ -109,6 +116,43 @@ export default function NewsFeedMasonry() {
     onRefresh: handleRefresh,
     enabled: !isBottomSheetOpen
   })
+
+  // Handle scroll events for header visibility
+  useEffect(() => {
+    if (!isActive) return
+
+    const handleScroll = () => {
+      const element = scrollRef.current
+      if (!element) return
+
+      if (!tickingRef.current) {
+        window.requestAnimationFrame(() => {
+          setScrollPosition(element.scrollTop)
+          tickingRef.current = false
+        })
+        tickingRef.current = true
+      }
+    }
+
+    const checkInterval = setInterval(() => {
+      const element = scrollRef.current
+      if (element) {
+        clearInterval(checkInterval)
+        element.addEventListener('scroll', handleScroll, { passive: true })
+        // Initial check
+        setScrollPosition(element.scrollTop)
+      }
+    }, 100)
+
+    return () => {
+      clearInterval(checkInterval)
+      const element = scrollRef.current
+      if (element) {
+        element.removeEventListener('scroll', handleScroll)
+      }
+      tickingRef.current = false
+    }
+  }, [isActive, setScrollPosition])
 
   // Check if component is visible in the DOM
   useEffect(() => {
@@ -465,21 +509,31 @@ export default function NewsFeedMasonry() {
         isRefreshing={isRefreshing} 
       />
       
+      {/* Pull-to-refresh transform wrapper */}
       <div 
-        ref={scrollRef}
-        className="w-full isolate overflow-auto h-full"
+        className="h-full"
         style={{ 
-          overscrollBehaviorY: 'contain', 
-          WebkitOverflowScrolling: 'touch',
           transform: `translateY(${Math.min(pullDistance, 150)}px)`,
-          transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out',
-          ...(isBottomSheetOpen && {
-            overflow: 'hidden',
-            touchAction: 'none',
-            pointerEvents: 'none'
-          })
+          transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out'
         }}
       >
+        {/* Actual scroll container */}
+        <div 
+          ref={scrollRef}
+          className="w-full isolate overflow-auto h-full"
+          style={{ 
+            overscrollBehaviorY: 'contain', 
+            WebkitOverflowScrolling: 'touch',
+            ...(isBottomSheetOpen && {
+              overflow: 'hidden',
+              touchAction: 'none',
+              pointerEvents: 'none'
+            })
+          }}
+        >
+        {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
+        <div className="h-[110px] w-full" aria-hidden="true" />
+        
         {/* Masonry news feed container */}
         <div ref={feedRef} className="news-feed isolate">
         {articles.map((article) => {
@@ -504,6 +558,7 @@ export default function NewsFeedMasonry() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-600 dark:border-neutral-400"></div>
           </div>
         )}
+      </div>
       </div>
       </div>
 

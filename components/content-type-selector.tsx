@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from 'react';
-import { useSwipeGesture } from '@/hooks/use-swipe-gesture';
 
 export type ContentType = 'headlines' | 'news' | 'bulletin';
 
@@ -14,7 +13,6 @@ const contentTypes: ContentType[] = ['headlines', 'news', 'bulletin'];
 
 export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value, onChange }) => {
   const [isPressed, setIsPressed] = React.useState<ContentType | null>(null)
-  const containerRef = React.useRef<HTMLDivElement>(null)
 
   const handlePress = (type: ContentType) => {
     setIsPressed(type)
@@ -22,31 +20,10 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
     setTimeout(() => setIsPressed(null), 150)
   }
 
-  // Handle swipe gestures
-  const handleSwipeLeft = () => {
-    const currentIndex = contentTypes.indexOf(value)
-    const nextIndex = (currentIndex + 1) % contentTypes.length
-    onChange(contentTypes[nextIndex])
-  }
-
-  const handleSwipeRight = () => {
-    const currentIndex = contentTypes.indexOf(value)
-    const prevIndex = (currentIndex - 1 + contentTypes.length) % contentTypes.length
-    onChange(contentTypes[prevIndex])
-  }
-
-  // Enable swipe gestures on the selector
-  useSwipeGesture(containerRef, {
-    onSwipeLeft: handleSwipeLeft,
-    onSwipeRight: handleSwipeRight,
-    threshold: 40,
-    enabled: true
-  })
-
   return (
     <div className="relative flex justify-center" role="tablist" aria-label="Content type selector">
       {/* Minimalist pill container */}
-      <div ref={containerRef} className="inline-flex gap-1 p-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-full touch-manipulation">
+      <div className="inline-flex gap-1 p-1 bg-transparent rounded-full touch-manipulation">
         {/* Discover button */}
         <button
           role="tab"

@@ -5,6 +5,7 @@ import UnifiedHeader from "@/components/unified-header"
 import FooterNav from "@/components/footer-nav"
 import MainContent from "@/components/main-content-with-selector"
 import SideMenu from "@/components/side-menu-overlay"
+import StickyCategorySelector from "@/components/sticky-category-selector"
 import { ContentType } from "@/components/content-type-selector"
 import { useEdgeSwipe, useSwipeGesture } from "@/hooks/use-swipe-gesture"
 
@@ -13,7 +14,7 @@ const contentTypes: ContentType[] = ['headlines', 'news', 'bulletin'];
 export default function HomePage() {
   const [contentType, setContentType] = useState<ContentType>('headlines')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const mainContentRef = useRef<HTMLDivElement>(null)
 
   // Enable edge swipe to open menu
   useEdgeSwipe({
@@ -45,8 +46,8 @@ export default function HomePage() {
     handleContentTypeChange(contentTypes[prevIndex])
   }
 
-  // Enable swipe gestures on scroll container
-  useSwipeGesture(scrollContainerRef, {
+  // Enable swipe gestures on main content area (always available)
+  useSwipeGesture(mainContentRef, {
     onSwipeLeft: handleSwipeLeft,
     onSwipeRight: handleSwipeRight,
     threshold: 60,
@@ -63,21 +64,26 @@ export default function HomePage() {
         <span id="content-change-announcement"></span>
       </div>
 
-      {/* App container without scroll */}
-      <div className="fixed inset-0 flex flex-col">
-        {/* Unified sticky header with category selector */}
+      {/* App container - main content takes full viewport */}
+      <div className="fixed inset-0">
+        {/* Main content area - full viewport height */}
+        <main ref={mainContentRef} className="absolute inset-0">
+          <MainContent 
+            contentType={contentType} 
+          />
+        </main>
+
+        {/* Unified header - floating overlay */}
         <UnifiedHeader 
           isMenuOpen={isMenuOpen}
           onMenuOpenChange={setIsMenuOpen}
-          contentType={contentType}
-          onContentTypeChange={handleContentTypeChange}
-          scrollContainerRef={scrollContainerRef}
         />
 
-        {/* Main content area */}
-        <main className="flex-1 min-h-0 overflow-hidden">
-          <MainContent contentType={contentType} />
-        </main>
+        {/* Sticky category selector - floating overlay */}
+        <StickyCategorySelector 
+          value={contentType}
+          onChange={handleContentTypeChange}
+        />
       </div>
 
       {/* Fixed bottom navigation */}

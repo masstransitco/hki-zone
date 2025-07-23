@@ -8,6 +8,7 @@ import { QueryProvider } from "@/components/query-provider"
 import { Analytics } from "@vercel/analytics/react"
 import { WebsiteStructuredData } from "@/components/structured-data"
 import { ServiceWorkerCleanup } from "@/components/service-worker-cleanup"
+import { HeaderVisibilityProvider } from "@/contexts/header-visibility"
 // import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
 const inter = Inter({ 
@@ -97,11 +98,13 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <QueryProvider>
-              <WebsiteStructuredData />
-              <ServiceWorkerCleanup />
-              {/* <ServiceWorkerRegister /> */}
-              {children}
-              <Analytics />
+              <HeaderVisibilityProvider>
+                <WebsiteStructuredData />
+                <ServiceWorkerCleanup />
+                {/* <ServiceWorkerRegister /> */}
+                {children}
+                <Analytics />
+              </HeaderVisibilityProvider>
             </QueryProvider>
           </LanguageProvider>
         </ThemeProvider>

@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import { ContentTypeSelector, ContentType } from './content-type-selector';
-import { useHeaderVisibility } from '@/hooks/use-header-visibility';
+import { useHeaderVisibility } from '@/contexts/header-visibility';
+import { cn } from '@/lib/utils';
 
 interface StickyCategorySelectorProps {
   value: ContentType;
@@ -10,12 +11,16 @@ interface StickyCategorySelectorProps {
 }
 
 export default function StickyCategorySelector({ value, onChange }: StickyCategorySelectorProps) {
-  const { isVisible: headerVisible } = useHeaderVisibility();
+  const { isHeaderVisible } = useHeaderVisibility();
+
+  const shouldHide = !isHeaderVisible;
 
   return (
-    <div className={`sticky z-[90] bg-background/95 backdrop-blur-sm border-b border-border transition-all duration-300 ease-in-out ${
-      headerVisible ? 'top-[57px]' : 'top-0'
-    }`}>
+    <div className={cn(
+      "fixed top-[57px] left-0 right-0 z-30",
+      "transition-transform duration-300 ease-out",
+      shouldHide && "-translate-y-full"
+    )}>
       <div className="px-4 py-3">
         <ContentTypeSelector value={value} onChange={onChange} />
       </div>

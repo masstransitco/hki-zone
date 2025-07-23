@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,9 @@ import {
   RefreshCw
 } from "lucide-react"
 import { format } from "date-fns"
+import PullRefreshIndicator from "./pull-refresh-indicator"
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
+import { useHeaderVisibility } from "@/contexts/header-visibility"
 
 interface BulletinItem {
   id: string
@@ -36,13 +39,15 @@ interface GovernmentBulletinProps {
   autoRefresh?: boolean
   refreshInterval?: number
   showFilters?: boolean
+  isActive?: boolean
 }
 
 export default function GovernmentBulletin({
   limit = 20,
   autoRefresh = true,
   refreshInterval = 2 * 60 * 1000, // 2 minutes
-  showFilters = false
+  showFilters = false,
+  isActive = true
 }: GovernmentBulletinProps) {
   const [items, setItems] = useState<BulletinItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -51,6 +56,8 @@ export default function GovernmentBulletin({
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const { setScrollPosition } = useHeaderVisibility()
+  const tickingRef = useRef(false)
 
   useEffect(() => {
     loadBulletinItems(0)
@@ -96,11 +103,61 @@ export default function GovernmentBulletin({
     }
   }
 
-  const handleRefresh = async () => {
-    setRefreshing(true)
+  const handleRefresh = useCallback(async () => {
+    console.log('🔄 [GOV-BULLETIN] Refresh START')
     await loadBulletinItems(0)
-    setRefreshing(false)
-  }
+    console.log('✅ [GOV-BULLETIN] Refresh COMPLETED')
+  }, [])
+
+  // Use pull-to-refresh hook
+  const {
+    scrollRef,
+    pullDistance,
+    isRefreshing,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd
+  } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    enabled: true
+  })
+
+  // Handle scroll events for header visibility
+  useEffect(() => {
+    if (!isActive) return
+
+    const handleScroll = () => {
+      const element = scrollRef.current
+      if (!element) return
+
+      if (!tickingRef.current) {
+        window.requestAnimationFrame(() => {
+          setScrollPosition(element.scrollTop)
+          tickingRef.current = false
+        })
+        tickingRef.current = true
+      }
+    }
+
+    const checkInterval = setInterval(() => {
+      const element = scrollRef.current
+      if (element) {
+        clearInterval(checkInterval)
+        element.addEventListener('scroll', handleScroll, { passive: true })
+        // Initial check
+        setScrollPosition(element.scrollTop)
+      }
+    }, 100)
+
+    return () => {
+      clearInterval(checkInterval)
+      const element = scrollRef.current
+      if (element) {
+        element.removeEventListener('scroll', handleScroll)
+      }
+      tickingRef.current = false
+    }
+  }, [isActive, setScrollPosition])
 
   const handleLoadMore = () => {
     if (hasMore && !loadingMore) {
@@ -192,27 +249,53 @@ export default function GovernmentBulletin({
   }
 
   return (
-    <div className="pt-6 space-y-4">
-      {/* Header with refresh button */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            Government Bulletin
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Latest updates from Hong Kong government sources
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="h-8 w-8"
+    <div className="relative h-full overflow-hidden">
+      <PullRefreshIndicator 
+        pullDistance={pullDistance} 
+        isRefreshing={isRefreshing} 
+      />
+      
+      {/* Pull-to-refresh transform wrapper */}
+      <div 
+        className="h-full"
+        style={{ 
+          transform: `translateY(${Math.min(pullDistance, 150)}px)`,
+          transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out'
+        }}
+      >
+        {/* Actual scroll container */}
+        <div 
+          ref={scrollRef}
+          className="isolate overflow-auto h-full"
+          style={{ 
+            overscrollBehaviorY: 'contain', 
+            WebkitOverflowScrolling: 'touch'
+          }}
         >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-        </Button>
-      </div>
+        {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
+        <div className="h-[110px] w-full" aria-hidden="true" />
+        
+        <div className="pt-6 space-y-4 px-6">
+          {/* Header with refresh button */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                Government Bulletin
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Latest updates from Hong Kong government sources
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="h-8 w-8"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
 
       {/* Bulletin List */}
       <div className="space-y-2">
@@ -355,6 +438,9 @@ export default function GovernmentBulletin({
           </Button>
         </div>
       )}
+        </div>
+      </div>
+      </div>
     </div>
   )
 }

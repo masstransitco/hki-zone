@@ -33,7 +33,7 @@ export default function MainContent({ contentType }: MainContentProps) {
   }, [contentType]);
 
   return (
-    <div className="relative px-6 pb-2 h-full isolate">
+    <div className="relative pb-2 h-full isolate bg-transparent">
       {/* Headlines content */}
       <div
         role="tabpanel"
@@ -41,12 +41,14 @@ export default function MainContent({ contentType }: MainContentProps) {
         aria-labelledby="headlines-tab"
         className={cn(
           "transition-all duration-200 ease-out isolate h-full",
-          contentType === 'headlines' ? "block" : "hidden",
+          contentType === 'headlines' ? "block" : "hidden pointer-events-none",
           isTransitioning && contentType === 'headlines' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
         )}
       >
-        <div className="relative -mx-6 h-full">
-          <TopicsFeed />
+        <div className="relative h-full">
+          <TopicsFeed 
+            isActive={contentType === 'headlines'}
+          />
         </div>
       </div>
 
@@ -61,8 +63,10 @@ export default function MainContent({ contentType }: MainContentProps) {
           isTransitioning && contentType === 'news' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
         )}
       >
-        <div className="relative -mx-6 h-full">
-          <NewsFeedMasonry />
+        <div className="relative h-full">
+          <NewsFeedMasonry 
+            isActive={contentType === 'news'}
+          />
         </div>
       </div>
 
@@ -72,12 +76,16 @@ export default function MainContent({ contentType }: MainContentProps) {
         id="bulletin-panel"
         aria-labelledby="bulletin-tab"
         className={cn(
-          "transition-all duration-200 ease-out isolate",
+          "transition-all duration-200 ease-out isolate h-full",
           contentType === 'bulletin' ? "block" : "hidden",
           isTransitioning && contentType === 'bulletin' ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100 scale-100 translate-y-0"
         )}
       >
-        <GovernmentBulletin autoRefresh={true} refreshInterval={2 * 60 * 1000} />
+        <GovernmentBulletin 
+          autoRefresh={true} 
+          refreshInterval={2 * 60 * 1000} 
+          isActive={contentType === 'bulletin'}
+        />
       </div>
       
       {/* Loading shimmer during transition */}
