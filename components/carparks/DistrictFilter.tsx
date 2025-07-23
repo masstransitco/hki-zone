@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { DISTRICT_LABELS } from '../../utils/format';
 import { ChevronDown } from 'lucide-react';
+import { useLanguage } from '../language-provider';
 
 type DistrictKey = 'ALL' | 'HKI' | 'KOWLOON' | 'NT';
 
@@ -15,10 +16,22 @@ const DISTRICT_KEYS: DistrictKey[] = ['ALL', 'HKI', 'KOWLOON', 'NT'];
 export const DistrictFilter: React.FC<DistrictFilterProps> = ({ value, onChange, counts }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
   
   // Get display label for current value
   const getLabel = (key: DistrictKey) => {
-    return key === 'ALL' ? 'All Districts' : DISTRICT_LABELS[key] ?? key;
+    switch (key) {
+      case 'ALL':
+        return t('parking.allDistricts');
+      case 'HKI':
+        return t('parking.hongKongIsland');
+      case 'KOWLOON':
+        return t('parking.kowloon');
+      case 'NT':
+        return t('parking.newTerritories');
+      default:
+        return key;
+    }
   };
   
   // Close dropdown when clicking outside

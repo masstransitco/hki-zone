@@ -38,6 +38,21 @@ const translations = {
     "topics.business": "Business",
     "topics.world": "World",
 
+    // Content Types (Main App)
+    "content.discover": "Discover",
+    "content.news": "News",
+    "content.gov": "Gov",
+    
+    // Marketplace Categories
+    "marketplace.cars": "Cars",
+    "marketplace.parking": "Parking",
+    
+    // Parking Districts
+    "parking.allDistricts": "All Districts",
+    "parking.hongKongIsland": "Hong Kong Island",
+    "parking.kowloon": "Kowloon",
+    "parking.newTerritories": "New Territories",
+    
     // Article
     "article.readMore": "Read More",
     "article.back": "Back",
@@ -413,6 +428,21 @@ const translations = {
     "topics.entertainment": "娱乐",
     "topics.business": "商业",
     "topics.world": "国际",
+    
+    // Content Types (Main App)
+    "content.discover": "发现",
+    "content.news": "新闻",
+    "content.gov": "政府",
+    
+    // Marketplace Categories
+    "marketplace.cars": "汽车",
+    "marketplace.parking": "停车",
+    
+    // Parking Districts
+    "parking.allDistricts": "所有地区",
+    "parking.hongKongIsland": "香港岛",
+    "parking.kowloon": "九龙",
+    "parking.newTerritories": "新界",
 
     // Article
     "article.readMore": "阅读更多",
@@ -789,6 +819,21 @@ const translations = {
     "topics.entertainment": "娛樂",
     "topics.business": "商業",
     "topics.world": "國際",
+    
+    // Content Types (Main App)
+    "content.discover": "發現",
+    "content.news": "新聞",
+    "content.gov": "政府",
+    
+    // Marketplace Categories
+    "marketplace.cars": "汽車",
+    "marketplace.parking": "停車",
+    
+    // Parking Districts
+    "parking.allDistricts": "所有地區",
+    "parking.hongKongIsland": "香港島",
+    "parking.kowloon": "九龍",
+    "parking.newTerritories": "新界",
 
     // Article
     "article.readMore": "閱讀更多",

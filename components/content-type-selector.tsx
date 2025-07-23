@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from 'react';
+import { useLanguage } from './language-provider';
 
 export type ContentType = 'headlines' | 'news' | 'bulletin';
 
@@ -13,6 +14,7 @@ const contentTypes: ContentType[] = ['headlines', 'news', 'bulletin'];
 
 export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value, onChange }) => {
   const [isPressed, setIsPressed] = React.useState<ContentType | null>(null)
+  const { t } = useLanguage()
 
   const handlePress = (type: ContentType) => {
     setIsPressed(type)
@@ -40,7 +42,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'headlines' ? 'scale-[0.97]' : ''}`}
         >
-          Discover
+          {t('content.discover')}
         </button>
         
         {/* News button */}
@@ -59,7 +61,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'news' ? 'scale-[0.97]' : ''}`}
         >
-          News
+          {t('content.news')}
         </button>
 
         {/* Gov button */}
@@ -78,7 +80,7 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'bulletin' ? 'scale-[0.97]' : ''}`}
         >
-          Gov
+          {t('content.gov')}
         </button>
       </div>
     </div>
