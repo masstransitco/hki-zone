@@ -105,9 +105,20 @@ function decodeEntities(str="") {
 
 function cleanBody(text="") {
   return decodeEntities(text)
-    .replace(/^\s*\d{2}:\d{2}\s*$/gm, "") // drop timestamp-only lines
-    .replace(/^\s*SCMP\+?.*$/gim, "")     // promo lines
-    .replace(/\n{3,}/g, "\n\n")
+    .replace(/^\s*\d{2}:\d{2}\s*$/gm, "")                    // drop timestamp-only lines
+    .replace(/^\s*SCMP\+?.*$/gim, "")                        // promo lines
+    .replace(/.*background-color:#[^;]+;.*$/gm, "")          // CSS styling lines
+    .replace(/.*cursor:pointer.*$/gm, "")                    // CSS cursor lines
+    .replace(/.*box-shadow:.*$/gm, "")                       // CSS box-shadow lines
+    .replace(/.*no-repeat center.*$/gm, "")                  // CSS background lines
+    .replace(/.*rgba\([^)]+\).*$/gm, "")                     // CSS rgba color lines
+    .replace(/.*webkit-appearance.*$/gm, "")                 // CSS webkit lines
+    .replace(/^\s*\}.*$/gm, "")                              // CSS closing braces
+    .replace(/^\s*\{.*$/gm, "")                              // CSS opening braces and JSON fragments
+    .replace(/^Why you can trust SCMP.*$/gm, "")             // Trust banner
+    .replace(/^@\w+.*$/gm, "")                               // Schema.org type declarations
+    .replace(/\n{3,}/g, "\n\n")                              // normalize line breaks
+    .replace(/^\s*[\)\(]+\s*$/gm, "")                        // lines with only parentheses
     .trim();
 }
 
@@ -133,7 +144,13 @@ function extractFromLDJSON($) {
       else blocks.push(json);
     } catch {}
   });
-  const article = blocks.find((b) => b && (b["@type"] === "NewsArticle" || b["@type"] === "Article"));
+  // Enhanced type checking to handle complex types like "NewsArticle,ReportageNewsArticle"
+  const article = blocks.find((b) => b && b["@type"] && (
+    b["@type"] === "NewsArticle" || 
+    b["@type"] === "Article" ||
+    (typeof b["@type"] === "string" && b["@type"].includes("NewsArticle")) ||
+    (Array.isArray(b["@type"]) && b["@type"].some(type => type === "NewsArticle" || type === "Article"))
+  ));
   if (!article) return null;
 
   const img = Array.isArray(article.image)
@@ -157,20 +174,65 @@ function extractFromLDJSON($) {
 }
 
 function extractBodyFallback($) {
+  // Enhanced selectors for current SCMP structure
   const selectors = [
     "article .article-body",
-    ".article-body",
+    ".article-body", 
     ".basic-article__body",
     "[data-testid='article-body']",
+    ".story-body",
+    ".content-body",
+    "section.article"
   ];
+  
   for (const sel of selectors) {
-    const html = $(sel).html();
-    if (html && html.length > 300) return $(sel).text().trim();
+    const element = $(sel);
+    if (element.length > 0 && element.html() && element.html().length > 300) {
+      // Extract paragraphs with enhanced filtering
+      const paragraphs = element.find('p').map((_, el) => $(el).text().trim()).get();
+      const cleanParagraphs = paragraphs.filter(text => 
+        text.length > 20 && 
+        !text.includes('background-color') &&
+        !text.includes('Why you can trust SCMP') &&
+        !text.includes('cursor:pointer') &&
+        !text.includes('box-shadow') &&
+        !text.includes('no-repeat center') &&
+        !text.includes('rgba(') &&
+        !text.includes('webkit-appearance') &&
+        !text.match(/^@\w+/) &&
+        !text.match(/^\{.*\}$/) &&
+        !text.match(/^[\s\)\(\;]+$/) &&
+        !text.match(/^(Subscribe|Follow|Share|Comment|Related|More)/i) &&
+        !text.match(/^[\d\s\-\.\,]+$/) &&
+        text.split(' ').length > 5
+      );
+      
+      if (cleanParagraphs.length > 0) {
+        return cleanParagraphs.join("\n\n");
+      }
+    }
   }
-  return $("article p")
-    .map((_, el) => $(el).text().trim())
-    .get()
-    .join("\n\n");
+  
+  // Enhanced final fallback with better filtering
+  const allParagraphs = $("p").map((_, el) => $(el).text().trim()).get();
+  const cleanAllParagraphs = allParagraphs.filter(text => 
+    text.length > 30 && 
+    !text.includes('background-color') &&
+    !text.includes('Why you can trust SCMP') &&
+    !text.includes('cursor:pointer') &&
+    !text.includes('box-shadow') &&
+    !text.includes('no-repeat center') &&
+    !text.includes('rgba(') &&
+    !text.includes('webkit-appearance') &&
+    !text.match(/^@\w+/) &&
+    !text.match(/^\{.*\}$/) &&
+    !text.match(/^[\s\)\(\;]+$/) &&
+    !text.match(/^(Subscribe|Follow|Share|Comment|Related|More)/i) &&
+    !text.match(/^[\d\s\-\.\,]+$/) &&
+    text.split(' ').length > 5
+  );
+  
+  return cleanAllParagraphs.join("\n\n");
 }
 
 function extractCanonicalAndId($, url) {
