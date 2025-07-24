@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 
 interface UseTextToSpeechProps {
   apiKey?: string
@@ -246,51 +246,106 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
     }
   }, [])
 
+  // Previous audio data for smoothing
+  const previousDataRef = useRef<number[]>(Array(6).fill(0))
+  const smoothingFactor = 0.3 // Lower = more responsive to changes
+
   // Real-time audio analysis for visualization
   const updateAudioVisualization = useCallback(() => {
     if (!analyserRef.current || !isPlaying) {
-      // Generate subtle animation when not playing
+      // Generate subtle breathing animation when not playing
       if (!isPlaying) {
-        setAudioData(Array(6).fill(0).map(() => Math.random() * 0.1))
+        const time = Date.now() / 1000
+        setAudioData(Array(6).fill(0).map((_, i) => {
+          const offset = i * 0.2
+          return Math.sin(time + offset) * 0.05 + 0.05
+        }))
       }
       return
     }
+    
+    console.log('🎵 Updating audio visualization frame')
 
     const analyser = analyserRef.current
     const bufferLength = analyser.frequencyBinCount
     const dataArray = new Uint8Array(bufferLength)
     analyser.getByteFrequencyData(dataArray)
+    
+    // Debug: Check if we're getting any frequency data
+    const maxFreq = Math.max(...dataArray)
+    if (maxFreq > 0) {
+      console.log('🎵 Got frequency data, max:', maxFreq)
+    }
 
-    // Convert frequency data to 6 bars for visualization
-    const bars = 6
-    const barWidth = Math.floor(bufferLength / bars)
-    const newAudioData = []
+    // Speech-optimized frequency bands (FFT size 256 = 128 bins, ~172Hz per bin at 44.1kHz)
+    // Human speech: 85-255Hz (fundamental), 700-3000Hz (formants), 3000-8000Hz (clarity)
+    const speechBands = [
+      { start: 0, end: 2, weight: 1.5 },    // 0-344Hz: Voice fundamental
+      { start: 2, end: 4, weight: 1.3 },    // 344-688Hz: Lower harmonics
+      { start: 4, end: 8, weight: 1.2 },    // 688-1376Hz: First formant
+      { start: 8, end: 15, weight: 1.0 },   // 1376-2580Hz: Second formant
+      { start: 15, end: 25, weight: 0.8 },  // 2580-4300Hz: Higher formants
+      { start: 25, end: 40, weight: 0.6 }   // 4300-6880Hz: Consonants/clarity
+    ]
 
-    for (let i = 0; i < bars; i++) {
+    const newAudioData = speechBands.map((band, i) => {
       let sum = 0
-      const start = i * barWidth
-      const end = start + barWidth
+      let count = 0
 
-      for (let j = start; j < end && j < bufferLength; j++) {
-        sum += dataArray[j]
+      // Calculate weighted average for this frequency band
+      for (let j = band.start; j < band.end && j < bufferLength; j++) {
+        sum += dataArray[j] * band.weight
+        count++
       }
 
-      const average = sum / barWidth
+      // Normalize the frequency data
+      const average = count > 0 ? sum / count : 0
       const normalized = average / 255
       
-      // Apply frequency weighting (lower frequencies typically stronger in speech)
-      const frequencyWeight = 1 - (i / bars) * 0.5
-      const weighted = normalized * frequencyWeight
+      // Apply exponential smoothing for natural motion
+      const previousValue = previousDataRef.current[i] || 0
+      const smoothed = previousValue * smoothingFactor + normalized * (1 - smoothingFactor)
       
-      newAudioData.push(Math.min(1, weighted * 2)) // Amplify for better visualization
-    }
+      // Amplify for better visual impact
+      return Math.min(1, smoothed * 2.0)
+    })
 
-    setAudioData(newAudioData)
+    // Store for next frame smoothing
+    previousDataRef.current = newAudioData
     
-    if (isPlaying) {
-      animationFrameRef.current = requestAnimationFrame(updateAudioVisualization)
-    }
+    // Debug: log the processed values
+    console.log('🎵 Processed audio data:', newAudioData.map(v => v.toFixed(2)).join(', '))
+    
+    setAudioData(newAudioData)
   }, [isPlaying])
+
+  // Start/stop animation loop based on playing state
+  useEffect(() => {
+    if (isPlaying) {
+      console.log('🎵 Starting audio visualization loop')
+      // Start the animation loop
+      const animate = () => {
+        updateAudioVisualization()
+        if (isPlaying) {
+          animationFrameRef.current = requestAnimationFrame(animate)
+        }
+      }
+      animate()
+    } else {
+      console.log('🎵 Stopping audio visualization loop')
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = undefined
+      }
+    }
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = undefined
+      }
+    }
+  }, [isPlaying, updateAudioVisualization])
 
   const stop = useCallback(() => {
     if (audioRef.current) {
@@ -386,8 +441,7 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
       setIsPlaying(true)   // Set playing state
       setIsPaused(false)   // Clear paused state
       
-      // Restart audio visualization
-      updateAudioVisualization()
+      // Visualization will restart automatically via useEffect
     } else {
       console.warn('🎵 TTS Hook - Nothing to resume')
     }
@@ -500,8 +554,7 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
             setIsPlaying(true)
             setIsLoading(false)
             
-            // Start visualization
-            updateAudioVisualization()
+            // Visualization will start automatically via useEffect
           }
           
           console.log('🎵 Audio element state before play:', {
