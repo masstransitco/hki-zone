@@ -3,6 +3,7 @@
 import * as React from "react"
 import { X } from "lucide-react"
 import HeadphonesIcon from '@mui/icons-material/Headphones'
+import PauseIcon from '@mui/icons-material/Pause'
 import { 
   Drawer, 
   DrawerContent, 
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import ArticleDetailSheet from "./article-detail-sheet"
 import ShareButton from "./share-button"
-import { useTextToSpeech } from "@/hooks/use-text-to-speech"
+import { useTTSContext } from "@/contexts/tts-context"
 import { useLanguage } from "./language-provider"
 
 interface ArticleBottomSheetProps {
@@ -31,13 +32,32 @@ export default function ArticleBottomSheet({
   onOpenChange,
   isPerplexityArticle = false
 }: ArticleBottomSheetProps) {
+  
+  // Debug when open state changes
+  React.useEffect(() => {
+    console.log('📱 Bottom Sheet - Open state changed:', { 
+      open, 
+      articleId,
+      timestamp: Date.now() 
+    })
+  }, [open, articleId])
   const { language } = useLanguage()
   const [article, setArticle] = React.useState<any>(null)
   
-  const { isPlaying, isLoading, speak, stop } = useTextToSpeech({
-    apiKey: process.env.NEXT_PUBLIC_GOOGLE_TEXT_TO_SPEECH_API_KEY,
-    language
-  })
+  const { isPlaying, isPaused, isLoading, currentArticle, playArticle, pause, resume, stop } = useTTSContext()
+
+  // Debug logging for TTS states
+  React.useEffect(() => {
+    console.log('📱 Bottom Sheet - TTS States:', { 
+      isPlaying, 
+      isPaused, 
+      isLoading, 
+      open,
+      articleId: article?.id,
+      articleTitle: article?.title,
+      currentArticleId: currentArticle?.id
+    })
+  }, [isPlaying, isPaused, isLoading, open, article, currentArticle])
 
   // Fetch article data when articleId changes
   React.useEffect(() => {
@@ -62,26 +82,66 @@ export default function ArticleBottomSheet({
   }, [articleId])
 
   const handleTextToSpeech = async () => {
-    if (!article) return
+    console.log('📱 Bottom Sheet - handleTextToSpeech called', { 
+      hasArticle: !!article, 
+      articleId: article?.id,
+      articleTitle: article?.title,
+      isPlaying,
+      isPaused,
+      currentArticleId: currentArticle?.id,
+      sameArticle: currentArticle?.id === article?.id
+    })
+    
+    if (!article) {
+      console.warn('📱 Bottom Sheet - No article available for TTS')
+      return
+    }
 
     try {
-      if (isPlaying) {
-        stop()
-      } else {
-        // Create text to speak: title + content
-        let textToSpeak = article.title
-        if (article.content) {
-          // Remove HTML tags and clean up content
-          const cleanContent = article.content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-          textToSpeak += '. ' + cleanContent
+      // Handle same article - toggle pause/resume/play
+      if (currentArticle?.id === article.id) {
+        if (isPlaying) {
+          console.log('📱 Bottom Sheet - Pausing currently playing article (same article)')
+          pause()
+        } else if (isPaused) {
+          console.log('📱 Bottom Sheet - Resuming paused article (same article)')
+          resume()
+        } else {
+          console.log('📱 Bottom Sheet - Restarting same article playback')
+          await playArticle({
+            id: article.id,
+            title: article.title,
+            content: article.content || ''
+          })
         }
-        
-        await speak(textToSpeak)
+      } else {
+        // Different article - playArticle will handle stopping previous article
+        console.log('📱 Bottom Sheet - Starting new article playback (different article)')
+        await playArticle({
+          id: article.id,
+          title: article.title,
+          content: article.content || ''
+        })
       }
     } catch (error) {
-      console.error('Text-to-speech error:', error)
+      console.error('📱 Bottom Sheet - Text-to-speech error:', error)
     }
   }
+
+  // Smart auto-stop: Only stop if opening a different article, not on manual close
+  React.useEffect(() => {
+    if (!open && (isPlaying || isPaused)) {
+      // Don't auto-stop TTS when bottom sheet closes - let it continue with HUD
+      console.log('📱 Bottom Sheet - Sheet closed, TTS continues with HUD', {
+        open,
+        isPlaying,
+        isPaused,
+        articleId,
+        currentArticleId: currentArticle?.id
+      })
+      // TTS continues playing - user can control via HUD
+    }
+  }, [open, isPlaying, isPaused, articleId, currentArticle])
   // Freeze body scrolling while drawer is open to prevent bounce
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden"
@@ -93,10 +153,12 @@ export default function ArticleBottomSheet({
   }, [open])
 
   return (
+    <>
     <Drawer 
       open={open} 
       onOpenChange={onOpenChange}
       shouldScaleBackground={true}
+      modal={false}
     >
       <DrawerContent 
         className={cn(
@@ -128,23 +190,78 @@ export default function ArticleBottomSheet({
           
           {/* Text-to-speech and Share buttons positioned on the right with proper spacing */}
           {articleId && (
-            <div className="absolute right-6 top-4 flex items-center gap-2">
+            <div className="absolute right-6 top-4 flex items-center gap-2" style={{ pointerEvents: 'auto', zIndex: 9000 }}>
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleTextToSpeech}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  console.log('📱 Bottom Sheet - Headphones button clicked!')
+                  handleTextToSpeech()
+                }}
                 disabled={isLoading}
-                className="h-10 w-10 p-0 hover:bg-muted"
+                className="h-10 w-10 p-0 rounded-full transition-all duration-200"
+                style={{ 
+                  position: 'relative',
+                  pointerEvents: 'auto',
+                  backgroundColor: 'rgb(var(--tts-control-bg))',
+                  color: 'rgb(var(--tts-control-fg))',
+                  border: '1px solid rgb(var(--tts-border) / 0.3)',
+                  boxShadow: `
+                    0 2px 8px rgb(var(--tts-shadow) / 0.1),
+                    inset 0 1px 0 rgb(255 255 255 / 0.05)
+                  `
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-hover))'
+                  e.currentTarget.style.transform = 'scale(1.05)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg))'
+                  e.currentTarget.style.transform = 'scale(1)'
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-active))'
+                  e.currentTarget.style.transform = 'scale(0.95)'
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-hover))'
+                  e.currentTarget.style.transform = 'scale(1.05)'
+                }}
               >
-                <HeadphonesIcon 
-                  className={cn(
-                    "h-5 w-5",
-                    isPlaying ? "text-primary" : "text-muted-foreground",
-                    isLoading && "animate-pulse"
-                  )} 
-                />
+                {(isPlaying && currentArticle?.id === article?.id) ? (
+                  <PauseIcon 
+                    className={cn(
+                      "h-5 w-5",
+                      isLoading && "animate-pulse"
+                    )} 
+                    style={{ 
+                      pointerEvents: 'none',
+                      color: 'rgb(var(--tts-accent))'
+                    }}
+                  />
+                ) : (
+                  <HeadphonesIcon 
+                    className={cn(
+                      "h-5 w-5",
+                      isLoading && "animate-pulse"
+                    )} 
+                    style={{ 
+                      pointerEvents: 'none',
+                      color: (isPaused && currentArticle?.id === article?.id) 
+                        ? 'rgb(var(--tts-accent))' 
+                        : 'rgb(var(--tts-control-fg-secondary))'
+                    }}
+                  />
+                )}
                 <span className="sr-only">
-                  {isPlaying ? "Stop reading article" : "Read article aloud"}
+                  {(isPlaying && currentArticle?.id === article?.id)
+                    ? "Pause reading article" 
+                    : (isPaused && currentArticle?.id === article?.id)
+                      ? "Resume reading article"
+                      : "Read article aloud"
+                  }
                 </span>
               </Button>
               
@@ -171,5 +288,6 @@ export default function ArticleBottomSheet({
         </div>
       </DrawerContent>
     </Drawer>
+    </>
   )
 }

@@ -9,6 +9,8 @@ import { Analytics } from "@vercel/analytics/react"
 import { WebsiteStructuredData } from "@/components/structured-data"
 import { ServiceWorkerCleanup } from "@/components/service-worker-cleanup"
 import { HeaderVisibilityProvider } from "@/contexts/header-visibility"
+import { TTSProvider } from "@/contexts/tts-context"
+import GlobalTTSHUD from "@/components/global-tts-hud"
 // import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
 const inter = Inter({ 
@@ -99,11 +101,14 @@ export default function RootLayout({
           <LanguageProvider>
             <QueryProvider>
               <HeaderVisibilityProvider>
-                <WebsiteStructuredData />
-                <ServiceWorkerCleanup />
-                {/* <ServiceWorkerRegister /> */}
-                {children}
-                <Analytics />
+                <TTSProvider>
+                  <WebsiteStructuredData />
+                  <ServiceWorkerCleanup />
+                  {/* <ServiceWorkerRegister /> */}
+                  {children}
+                  <GlobalTTSHUD />
+                  <Analytics />
+                </TTSProvider>
               </HeaderVisibilityProvider>
             </QueryProvider>
           </LanguageProvider>

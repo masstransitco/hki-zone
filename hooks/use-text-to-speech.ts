@@ -11,6 +11,10 @@ interface UseTextToSpeechReturn {
   isPlaying: boolean
   isPaused: boolean
   isLoading: boolean
+  progress: number // 0-1 representing playback progress
+  duration: number // Total duration in seconds
+  currentTime: number // Current playback time in seconds
+  audioData: number[] // Real-time audio visualization data
   speak: (text: string) => Promise<void>
   pause: () => void
   resume: () => void
@@ -101,6 +105,22 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
   cleanText = cleanText.replace(/\(Photo[^)]*\)/gi, '') // Remove photo captions
   cleanText = cleanText.replace(/\[Advertisement\]/gi, '') // Remove ad markers
   
+  // Remove AI-enhanced article structure elements
+  // Remove section headers (English, Traditional Chinese, Simplified Chinese)
+  cleanText = cleanText.replace(/^(Summary|Key Points|What it matters|摘要|重點|為什麼重要|摘要|要点|为什么重要)[\s]*:?[\s]*/gmi, '')
+  cleanText = cleanText.replace(/\n(Summary|Key Points|What it matters|摘要|重點|為什麼重要|摘要|要点|为什么重要)[\s]*:?[\s]*/gmi, '\n')
+  
+  // Remove numbered citations in square brackets [1], [2], etc.
+  cleanText = cleanText.replace(/\[\d+\]/g, '')
+  
+  // Remove asterisks used for emphasis or bullet points
+  cleanText = cleanText.replace(/\*+/g, '')
+  
+  // Remove multiple line breaks and normalize spacing
+  cleanText = cleanText.replace(/\n\s*\n\s*\n/g, '\n\n') // Triple+ line breaks to double
+  cleanText = cleanText.replace(/\n\s*\n/g, '. ') // Double line breaks to sentence breaks
+  cleanText = cleanText.replace(/\s+/g, ' ').trim() // Normalize whitespace
+  
   // Split into sentences for better pacing
   const sentences = cleanText.split(/(?<=[.!?])\s+/).filter(s => s.trim().length > 0)
   
@@ -169,8 +189,108 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
   const [isPlaying, setIsPlaying] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [audioData, setAudioData] = useState<number[]>(Array(6).fill(0))
+  
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const speechUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const animationFrameRef = useRef<number>()
+  const audioContextRef = useRef<AudioContext | null>(null)
+
+  // Initialize Web Audio API for visualization
+  const initializeAudioAnalysis = useCallback(async (audioElement: HTMLAudioElement) => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+        console.log('🎵 Created new AudioContext, state:', audioContextRef.current.state)
+      }
+      
+      const audioContext = audioContextRef.current
+      
+      // Resume AudioContext if suspended (required by some browsers)
+      if (audioContext.state === 'suspended') {
+        console.log('🎵 AudioContext suspended, attempting to resume...')
+        await audioContext.resume()
+        console.log('🎵 AudioContext resumed, new state:', audioContext.state)
+      }
+      
+      const analyser = audioContext.createAnalyser()
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.8
+      
+      console.log('🎵 Creating MediaElementSource...')
+      let source
+      try {
+        source = audioContext.createMediaElementSource(audioElement)
+        console.log('🎵 MediaElementSource created successfully')
+      } catch (sourceError) {
+        console.error('🎵 Failed to create MediaElementSource:', sourceError)
+        // If we can't create the source, skip visualization but allow audio to play normally
+        console.log('🎵 Falling back to audio without visualization')
+        return null
+      }
+      
+      console.log('🎵 Connecting audio graph: source -> analyser -> destination')
+      source.connect(analyser)
+      analyser.connect(audioContext.destination)
+      
+      analyserRef.current = analyser
+      console.log('🎵 Audio analysis initialized successfully')
+      return analyser
+    } catch (error) {
+      console.error('🎵 Failed to initialize audio analysis:', error)
+      return null
+    }
+  }, [])
+
+  // Real-time audio analysis for visualization
+  const updateAudioVisualization = useCallback(() => {
+    if (!analyserRef.current || !isPlaying) {
+      // Generate subtle animation when not playing
+      if (!isPlaying) {
+        setAudioData(Array(6).fill(0).map(() => Math.random() * 0.1))
+      }
+      return
+    }
+
+    const analyser = analyserRef.current
+    const bufferLength = analyser.frequencyBinCount
+    const dataArray = new Uint8Array(bufferLength)
+    analyser.getByteFrequencyData(dataArray)
+
+    // Convert frequency data to 6 bars for visualization
+    const bars = 6
+    const barWidth = Math.floor(bufferLength / bars)
+    const newAudioData = []
+
+    for (let i = 0; i < bars; i++) {
+      let sum = 0
+      const start = i * barWidth
+      const end = start + barWidth
+
+      for (let j = start; j < end && j < bufferLength; j++) {
+        sum += dataArray[j]
+      }
+
+      const average = sum / barWidth
+      const normalized = average / 255
+      
+      // Apply frequency weighting (lower frequencies typically stronger in speech)
+      const frequencyWeight = 1 - (i / bars) * 0.5
+      const weighted = normalized * frequencyWeight
+      
+      newAudioData.push(Math.min(1, weighted * 2)) // Amplify for better visualization
+    }
+
+    setAudioData(newAudioData)
+    
+    if (isPlaying) {
+      animationFrameRef.current = requestAnimationFrame(updateAudioVisualization)
+    }
+  }, [isPlaying])
 
   const stop = useCallback(() => {
     if (audioRef.current) {
@@ -183,31 +303,95 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
       speechSynthesis.cancel()
       speechUtteranceRef.current = null
     }
+
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
+    }
     
     setIsPlaying(false)
     setIsPaused(false)
     setIsLoading(false)
+    setProgress(0)
+    setCurrentTime(0)
+    setDuration(0)
+    setAudioData(Array(6).fill(0))
   }, [])
 
   const pause = useCallback(() => {
+    console.log('🎵 TTS Hook - Pause called', {
+      hasAudioRef: !!audioRef.current,
+      audioRefPaused: audioRef.current?.paused,
+      speechSynthesisSpeaking: speechSynthesis.speaking,
+      speechSynthesisPaused: speechSynthesis.paused,
+      currentIsPlaying: isPlaying,
+      currentIsPaused: isPaused
+    })
+
+    let paused = false
+
     if (audioRef.current && !audioRef.current.paused) {
+      console.log('🎵 TTS Hook - Pausing audio element')
       audioRef.current.pause()
-      setIsPaused(true)
+      paused = true
     } else if (speechSynthesis.speaking && !speechSynthesis.paused) {
+      console.log('🎵 TTS Hook - Pausing speech synthesis')
       speechSynthesis.pause()
-      setIsPaused(true)
+      paused = true
     }
-  }, [])
+
+    if (paused) {
+      console.log('🎵 TTS Hook - Setting paused state')
+      setIsPlaying(false)  // Stop playing state
+      setIsPaused(true)    // Set paused state
+      
+      // Stop audio visualization
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+    } else {
+      console.warn('🎵 TTS Hook - Nothing to pause')
+    }
+  }, [isPlaying, isPaused])
 
   const resume = useCallback(() => {
+    console.log('🎵 TTS Hook - Resume called', {
+      hasAudioRef: !!audioRef.current,
+      audioRefPaused: audioRef.current?.paused,
+      speechSynthesisSpeaking: speechSynthesis.speaking,
+      speechSynthesisPaused: speechSynthesis.paused,
+      currentIsPlaying: isPlaying,
+      currentIsPaused: isPaused
+    })
+
+    let resumed = false
+
     if (audioRef.current && audioRef.current.paused) {
+      console.log('🎵 TTS Hook - Resuming audio element')
       audioRef.current.play()
-      setIsPaused(false)
+        .then(() => {
+          console.log('🎵 TTS Hook - Audio resume successful')
+        })
+        .catch((error) => {
+          console.error('🎵 TTS Hook - Audio resume failed:', error)
+        })
+      resumed = true
     } else if (speechSynthesis.paused) {
+      console.log('🎵 TTS Hook - Resuming speech synthesis')
       speechSynthesis.resume()
-      setIsPaused(false)
+      resumed = true
     }
-  }, [])
+
+    if (resumed) {
+      console.log('🎵 TTS Hook - Setting resumed state')
+      setIsPlaying(true)   // Set playing state
+      setIsPaused(false)   // Clear paused state
+      
+      // Restart audio visualization
+      updateAudioVisualization()
+    } else {
+      console.warn('🎵 TTS Hook - Nothing to resume')
+    }
+  }, [isPlaying, isPaused, updateAudioVisualization])
 
   const speakWithGoogleTTS = useCallback(async (text: string, isRetry: boolean = false) => {
     if (!apiKey) {
@@ -230,6 +414,8 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
         ? preprocessTextToSSML(chunk, voiceConfig.name, language)
         : ssmlText
       
+      console.log(`🎵 Google TTS - Making API request for chunk ${i + 1}/${textChunks.length}`)
+      
       const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`, {
         method: 'POST',
         headers: {
@@ -248,6 +434,8 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
           }
         })
       })
+      
+      console.log(`🎵 Google TTS - API response status:`, response.status)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -294,12 +482,69 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
         const audio = new Audio(audioUrls[currentChunkIndex])
         audioRef.current = audio
 
-        audio.onloadeddata = () => {
+        audio.onloadedmetadata = () => {
           if (currentChunkIndex === 0) {
-            setIsLoading(false)
-            setIsPlaying(true)
+            // Set total duration for all chunks (estimate)
+            setDuration(audio.duration * audioUrls.length)
           }
-          audio.play().catch(reject)
+        }
+
+        audio.onloadeddata = async () => {
+          if (currentChunkIndex === 0) {
+            console.log('🎵 Audio loaded, starting playback...')
+            
+            // Initialize audio analysis first
+            await initializeAudioAnalysis(audio)
+            
+            // Set playing state before stopping loading to avoid visibility gap
+            setIsPlaying(true)
+            setIsLoading(false)
+            
+            // Start visualization
+            updateAudioVisualization()
+          }
+          
+          console.log('🎵 Audio element state before play:', {
+            readyState: audio.readyState,
+            paused: audio.paused,
+            ended: audio.ended,
+            muted: audio.muted,
+            volume: audio.volume,
+            duration: audio.duration,
+            currentTime: audio.currentTime
+          })
+          
+          console.log('🎵 Playing audio chunk:', currentChunkIndex + 1, 'of', audioUrls.length)
+          audio.play()
+            .then(() => {
+              console.log('🎵 Audio play() successful for chunk:', currentChunkIndex + 1)
+              console.log('🎵 Audio state after play:', {
+                paused: audio.paused,
+                currentTime: audio.currentTime,
+                volume: audio.volume
+              })
+            })
+            .catch((error) => {
+              console.error('🎵 Audio play() failed:', error)
+              reject(error)
+            })
+        }
+
+        audio.ontimeupdate = () => {
+          const chunkProgress = currentChunkIndex / audioUrls.length
+          const currentChunkProgress = (audio.currentTime / audio.duration) / audioUrls.length
+          setProgress(chunkProgress + currentChunkProgress)
+          setCurrentTime((currentChunkIndex * (audio.duration || 0)) + audio.currentTime)
+          
+          // Log audio progress periodically
+          if (Math.floor(audio.currentTime) % 2 === 0 && audio.currentTime % 1 < 0.1) {
+            console.log('🎵 Audio playing:', {
+              currentTime: Math.round(audio.currentTime * 10) / 10,
+              duration: Math.round(audio.duration * 10) / 10,
+              volume: audio.volume,
+              paused: audio.paused
+            })
+          }
         }
 
         audio.onended = () => {
@@ -312,6 +557,9 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
           setIsPlaying(false)
           setIsPaused(false)
           audioRef.current = null
+          if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current)
+          }
           // Clean up all URLs
           audioUrls.forEach(url => URL.revokeObjectURL(url))
           reject(new Error("Audio playback failed"))
@@ -392,31 +640,38 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
   }, [language])
 
   const speak = useCallback(async (text: string) => {
+    console.log('🎵 TTS Hook - Starting speak request, text length:', text.length)
+    
     stop() // Stop any current playback
     setIsLoading(true)
+    
+    console.log('🎵 TTS Hook - State set to loading')
 
     try {
       // Try Google TTS first for better quality if API key is available
       if (apiKey) {
+        console.log('🎵 TTS Hook - Using Google TTS')
         await speakWithGoogleTTS(text)
       } else {
+        console.log('🎵 TTS Hook - Using Browser TTS')
         // Fallback to browser API if no API key
         await speakWithBrowserAPI(text)
       }
+      console.log('🎵 TTS Hook - Speech completed successfully')
     } catch (error) {
-      console.warn("Primary TTS failed:", error)
+      console.warn("🎵 TTS Hook - Primary TTS failed:", error)
       
       try {
         // Fallback: if Google TTS failed, try browser API
         if (apiKey) {
-          console.log("Falling back to browser TTS...")
+          console.log("🎵 TTS Hook - Falling back to browser TTS...")
           await speakWithBrowserAPI(text)
         } else {
           // If browser API was primary and failed, no fallback available
           throw error
         }
       } catch (fallbackError) {
-        console.error("Both TTS methods failed:", fallbackError)
+        console.error("🎵 TTS Hook - Both TTS methods failed:", fallbackError)
         setIsLoading(false)
         setIsPlaying(false)
         setIsPaused(false)
@@ -429,6 +684,10 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
     isPlaying,
     isPaused,
     isLoading,
+    progress,
+    duration,
+    currentTime,
+    audioData,
     speak,
     pause,
     resume,
