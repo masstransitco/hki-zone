@@ -10,6 +10,8 @@ import { WebsiteStructuredData } from "@/components/structured-data"
 import { ServiceWorkerCleanup } from "@/components/service-worker-cleanup"
 import { HeaderVisibilityProvider } from "@/contexts/header-visibility"
 import { TTSProvider } from "@/contexts/tts-context"
+import { AuthProvider } from "@/contexts/auth-context"
+import AuthInitializer from "@/components/auth-initializer"
 import GlobalTTSHUD from "@/components/global-tts-hud"
 // import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
@@ -100,16 +102,19 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <LanguageProvider>
             <QueryProvider>
-              <HeaderVisibilityProvider>
-                <TTSProvider>
-                  <WebsiteStructuredData />
-                  <ServiceWorkerCleanup />
-                  {/* <ServiceWorkerRegister /> */}
-                  {children}
-                  <GlobalTTSHUD />
-                  <Analytics />
-                </TTSProvider>
-              </HeaderVisibilityProvider>
+              <AuthProvider>
+                <HeaderVisibilityProvider>
+                  <TTSProvider>
+                    <WebsiteStructuredData />
+                    <ServiceWorkerCleanup />
+                    <AuthInitializer />
+                    {/* <ServiceWorkerRegister /> */}
+                    {children}
+                    <GlobalTTSHUD />
+                    <Analytics />
+                  </TTSProvider>
+                </HeaderVisibilityProvider>
+              </AuthProvider>
             </QueryProvider>
           </LanguageProvider>
         </ThemeProvider>

@@ -8,11 +8,13 @@ import SellTwoToneIcon from '@mui/icons-material/SellTwoTone'
 import AddBoxIcon from '@mui/icons-material/AddBox'
 import NewspaperTwoToneIcon from '@mui/icons-material/NewspaperTwoTone'
 import LocalHospitalTwoToneIcon from '@mui/icons-material/LocalHospitalTwoTone'
+import TurnedInIcon from '@mui/icons-material/TurnedIn'
 import { cn } from "@/lib/utils"
 import CategoryMenuBottomSheet from "./category-menu-bottom-sheet"
 
 const navItems = [
   { href: "/", icon: NewspaperTwoToneIcon, label: "Topics", labelKey: "nav.topics" },
+  { href: "/bookmarks", icon: TurnedInIcon, label: "Bookmarks", labelKey: "nav.bookmarks" },
 ]
 
 export default function FooterNav() {

@@ -1,6 +1,11 @@
 import { track } from "@vercel/analytics"
 
 export const analytics = {
+  // Generic track method for direct usage
+  track: (event: string, properties?: Record<string, any>) => {
+    track(event, properties)
+  },
+
   // Article interactions
   trackArticleView: (articleId: string, source: string, topic?: string) => {
     track("article_view", {

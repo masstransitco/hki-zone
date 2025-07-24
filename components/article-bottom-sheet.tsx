@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import ArticleDetailSheet from "./article-detail-sheet"
 import ShareButton from "./share-button"
+import BookmarkButton from "./bookmark-button"
+import AuthDialog from "./auth-dialog"
 import { useTTSContext } from "@/contexts/tts-context"
 import { useLanguage } from "./language-provider"
 
@@ -43,6 +45,7 @@ export default function ArticleBottomSheet({
   }, [open, articleId])
   const { language } = useLanguage()
   const [article, setArticle] = React.useState<any>(null)
+  const [showAuthDialog, setShowAuthDialog] = React.useState(false)
   
   const { isPlaying, isPaused, isLoading, currentArticle, playArticle, pause, resume, stop } = useTTSContext()
 
@@ -265,6 +268,12 @@ export default function ArticleBottomSheet({
                 </span>
               </Button>
               
+              <BookmarkButton
+                articleId={articleId}
+                articleTitle={article?.title}
+                onAuthRequired={() => setShowAuthDialog(true)}
+              />
+              
               <ShareButton 
                 articleId={articleId} 
                 isPerplexityArticle={isPerplexityArticle}
@@ -288,6 +297,13 @@ export default function ArticleBottomSheet({
         </div>
       </DrawerContent>
     </Drawer>
+    
+    <AuthDialog
+      open={showAuthDialog}
+      onOpenChange={setShowAuthDialog}
+      title="Sign in required"
+      description="Please sign in to bookmark articles for later reading."
+    />
     </>
   )
 }

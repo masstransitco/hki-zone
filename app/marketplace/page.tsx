@@ -3,7 +3,7 @@
 import { Suspense, useState, useRef } from "react"
 import UnifiedHeader from "@/components/unified-header"
 import FooterNav from "@/components/footer-nav"
-import SideMenu from "@/components/side-menu-overlay"
+import SideMenu from "@/components/side-menu"
 import StickyMarketplaceSelector from "@/components/sticky-marketplace-selector"
 import MarketplaceContent from "@/components/marketplace-content"
 import { MarketplaceCategoryType } from "@/components/marketplace-category-selector"
