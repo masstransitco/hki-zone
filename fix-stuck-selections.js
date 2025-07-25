@@ -93,7 +93,7 @@ async function fixStuckSelections() {
   const { count: newCandidates } = await supabase
     .from('articles')
     .select('*', { count: 'exact', head: true })
-    .in('source', ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK'])
+    .in('source', ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'AM730', 'SCMP'])
     .gte('created_at', sixHoursAgo)
     .eq('is_ai_enhanced', false)
     .eq('selected_for_enhancement', false)

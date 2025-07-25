@@ -110,7 +110,7 @@ async function directDatabaseAnalysis() {
     .select('*', { count: 'exact', head: true })
     .eq('selected_for_enhancement', false)
     .eq('is_ai_enhanced', false)
-    .in('source', ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK'])
+    .in('source', ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'AM730', 'SCMP'])
     .gte('created_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .not('content', 'is', null);
   

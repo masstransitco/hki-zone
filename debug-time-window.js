@@ -39,7 +39,7 @@ async function debugTimeWindowIssue() {
   
   // Check various time windows
   const timeWindows = [1, 2, 6, 12, 24, 48];
-  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK'];
+  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'AM730', 'SCMP'];
   
   console.log('\n📊 Article counts by time window:');
   

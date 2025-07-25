@@ -101,7 +101,7 @@ graph TD
 
 **Selection Criteria**:
 - **Time Window**: Last 6 hours (recent news priority)
-- **Source Filter**: Only scraped sources (`HKFP`, `SingTao`, `HK01`, `on.cc`, `RTHK`)
+- **Source Filter**: Only scraped sources (`HKFP`, `SingTao`, `HK01`, `on.cc`, `RTHK`, `AM730`, `SCMP`)
 - **Status Filter**: `is_ai_enhanced = false` AND `selected_for_enhancement = false`
 - **Content Filter**: Minimum 100 characters, valid title
 - **Processing Filter**: Exclude articles with `source_article_status = 'enhanced_children_created'`
@@ -271,7 +271,7 @@ SELECT COUNT(*) as candidates
 FROM articles
 WHERE is_ai_enhanced = false
   AND selected_for_enhancement = false
-  AND source IN ('HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK')
+  AND source IN ('HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'AM730', 'SCMP')
   AND created_at >= NOW() - INTERVAL '6 hours'
   AND content IS NOT NULL
   AND (enhancement_metadata->>'source_article_status') IS NULL;

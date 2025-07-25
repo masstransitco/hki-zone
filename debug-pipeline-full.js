@@ -105,7 +105,7 @@ async function analyzeArticleSelectionPipeline() {
   console.log('='.repeat(50));
   
   // Step 1: Check scraped sources
-  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK'];
+  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'AM730', 'SCMP'];
   
   console.log('\\n1️⃣ SCRAPED ARTICLE ANALYSIS');
   console.log('-'.repeat(30));
@@ -356,7 +356,7 @@ async function analyzePipelineConfig() {
   console.log('   Cleanup:      :10, :40 (every 30 min, between cycles)');
   
   console.log('\\n📊 Pipeline Flow:');
-  console.log('   1. Scraping → Articles table (sources: HKFP, SingTao, HK01, on.cc, RTHK)');
+  console.log('   1. Scraping → Articles table (sources: HKFP, SingTao, HK01, on.cc, RTHK, AM730, SCMP)');
   console.log('   2. Selection → Mark articles selected_for_enhancement=true');
   console.log('   3. Enhancement → Create enhanced versions, mark is_ai_enhanced=true');
   console.log('   4. Cleanup → Reset stuck selections');
@@ -382,7 +382,7 @@ async function generateRefactoringRecommendations() {
   const { count: candidateCount } = await supabase
     .from('articles')
     .select('*', { count: 'exact', head: true })
-    .in('source', ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK'])
+    .in('source', ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'AM730', 'SCMP'])
     .gte('created_at', new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString())
     .eq('is_ai_enhanced', false)
     .eq('selected_for_enhancement', false)
