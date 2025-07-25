@@ -55,12 +55,6 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
 
   return (
     <div className="space-y-4">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold">{t('auth.welcomeBack')}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t('auth.signIn')}
-        </p>
-      </div>
 
       {error && (
         <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
@@ -70,9 +64,9 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">{t('auth.email')}</Label>
+          <Label htmlFor="email" className="text-gray-800 dark:text-neutral-200">{t('auth.email')}</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
             <Input
               id="email"
               type="email"
@@ -87,9 +81,9 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">{t('auth.password')}</Label>
+          <Label htmlFor="password" className="text-gray-800 dark:text-neutral-200">{t('auth.password')}</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -103,7 +97,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-3 text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
               disabled={loading || isSubmitting}
             >
               {showPassword ? (
@@ -135,7 +129,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
         <Button
           variant="link"
           size="sm"
-          className="text-sm text-muted-foreground"
+          className="text-sm text-gray-600 dark:text-muted-foreground"
           onClick={() => {
             // TODO: Implement forgot password
             console.log('Forgot password clicked')
@@ -145,7 +139,7 @@ export default function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormPr
         </Button>
         
         {onSwitchToRegister && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-gray-600 dark:text-muted-foreground">
             {t('auth.dontHaveAccount')}{' '}
             <Button
               variant="link"

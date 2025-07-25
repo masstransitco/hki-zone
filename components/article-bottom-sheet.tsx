@@ -17,7 +17,6 @@ import { cn } from "@/lib/utils"
 import ArticleDetailSheet from "./article-detail-sheet"
 import ShareButton from "./share-button"
 import BookmarkButton from "./bookmark-button"
-import AuthDialog from "./auth-dialog"
 import { useTTSContext } from "@/contexts/tts-context"
 import { useLanguage } from "./language-provider"
 
@@ -45,7 +44,6 @@ export default function ArticleBottomSheet({
   }, [open, articleId])
   const { language } = useLanguage()
   const [article, setArticle] = React.useState<any>(null)
-  const [showAuthDialog, setShowAuthDialog] = React.useState(false)
   
   const { isPlaying, isPaused, isLoading, currentArticle, playArticle, pause, resume, stop } = useTTSContext()
 
@@ -161,11 +159,11 @@ export default function ArticleBottomSheet({
       open={open} 
       onOpenChange={onOpenChange}
       shouldScaleBackground={true}
-      modal={false}
+      modal={true}
     >
       <DrawerContent 
         className={cn(
-          "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[12px] border bg-background overflow-y-auto",
+          "fixed inset-x-0 bottom-0 z-40 flex flex-col rounded-t-[12px] border bg-background overflow-y-auto",
           "focus:outline-none [&>div:first-child]:mt-2"
         )}
         style={{
@@ -271,7 +269,6 @@ export default function ArticleBottomSheet({
               <BookmarkButton
                 articleId={articleId}
                 articleTitle={article?.title}
-                onAuthRequired={() => setShowAuthDialog(true)}
               />
               
               <ShareButton 
@@ -297,13 +294,6 @@ export default function ArticleBottomSheet({
         </div>
       </DrawerContent>
     </Drawer>
-    
-    <AuthDialog
-      open={showAuthDialog}
-      onOpenChange={setShowAuthDialog}
-      title="Sign in required"
-      description="Please sign in to bookmark articles for later reading."
-    />
     </>
   )
 }

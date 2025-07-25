@@ -5,11 +5,25 @@
 /* Disable browser pull-to-refresh on touch devices */
 html {
   overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
   overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
   /* Allow natural scrolling on all pages */
+}
+
+/* Ensure smooth scrolling on iOS */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix scrolling containers on mobile */
+.overflow-y-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 @layer base {

@@ -136,8 +136,8 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
 
   if (isLoading) {
     return (
-      <div className="relative h-full overflow-hidden">
-        <div className="h-full overflow-auto">
+      <div className="relative h-full">
+        <div className="h-full">
           <div className="h-[113px] w-full" aria-hidden="true" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 md:gap-[18px] lg:gap-[22px] isolate px-[1px]">
             <LoadingSkeleton variant="card" count={12} />
@@ -148,8 +148,8 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
   }
   
   if (error) return (
-    <div className="relative h-full overflow-hidden">
-      <div className="h-full overflow-auto">
+    <div className="relative h-full">
+      <div className="h-full">
         <div className="h-[110px] w-full" aria-hidden="true" />
         <div className="p-4 text-center text-destructive" suppressHydrationWarning>
           {t("error.failedToLoad")} AI-enhanced articles
@@ -162,7 +162,7 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
 
   if (articles.length === 0) {
     return (
-      <div className="relative h-full overflow-hidden">
+      <div className="relative h-full">
         <PullRefreshIndicator 
           pullDistance={pullDistance} 
           isRefreshing={isRefreshing} 
@@ -208,7 +208,7 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
   }
 
   return (
-    <div className="relative h-full overflow-hidden">
+    <div className="relative h-full">
       <PullRefreshIndicator 
         pullDistance={pullDistance} 
         isRefreshing={isRefreshing} 

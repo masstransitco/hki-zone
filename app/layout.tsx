@@ -11,8 +11,10 @@ import { ServiceWorkerCleanup } from "@/components/service-worker-cleanup"
 import { HeaderVisibilityProvider } from "@/contexts/header-visibility"
 import { TTSProvider } from "@/contexts/tts-context"
 import { AuthProvider } from "@/contexts/auth-context"
+import { AuthModalProvider } from "@/contexts/auth-modal-context"
 import AuthInitializer from "@/components/auth-initializer"
 import GlobalTTSHUD from "@/components/global-tts-hud"
+import GlobalAuthModal from "@/components/global-auth-modal"
 // import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
 const inter = Inter({ 
@@ -89,6 +91,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -103,17 +107,20 @@ export default function RootLayout({
           <LanguageProvider>
             <QueryProvider>
               <AuthProvider>
-                <HeaderVisibilityProvider>
-                  <TTSProvider>
-                    <WebsiteStructuredData />
-                    <ServiceWorkerCleanup />
-                    <AuthInitializer />
-                    {/* <ServiceWorkerRegister /> */}
-                    {children}
-                    <GlobalTTSHUD />
-                    <Analytics />
-                  </TTSProvider>
-                </HeaderVisibilityProvider>
+                <AuthModalProvider>
+                  <HeaderVisibilityProvider>
+                    <TTSProvider>
+                      <WebsiteStructuredData />
+                      <ServiceWorkerCleanup />
+                      <AuthInitializer />
+                      {/* <ServiceWorkerRegister /> */}
+                      {children}
+                      <GlobalTTSHUD />
+                      <GlobalAuthModal />
+                      <Analytics />
+                    </TTSProvider>
+                  </HeaderVisibilityProvider>
+                </AuthModalProvider>
               </AuthProvider>
             </QueryProvider>
           </LanguageProvider>

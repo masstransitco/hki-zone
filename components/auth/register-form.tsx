@@ -175,12 +175,6 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
 
   return (
     <div className="space-y-4">
-      <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold">{t('auth.createAccount')}</h2>
-        <p className="text-sm text-muted-foreground">
-          {t('auth.joinCommunity')}
-        </p>
-      </div>
 
       {error && (
         <div className="p-3 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
@@ -196,9 +190,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="username">{t('auth.username')}</Label>
+          <Label htmlFor="username" className="text-gray-800 dark:text-neutral-200">{t('auth.username')}</Label>
           <div className="relative">
-            <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <User className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
             <Input
               id="username"
               type="text"
@@ -227,7 +221,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
                     setUsername('')
                     setUsernameStatus('idle')
                   }}
-                  className="text-muted-foreground hover:text-foreground"
+                  className="text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
                   disabled={loading || isSubmitting}
                 >
                   <X className="h-4 w-4" />
@@ -240,16 +234,16 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
             "text-xs",
             usernameStatus === 'available' && "text-green-600",
             (usernameStatus === 'taken' || usernameStatus === 'invalid') && "text-red-600",
-            usernameStatus === 'idle' && "text-muted-foreground"
+            usernameStatus === 'idle' && "text-gray-600 dark:text-muted-foreground"
           )}>
             {getUsernameHelperText()}
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">{t('auth.email')}</Label>
+          <Label htmlFor="email" className="text-gray-800 dark:text-neutral-200">{t('auth.email')}</Label>
           <div className="relative">
-            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
             <Input
               id="email"
               type="email"
@@ -264,9 +258,9 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="password">{t('auth.password')}</Label>
+          <Label htmlFor="password" className="text-gray-800 dark:text-neutral-200">{t('auth.password')}</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
@@ -280,7 +274,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+              className="absolute right-3 top-3 text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
               disabled={loading || isSubmitting}
             >
               {showPassword ? (
@@ -290,15 +284,15 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
               )}
             </button>
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-gray-600 dark:text-muted-foreground">
             {t('auth.passwordMinLength')}
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">{t('auth.confirmPassword')}</Label>
+          <Label htmlFor="confirmPassword" className="text-gray-800 dark:text-neutral-200">{t('auth.confirmPassword')}</Label>
           <div className="relative">
-            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
             <Input
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
@@ -324,7 +318,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
                 disabled={loading || isSubmitting}
               >
                 {showConfirmPassword ? (
@@ -354,7 +348,7 @@ export default function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFor
       </form>
 
       {onSwitchToLogin && (
-        <div className="text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-gray-600 dark:text-muted-foreground">
           {t('auth.alreadyHaveAccount')}{' '}
           <Button
             variant="link"

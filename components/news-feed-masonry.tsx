@@ -209,8 +209,8 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
   // Conditional returns must come after all hooks
   if (isLoading) {
     return (
-      <div className="relative h-full overflow-hidden">
-        <div className="h-full overflow-auto">
+      <div className="relative h-full">
+        <div className="h-full">
           <div className="h-[113px] w-full" aria-hidden="true" />
           <div className="news-feed isolate">
             <LoadingSkeleton variant="masonry" count={15} />
@@ -221,8 +221,8 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
   }
   
   if (error) return (
-    <div className="relative h-full overflow-hidden">
-      <div className="h-full overflow-auto">
+    <div className="relative h-full">
+      <div className="h-full">
         <div className="h-[113px] w-full" aria-hidden="true" />
         <div className="p-8 text-center text-red-600 dark:text-red-400">
           {t("error.failedToLoad")} articles
@@ -242,7 +242,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
   }
 
   return (
-    <div className="relative h-full overflow-hidden">
+    <div className="relative h-full">
       <PullRefreshIndicator 
         pullDistance={pullDistance} 
         isRefreshing={isRefreshing} 

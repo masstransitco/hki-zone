@@ -11,7 +11,6 @@ import { useHydrationSafeDate } from "@/hooks/use-hydration-safe-date"
 import { useState, useEffect } from "react"
 import OutletFavicon from "./outlet-favicon"
 import BookmarkButton from "./bookmark-button"
-import AuthDialog from "./auth-dialog"
 import type { Article } from "@/lib/types"
 
 // Custom time formatting for Perplexity articles (shows minutes instead of hours)
@@ -46,7 +45,6 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
   const { t } = useLanguage()
   const timeAgo = useHydrationSafeDate(article.publishedAt)
   const [perplexityTime, setPerplexityTime] = useState("")
-  const [showAuthDialog, setShowAuthDialog] = useState(false)
   
   // Use custom time formatting for Perplexity articles
   const isPerplexityArticle = article.source === "Perplexity AI"
@@ -126,18 +124,10 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
               articleId={article.id}
               articleTitle={article.title}
               compact={true}
-              onAuthRequired={() => setShowAuthDialog(true)}
             />
           </div>
         </div>
       </CardContent>
-      
-      <AuthDialog
-        open={showAuthDialog}
-        onOpenChange={setShowAuthDialog}
-        title={t("auth.signInRequired")}
-        description={t("auth.signInToBookmark")}
-      />
     </Card>
   )
 }

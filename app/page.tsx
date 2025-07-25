@@ -65,9 +65,9 @@ export default function HomePage() {
       </div>
 
       {/* App container - main content takes full viewport */}
-      <div className="fixed inset-0 overflow-hidden">
+      <div className="fixed inset-0 flex flex-col">
         {/* Main content area - full viewport height */}
-        <main ref={mainContentRef} className="absolute inset-0">
+        <main ref={mainContentRef} className="flex-1 relative">
           <MainContent 
             contentType={contentType} 
           />

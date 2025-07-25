@@ -6,6 +6,7 @@ import TurnedInNotIcon from '@mui/icons-material/TurnedInNot'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
+import { useAuthModal } from "@/contexts/auth-modal-context"
 import { supabaseAuth } from "@/lib/supabase-auth"
 import { analytics } from "@/lib/analytics"
 
@@ -14,17 +15,16 @@ interface BookmarkButtonProps {
   articleTitle?: string
   compact?: boolean
   className?: string
-  onAuthRequired?: () => void
 }
 
 export default function BookmarkButton({ 
   articleId, 
   articleTitle,
   compact = false, 
-  className,
-  onAuthRequired
+  className
 }: BookmarkButtonProps) {
   const { user, loading: authLoading } = useAuth()
+  const { showAuthModal } = useAuthModal()
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [loading, setLoading] = useState(false)
   const [checkingStatus, setCheckingStatus] = useState(true)
@@ -75,12 +75,16 @@ export default function BookmarkButton({
   }, [user, articleId, authLoading, checkBookmarkStatus])
 
   const handleBookmarkToggle = async (e: React.MouseEvent) => {
+    // Prevent both default action and event bubbling to parent Card
     e.preventDefault()
     e.stopPropagation()
-
+    
     // Check if user is authenticated
     if (!user) {
-      onAuthRequired?.()
+      showAuthModal({
+        title: "Sign in to bookmark",
+        description: "Create an account or sign in to save articles for later"
+      })
       return
     }
 
@@ -93,7 +97,10 @@ export default function BookmarkButton({
       const token = session.data.session?.access_token
 
       if (!token) {
-        onAuthRequired?.()
+        showAuthModal({
+          title: "Sign in to bookmark",
+          description: "Create an account or sign in to save articles for later"
+        })
         return
       }
 
