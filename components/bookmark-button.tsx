@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState } from "react"
 import TurnedInIcon from '@mui/icons-material/TurnedIn'
 import TurnedInNotIcon from '@mui/icons-material/TurnedInNot'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/contexts/auth-context"
 import { useAuthModal } from "@/contexts/auth-modal-context"
-import { supabaseAuth } from "@/lib/supabase-auth"
+import { useBookmarks } from "@/contexts/bookmark-context"
 import { analytics } from "@/lib/analytics"
 
 interface BookmarkButtonProps {
@@ -23,56 +23,12 @@ export default function BookmarkButton({
   compact = false, 
   className
 }: BookmarkButtonProps) {
-  const { user, loading: authLoading } = useAuth()
+  const { user } = useAuth()
   const { showAuthModal } = useAuthModal()
-  const [isBookmarked, setIsBookmarked] = useState(false)
+  const { isBookmarked, toggleBookmark, loading: bookmarksLoading } = useBookmarks()
+  
+  const isArticleBookmarked = isBookmarked(articleId)
   const [loading, setLoading] = useState(false)
-  const [checkingStatus, setCheckingStatus] = useState(true)
-
-  // Check bookmark status when component mounts or user changes
-  const checkBookmarkStatus = useCallback(async () => {
-    if (!user || !articleId) {
-      setIsBookmarked(false)
-      setCheckingStatus(false)
-      return
-    }
-
-    try {
-      const session = await supabaseAuth.auth.getSession()
-      const token = session.data.session?.access_token
-
-      if (!token) {
-        setIsBookmarked(false)
-        setCheckingStatus(false)
-        return
-      }
-
-      const response = await fetch(`/api/bookmarks/${articleId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setIsBookmarked(data.isBookmarked)
-      } else {
-        setIsBookmarked(false)
-      }
-    } catch (error) {
-      console.error('Error checking bookmark status:', error)
-      setIsBookmarked(false)
-    } finally {
-      setCheckingStatus(false)
-    }
-  }, [user, articleId])
-
-  useEffect(() => {
-    if (!authLoading) {
-      checkBookmarkStatus()
-    }
-  }, [user, articleId, authLoading, checkBookmarkStatus])
 
   const handleBookmarkToggle = async (e: React.MouseEvent) => {
     // Prevent both default action and event bubbling to parent Card
@@ -93,51 +49,17 @@ export default function BookmarkButton({
     setLoading(true)
 
     try {
-      const session = await supabaseAuth.auth.getSession()
-      const token = session.data.session?.access_token
-
-      if (!token) {
-        showAuthModal({
-          title: "Sign in to bookmark",
-          description: "Create an account or sign in to save articles for later"
-        })
-        return
-      }
-
-      console.log('Making bookmark toggle request for article:', articleId)
-      console.log('Using auth token:', token ? 'present' : 'missing')
+      const newBookmarkStatus = await toggleBookmark(articleId, articleTitle)
       
-      const response = await fetch('/api/bookmarks', {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ articleId }),
-        cache: 'no-cache' // Prevent caching issues
+      // Track analytics
+      analytics.track('bookmark_toggled', {
+        article_id: articleId,
+        article_title: articleTitle,
+        action: newBookmarkStatus ? 'added' : 'removed',
+        is_bookmarked: newBookmarkStatus
       })
 
-      console.log('Bookmark toggle response:', response.status, response.statusText)
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()))
-
-      if (response.ok) {
-        const data = await response.json()
-        setIsBookmarked(data.isBookmarked)
-        
-        // Track analytics
-        analytics.track('bookmark_toggled', {
-          article_id: articleId,
-          article_title: articleTitle,
-          action: data.action,
-          is_bookmarked: data.isBookmarked
-        })
-
-        // Show toast notification (optional - can be added later)
-        console.log(`Article ${data.action} ${data.isBookmarked ? 'to' : 'from'} bookmarks`)
-      } else {
-        const errorData = await response.json()
-        console.error('Failed to toggle bookmark:', errorData.error)
-      }
+      console.log(`Article ${newBookmarkStatus ? 'added to' : 'removed from'} bookmarks: ${articleTitle || articleId}`)
     } catch (error) {
       console.error('Error toggling bookmark:', error)
     } finally {
@@ -145,12 +67,12 @@ export default function BookmarkButton({
     }
   }
 
-  // Show nothing while checking auth status
-  if (authLoading || checkingStatus) {
+  // Show nothing while loading initial bookmarks
+  if (bookmarksLoading) {
     return null
   }
 
-  const IconComponent = isBookmarked ? TurnedInIcon : TurnedInNotIcon
+  const IconComponent = isArticleBookmarked ? TurnedInIcon : TurnedInNotIcon
 
   if (compact) {
     // Compact version for article cards (small icon next to time)
@@ -159,17 +81,17 @@ export default function BookmarkButton({
         onClick={handleBookmarkToggle}
         disabled={loading}
         className={cn(
-          "flex items-center justify-center transition-colors duration-200",
+          "flex items-center justify-center p-1 transition-colors duration-200",
           "hover:text-stone-700 dark:hover:text-stone-300",
-          isBookmarked 
+          isArticleBookmarked 
             ? "text-blue-600 dark:text-blue-400" 
             : "text-stone-500 dark:text-neutral-400",
           loading && "opacity-50 cursor-not-allowed",
           className
         )}
-        aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+        aria-label={isArticleBookmarked ? "Remove bookmark" : "Add bookmark"}
       >
-        <IconComponent sx={{ fontSize: 12 }} />
+        <IconComponent sx={{ fontSize: 16 }} />
       </button>
     )
   }
@@ -183,13 +105,13 @@ export default function BookmarkButton({
       disabled={loading}
       className={cn(
         "h-10 w-10 p-0 rounded-full transition-all duration-200",
-        isBookmarked
+        isArticleBookmarked
           ? "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
           : "text-muted-foreground hover:text-foreground hover:bg-muted",
         loading && "opacity-50 cursor-not-allowed",
         className
       )}
-      aria-label={isBookmarked ? "Remove bookmark" : "Add bookmark"}
+      aria-label={isArticleBookmarked ? "Remove bookmark" : "Add bookmark"}
     >
       <IconComponent sx={{ fontSize: 20 }} />
     </Button>

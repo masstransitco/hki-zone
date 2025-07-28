@@ -373,6 +373,7 @@ export default function BookmarksPage() {
                     key={`bookmark-${bookmark.bookmarkId}`}
                     article={bookmark} 
                     onReadMore={handleReadMore}
+                    showHkiLogo={true}
                   />
                 ))}
               </div>

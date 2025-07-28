@@ -39,9 +39,10 @@ interface ArticleCardProps {
   onReadMore?: (articleId: string) => void
   className?: string
   aspectRatio?: string
+  showHkiLogo?: boolean
 }
 
-export default function ArticleCard({ article, onReadMore, className, aspectRatio }: ArticleCardProps) {
+export default function ArticleCard({ article, onReadMore, className, aspectRatio, showHkiLogo = false }: ArticleCardProps) {
   const { t } = useLanguage()
   const timeAgo = useHydrationSafeDate(article.publishedAt)
   const [perplexityTime, setPerplexityTime] = useState("")
@@ -101,7 +102,17 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
         {/* Sources and time aligned to bottom */}
         <div className="flex items-center justify-between text-xs text-stone-500 dark:text-neutral-400 mt-auto">
           <div className="flex items-center gap-2">
-            {article.isAiEnhanced && article.enhancementMetadata?.sources?.length ? (
+            {showHkiLogo && article.isAiEnhanced ? (
+              <div className="flex items-center gap-2">
+                <div className="flex-shrink-0 flex items-center justify-center w-4 h-4 bg-black dark:bg-neutral-800 rounded-sm">
+                  <img
+                    src="/hki-logo-white.png"
+                    alt="HKI logo"
+                    className="w-3 h-3 object-contain"
+                  />
+                </div>
+              </div>
+            ) : article.isAiEnhanced && article.enhancementMetadata?.sources?.length ? (
               <InlineSourcesBadge sources={article.enhancementMetadata.sources} />
             ) : (
               <div className="flex items-center gap-2">

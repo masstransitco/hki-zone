@@ -12,6 +12,7 @@ import { HeaderVisibilityProvider } from "@/contexts/header-visibility"
 import { TTSProvider } from "@/contexts/tts-context"
 import { AuthProvider } from "@/contexts/auth-context"
 import { AuthModalProvider } from "@/contexts/auth-modal-context"
+import { BookmarkProvider } from "@/contexts/bookmark-context"
 import AuthInitializer from "@/components/auth-initializer"
 import GlobalTTSHUD from "@/components/global-tts-hud"
 import GlobalAuthModal from "@/components/global-auth-modal"
@@ -108,18 +109,20 @@ export default function RootLayout({
             <QueryProvider>
               <AuthProvider>
                 <AuthModalProvider>
-                  <HeaderVisibilityProvider>
-                    <TTSProvider>
-                      <WebsiteStructuredData />
-                      <ServiceWorkerCleanup />
-                      <AuthInitializer />
-                      {/* <ServiceWorkerRegister /> */}
-                      {children}
-                      <GlobalTTSHUD />
-                      <GlobalAuthModal />
-                      <Analytics />
-                    </TTSProvider>
-                  </HeaderVisibilityProvider>
+                  <BookmarkProvider>
+                    <HeaderVisibilityProvider>
+                      <TTSProvider>
+                        <WebsiteStructuredData />
+                        <ServiceWorkerCleanup />
+                        <AuthInitializer />
+                        {/* <ServiceWorkerRegister /> */}
+                        {children}
+                        <GlobalTTSHUD />
+                        <GlobalAuthModal />
+                        <Analytics />
+                      </TTSProvider>
+                    </HeaderVisibilityProvider>
+                  </BookmarkProvider>
                 </AuthModalProvider>
               </AuthProvider>
             </QueryProvider>

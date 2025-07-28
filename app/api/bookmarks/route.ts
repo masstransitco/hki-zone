@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     // Try articles table first (where current articles are stored)
     const { data: articles, error: articlesError } = await supabase
       .from('articles')
-      .select('id, title, summary, content, url, source, category, created_at, image_url')
+      .select('id, title, summary, content, url, source, category, created_at, image_url, is_ai_enhanced, enhancement_metadata')
       .in('id', articleIds)
 
     if (articlesError) {
@@ -77,6 +77,8 @@ export async function GET(request: NextRequest) {
         category: article.category,
         publishedAt: article.created_at, // articles table uses created_at
         imageUrl: article.image_url,
+        isAiEnhanced: article.is_ai_enhanced || false,
+        enhancementMetadata: article.enhancement_metadata || null,
         bookmarkId: bookmark.id,
         bookmarkedAt: bookmark.created_at
       }

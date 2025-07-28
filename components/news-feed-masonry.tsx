@@ -11,6 +11,7 @@ import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
 import { LoadingSpinner } from "./loading-spinner"
+import { useRealtimeArticles } from "@/hooks/use-realtime-articles"
 import type { Article } from "@/lib/types"
 
 async function fetchArticles({ pageParam = 0 }): Promise<{ articles: Article[]; nextPage: number | null }> {
@@ -79,11 +80,23 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
     queryFn: fetchArticles,
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
+    // With real-time updates, we can use normal caching
+    staleTime: 5 * 60 * 1000, // 5 minutes - real-time updates keep data fresh
+    // Reduce background refetch since real-time handles updates
+    refetchOnWindowFocus: false,
   })
 
-  // Handle refresh functionality
+  // Set up real-time subscription for regular (non-AI enhanced) articles
+  const { connectionStatus, isConnected } = useRealtimeArticles({
+    queryKey: ["articles"],
+    isAiEnhanced: false,
+    enabled: isActive
+  })
+
+  // Handle refresh functionality - now mainly for manual refresh when real-time is disconnected
   const handleRefresh = useCallback(async () => {
-    console.log('🔄 [NEWS-FEED] Refresh START')
+    console.log('🔄 [NEWS-FEED] Manual refresh START')
+    console.log(`📊 Real-time status: ${connectionStatus}`)
     console.log(`📊 Current articles count: ${data?.pages.flatMap(p => p.articles).length || 0}`)
     
     try {
@@ -95,12 +108,12 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
       // Also refetch to ensure we get the latest data
       await refetch()
       
-      console.log('✅ [NEWS-FEED] Refresh COMPLETED')
+      console.log('✅ [NEWS-FEED] Manual refresh COMPLETED')
       console.log(`📊 New articles count: ${data?.pages.flatMap(p => p.articles).length || 0}`)
     } catch (error) {
-      console.error("❌ [NEWS-FEED] Refresh FAILED:", error)
+      console.error("❌ [NEWS-FEED] Manual refresh FAILED:", error)
     }
-  }, [queryClient, refetch, data])
+  }, [queryClient, refetch, data, connectionStatus])
 
   // Use the clean pull-to-refresh hook
   const {

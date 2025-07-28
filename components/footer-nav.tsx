@@ -3,11 +3,9 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useState } from "react"
-import { Home, Hash, Search, User, Newspaper, Sparkles, Car, Hospital } from "lucide-react"
 import SellTwoToneIcon from '@mui/icons-material/SellTwoTone'
 import AddBoxIcon from '@mui/icons-material/AddBox'
 import NewspaperTwoToneIcon from '@mui/icons-material/NewspaperTwoTone'
-import LocalHospitalTwoToneIcon from '@mui/icons-material/LocalHospitalTwoTone'
 import TurnedInIcon from '@mui/icons-material/TurnedIn'
 import { cn } from "@/lib/utils"
 import CategoryMenuBottomSheet from "./category-menu-bottom-sheet"
@@ -20,13 +18,6 @@ const navItems = [
 export default function FooterNav() {
   const pathname = usePathname()
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
-  const [pressedItem, setPressedItem] = useState<string | null>(null)
-
-  const handlePress = (itemId: string) => {
-    setPressedItem(itemId)
-    // Haptic-style visual feedback
-    setTimeout(() => setPressedItem(null), 150)
-  }
 
   return (
     <>
@@ -34,91 +25,55 @@ export default function FooterNav() {
         <div className="flex items-center justify-around py-2 px-2">
           {navItems.map(({ href, icon: Icon, label }) => {
             const isActive = pathname === href
-            const isPressed = pressedItem === href
 
             return (
               <Link
                 key={href}
                 href={href}
-                onMouseDown={() => handlePress(href)}
-                onTouchStart={() => handlePress(href)}
                 className={cn(
-                  "relative flex items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-[52px] min-h-[52px] group touch-manipulation",
-                  "before:absolute before:inset-0 before:rounded-xl before:transition-all before:duration-300",
+                  "flex items-center justify-center p-3 rounded-xl min-w-[52px] min-h-[52px] touch-manipulation",
+                  "transition-colors duration-150",
                   isActive 
-                    ? "text-stone-800 dark:text-stone-200 before:bg-stone-200/80 dark:before:bg-stone-700/80 before:scale-100" 
-                    : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 before:bg-stone-100 dark:before:bg-stone-800 before:scale-0 hover:before:scale-100",
-                  isPressed && "scale-95"
+                    ? "text-stone-800 dark:text-stone-200 bg-stone-200/60 dark:bg-stone-700/60" 
+                    : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-100/60 dark:hover:bg-stone-800/60",
+                  "active:scale-95 active:transition-transform active:duration-100"
                 )}
                 aria-label={label}
                 aria-current={isActive ? "page" : undefined}
               >
-                <span className={cn(
-                  "relative z-10 flex flex-col items-center gap-1",
-                  "transition-transform duration-200",
-                  isActive ? "translate-y-[-2px]" : ""
-                )}>
-                  <Icon className={cn(
-                    "w-6 h-6 transition-all duration-300",
-                    isActive ? "scale-110 drop-shadow-sm" : "group-hover:scale-105"
-                  )} />
-                  {isActive && (
-                    <span className="absolute -bottom-2 w-1 h-1 bg-stone-600 dark:bg-stone-300 rounded-full animate-pulse" />
-                  )}
-                </span>
+                <Icon className="w-6 h-6" />
               </Link>
             )
           })}
           
           <button
             onClick={() => setIsBottomSheetOpen(true)}
-            onMouseDown={() => handlePress('menu')}
-            onTouchStart={() => handlePress('menu')}
             className={cn(
-              "relative flex items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-[52px] min-h-[52px] group touch-manipulation",
-              "before:absolute before:inset-0 before:rounded-xl before:transition-all before:duration-300",
+              "flex items-center justify-center p-3 rounded-xl min-w-[52px] min-h-[52px] touch-manipulation",
+              "transition-colors duration-150",
               "text-stone-700 dark:text-stone-200 hover:text-stone-900 dark:hover:text-stone-100",
-              "before:bg-stone-100 dark:before:bg-stone-800 before:scale-0 hover:before:scale-100",
-              pressedItem === 'menu' && "scale-95"
+              "hover:bg-stone-100/60 dark:hover:bg-stone-800/60",
+              "active:scale-95 active:transition-transform active:duration-100"
             )}
             aria-label="Open category menu"
           >
-            <span className="relative z-10">
-              <AddBoxIcon className={cn(
-                "w-6 h-6 transition-all duration-300",
-                "group-hover:scale-110 group-hover:rotate-90"
-              )} />
-            </span>
+            <AddBoxIcon className="w-6 h-6" />
           </button>
 
           <Link
             href="/marketplace"
-            onMouseDown={() => handlePress('/marketplace')}
-            onTouchStart={() => handlePress('/marketplace')}
             className={cn(
-              "relative flex items-center justify-center p-3 rounded-xl transition-all duration-200 min-w-[52px] min-h-[52px] group touch-manipulation",
-              "before:absolute before:inset-0 before:rounded-xl before:transition-all before:duration-300",
+              "flex items-center justify-center p-3 rounded-xl min-w-[52px] min-h-[52px] touch-manipulation",
+              "transition-colors duration-150",
               pathname === "/marketplace" 
-                ? "text-stone-800 dark:text-stone-200 before:bg-stone-200/80 dark:before:bg-stone-700/80 before:scale-100" 
-                : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 before:bg-stone-100 dark:before:bg-stone-800 before:scale-0 hover:before:scale-100",
-              pressedItem === '/marketplace' && "scale-95"
+                ? "text-stone-800 dark:text-stone-200 bg-stone-200/60 dark:bg-stone-700/60" 
+                : "text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-300 hover:bg-stone-100/60 dark:hover:bg-stone-800/60",
+              "active:scale-95 active:transition-transform active:duration-100"
             )}
             aria-label="Marketplace"
             aria-current={pathname === "/marketplace" ? "page" : undefined}
           >
-            <span className={cn(
-              "relative z-10 flex flex-col items-center gap-1",
-              "transition-transform duration-200",
-              pathname === "/marketplace" ? "translate-y-[-2px]" : ""
-            )}>
-              <SellTwoToneIcon className={cn(
-                "w-6 h-6 transition-all duration-300",
-                pathname === "/marketplace" ? "scale-110 drop-shadow-sm" : "group-hover:scale-105"
-              )} />
-              {pathname === "/marketplace" && (
-                <span className="absolute -bottom-2 w-1 h-1 bg-stone-600 dark:bg-stone-300 rounded-full animate-pulse" />
-              )}
-            </span>
+            <SellTwoToneIcon className="w-6 h-6" />
           </Link>
         </div>
       </nav>

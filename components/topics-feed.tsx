@@ -11,6 +11,7 @@ import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
 import { LoadingSpinner } from "./loading-spinner"
+import { useRealtimeArticles } from "@/hooks/use-realtime-articles"
 import type { Article } from "@/lib/types"
 
 async function fetchTopicsArticles({ pageParam = 0, language = "en" }): Promise<{ articles: Article[]; nextPage: number | null }> {
@@ -49,17 +50,26 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
     queryFn: ({ pageParam }) => fetchTopicsArticles({ pageParam, language }),
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
-    // No stale time - always fetch fresh data since articles update every minute
-    staleTime: 0, // Always consider data stale to get fresh articles
-    // Enable background refetch to detect new articles
-    refetchOnWindowFocus: true,
+    // With real-time updates, we can use normal caching
+    staleTime: 5 * 60 * 1000, // 5 minutes - real-time updates keep data fresh
+    // Reduce background refetch since real-time handles updates
+    refetchOnWindowFocus: false,
     // Retry on failure to handle temporary network issues
     retry: 2,
   })
 
-  // Handle refresh functionality
+  // Set up real-time subscription for AI enhanced articles
+  const { connectionStatus, isConnected } = useRealtimeArticles({
+    queryKey: ["topics-articles", language],
+    isAiEnhanced: true,
+    language: language,
+    enabled: isActive
+  })
+
+  // Handle refresh functionality - now mainly for manual refresh when real-time is disconnected
   const handleRefresh = useCallback(async () => {
-    console.log(`🔄 [TOPICS-FEED] Refresh START - Language: ${language}`)
+    console.log(`🔄 [TOPICS-FEED] Manual refresh START - Language: ${language}`)
+    console.log(`📊 Real-time status: ${connectionStatus}`)
     console.log(`📊 Current articles count: ${data?.pages.flatMap(p => p.articles).length || 0}`)
     
     try {
@@ -71,12 +81,12 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
       // Also refetch to ensure we get the latest data
       await refetch()
       
-      console.log(`✅ [TOPICS-FEED] Refresh COMPLETED - Language: ${language}`)
+      console.log(`✅ [TOPICS-FEED] Manual refresh COMPLETED - Language: ${language}`)
       console.log(`📊 New articles count: ${data?.pages.flatMap(p => p.articles).length || 0}`)
     } catch (error) {
-      console.error("❌ [TOPICS-FEED] Refresh FAILED:", error)
+      console.error("❌ [TOPICS-FEED] Manual refresh FAILED:", error)
     }
-  }, [queryClient, language, refetch, data])
+  }, [queryClient, language, refetch, data, connectionStatus])
 
   // Use the clean pull-to-refresh hook
   const {
