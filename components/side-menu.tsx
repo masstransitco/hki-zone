@@ -10,7 +10,7 @@ import LoginForm from "./auth/login-form"
 import RegisterForm from "./auth/register-form"
 import { cn } from "@/lib/utils"
 import { useSwipeGesture } from "@/hooks/use-swipe-gesture"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/hooks/redux-auth"
 import { useLanguage } from "./language-provider"
 
 interface SideMenuProps {

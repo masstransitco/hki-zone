@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { useInView } from "react-intersection-observer"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/hooks/redux-auth"
 import { useLanguage } from "@/components/language-provider"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"

@@ -10,7 +10,7 @@ import { WebsiteStructuredData } from "@/components/structured-data"
 import { ServiceWorkerCleanup } from "@/components/service-worker-cleanup"
 import { HeaderVisibilityProvider } from "@/contexts/header-visibility"
 import { TTSProvider } from "@/contexts/tts-context"
-import { AuthProvider } from "@/contexts/auth-context"
+import ReduxProvider from "@/components/redux-provider"
 import { AuthModalProvider } from "@/contexts/auth-modal-context"
 import { BookmarkProvider } from "@/contexts/bookmark-context"
 import AuthInitializer from "@/components/auth-initializer"
@@ -104,10 +104,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans`} suppressHydrationWarning>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <LanguageProvider>
-            <QueryProvider>
-              <AuthProvider>
+        <ReduxProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            <LanguageProvider>
+              <QueryProvider>
                 <AuthModalProvider>
                   <BookmarkProvider>
                     <HeaderVisibilityProvider>
@@ -124,10 +124,10 @@ export default function RootLayout({
                     </HeaderVisibilityProvider>
                   </BookmarkProvider>
                 </AuthModalProvider>
-              </AuthProvider>
-            </QueryProvider>
-          </LanguageProvider>
-        </ThemeProvider>
+              </QueryProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </ReduxProvider>
       </body>
     </html>
   )

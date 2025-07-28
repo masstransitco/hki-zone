@@ -1,7 +1,7 @@
 "use client"
 
 import { useAuthModal } from "@/contexts/auth-modal-context"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/hooks/redux-auth"
 import AuthDialog from "./auth-dialog"
 
 export default function GlobalAuthModal() {

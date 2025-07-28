@@ -1,17 +1,11 @@
 "use client"
 
-import { useEffect } from 'react'
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from "@/hooks/redux-auth"
 
 export default function AuthInitializer() {
-  const { loading } = useAuth()
-
-  useEffect(() => {
-    // This component helps ensure auth is properly initialized on the client
-    if (!loading) {
-      console.log('Auth initialization complete')
-    }
-  }, [loading])
-
+  // Redux auth initializes automatically via the useAuth hook
+  // This component is now a lightweight wrapper that ensures initialization
+  useAuth()
+  
   return null
 }

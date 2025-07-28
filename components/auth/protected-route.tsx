@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from "@/hooks/redux-auth"
 
 interface ProtectedRouteProps {
   children: React.ReactNode

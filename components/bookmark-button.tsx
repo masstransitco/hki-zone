@@ -5,7 +5,7 @@ import TurnedInIcon from '@mui/icons-material/TurnedIn'
 import TurnedInNotIcon from '@mui/icons-material/TurnedInNot'
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/hooks/redux-auth"
 import { useAuthModal } from "@/contexts/auth-modal-context"
 import { useBookmarks } from "@/contexts/bookmark-context"
 import { analytics } from "@/lib/analytics"

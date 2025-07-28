@@ -1,12 +1,15 @@
 import { createClient } from "@supabase/supabase-js"
 
-// Custom storage adapter for better persistence
+// Simplified storage adapter that doesn't interfere with Supabase
 const customStorage = {
   getItem: (key: string) => {
     if (typeof window === 'undefined') return null
     try {
-      return localStorage.getItem(key)
-    } catch {
+      const item = localStorage.getItem(key)
+      console.log('📥 Storage getItem:', key, item ? 'FOUND' : 'NOT_FOUND')
+      return item
+    } catch (error) {
+      console.warn('❌ Storage getItem failed:', key, error)
       return null
     }
   },
@@ -14,16 +17,18 @@ const customStorage = {
     if (typeof window === 'undefined') return
     try {
       localStorage.setItem(key, value)
+      console.log('📤 Storage setItem:', key, 'SUCCESS')
     } catch (error) {
-      console.warn('Failed to store auth session:', error)
+      console.warn('❌ Storage setItem failed:', key, error)
     }
   },
   removeItem: (key: string) => {
     if (typeof window === 'undefined') return
     try {
       localStorage.removeItem(key)
+      console.log('🗑️ Storage removeItem:', key, 'SUCCESS')
     } catch (error) {
-      console.warn('Failed to remove auth session:', error)
+      console.warn('❌ Storage removeItem failed:', key, error)
     }
   }
 }
@@ -39,23 +44,16 @@ if (!supabaseAnonKey) {
   throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable')
 }
 
-// Create client for authentication (must use anon key for auth)
+// Create client for authentication with minimal config
 export const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-    storageKey: 'panora-auth-token',
-    storage: customStorage
+    detectSessionInUrl: false,
+    // Use default storage and minimal config
   },
   db: {
     schema: 'public'
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'supabase-js-web'
-    }
   }
 })
 

@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useAuth } from '@/contexts/auth-context'
+import { useAuth } from '@/hooks/redux-auth'
 import { useLanguage } from '@/components/language-provider'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 

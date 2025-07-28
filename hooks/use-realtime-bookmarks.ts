@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useAuth } from "@/contexts/auth-context"
+import { useAuth } from "@/hooks/redux-auth"
 import { supabaseAuth } from "@/lib/supabase-auth"
 import { RealtimeChannel } from "@supabase/supabase-js"
 
