@@ -159,7 +159,7 @@ export default function ArticleBottomSheet({
       open={open} 
       onOpenChange={onOpenChange}
       shouldScaleBackground={true}
-      modal={true}
+      modal={false}
     >
       <DrawerContent 
         className={cn(
@@ -191,13 +191,25 @@ export default function ArticleBottomSheet({
           
           {/* Text-to-speech and Share buttons positioned on the right with proper spacing */}
           {articleId && (
-            <div className="absolute right-6 top-4 flex items-center gap-2" style={{ pointerEvents: 'auto', zIndex: 9000 }}>
+            <div 
+              className="absolute right-6 top-4 flex items-center gap-2" 
+              style={{ 
+                pointerEvents: 'auto', 
+                zIndex: 9000,
+                isolation: 'isolate' // Create stacking context for better event isolation
+              }}
+              onClick={(e) => {
+                // Prevent clicks on this container from propagating
+                e.stopPropagation()
+              }}
+            >
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
+                  e.nativeEvent.stopImmediatePropagation() // Better event isolation
                   console.log('📱 Bottom Sheet - Headphones button clicked!')
                   handleTextToSpeech()
                 }}

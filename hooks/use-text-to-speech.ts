@@ -185,6 +185,25 @@ const chunkTextForStudio = (text: string, maxBytes: number = 4500): string[] => 
   return chunks.length > 0 ? chunks : [text]
 }
 
+// Mobile browser detection utilities
+const isMobile = () => {
+  if (typeof window === 'undefined') return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
+const isIOSChrome = () => {
+  if (typeof window === 'undefined') return false
+  return /CriOS/i.test(navigator.userAgent) || 
+         (/iPhone|iPad|iPod/.test(navigator.userAgent) && /Chrome/i.test(navigator.userAgent))
+}
+
+const isIOSSafari = () => {
+  if (typeof window === 'undefined') return false
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) && 
+         /Safari/i.test(navigator.userAgent) && 
+         !/Chrome|CriOS|FxiOS|EdgiOS/i.test(navigator.userAgent)
+}
+
 export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProps = {}): UseTextToSpeechReturn {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
@@ -199,22 +218,76 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
   const analyserRef = useRef<AnalyserNode | null>(null)
   const animationFrameRef = useRef<number>()
   const audioContextRef = useRef<AudioContext | null>(null)
+  const audioContextInitializedRef = useRef<boolean>(false)
+  const userGestureRequiredRef = useRef<boolean>(false)
 
-  // Initialize Web Audio API for visualization
-  const initializeAudioAnalysis = useCallback(async (audioElement: HTMLAudioElement) => {
+  // Initialize AudioContext with proper user gesture handling for mobile
+  const initializeAudioContext = useCallback(async () => {
     try {
       if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+        if (!AudioContextClass) {
+          console.warn('🎵 Web Audio API not supported')
+          return null
+        }
+        
+        audioContextRef.current = new AudioContextClass()
         console.log('🎵 Created new AudioContext, state:', audioContextRef.current.state)
+        
+        // Track if this is a mobile environment that requires user gestures
+        if (isMobile()) {
+          userGestureRequiredRef.current = true
+          console.log('🎵 Mobile environment detected, user gesture required')
+        }
       }
       
       const audioContext = audioContextRef.current
       
-      // Resume AudioContext if suspended (required by some browsers)
+      // Handle suspended AudioContext (common on mobile browsers)
       if (audioContext.state === 'suspended') {
         console.log('🎵 AudioContext suspended, attempting to resume...')
-        await audioContext.resume()
-        console.log('🎵 AudioContext resumed, new state:', audioContext.state)
+        
+        // For iOS Chrome, we need to be more aggressive about resumption
+        if (isIOSChrome()) {
+          console.log('🎵 iOS Chrome detected, using enhanced resumption strategy')
+          
+          // Try multiple times with delays for iOS Chrome
+          for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+              await audioContext.resume()
+              if (audioContext.state === 'running') {
+                console.log('🎵 AudioContext resumed successfully on attempt', attempt + 1)
+                break
+              }
+              await new Promise(resolve => setTimeout(resolve, 100))
+            } catch (resumeError) {
+              console.warn(`🎵 Resume attempt ${attempt + 1} failed:`, resumeError)
+            }
+          }
+        } else {
+          // Standard resumption for other browsers
+          await audioContext.resume()
+        }
+        
+        console.log('🎵 AudioContext final state:', audioContext.state)
+      }
+      
+      audioContextInitializedRef.current = true
+      return audioContext
+    } catch (error) {
+      console.error('🎵 Failed to initialize AudioContext:', error)
+      return null
+    }
+  }, [])
+
+  // Initialize Web Audio API for visualization
+  const initializeAudioAnalysis = useCallback(async (audioElement: HTMLAudioElement) => {
+    try {
+      // Initialize AudioContext first
+      const audioContext = await initializeAudioContext()
+      if (!audioContext) {
+        console.log('🎵 Skipping audio analysis - AudioContext unavailable')
+        return null
       }
       
       const analyser = audioContext.createAnalyser()
@@ -228,23 +301,43 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
         console.log('🎵 MediaElementSource created successfully')
       } catch (sourceError) {
         console.error('🎵 Failed to create MediaElementSource:', sourceError)
-        // If we can't create the source, skip visualization but allow audio to play normally
-        console.log('🎵 Falling back to audio without visualization')
+        
+        // On mobile browsers, especially iOS Chrome, this can fail
+        // Provide graceful degradation
+        if (isMobile()) {
+          console.log('🎵 Mobile browser - gracefully degrading without visualization')
+        } else {
+          console.log('🎵 Falling back to audio without visualization')
+        }
         return null
       }
       
       console.log('🎵 Connecting audio graph: source -> analyser -> destination')
-      source.connect(analyser)
-      analyser.connect(audioContext.destination)
-      
-      analyserRef.current = analyser
-      console.log('🎵 Audio analysis initialized successfully')
-      return analyser
+      try {
+        source.connect(analyser)
+        analyser.connect(audioContext.destination)
+        
+        analyserRef.current = analyser
+        console.log('🎵 Audio analysis initialized successfully')
+        return analyser
+      } catch (connectionError) {
+        console.error('🎵 Failed to connect audio graph:', connectionError)
+        
+        // On some mobile browsers, connection might fail
+        // Still allow audio to play without visualization
+        try {
+          source.connect(audioContext.destination) // Direct connection for audio playback
+          console.log('🎵 Using direct audio connection without analysis')
+        } catch (directConnectionError) {
+          console.error('🎵 Even direct connection failed:', directConnectionError)
+        }
+        return null
+      }
     } catch (error) {
       console.error('🎵 Failed to initialize audio analysis:', error)
       return null
     }
-  }, [])
+  }, [initializeAudioContext])
 
   // Previous audio data for smoothing
   const previousDataRef = useRef<number[]>(Array(6).fill(0))
@@ -348,21 +441,50 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
   }, [isPlaying, updateAudioVisualization])
 
   const stop = useCallback(() => {
+    console.log('🎵 TTS Hook - Stop called, cleaning up resources')
+    
+    // Clean up audio element
     if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      audioRef.current = null
+      try {
+        audioRef.current.pause()
+        audioRef.current.currentTime = 0
+        // Remove event listeners to prevent memory leaks
+        audioRef.current.onloadeddata = null
+        audioRef.current.ontimeupdate = null
+        audioRef.current.onended = null
+        audioRef.current.onerror = null
+        audioRef.current = null
+        console.log('🎵 Audio element cleaned up')
+      } catch (audioCleanupError) {
+        console.warn('🎵 Error cleaning up audio element:', audioCleanupError)
+      }
     }
     
+    // Clean up speech synthesis
     if (speechUtteranceRef.current) {
-      speechSynthesis.cancel()
-      speechUtteranceRef.current = null
+      try {
+        speechSynthesis.cancel()
+        speechUtteranceRef.current = null
+        console.log('🎵 Speech synthesis cancelled')
+      } catch (speechCleanupError) {
+        console.warn('🎵 Error cleaning up speech synthesis:', speechCleanupError)
+      }
     }
 
+    // Clean up animation frame
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = undefined
+      console.log('🎵 Animation frame cancelled')
     }
     
+    // Clean up audio analysis
+    if (analyserRef.current) {
+      analyserRef.current = null
+      console.log('🎵 Audio analyser cleared')
+    }
+    
+    // Reset all state
     setIsPlaying(false)
     setIsPaused(false)
     setIsLoading(false)
@@ -370,6 +492,8 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
     setCurrentTime(0)
     setDuration(0)
     setAudioData(Array(6).fill(0))
+    
+    console.log('🎵 TTS Hook - Stop completed, all resources cleaned up')
   }, [])
 
   const pause = useCallback(() => {
@@ -480,11 +604,14 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
           voice: voiceConfig,
           audioConfig: {
             audioEncoding: 'MP3',
-            sampleRateHertz: 48000, // FM/streaming quality
-            speakingRate: 1.05, // ≈155 wpm - energetic yet clear
-            pitch: -1.0, // Slightly deeper for more gravitas
+            // Mobile-optimized audio settings
+            sampleRateHertz: isMobile() ? 44100 : 48000, // Standard rate for mobile
+            speakingRate: isMobile() ? 0.95 : 1.05, // Slower on mobile for better comprehension
+            pitch: isMobile() ? -0.5 : -1.0, // Less deep pitch on mobile for clarity
             volumeGainDb: 0.0,
-            effectsProfileId: ['large-home-entertainment-class-device'] // Full-range EQ
+            effectsProfileId: isMobile() 
+              ? ['telephony-class-application'] // Better for mobile speakers
+              : ['large-home-entertainment-class-device'] // Full-range EQ for desktop
           }
         })
       })
@@ -547,8 +674,12 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
           if (currentChunkIndex === 0) {
             console.log('🎵 Audio loaded, starting playback...')
             
-            // Initialize audio analysis first
-            await initializeAudioAnalysis(audio)
+            // Initialize audio analysis first (gracefully handle failures)
+            try {
+              await initializeAudioAnalysis(audio)
+            } catch (analysisError) {
+              console.warn('🎵 Audio analysis initialization failed, continuing without visualization:', analysisError)
+            }
             
             // Set playing state before stopping loading to avoid visibility gap
             setIsPlaying(true)
@@ -568,19 +699,43 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
           })
           
           console.log('🎵 Playing audio chunk:', currentChunkIndex + 1, 'of', audioUrls.length)
-          audio.play()
-            .then(() => {
-              console.log('🎵 Audio play() successful for chunk:', currentChunkIndex + 1)
-              console.log('🎵 Audio state after play:', {
-                paused: audio.paused,
-                currentTime: audio.currentTime,
-                volume: audio.volume
-              })
-            })
-            .catch((error) => {
-              console.error('🎵 Audio play() failed:', error)
-              reject(error)
-            })
+          
+          // Improved play() with better error handling and mobile compatibility
+          const playAudio = async () => {
+            try {
+              // For mobile browsers, especially iOS, we might need to handle play promises differently
+              const playPromise = audio.play()
+              
+              if (playPromise !== undefined) {
+                await playPromise
+                console.log('🎵 Audio play() successful for chunk:', currentChunkIndex + 1)
+                console.log('🎵 Audio state after play:', {
+                  paused: audio.paused,
+                  currentTime: audio.currentTime,
+                  volume: audio.volume
+                })
+              }
+            } catch (playError) {
+              console.error('🎵 Audio play() failed:', playError)
+              
+              // For mobile browsers, retry once after a short delay
+              if (isMobile() && currentChunkIndex === 0) {
+                console.log('🎵 Mobile browser detected, retrying play after delay...')
+                try {
+                  await new Promise(resolve => setTimeout(resolve, 200))
+                  await audio.play()
+                  console.log('🎵 Audio play retry successful')
+                } catch (retryError) {
+                  console.error('🎵 Audio play retry also failed:', retryError)
+                  reject(playError)
+                }
+              } else {
+                reject(playError)
+              }
+            }
+          }
+          
+          await playAudio()
         }
 
         audio.ontimeupdate = () => {
@@ -630,6 +785,18 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
         return
       }
 
+      console.log('🎵 Browser TTS - Starting speech synthesis')
+      
+      // On some mobile browsers, we need to cancel any existing utterances first
+      if (isMobile()) {
+        try {
+          speechSynthesis.cancel()
+          console.log('🎵 Browser TTS - Cancelled any existing utterances (mobile)')
+        } catch (cancelError) {
+          console.warn('🎵 Browser TTS - Error cancelling existing utterances:', cancelError)
+        }
+      }
+
       const utterance = new SpeechSynthesisUtterance(text)
       speechUtteranceRef.current = utterance
 
@@ -639,8 +806,11 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
       // Voice selection with better voice loading handling
       const selectVoice = () => {
         const voices = speechSynthesis.getVoices()
+        console.log(`🎵 Browser TTS - Available voices: ${voices.length}`)
+        
         if (voices.length === 0) {
           // Voices not loaded yet, use default voice
+          console.log('🎵 Browser TTS - No voices loaded, using default')
           return
         }
 
@@ -648,27 +818,51 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
         const languageVoice = voices.find(voice => voice.lang.startsWith(languageCode))
         if (languageVoice) {
           utterance.voice = languageVoice
+          console.log(`🎵 Browser TTS - Selected voice: ${languageVoice.name} (${languageVoice.lang})`)
+        } else {
+          console.log(`🎵 Browser TTS - No voice found for ${languageCode}, using default`)
         }
       }
 
       // Try to select voice immediately
       selectVoice()
 
-      // If voices aren't loaded yet, wait for them
+      // If voices aren't loaded yet, wait for them (with timeout for mobile)
       if (speechSynthesis.getVoices().length === 0) {
+        console.log('🎵 Browser TTS - Waiting for voices to load...')
+        
+        let voiceTimeout: NodeJS.Timeout | null = null
+        
         const handleVoicesChanged = () => {
+          console.log('🎵 Browser TTS - Voices changed event fired')
           selectVoice()
           speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged)
+          if (voiceTimeout) {
+            clearTimeout(voiceTimeout)
+            voiceTimeout = null
+          }
         }
+        
         speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged)
+        
+        // Set timeout for mobile browsers that might not fire the event
+        if (isMobile()) {
+          voiceTimeout = setTimeout(() => {
+            console.log('🎵 Browser TTS - Voice loading timeout, proceeding with default')
+            speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged)
+            selectVoice() // Try once more
+          }, 1000)
+        }
       }
 
       utterance.onstart = () => {
+        console.log('🎵 Browser TTS - Speech started')
         setIsLoading(false)
         setIsPlaying(true)
       }
 
       utterance.onend = () => {
+        console.log('🎵 Browser TTS - Speech ended')
         setIsPlaying(false)
         setIsPaused(false)
         speechUtteranceRef.current = null
@@ -676,6 +870,7 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
       }
 
       utterance.onerror = (event) => {
+        console.error('🎵 Browser TTS - Speech error:', event.error)
         setIsLoading(false)
         setIsPlaying(false)
         setIsPaused(false)
@@ -684,11 +879,29 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
       }
 
       // Add some basic utterance settings for better quality
-      utterance.rate = 0.9 // Slightly slower for better comprehension
-      utterance.volume = 1.0
-      utterance.pitch = 1.0
+      // Mobile browsers might be more sensitive to these settings
+      if (isMobile()) {
+        utterance.rate = 0.85 // Slower for mobile for better reliability
+        utterance.volume = 1.0
+        utterance.pitch = 1.0
+        console.log('🎵 Browser TTS - Applied mobile-optimized settings')
+      } else {
+        utterance.rate = 0.9 // Slightly slower for better comprehension
+        utterance.volume = 1.0
+        utterance.pitch = 1.0
+      }
 
-      speechSynthesis.speak(utterance)
+      console.log('🎵 Browser TTS - Starting speech utterance')
+      try {
+        speechSynthesis.speak(utterance)
+      } catch (speakError) {
+        console.error('🎵 Browser TTS - Error starting speech:', speakError)
+        setIsLoading(false)
+        setIsPlaying(false)
+        setIsPaused(false)
+        speechUtteranceRef.current = null
+        reject(speakError)
+      }
     })
   }, [language])
 
@@ -699,6 +912,12 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
     setIsLoading(true)
     
     console.log('🎵 TTS Hook - State set to loading')
+    
+    // Initialize AudioContext on user gesture for mobile compatibility
+    if (!audioContextInitializedRef.current && userGestureRequiredRef.current) {
+      console.log('🎵 TTS Hook - Initializing AudioContext on user gesture')
+      await initializeAudioContext()
+    }
 
     try {
       // Try Google TTS first for better quality if API key is available
@@ -731,7 +950,7 @@ export function useTextToSpeech({ apiKey, language = 'en' }: UseTextToSpeechProp
         throw fallbackError
       }
     }
-  }, [apiKey, speakWithGoogleTTS, speakWithBrowserAPI, stop])
+  }, [apiKey, speakWithGoogleTTS, speakWithBrowserAPI, stop, initializeAudioContext])
 
   return {
     isPlaying,

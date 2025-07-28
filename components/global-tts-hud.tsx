@@ -1,6 +1,7 @@
 "use client"
 
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from "framer-motion"
 import HeadphonesIcon from '@mui/icons-material/Headphones'
 import PauseIcon from '@mui/icons-material/Pause'
@@ -8,6 +9,29 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useTTSContext } from '@/contexts/tts-context'
+
+// Portal container management
+const getPortalContainer = () => {
+  const existingContainer = document.getElementById('tts-hud-portal')
+  if (existingContainer) {
+    return existingContainer
+  }
+  
+  // Create portal container
+  const container = document.createElement('div')
+  container.id = 'tts-hud-portal'
+  container.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 9999;
+  `
+  document.body.appendChild(container)
+  return container
+}
 
 export default function GlobalTTSHUD() {
   const { 
@@ -24,6 +48,16 @@ export default function GlobalTTSHUD() {
     stop 
   } = useTTSContext()
   
+  // Portal container state
+  const [portalContainer, setPortalContainer] = React.useState<HTMLElement | null>(null)
+
+  // Initialize portal container on client side
+  React.useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setPortalContainer(getPortalContainer())
+    }
+  }, [])
+
   // Show when there's an active article and it's loading, playing, or paused
   const isVisible = Boolean(currentArticle && (isPlaying || isLoading || isPaused))
 
@@ -43,13 +77,7 @@ export default function GlobalTTSHUD() {
     })
   }, [isVisible, isPlaying, isLoading, isPaused, progress, duration, currentTime, audioData, currentArticle])
 
-  const handleTogglePlayback = (e?: React.MouseEvent) => {
-    // Prevent event bubbling that might close bottom sheet
-    if (e) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
-    
+  const handleTogglePlayback = () => {
     console.log('🌟 Global TTS HUD - Toggle playback clicked', { isPlaying, isPaused })
     
     if (isPlaying) {
@@ -59,6 +87,11 @@ export default function GlobalTTSHUD() {
       console.log('🌟 Global TTS HUD - Resuming playback')
       resume()
     }
+  }
+
+  const handleStopClick = () => {
+    console.log('🌟 Global TTS HUD - Close button clicked')
+    stop()
   }
 
   const getControlIcon = () => {
@@ -78,11 +111,11 @@ export default function GlobalTTSHUD() {
     return "Play speech"
   }
 
-  if (!isVisible) {
+  if (!isVisible || !portalContainer) {
     return null
   }
 
-  return (
+  const hudContent = (
     <>
       <style jsx global>{`
         :root {
@@ -115,17 +148,18 @@ export default function GlobalTTSHUD() {
       `}</style>
       
       <div 
-        className="fixed pointer-events-none z-[200] flex justify-center"
+        className="flex justify-center"
         style={{
           // Position above footer nav (76px) with 0.5rem spacing
+          position: 'fixed',
           bottom: 'calc(76px + max(0.5rem, env(safe-area-inset-bottom, 0px)))',
           left: '1rem',
           right: '1rem',
+          pointerEvents: 'auto', // Enable pointer events since we're in a portal
         }}
       >
         <AnimatePresence>
           <motion.div
-            className="pointer-events-auto"
             initial={{ y: 100, opacity: 0, scale: 0.9 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 100, opacity: 0, scale: 0.9 }}
@@ -141,7 +175,9 @@ export default function GlobalTTSHUD() {
                 0 4px 16px rgb(var(--tts-shadow) / 0.08),
                 0 2px 8px rgb(var(--tts-shadow) / 0.04),
                 inset 0 1px 0 rgb(255 255 255 / 0.1)
-              `
+              `,
+              pointerEvents: 'auto',
+              isolation: 'isolate',
             }}
             initial={{ scale: 0.9 }}
             animate={{ scale: 1 }}
@@ -307,7 +343,10 @@ export default function GlobalTTSHUD() {
                 boxShadow: `
                   0 2px 8px rgb(var(--tts-shadow) / 0.1),
                   inset 0 1px 0 rgb(255 255 255 / 0.1)
-                `
+                `,
+                // Better touch target size for mobile
+                minHeight: '44px', // iOS recommended touch target
+                minWidth: '44px',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-hover))'
@@ -325,7 +364,16 @@ export default function GlobalTTSHUD() {
                 e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-hover))'
                 e.currentTarget.style.transform = 'scale(1.05)'
               }}
-              onClick={(e) => handleTogglePlayback(e)}
+              // Mobile touch events for better responsiveness
+              onTouchStart={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-active))'
+                e.currentTarget.style.transform = 'scale(0.95)'
+              }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg))'
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+              onClick={handleTogglePlayback}
               disabled={isLoading}
               aria-label={getAriaLabel()}
             >
@@ -354,7 +402,10 @@ export default function GlobalTTSHUD() {
                 boxShadow: `
                   0 2px 8px rgb(var(--tts-shadow) / 0.1),
                   inset 0 1px 0 rgb(255 255 255 / 0.1)
-                `
+                `,
+                // Better touch target size for mobile
+                minHeight: '44px', // iOS recommended touch target
+                minWidth: '44px',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-hover))'
@@ -374,12 +425,17 @@ export default function GlobalTTSHUD() {
                 e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-hover))'
                 e.currentTarget.style.transform = 'scale(1.05)'
               }}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                console.log('🌟 Global TTS HUD - Close button clicked')
-                stop()
+              // Mobile touch events for better responsiveness
+              onTouchStart={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg-active))'
+                e.currentTarget.style.transform = 'scale(0.95)'
               }}
+              onTouchEnd={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgb(var(--tts-control-bg))'
+                e.currentTarget.style.color = 'rgb(var(--tts-control-fg-secondary))'
+                e.currentTarget.style.transform = 'scale(1)'
+              }}
+              onClick={handleStopClick}
               aria-label="Stop and close"
             >
               <X className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -403,4 +459,7 @@ export default function GlobalTTSHUD() {
     </div>
     </>
   )
+
+  // Render HUD content through portal
+  return createPortal(hudContent, portalContainer)
 }
