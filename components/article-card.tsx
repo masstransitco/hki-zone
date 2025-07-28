@@ -40,9 +40,10 @@ interface ArticleCardProps {
   className?: string
   aspectRatio?: string
   showHkiLogo?: boolean
+  showTimestamp?: boolean
 }
 
-export default function ArticleCard({ article, onReadMore, className, aspectRatio, showHkiLogo = false }: ArticleCardProps) {
+export default function ArticleCard({ article, onReadMore, className, aspectRatio, showHkiLogo = false, showTimestamp = true }: ArticleCardProps) {
   const { t } = useLanguage()
   const timeAgo = useHydrationSafeDate(article.publishedAt)
   const [perplexityTime, setPerplexityTime] = useState("")
@@ -125,12 +126,14 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
             )}
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              <span className="truncate">
-                {displayTime && (isPerplexityArticle ? displayTime : `${displayTime} ${t("time.ago")}`)}
-              </span>
-            </div>
+            {showTimestamp && (
+              <div className="flex items-center gap-1">
+                <Clock className="h-3 w-3" />
+                <span className="truncate">
+                  {displayTime && (isPerplexityArticle ? displayTime : `${displayTime.replace(/minute/g, 'min').replace(/minutes/g, 'mins')} ${t("time.ago")}`)}
+                </span>
+              </div>
+            )}
             <BookmarkButton
               articleId={article.id}
               articleTitle={article.title}

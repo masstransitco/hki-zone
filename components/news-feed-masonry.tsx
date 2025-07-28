@@ -297,6 +297,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
                 onReadMore={handleReadMore}
                 className="w-full"
                 aspectRatio={aspectRatio}
+                showTimestamp={true}
               />
             </div>
           )

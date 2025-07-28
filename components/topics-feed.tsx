@@ -256,6 +256,7 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
               key={article.id} 
               article={article} 
               onReadMore={handleReadMore}
+              showTimestamp={false}
             />
           ))}
         </div>

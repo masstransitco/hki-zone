@@ -3,9 +3,11 @@
 import Logo from "./logo"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
+import AddBoxIcon from '@mui/icons-material/AddBox'
 import { cn } from "@/lib/utils"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
-import { useRef } from "react"
+import { useRef, useState } from "react"
+import CategoryMenuBottomSheet from "./category-menu-bottom-sheet"
 
 interface UnifiedHeaderProps {
   isMenuOpen: boolean
@@ -18,6 +20,7 @@ export default function UnifiedHeader({
 }: UnifiedHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
   const { isHeaderVisible } = useHeaderVisibility()
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
 
   const shouldHide = !isHeaderVisible
 
@@ -58,10 +61,22 @@ export default function UnifiedHeader({
         </div>
 
         <div className="flex items-center">
-          {/* Reserved space for balance */}
-          <div className="w-11 h-11" />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-11 h-11 p-0 text-foreground hover:bg-muted touch-manipulation"
+            aria-label="Open category menu"
+            onClick={() => setIsBottomSheetOpen(true)}
+          >
+            <AddBoxIcon className="w-6 h-6" />
+          </Button>
         </div>
       </div>
+      
+      <CategoryMenuBottomSheet 
+        isOpen={isBottomSheetOpen} 
+        onClose={() => setIsBottomSheetOpen(false)} 
+      />
     </header>
   )
 }
