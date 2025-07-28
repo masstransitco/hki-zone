@@ -2,6 +2,9 @@ import { configureStore, combineReducers } from '@reduxjs/toolkit'
 import { persistStore, persistReducer, createTransform } from 'redux-persist'
 import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist'
 import authReducer from './authSlice'
+import ttsReducer from './ttsSlice'
+import audioReducer from './audioSlice'
+import { ttsMiddleware, visualizationMiddleware } from './middleware/ttsMiddleware'
 
 // Custom storage implementation with better error handling
 const createRobustStorage = () => {
@@ -80,7 +83,7 @@ const persistConfig = {
   key: 'panora-auth-v2', // Updated key to avoid conflicts
   storage: createRobustStorage(),
   transforms: [authTransform],
-  whitelist: ['auth'], // Only persist auth slice
+  whitelist: ['auth'], // Only persist auth slice (TTS state should not be persisted)
   timeout: 10000, // 10 second timeout for storage operations
   throttle: 1000, // Throttle persistence to avoid excessive writes
 }
@@ -88,7 +91,8 @@ const persistConfig = {
 // Root reducer
 const rootReducer = combineReducers({
   auth: authReducer,
-  // Add other slices here as needed
+  tts: ttsReducer,
+  audio: audioReducer,
 })
 
 // Persisted reducer
@@ -102,31 +106,42 @@ export const store = configureStore({
       serializableCheck: {
         // Ignore redux-persist actions
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-        // Ignore non-serializable values in auth state
-        ignoredActionsPaths: ['payload.session', 'payload.user.profile'],
-        ignoredPaths: ['auth.session'],
+        // Ignore non-serializable values in auth state and TTS/audio state
+        ignoredActionsPaths: ['payload.session', 'payload.user.profile', 'payload.audioElement', 'payload.services'],
+        ignoredPaths: ['auth.session', 'audio.audioElement', 'tts.services', 'tts.currentAudioElement'],
       },
       // Enable additional middleware for development
       immutableCheck: process.env.NODE_ENV === 'development',
       actionCreatorCheck: process.env.NODE_ENV === 'development',
     }).concat([
+      // Add TTS middleware
+      ttsMiddleware,
+      visualizationMiddleware,
       // Add custom middleware for auth monitoring
       (store) => (next) => (action: any) => {
-        // Log auth actions in development
-        if (process.env.NODE_ENV === 'development' && action.type?.startsWith('auth/')) {
-          console.log('Auth Action:', action.type, action.payload)
+        // Log auth and TTS actions in development
+        if (process.env.NODE_ENV === 'development') {
+          if (action.type?.startsWith('auth/')) {
+            console.log('Auth Action:', action.type, action.payload)
+          } else if (action.type?.startsWith('tts/') || action.type?.startsWith('audio/')) {
+            console.log('TTS/Audio Action:', action.type, action.payload)
+          }
         }
         
-        // Handle auth errors globally
+        // Handle errors globally
         if (action.type?.endsWith('/rejected')) {
-          console.error('Auth Error:', action.type, action.payload)
+          if (action.type.startsWith('auth/')) {
+            console.error('Auth Error:', action.type, action.payload)
+          } else if (action.type.startsWith('tts/') || action.type.startsWith('audio/')) {
+            console.error('TTS/Audio Error:', action.type, action.payload)
+          }
         }
         
         return next(action)
       }
     ]),
   devTools: process.env.NODE_ENV === 'development' && {
-    name: 'Panora Auth Store',
+    name: 'Panora Redux Store',
     trace: true,
     traceLimit: 25,
   },

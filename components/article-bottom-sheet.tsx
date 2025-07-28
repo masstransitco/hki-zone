@@ -17,7 +17,19 @@ import { cn } from "@/lib/utils"
 import ArticleDetailSheet from "./article-detail-sheet"
 import ShareButton from "./share-button"
 import BookmarkButton from "./bookmark-button"
-import { useTTSContext } from "@/contexts/tts-context"
+import { useSelector, useDispatch } from 'react-redux'
+import { 
+  selectTTSCurrentArticle,
+  selectTTSPlaybackState,
+  selectTTSIsInitialized,
+  selectTTSCanPlay,
+  selectTTS,
+  playArticle,
+  pausePlayback,
+  resumePlayback,
+  stopPlayback 
+} from '@/store/ttsSlice'
+import type { AppDispatch } from '@/store'
 import { useLanguage } from "./language-provider"
 
 interface ArticleBottomSheetProps {
@@ -45,7 +57,14 @@ export default function ArticleBottomSheet({
   const { language } = useLanguage()
   const [article, setArticle] = React.useState<any>(null)
   
-  const { isPlaying, isPaused, isLoading, currentArticle, playArticle, pause, resume, stop } = useTTSContext()
+  const dispatch = useDispatch<AppDispatch>()
+  
+  // Redux selectors
+  const currentTTSArticle = useSelector(selectTTSCurrentArticle)
+  const { isPlaying, isPaused, isLoading } = useSelector(selectTTSPlaybackState)
+  const ttsIsInitialized = useSelector(selectTTSIsInitialized)
+  const ttsCanPlay = useSelector(selectTTSCanPlay)
+  const fullTTSState = useSelector(selectTTS)
 
   // Debug logging for TTS states
   React.useEffect(() => {
@@ -56,9 +75,18 @@ export default function ArticleBottomSheet({
       open,
       articleId: article?.id,
       articleTitle: article?.title,
-      currentArticleId: currentArticle?.id
+      currentArticleId: currentTTSArticle?.id,
+      ttsIsInitialized,
+      ttsCanPlay,
+      buttonDisabled: isLoading || !ttsIsInitialized || !ttsCanPlay,
+      services: {
+        hasTTSService: !!fullTTSState.services?.ttsService,
+        hasSpeechService: !!fullTTSState.services?.speechService,
+        hasAudioService: !!fullTTSState.services?.audioService
+      },
+      error: fullTTSState.error
     })
-  }, [isPlaying, isPaused, isLoading, open, article, currentArticle])
+  }, [isPlaying, isPaused, isLoading, open, article, currentTTSArticle, ttsIsInitialized, ttsCanPlay, fullTTSState])
 
   // Fetch article data when articleId changes
   React.useEffect(() => {
@@ -89,8 +117,8 @@ export default function ArticleBottomSheet({
       articleTitle: article?.title,
       isPlaying,
       isPaused,
-      currentArticleId: currentArticle?.id,
-      sameArticle: currentArticle?.id === article?.id
+      currentArticleId: currentTTSArticle?.id,
+      sameArticle: currentTTSArticle?.id === article?.id
     })
     
     if (!article) {
@@ -98,31 +126,72 @@ export default function ArticleBottomSheet({
       return
     }
 
+    if (!article.id || !article.title) {
+      console.warn('📱 Bottom Sheet - Article missing required fields:', { 
+        hasId: !!article.id, 
+        hasTitle: !!article.title,
+        article: article
+      })
+      return
+    }
+
+    if (!ttsIsInitialized) {
+      console.warn('📱 Bottom Sheet - TTS system not initialized yet')
+      return
+    }
+
+    if (!ttsCanPlay) {
+      console.warn('📱 Bottom Sheet - TTS system cannot play yet')
+      return
+    }
+
+    console.log('📱 Bottom Sheet - Dispatching TTS action with article:', {
+      id: article.id,
+      title: article.title,
+      hasContent: !!article.content,
+      hasSummary: !!article.summary,
+      contentLength: article.content?.length || 0,
+      summaryLength: article.summary?.length || 0,
+      currentLanguage: language,
+      ttsIsInitialized,
+      ttsCanPlay
+    })
+
     try {
       // Handle same article - toggle pause/resume/play
-      if (currentArticle?.id === article.id) {
+      if (currentTTSArticle?.id === article.id) {
         if (isPlaying) {
           console.log('📱 Bottom Sheet - Pausing currently playing article (same article)')
-          pause()
+          dispatch(pausePlayback())
         } else if (isPaused) {
           console.log('📱 Bottom Sheet - Resuming paused article (same article)')
-          resume()
+          dispatch(resumePlayback())
         } else {
           console.log('📱 Bottom Sheet - Restarting same article playback')
-          await playArticle({
+          dispatch(playArticle({
             id: article.id,
             title: article.title,
-            content: article.content || ''
-          })
+            content: article.content || '',
+            summary: article.summary || '',
+            url: article.url || '',
+            source: article.source || '',
+            publishedAt: article.publishedAt || new Date().toISOString(),
+            category: article.category || 'news'
+          }))
         }
       } else {
         // Different article - playArticle will handle stopping previous article
         console.log('📱 Bottom Sheet - Starting new article playback (different article)')
-        await playArticle({
+        dispatch(playArticle({
           id: article.id,
           title: article.title,
-          content: article.content || ''
-        })
+          content: article.content || '',
+          summary: article.summary || '',
+          url: article.url || '',
+          source: article.source || '',
+          publishedAt: article.publishedAt || new Date().toISOString(),
+          category: article.category || 'news'
+        }))
       }
     } catch (error) {
       console.error('📱 Bottom Sheet - Text-to-speech error:', error)
@@ -138,11 +207,11 @@ export default function ArticleBottomSheet({
         isPlaying,
         isPaused,
         articleId,
-        currentArticleId: currentArticle?.id
+        currentArticleId: currentTTSArticle?.id
       })
       // TTS continues playing - user can control via HUD
     }
-  }, [open, isPlaying, isPaused, articleId, currentArticle])
+  }, [open, isPlaying, isPaused, articleId, currentTTSArticle])
   // Freeze body scrolling while drawer is open to prevent bounce
   React.useEffect(() => {
     if (open) document.body.style.overflow = "hidden"
@@ -210,10 +279,17 @@ export default function ArticleBottomSheet({
                   e.preventDefault()
                   e.stopPropagation()
                   e.nativeEvent.stopImmediatePropagation() // Better event isolation
-                  console.log('📱 Bottom Sheet - Headphones button clicked!')
+                  console.log('📱 Bottom Sheet - Headphones button clicked!', {
+                    buttonDisabled: isLoading || !ttsIsInitialized || !ttsCanPlay,
+                    isLoading,
+                    ttsIsInitialized,
+                    ttsCanPlay,
+                    hasArticle: !!article,
+                    clickEvent: 'registered'
+                  })
                   handleTextToSpeech()
                 }}
-                disabled={isLoading}
+                disabled={isLoading || !ttsIsInitialized || !ttsCanPlay}
                 className="h-10 w-10 p-0 rounded-full transition-all duration-200"
                 style={{ 
                   position: 'relative',
@@ -243,7 +319,7 @@ export default function ArticleBottomSheet({
                   e.currentTarget.style.transform = 'scale(1.05)'
                 }}
               >
-                {(isPlaying && currentArticle?.id === article?.id) ? (
+                {(isPlaying && currentTTSArticle?.id === article?.id) ? (
                   <PauseIcon 
                     className={cn(
                       "h-5 w-5",
@@ -262,16 +338,16 @@ export default function ArticleBottomSheet({
                     )} 
                     style={{ 
                       pointerEvents: 'none',
-                      color: (isPaused && currentArticle?.id === article?.id) 
+                      color: (isPaused && currentTTSArticle?.id === article?.id) 
                         ? 'rgb(var(--tts-accent))' 
                         : 'rgb(var(--tts-control-fg-secondary))'
                     }}
                   />
                 )}
                 <span className="sr-only">
-                  {(isPlaying && currentArticle?.id === article?.id)
+                  {(isPlaying && currentTTSArticle?.id === article?.id)
                     ? "Pause reading article" 
-                    : (isPaused && currentArticle?.id === article?.id)
+                    : (isPaused && currentTTSArticle?.id === article?.id)
                       ? "Resume reading article"
                       : "Read article aloud"
                   }

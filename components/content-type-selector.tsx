@@ -36,11 +36,15 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
           onMouseDown={() => setIsPressed('headlines')}
           onMouseUp={() => setIsPressed(null)}
           onTouchStart={() => setIsPressed('headlines')}
-          className={`relative px-5 py-2 text-sm font-normal rounded-full transition-all duration-200 ease-out touch-manipulation ${
+          className={`relative px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans ${
             value === 'headlines'
               ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'headlines' ? 'scale-[0.97]' : ''}`}
+          style={{ 
+            fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
+            letterSpacing: '-0.01em'
+          }}
         >
           {t('content.discover')}
         </button>
@@ -55,11 +59,15 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
           onMouseDown={() => setIsPressed('news')}
           onMouseUp={() => setIsPressed(null)}
           onTouchStart={() => setIsPressed('news')}
-          className={`relative px-5 py-2 text-sm font-normal rounded-full transition-all duration-200 ease-out touch-manipulation ${
+          className={`relative px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans ${
             value === 'news'
               ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'news' ? 'scale-[0.97]' : ''}`}
+          style={{ 
+            fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
+            letterSpacing: '-0.01em'
+          }}
         >
           {t('content.news')}
         </button>
@@ -74,11 +82,15 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
           onMouseDown={() => setIsPressed('bulletin')}
           onMouseUp={() => setIsPressed(null)}
           onTouchStart={() => setIsPressed('bulletin')}
-          className={`relative px-5 py-2 text-sm font-normal rounded-full transition-all duration-200 ease-out touch-manipulation ${
+          className={`relative px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans ${
             value === 'bulletin'
               ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
               : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
           } ${isPressed === 'bulletin' ? 'scale-[0.97]' : ''}`}
+          style={{ 
+            fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
+            letterSpacing: '-0.01em'
+          }}
         >
           {t('content.gov')}
         </button>

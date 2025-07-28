@@ -41,8 +41,8 @@ const translations = {
 
     // Content Types (Main App)
     "content.discover": "Discover",
-    "content.news": "News",
-    "content.gov": "Gov",
+    "content.news": "Latest",
+    "content.gov": "Notice",
     
     // Marketplace Categories
     "marketplace.cars": "Cars",
@@ -485,9 +485,9 @@ const translations = {
     "topics.world": "国际",
     
     // Content Types (Main App)
-    "content.discover": "发现",
-    "content.news": "新闻",
-    "content.gov": "政府",
+    "content.discover": "要闻",
+    "content.news": "最新",
+    "content.gov": "通告",
     
     // Marketplace Categories
     "marketplace.cars": "汽车",
@@ -930,9 +930,9 @@ const translations = {
     "topics.world": "國際",
     
     // Content Types (Main App)
-    "content.discover": "發現",
-    "content.news": "新聞",
-    "content.gov": "政府",
+    "content.discover": "要聞",
+    "content.news": "最新",
+    "content.gov": "通告",
     
     // Marketplace Categories
     "marketplace.cars": "汽車",
