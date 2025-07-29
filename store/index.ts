@@ -105,10 +105,27 @@ export const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore redux-persist actions
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-        // Ignore non-serializable values in auth state and TTS/audio state
-        ignoredActionsPaths: ['payload.session', 'payload.user.profile', 'payload.audioElement', 'payload.services'],
-        ignoredPaths: ['auth.session', 'audio.audioElement', 'tts.services', 'tts.currentAudioElement'],
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER, 'tts/initialize/fulfilled', 'tts/initialize/pending', 'tts/setCurrentAudioElement'],
+        // Ignore all non-serializable values in TTS/audio state 
+        ignoredActionsPaths: [
+          'payload.session', 
+          'payload.user.profile', 
+          'payload.audioElement', 
+          'payload.services',
+          'payload.services.ttsService', 
+          'payload.services.speechService', 
+          'payload.services.audioService',
+          'payload.currentAudioElement'
+        ],
+        ignoredPaths: [
+          'auth.session', 
+          'audio.audioElement', 
+          'tts.services', 
+          'tts.currentAudioElement', 
+          'tts.services.ttsService', 
+          'tts.services.speechService', 
+          'tts.services.audioService'
+        ],
       },
       // Enable additional middleware for development
       immutableCheck: process.env.NODE_ENV === 'development',
@@ -119,12 +136,18 @@ export const store = configureStore({
       visualizationMiddleware,
       // Add custom middleware for auth monitoring
       (store) => (next) => (action: any) => {
-        // Log auth and TTS actions in development
+        // Log auth and TTS actions in development (excluding high-frequency updates)
         if (process.env.NODE_ENV === 'development') {
           if (action.type?.startsWith('auth/')) {
             console.log('Auth Action:', action.type, action.payload)
           } else if (action.type?.startsWith('tts/') || action.type?.startsWith('audio/')) {
-            console.log('TTS/Audio Action:', action.type, action.payload)
+            // Filter out high-frequency visualization updates
+            const isHighFrequency = action.type === 'tts/updateAudioData' || 
+                                   action.type === 'audio/updateVisualizationData' ||
+                                   action.type === 'tts/updateProgress'
+            if (!isHighFrequency) {
+              console.log('TTS/Audio Action:', action.type, action.payload)
+            }
           }
         }
         

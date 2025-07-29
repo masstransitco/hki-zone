@@ -37,12 +37,7 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
     .replace(/\n\n?(?:\d+\.\s+\[.*?\]\(.*?\).*\n?)+$/i, '')
 
   // Debug logging for development
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    console.log('🔍 Parsing content:', { 
-      length: cleanedContent.length,
-      preview: cleanedContent.substring(0, 200) + '...'
-    })
-  }
+  // Content parsing debug (removed for cleaner console)
 
   // Check if content has structured format (English or Chinese) - handle both ** and ## formats
   const hasStructuredSections = /(\*\*(Summary|Key Points?|Key Context|Why It Matters?|摘要|重点|重點|重要性)\*\*|##\s*(SUMMARY|KEY POINTS?|KEY CONTEXT|WHY IT MATTERS?|摘要|重点|重點|重要性))/i.test(cleanedContent)
@@ -97,10 +92,7 @@ export function parseAIEnhancedContent(content: string): ParsedArticleContent {
 
     if (!sectionContent || !sectionTitle) continue
 
-    // Debug logging
-    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      console.log('📑 Section found:', { title: sectionTitle, contentLength: sectionContent.length })
-    }
+    // Section parsing debug (removed for cleaner console)
 
     switch (sectionTitle) {
       case 'summary':

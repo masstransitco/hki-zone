@@ -37,13 +37,15 @@ interface ArticleBottomSheetProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   isPerplexityArticle?: boolean
+  onArticleChange?: (articleId: string) => void
 }
 
 export default function ArticleBottomSheet({ 
   articleId, 
   open, 
   onOpenChange,
-  isPerplexityArticle = false
+  isPerplexityArticle = false,
+  onArticleChange
 }: ArticleBottomSheetProps) {
   
   // Debug when open state changes
@@ -67,26 +69,7 @@ export default function ArticleBottomSheet({
   const fullTTSState = useSelector(selectTTS)
 
   // Debug logging for TTS states
-  React.useEffect(() => {
-    console.log('📱 Bottom Sheet - TTS States:', { 
-      isPlaying, 
-      isPaused, 
-      isLoading, 
-      open,
-      articleId: article?.id,
-      articleTitle: article?.title,
-      currentArticleId: currentTTSArticle?.id,
-      ttsIsInitialized,
-      ttsCanPlay,
-      buttonDisabled: isLoading || !ttsIsInitialized || !ttsCanPlay,
-      services: {
-        hasTTSService: !!fullTTSState.services?.ttsService,
-        hasSpeechService: !!fullTTSState.services?.speechService,
-        hasAudioService: !!fullTTSState.services?.audioService
-      },
-      error: fullTTSState.error
-    })
-  }, [isPlaying, isPaused, isLoading, open, article, currentTTSArticle, ttsIsInitialized, ttsCanPlay, fullTTSState])
+  // TTS state tracking (debug logging removed)
 
   // Fetch article data when articleId changes
   React.useEffect(() => {
@@ -195,6 +178,13 @@ export default function ArticleBottomSheet({
       }
     } catch (error) {
       console.error('📱 Bottom Sheet - Text-to-speech error:', error)
+    }
+  }
+
+  // Handle article selection from Keep Reading section
+  const handleArticleSelect = (newArticleId: string) => {
+    if (onArticleChange) {
+      onArticleChange(newArticleId)
     }
   }
 
@@ -377,7 +367,10 @@ export default function ArticleBottomSheet({
         {/* Article content */}
         <div className="flex-1 overflow-y-auto overscroll-contain">
           {articleId && (
-            <ArticleDetailSheet articleId={articleId} />
+            <ArticleDetailSheet 
+              articleId={articleId} 
+              onArticleSelect={handleArticleSelect}
+            />
           )}
         </div>
       </DrawerContent>

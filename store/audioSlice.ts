@@ -138,8 +138,6 @@ export const initializeAudioContext = createAsyncThunk(
       const state = getState() as { audio: AudioState }
       const { device } = state.audio
       
-      console.log('🎵 Audio Redux - Initializing AudioContext...')
-      console.log('🎵 Audio Redux - Device info:', device)
       
       // Check for AudioContext support
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
@@ -150,7 +148,6 @@ export const initializeAudioContext = createAsyncThunk(
       // For mobile browsers, especially iOS, we need to handle suspended contexts
       const contextInitialized = Date.now()
       
-      console.log('🎵 Audio Redux - AudioContext created successfully')
       
       return {
         contextInitialized,
@@ -176,7 +173,6 @@ export const connectAudioAnalysis = createAsyncThunk(
         throw new Error('AudioContext not ready')
       }
       
-      console.log('🎵 Audio Redux - Connecting audio analysis...')
       
       // Basic audio element information
       const audioInfo = {
@@ -188,12 +184,10 @@ export const connectAudioAnalysis = createAsyncThunk(
         paused: audioElement.paused
       }
       
-      console.log('🎵 Audio Redux - Audio element info:', audioInfo)
       
       // On mobile browsers, especially iOS Chrome, connection might fail
       // Provide graceful degradation
       if (device.isMobile) {
-        console.log('🎵 Audio Redux - Mobile device detected, using compatible mode')
       }
       
       return {
@@ -220,7 +214,6 @@ export const startVisualization = createAsyncThunk(
         console.warn('🎵 Audio Redux - Analyser not connected, starting mock visualization')
       }
       
-      console.log('🎵 Audio Redux - Starting visualization updates')
       
       return {
         started: true,
@@ -239,7 +232,6 @@ export const stopVisualization = createAsyncThunk(
   'audio/stopVisualization',
   async (_, { rejectWithValue }) => {
     try {
-      console.log('🎵 Audio Redux - Stopping visualization')
       
       return {
         stopped: true,

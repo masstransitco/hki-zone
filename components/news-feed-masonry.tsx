@@ -75,6 +75,11 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
     }
   }
 
+  const handleArticleChange = (articleId: string) => {
+    setSelectedArticleId(articleId)
+    // Keep the bottom sheet open when switching articles
+  }
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } = useInfiniteQuery({
     queryKey: ["articles"],
     queryFn: fetchArticles,
@@ -332,6 +337,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
         articleId={selectedArticleId}
         open={isBottomSheetOpen}
         onOpenChange={handleBottomSheetChange}
+        onArticleChange={handleArticleChange}
       />
     </div>
   )

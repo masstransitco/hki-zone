@@ -98,14 +98,12 @@ async function startGoogleTTSPlayback(
       store.dispatch(setPlaying(false))
       store.dispatch(stopVisualization())
       store.dispatch(setCurrentAudioElement(null))
-      console.log('🎵 Middleware - Google TTS playback completed')
       return
     }
 
     const audio = new Audio(audioUrls[currentChunkIndex])
     store.dispatch(setCurrentAudioElement(audio))
     
-    console.log('🎵 Middleware - Created audio element for chunk', currentChunkIndex + 1)
 
     // Set up audio event handlers
     audio.onloadedmetadata = () => {
@@ -122,7 +120,6 @@ async function startGoogleTTSPlayback(
 
     audio.onloadeddata = async () => {
       if (currentChunkIndex === 0) {
-        console.log('🎵 Middleware - First chunk loaded, starting playback')
         
         // Set playing state first
         store.dispatch(setPlaying(true))
@@ -131,24 +128,20 @@ async function startGoogleTTSPlayback(
         if (audioService) {
           try {
             await audioService.setupAudioAnalysis(audio)
-            console.log('🎵 Middleware - Audio analysis connected successfully')
             
             // Now start the real-time visualization since audio analysis is connected
             store.dispatch(startVisualization())
           } catch (analysisError) {
-            console.warn('🎵 Middleware - Audio analysis failed, using mock visualization:', analysisError)
             // Still start visualization but it will use mock data
             store.dispatch(startVisualization())
           }
         } else {
-          console.log('🎵 Middleware - No audio service available, using mock visualization')
           store.dispatch(startVisualization())
         }
       }
       
       try {
         await audio.play()
-        console.log(`🎵 Middleware - Playing chunk ${currentChunkIndex + 1}/${audioUrls.length}`)
       } catch (playError) {
         console.error('🎵 Middleware - Audio play failed:', playError)
         // Try next chunk
@@ -170,7 +163,6 @@ async function startGoogleTTSPlayback(
     }
 
     audio.onended = () => {
-      console.log(`🎵 Middleware - Chunk ${currentChunkIndex + 1} ended`)
       currentChunkIndex++
       playNextChunk()
     }
@@ -194,13 +186,11 @@ async function startBrowserTTSPlayback(
   speechService: SpeechService
 ) {
   try {
-    console.log('🎵 Middleware - Starting browser TTS playback')
     
     // Set playing state
     store.dispatch(setPlaying(true))
     
     // Browser TTS doesn't have real audio data, so no visualization
-    console.log('🎵 Middleware - Browser TTS: No audio visualization available')
     
     // Start speech
     await speechService.speak(text)
@@ -210,7 +200,6 @@ async function startBrowserTTSPlayback(
     const idleData = Array(6).fill(0)
     store.dispatch(updateAudioData(idleData))
     
-    console.log('🎵 Middleware - Browser TTS playback completed')
   } catch (error) {
     console.error('🎵 Middleware - Browser TTS playback failed:', error)
     store.dispatch(setPlaying(false))
@@ -238,9 +227,7 @@ export const visualizationMiddleware: Middleware = (store) => (next) => (action)
         },
         'playing'
       )
-      console.log('🎵 Visualization Middleware - Started real-time audio visualization')
     } else {
-      console.log('🎵 Visualization Middleware - No audio service or not playing, skipping visualization')
     }
   }
 
@@ -252,7 +239,6 @@ export const visualizationMiddleware: Middleware = (store) => (next) => (action)
       tts.services.audioService.stopVisualizationLoop()
     }
     
-    console.log('🎵 Visualization Middleware - Stopped visualization')
   }
 
   return result

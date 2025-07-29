@@ -131,6 +131,11 @@ export default function UnifiedFeed({
     }
   };
 
+  const handleArticleChange = (articleId: string) => {
+    setSelectedArticleId(articleId);
+    // Keep the bottom sheet open when switching articles
+  };
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -264,6 +269,7 @@ export default function UnifiedFeed({
         articleId={selectedArticleId}
         open={isBottomSheetOpen}
         onOpenChange={handleBottomSheetChange}
+        onArticleChange={handleArticleChange}
       />
     </div>
   );

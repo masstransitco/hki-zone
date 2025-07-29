@@ -12,9 +12,11 @@ import PublicSources from "./public-sources"
 import AIEnhancedContent from "./ai-enhanced-content"
 import OutletFavicon from "./outlet-favicon"
 import { getSourceDisplayNameWithAI } from "@/lib/source-display-name"
+import KeepReadingSection from "./keep-reading-section"
 
 interface ArticleDetailSheetProps {
   articleId: string
+  onArticleSelect?: (articleId: string) => void
 }
 
 async function fetchArticle(id: string): Promise<Article> {
@@ -39,7 +41,7 @@ async function fetchArticle(id: string): Promise<Article> {
   return article
 }
 
-export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProps) {
+export default function ArticleDetailSheet({ articleId, onArticleSelect }: ArticleDetailSheetProps) {
   const { t } = useLanguage()
   const [article, setArticle] = useState<Article | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -72,6 +74,15 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
 
     return () => {
       mounted = false
+    }
+  }, [articleId])
+
+  // Scroll to top when article changes
+  useEffect(() => {
+    // Find the article content container and scroll to top
+    const articleContainer = document.querySelector('.overflow-y-auto.overscroll-contain')
+    if (articleContainer) {
+      articleContainer.scrollTo({ top: 0, behavior: 'smooth' })
     }
   }, [articleId])
 
@@ -158,6 +169,14 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
         )}
 
       </div>
+
+      {/* Keep Reading Section */}
+      {onArticleSelect && (
+        <KeepReadingSection 
+          currentArticle={article}
+          onArticleSelect={onArticleSelect}
+        />
+      )}
 
       {/* Only show "Read original article" button for non-AI enhanced articles */}
       {!article.isAiEnhanced && (

@@ -45,6 +45,11 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
     }
   }
 
+  const handleArticleChange = (articleId: string) => {
+    setSelectedArticleId(articleId)
+    // Keep the bottom sheet open when switching articles
+  }
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } = useInfiniteQuery({
     queryKey: ["topics-articles", language],
     queryFn: ({ pageParam }) => fetchTopicsArticles({ pageParam, language }),
@@ -284,6 +289,7 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
         articleId={selectedArticleId}
         open={isBottomSheetOpen}
         onOpenChange={handleBottomSheetChange}
+        onArticleChange={handleArticleChange}
       />
     </div>
   )

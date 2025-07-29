@@ -131,7 +131,6 @@ export const initializeTTS = createAsyncThunk(
   'tts/initialize',
   async (config: Partial<TTSConfig>, { rejectWithValue }) => {
     try {
-      console.log('🎵 TTS Redux - Initializing TTS system...')
       
       // Get API key from environment or config
       const apiKey = config.apiKey || process.env.NEXT_PUBLIC_GOOGLE_TEXT_TO_SPEECH_API_KEY
@@ -148,12 +147,6 @@ export const initializeTTS = createAsyncThunk(
       const speechService = createSpeechService({ language })
       const audioService = createAudioService()
       
-      console.log('🎵 TTS Redux - Services created:', {
-        hasTTSService: !!ttsService,
-        hasSpeechService: !!speechService,
-        hasAudioService: !!audioService,
-        apiKey: apiKey ? 'present' : 'missing'
-      })
       
       // Initialize audio service (don't let it block TTS initialization)
       let audioInitialized = false
@@ -162,13 +155,11 @@ export const initializeTTS = createAsyncThunk(
           audioService.initializeAudioContext(),
           new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000)) // 2 second timeout
         ])
-        console.log('🎵 TTS Redux - Audio service initialized:', audioInitialized)
       } catch (error) {
         console.warn('🎵 TTS Redux - Audio service initialization failed, continuing without it:', error)
         audioInitialized = false
       }
       
-      console.log('🎵 TTS Redux - All services initialized successfully')
       return { 
         config: ttsConfig,
         services: {
@@ -217,7 +208,6 @@ export const playArticle = createAsyncThunk(
       
       // Prepare text for TTS
       const textToSpeak = createTTSText(article)
-      console.log('🎵 TTS Redux - Text prepared, length:', textToSpeak.length)
       
       let audioUrls: string[] = []
       let totalDuration = 0
@@ -226,13 +216,11 @@ export const playArticle = createAsyncThunk(
       try {
         // Try Google TTS first if available
         if (services?.ttsService) {
-          console.log('🎵 TTS Redux - Using Google TTS service')
           const response = await services.ttsService.synthesizeSpeech(textToSpeak)
           audioUrls = response.audioUrls
           totalDuration = response.totalDuration
           playbackMethod = 'google'
         } else if (services?.speechService) {
-          console.log('🎵 TTS Redux - Using browser speech synthesis')
           playbackMethod = 'browser'
           // Browser API doesn't return URLs, will be handled in playback
         } else {
@@ -252,7 +240,6 @@ export const playArticle = createAsyncThunk(
         
         // Fallback to browser speech if Google TTS failed
         if (playbackMethod === 'google' && services?.speechService) {
-          console.log('🎵 TTS Redux - Falling back to browser speech')
           return {
             article,
             textToSpeak,
@@ -285,7 +272,6 @@ export const pausePlayback = createAsyncThunk(
         return rejectWithValue('Not currently playing')
       }
       
-      console.log('🎵 TTS Redux - Pausing playback')
       
       let paused = false
       
@@ -293,12 +279,10 @@ export const pausePlayback = createAsyncThunk(
       if (currentAudioElement && !currentAudioElement.paused) {
         currentAudioElement.pause()
         paused = true
-        console.log('🎵 TTS Redux - Paused audio element')
       }
       // Fallback to speech service
       else if (services?.speechService) {
         paused = services.speechService.pause()
-        console.log('🎵 TTS Redux - Paused speech synthesis:', paused)
       }
       
       if (!paused) {
@@ -326,7 +310,6 @@ export const resumePlayback = createAsyncThunk(
         return rejectWithValue('Not currently paused')
       }
       
-      console.log('🎵 TTS Redux - Resuming playback')
       
       let resumed = false
       
@@ -335,7 +318,6 @@ export const resumePlayback = createAsyncThunk(
         try {
           await currentAudioElement.play()
           resumed = true
-          console.log('🎵 TTS Redux - Resumed audio element')
         } catch (playError) {
           console.error('🎵 TTS Redux - Failed to resume audio element:', playError)
         }
@@ -343,7 +325,6 @@ export const resumePlayback = createAsyncThunk(
       // Fallback to speech service
       else if (services?.speechService) {
         resumed = services.speechService.resume()
-        console.log('🎵 TTS Redux - Resumed speech synthesis:', resumed)
       }
       
       if (!resumed) {
@@ -363,7 +344,6 @@ export const stopPlayback = createAsyncThunk(
   'tts/stop',
   async (_, { getState, rejectWithValue }) => {
     try {
-      console.log('🎵 TTS Redux - Stopping playback and cleaning up resources')
       
       const state = getState() as { tts: TTSState }
       const { services, currentAudioElement, currentAudioUrls } = state.tts
@@ -378,7 +358,6 @@ export const stopPlayback = createAsyncThunk(
           currentAudioElement.ontimeupdate = null
           currentAudioElement.onended = null
           currentAudioElement.onerror = null
-          console.log('🎵 TTS Redux - Stopped and cleaned up audio element')
         } catch (audioError) {
           console.warn('🎵 TTS Redux - Error stopping audio element:', audioError)
         }
@@ -388,7 +367,6 @@ export const stopPlayback = createAsyncThunk(
       if (services?.speechService) {
         try {
           services.speechService.stop()
-          console.log('🎵 TTS Redux - Stopped speech synthesis')
         } catch (speechError) {
           console.warn('🎵 TTS Redux - Error stopping speech synthesis:', speechError)
         }
@@ -398,7 +376,6 @@ export const stopPlayback = createAsyncThunk(
       if (services?.audioService) {
         try {
           services.audioService.stopVisualizationLoop()
-          console.log('🎵 TTS Redux - Stopped audio visualization')
         } catch (audioServiceError) {
           console.warn('🎵 TTS Redux - Error stopping audio service:', audioServiceError)
         }
@@ -413,7 +390,6 @@ export const stopPlayback = createAsyncThunk(
             console.warn('🎵 TTS Redux - Error revoking URL:', url, urlError)
           }
         })
-        console.log('🎵 TTS Redux - Cleaned up audio URLs')
       }
       
       return { timestamp: Date.now() }

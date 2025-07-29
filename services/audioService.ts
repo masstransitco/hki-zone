@@ -233,10 +233,8 @@ export class AudioService {
       if (this.analyser && type === 'playing') {
         // Use real frequency data when available
         data = this.getFrequencyData()
-        console.log('🎵 AudioService - Using REAL frequency data:', data.slice(0, 3))
       } else {
         // No analyser available - return zeros instead of mock data
-        console.log('🎵 AudioService - No analyser available, analyser:', !!this.analyser, 'type:', type)
         data = Array(6).fill(0)
       }
       

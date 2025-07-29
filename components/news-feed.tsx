@@ -33,6 +33,11 @@ export default function NewsFeed() {
     }
   }
 
+  const handleArticleChange = (articleId: string) => {
+    setSelectedArticleId(articleId)
+    // Keep the bottom sheet open when switching articles
+  }
+
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error } = useInfiniteQuery({
     queryKey: ["articles"],
     queryFn: fetchArticles,
@@ -72,6 +77,7 @@ export default function NewsFeed() {
         articleId={selectedArticleId}
         open={isBottomSheetOpen}
         onOpenChange={handleBottomSheetChange}
+        onArticleChange={handleArticleChange}
       />
     </div>
   )

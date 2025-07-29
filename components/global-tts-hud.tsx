@@ -67,29 +67,12 @@ export default function GlobalTTSHUD() {
   // isVisible is now handled by the selector
 
   // Debug logging
-  React.useEffect(() => {
-    console.log('🌟 Global TTS HUD - Render state:', { 
-      isVisible, 
-      isPlaying, 
-      isLoading, 
-      isPaused,
-      progress: Math.round(progress * 100) + '%',
-      duration: Math.round(duration) + 's',
-      currentTime: Math.round(currentTime) + 's',
-      audioDataAvg: audioData.reduce((a, b) => a + b, 0) / audioData.length,
-      hasCurrentArticle: !!currentArticle,
-      articleTitle: currentArticle?.title || 'none'
-    })
-  }, [isVisible, isPlaying, isLoading, isPaused, progress, duration, currentTime, audioData, currentArticle])
+  // HUD state tracking (debug logging removed)
 
   const handleTogglePlayback = () => {
-    console.log('🌟 Global TTS HUD - Toggle playback clicked', { isPlaying, isPaused })
-    
     if (isPlaying) {
-      console.log('🌟 Global TTS HUD - Pausing playback')
       dispatch(pausePlayback())
     } else if (isPaused) {
-      console.log('🌟 Global TTS HUD - Resuming playback')
       dispatch(resumePlayback())
     }
   }
