@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { Clock, ExternalLink } from "lucide-react"
@@ -47,6 +47,7 @@ export default function ArticleDetailSheet({ articleId, onArticleSelect }: Artic
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const timeAgo = useHydrationSafeDate(article?.publishedAt || null)
+  const articleRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     let mounted = true
@@ -77,13 +78,47 @@ export default function ArticleDetailSheet({ articleId, onArticleSelect }: Artic
     }
   }, [articleId])
 
-  // Scroll to top when article changes
+  // Scroll to top when article changes - iOS compatible
   useEffect(() => {
-    // Find the article content container and scroll to top
-    const articleContainer = document.querySelector('.overflow-y-auto.overscroll-contain')
-    if (articleContainer) {
-      articleContainer.scrollTo({ top: 0, behavior: 'smooth' })
+    const scrollToTop = () => {
+      // Method 1: Use the article ref directly
+      if (articleRef.current) {
+        articleRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        })
+        return
+      }
+      
+      // Method 2: Find parent scrollable container
+      const scrollableContainer = document.querySelector('.overflow-y-auto') || 
+                                 document.querySelector('[data-vaul-drawer]') ||
+                                 document.querySelector('.drawer-content')
+      
+      if (scrollableContainer) {
+        // Force scroll position to 0 (works better on iOS)
+        scrollableContainer.scrollTop = 0
+        
+        // Try smooth scroll as enhancement
+        if ('scrollTo' in scrollableContainer) {
+          try {
+            scrollableContainer.scrollTo({ top: 0, behavior: 'smooth' })
+          } catch (e) {
+            // iOS Safari sometimes throws errors, just use direct assignment
+            scrollableContainer.scrollTop = 0
+          }
+        }
+      }
     }
+    
+    // Immediate scroll for instant feedback
+    scrollToTop()
+    
+    // Also try after a small delay for iOS timing issues
+    const timeoutId = setTimeout(scrollToTop, 50)
+    
+    return () => clearTimeout(timeoutId)
   }, [articleId])
 
   if (isLoading) return <ArticleDetailSkeleton isBottomSheet={true} />
@@ -91,7 +126,7 @@ export default function ArticleDetailSheet({ articleId, onArticleSelect }: Artic
   if (!article) return <div className="px-6 py-4 text-center text-body">{t("error.articleNotFound")}</div>
 
   return (
-    <article className="px-6 pt-4 pb-8">
+    <article ref={articleRef} className="px-6 pt-4 pb-8">
       <header className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-6 leading-tight">{article.title}</h1>
 
