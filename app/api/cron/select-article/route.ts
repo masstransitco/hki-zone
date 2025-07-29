@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
     console.log(`✅ Authentication: ${isVercelCron ? 'Vercel Cron' : 'Secret Auth'}`)
     console.log('🎯 Starting article selection with Perplexity...')
 
-    // Select 1 best article from scraped sources for enhancement
-    const selectedArticles = await selectArticlesWithPerplexity(1)
+    // Select 3 best articles from scraped sources for enhancement
+    const selectedArticles = await selectArticlesWithPerplexity(3)
 
     if (selectedArticles.length === 0) {
       console.log('⏭️ No articles available for selection')
@@ -52,27 +52,27 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const selectedArticle = selectedArticles[0]
-    
-    console.log(`✅ Selected article for enhancement:`)
-    console.log(`   Title: ${selectedArticle.title}`)
-    console.log(`   Source: ${selectedArticle.source}`)
-    console.log(`   Reason: ${selectedArticle.selection_reason}`)
-    console.log(`   Score: ${selectedArticle.priority_score}`)
+    console.log(`✅ Selected ${selectedArticles.length} articles for enhancement:`)
+    selectedArticles.forEach((article, index) => {
+      console.log(`   ${index + 1}. Title: ${article.title}`)
+      console.log(`      Source: ${article.source}`)
+      console.log(`      Reason: ${article.selection_reason}`)
+      console.log(`      Score: ${article.priority_score}`)
+    })
 
     return NextResponse.json({
       success: true,
-      message: 'Article selected for enhancement',
-      selectedCount: 1,
-      article: {
-        id: selectedArticle.id,
-        title: selectedArticle.title,
-        source: selectedArticle.source,
-        category: selectedArticle.category,
-        selection_reason: selectedArticle.selection_reason,
-        priority_score: selectedArticle.priority_score,
-        published_at: selectedArticle.published_at
-      }
+      message: `${selectedArticles.length} articles selected for enhancement`,
+      selectedCount: selectedArticles.length,
+      articles: selectedArticles.map(article => ({
+        id: article.id,
+        title: article.title,
+        source: article.source,
+        category: article.category,
+        selection_reason: article.selection_reason,
+        priority_score: article.priority_score,
+        published_at: article.published_at
+      }))
     })
 
   } catch (error) {

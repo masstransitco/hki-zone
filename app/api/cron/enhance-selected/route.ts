@@ -19,22 +19,24 @@ function generateBatchId(): string {
 }
 
 function calculateTrilingualCost(enhancedArticles: any[]): number {
-  // Estimate: ~$0.075 per enhanced article
-  return enhancedArticles.length * 0.075
+  // With one-shot trilingual generation: ~$0.025 per source article (3 enhanced versions)
+  // So cost per enhanced article is approximately $0.008
+  return (enhancedArticles.length / 3) * 0.025
 }
 
-async function getSelectedArticleForEnhancement(): Promise<any | null> {
+async function getSelectedArticlesForEnhancement(limit: number = 3): Promise<any[] | null> {
   try {
-    console.log('   🔍 Finding article marked for enhancement...')
+    console.log(`   🔍 Finding up to ${limit} articles marked for enhancement...`)
     
-    // Check for backlog - if multiple articles are pending, prioritize oldest selection
+    // Get multiple articles - prioritize by priority score and oldest selection
     const { data: articles, error } = await supabase
       .from('articles')
       .select('*')
       .eq('selected_for_enhancement', true)
       .is('is_ai_enhanced', false)
-      .order('selection_metadata->selected_at', { ascending: true }) // Process oldest selection first
-      .limit(1)
+      .order('selection_metadata->priority_score', { ascending: false }) // Highest priority first
+      .order('selection_metadata->selected_at', { ascending: true }) // Then oldest selection
+      .limit(limit)
 
     if (error) {
       console.error('❌ Database error:', error)
@@ -48,10 +50,12 @@ async function getSelectedArticleForEnhancement(): Promise<any | null> {
       return null
     }
 
-    const article = articles[0]
-    console.log(`   ✅ Selected article: "${article.title?.substring(0, 50)}..." (${article.source})`)
+    console.log(`   ✅ Selected ${articles.length} articles:`)
+    articles.forEach((article, index) => {
+      console.log(`      ${index + 1}. "${article.title?.substring(0, 50)}..." (${article.source})`)
+    })
     
-    return {
+    return articles.map(article => ({
       id: article.id,
       title: article.title,
       summary: article.summary,
@@ -65,7 +69,7 @@ async function getSelectedArticleForEnhancement(): Promise<any | null> {
       author: article.author,
       selection_reason: article.selection_metadata?.selection_reason || 'Selected for enhancement',
       priority_score: article.selection_metadata?.priority_score || 80
-    }
+    }))
 
   } catch (error) {
     console.error('❌ Error getting selected article:', error)
@@ -244,49 +248,36 @@ export async function GET(request: NextRequest) {
 
     // 1. Find the article marked for enhancement
     let selectedArticle;
+    let selectedArticles;
     try {
-      console.log('🔍 Looking for selected article...')
-      selectedArticle = await getSelectedArticleForEnhancement()
+      console.log('🔍 Looking for selected articles...')
+      selectedArticles = await getSelectedArticlesForEnhancement(3) // Process up to 3 articles
 
-      if (!selectedArticle) {
-        console.log('⏭️ No article found for enhancement - may have been processed already')
+      if (!selectedArticles || selectedArticles.length === 0) {
+        console.log('⏭️ No articles found for enhancement - may have been processed already')
         return NextResponse.json({
           success: true,
-          message: 'No article found for enhancement',
+          message: 'No articles found for enhancement',
           processed: 0
         })
       }
 
-      console.log(`📝 Processing selected article: "${selectedArticle.title}"`)
-      console.log(`   Source: ${selectedArticle.source}`)
-      console.log(`   Reason: ${selectedArticle.selection_reason}`)
+      console.log(`📝 Processing ${selectedArticles.length} selected articles:`)
+      selectedArticles.forEach((article, index) => {
+        console.log(`   ${index + 1}. "${article.title}"`)
+        console.log(`      Source: ${article.source}`)
+        console.log(`      Reason: ${article.selection_reason}`)
+      })
     } catch (error) {
-      console.error('❌ Error finding selected article:', error)
-      throw new Error(`Failed to find selected article: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      console.error('❌ Error finding selected articles:', error)
+      throw new Error(`Failed to find selected articles: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
 
-    // 2. Create trilingual enhanced versions - format as array like working implementation
+    // 2. Create trilingual enhanced versions for all selected articles
     let trilingualArticles;
     try {
       console.log('🌐 Creating trilingual enhanced versions...')
-      console.log(`   Input: 1 article with ID ${selectedArticle.id}`)
-      
-      // Convert to the format expected by batchEnhanceTrilingualArticles (same as working implementation)
-      const selectedArticles = [{
-        id: selectedArticle.id,
-        title: selectedArticle.title,
-        summary: selectedArticle.summary,
-        content: selectedArticle.content,
-        url: selectedArticle.url,
-        source: selectedArticle.source,
-        category: selectedArticle.category,
-        published_at: selectedArticle.published_at,
-        created_at: selectedArticle.created_at,
-        image_url: selectedArticle.image_url,
-        author: selectedArticle.author,
-        selection_reason: selectedArticle.selection_reason,
-        priority_score: selectedArticle.priority_score
-      }];
+      console.log(`   Input: ${selectedArticles.length} articles`)
       
       trilingualArticles = await batchEnhanceTrilingualArticles(selectedArticles, batchId)
       console.log(`   Output: ${trilingualArticles?.length || 0} trilingual articles`)
@@ -314,39 +305,50 @@ export async function GET(request: NextRequest) {
       throw new Error(`Failed to save articles: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
 
-    // 4. Mark original article as processed to prevent re-selection - CRITICAL: Must succeed
+    // 4. Mark original articles as processed to prevent re-selection - CRITICAL: Must succeed
     try {
-      console.log('🔐 Marking original article as processed...')
+      console.log('🔐 Marking original articles as processed...')
       
-      // Use atomic transaction to ensure both operations succeed or both fail
-      const { error: markError } = await supabase
-        .from('articles')
-        .update({ 
-          is_ai_enhanced: false, // IMPORTANT: Source articles should NOT be marked as enhanced
-          selected_for_enhancement: false, // Reset selection flag
-          enhancement_metadata: {
-            enhanced_at: new Date().toISOString(),
-            trilingual_versions_created: savedArticles.length,
-            batch_id: batchId,
-            processing_time_ms: Date.now() - startTime,
-            estimated_cost: calculateTrilingualCost(trilingualArticles),
-            enhancement_method: 'cron_trilingual',
-            enhanced_article_ids: savedArticles.map(a => a.id),
-            source_article_status: 'enhanced_children_created'
-          }
-        })
-        .eq('id', selectedArticle.id)
-        .eq('selected_for_enhancement', true) // Additional safety check
-
-      if (markError) {
-        console.error('❌ CRITICAL: Failed to mark original article properly:', markError)
-        console.error('❌ This will cause AI to re-select this article!')
+      // Process each selected article
+      for (const selectedArticle of selectedArticles) {
+        // Calculate how many enhanced versions were created for this specific article
+        const articlesForThisSource = savedArticles.filter(a => 
+          a.source_article_id === selectedArticle.id || 
+          a.enhancement_metadata?.source_article_id === selectedArticle.id
+        ).length;
         
-        // CRITICAL FIX: Throw error to prevent incomplete state
-        throw new Error(`Failed to mark source article properly: ${markError.message}. This would cause duplicate selection by AI.`)
-      } else {
-        console.log(`✅ Marked source article "${selectedArticle.title}" as processed (not enhanced)`)
-        console.log(`✅ Created ${savedArticles.length} enhanced children articles`)
+        const { error: markError } = await supabase
+          .from('articles')
+          .update({ 
+            is_ai_enhanced: false, // IMPORTANT: Source articles should NOT be marked as enhanced
+            selected_for_enhancement: false, // Reset selection flag
+            enhancement_metadata: {
+              enhanced_at: new Date().toISOString(),
+              trilingual_versions_created: articlesForThisSource,
+              batch_id: batchId,
+              processing_time_ms: Date.now() - startTime,
+              estimated_cost: calculateTrilingualCost(trilingualArticles) / selectedArticles.length,
+              enhancement_method: 'cron_trilingual',
+              enhanced_article_ids: savedArticles
+                .filter(a => a.source_article_id === selectedArticle.id || 
+                            a.enhancement_metadata?.source_article_id === selectedArticle.id)
+                .map(a => a.id),
+              source_article_status: 'enhanced_children_created'
+            }
+          })
+          .eq('id', selectedArticle.id)
+          .eq('selected_for_enhancement', true) // Additional safety check
+
+        if (markError) {
+          console.error(`❌ CRITICAL: Failed to mark article ${selectedArticle.id} properly:`, markError)
+          console.error('❌ This will cause AI to re-select this article!')
+          
+          // CRITICAL FIX: Throw error to prevent incomplete state
+          throw new Error(`Failed to mark source article ${selectedArticle.id} properly: ${markError.message}. This would cause duplicate selection by AI.`)
+        } else {
+          console.log(`✅ Marked source article "${selectedArticle.title}" as processed (not enhanced)`)
+          console.log(`✅ Created ${articlesForThisSource} enhanced children articles for this source`)
+        }
       }
     } catch (error) {
       console.error('❌ CRITICAL Error marking original article:', error)
@@ -358,20 +360,20 @@ export async function GET(request: NextRequest) {
     const processingTime = Date.now() - startTime
     const estimatedCost = calculateTrilingualCost(trilingualArticles)
 
-    console.log(`✅ Enhancement complete: 1 → ${savedArticles.length} articles in ${Math.round(processingTime / 1000)}s`)
-    console.log(`   Cost: $${estimatedCost.toFixed(4)}`)
+    console.log(`✅ Enhancement complete: ${selectedArticles.length} → ${savedArticles.length} articles in ${Math.round(processingTime / 1000)}s`)
+    console.log(`   Cost: $${estimatedCost.toFixed(4)} (${(estimatedCost / selectedArticles.length).toFixed(4)} per source article)`)
 
     return NextResponse.json({
       success: true,
-      message: `Enhanced article into ${savedArticles.length} trilingual versions`,
+      message: `Enhanced ${selectedArticles.length} articles into ${savedArticles.length} trilingual versions`,
       batchId,
-      sourceArticle: {
-        id: selectedArticle.id,
-        title: selectedArticle.title,
-        source: selectedArticle.source,
-        selection_reason: selectedArticle.selection_reason,
-        priority_score: selectedArticle.priority_score
-      },
+      sourceArticles: selectedArticles.map(article => ({
+        id: article.id,
+        title: article.title,
+        source: article.source,
+        selection_reason: article.selection_reason,
+        priority_score: article.priority_score
+      })),
       totalEnhanced: trilingualArticles.length,
       totalSaved: savedArticles.length,
       articlesByLanguage: {
@@ -382,13 +384,14 @@ export async function GET(request: NextRequest) {
       processingTime,
       processingTimeMinutes: Math.round(processingTime / 60000 * 10) / 10,
       estimatedCost: estimatedCost.toFixed(4),
+      costPerArticle: (estimatedCost / selectedArticles.length).toFixed(4),
       articles: savedArticles.map(article => ({
         id: article.id,
         title: article.title,
         language: article.language,
         url: article.url,
         source: article.source,
-        qualityScore: article.quality_score
+        source_article_id: article.source_article_id || article.original_article_id
       }))
     })
 

@@ -61,9 +61,45 @@ interface EnhancementOptions {
   language?: 'en' | 'zh-TW' | 'zh-CN'
 }
 
+interface TrilingualResult {
+  en: {
+    title: string
+    summary: string
+    content: string
+    key_points: string[]
+    why_it_matters: string
+    citations: Array<{text: string; url: string}>
+  }
+  zh_HK: {
+    title: string
+    summary: string
+    content: string
+    key_points: string[]
+    why_it_matters: string
+    citations: Array<{text: string; url: string}>
+  }
+  zh_CN: {
+    title: string
+    summary: string
+    content: string
+    key_points: string[]
+    why_it_matters: string
+    citations: Array<{text: string; url: string}>
+  }
+}
+
 class PerplexityEnhancerV2 {
   private apiKey: string
   private baseUrl = 'https://api.perplexity.ai'
+  private lastSearchResults: any[] = []
+  private lastCitations: string[] = []
+  
+  // Trusted domains for citation validation (max 10 for Perplexity API)
+  private readonly TRUSTED_DOMAINS = [
+    'news.gov.hk', 'info.gov.hk', 'rthk.hk', 
+    'scmp.com', 'hk01.com', 'am730.com.hk',
+    'mingpao.com', 'on.cc', 'hket.com', 'thestandard.com.hk'
+  ]
   
   constructor() {
     this.apiKey = process.env.PERPLEXITY_API_KEY || ''
@@ -102,6 +138,42 @@ class PerplexityEnhancerV2 {
       relatedTopics: enhancedContent.relatedTopics,
       extractedImages: enhancedContent.extractedImages,
       citationsText: enhancedContent.citationsText
+    }
+  }
+
+  async enhanceTrilingual(
+    title: string,
+    content: string,
+    summary: string,
+    options: EnhancementOptions = {}
+  ): Promise<TrilingualResult> {
+    if (!this.apiKey) {
+      throw new Error('Perplexity API key not configured')
+    }
+
+    // Set conservative defaults for cost optimization
+    const enhancementOptions = {
+      searchDepth: content.length < 200 ? 'high' : 'low',
+      recencyFilter: 'day',
+      domainFilter: options.domainFilter || this.TRUSTED_DOMAINS,
+      maxTokens: 3000, // Total for all 3 languages
+      ...options
+    }
+
+    const prompt = this.buildTrilingualPrompt(title, content, summary)
+
+    try {
+      const response = await this.performTrilingualSearch(prompt, enhancementOptions)
+      const result = this.parseTrilingualResponse(response, title)
+      
+      // Clear stored results
+      this.lastSearchResults = []
+      this.lastCitations = []
+      
+      return result
+    } catch (error) {
+      console.error('Trilingual enhancement failed:', error)
+      throw new Error('Failed to generate trilingual enhanced content')
     }
   }
 
@@ -203,7 +275,7 @@ class PerplexityEnhancerV2 {
     }
 
     const requestBody = {
-      model: 'sonar-pro',
+      model: 'sonar',
       messages: [
         {
           role: 'system',
@@ -903,10 +975,207 @@ Requirements:
     const estimatedCost = (estimatedTokens / 1000) * 0.02 // Rough cost estimate
     return `~$${estimatedCost.toFixed(4)}`
   }
+
+  private buildTrilingualPrompt(title: string, content: string, summary: string): string {
+    // Generate search queries
+    const searchQueries = this.generateSearchQueries(title, content);
+    
+    return `Search the web for: "${title}" Hong Kong news 2025 recent updates
+
+Find and cite recent sources about this topic. Include URLs and citations in your response.
+
+After searching, generate enhanced versions of this article in THREE languages (English, Traditional Chinese, Simplified Chinese) with proper citations from your search.
+
+ORIGINAL ARTICLE:
+Title: ${title}
+Summary: ${summary}
+Content: ${content}
+
+REQUIREMENTS:
+- Include citations from your search results
+- Reference recent developments and context
+- Ensure each language version has proper citations
+
+Return ONLY a valid JSON object with this EXACT structure:
+{
+  "en": {
+    "title": "8-12 word title with active verb",
+    "summary": "Exactly 2 sentences, each ≤35 words",
+    "content": "<p>Summary paragraph</p><h3>Key Points</h3><ul><li>Point 1</li><li>Point 2</li><li>Point 3</li><li>Point 4</li><li>Point 5</li></ul><h3>Why It Matters</h3><p>2 sentences about Hong Kong impact</p>",
+    "key_points": ["Point 1", "Point 2", "Point 3", "Point 4", "Point 5"],
+    "why_it_matters": "2 sentences about significance for Hong Kong",
+    "citations": [{"text": "quoted text", "url": "source url"}]
+  },
+  "zh_HK": {
+    "title": "8-12字標題，主動動詞",
+    "summary": "恰好2句，每句≤35字",
+    "content": "<p>摘要段落</p><h3>重點</h3><ul><li>重點 1</li><li>重點 2</li><li>重點 3</li><li>重點 4</li><li>重點 5</li></ul><h3>重要性</h3><p>2句關於香港影響</p>",
+    "key_points": ["重點 1", "重點 2", "重點 3", "重點 4", "重點 5"],
+    "why_it_matters": "2句關於對香港的重要性",
+    "citations": [{"text": "引用文字", "url": "來源網址"}]
+  },
+  "zh_CN": {
+    "title": "8-12字标题，主动动词",
+    "summary": "恰好2句，每句≤35字",
+    "content": "<p>摘要段落</p><h3>重点</h3><ul><li>重点 1</li><li>重点 2</li><li>重点 3</li><li>重点 4</li><li>重点 5</li></ul><h3>重要性</h3><p>2句关于香港影响</p>",
+    "key_points": ["重点 1", "重点 2", "重点 3", "重点 4", "重点 5"],
+    "why_it_matters": "2句关于对香港的重要性",
+    "citations": [{"text": "引用文字", "url": "来源网址"}]
+  }
+}
+
+Requirements:
+- Each language version must be culturally appropriate
+- Maintain factual accuracy across all versions
+- Focus on Hong Kong relevance
+- Use only trusted news sources for citations
+- Ensure all required fields are present
+- Total response must be valid JSON`
+  }
+
+  private async performTrilingualSearch(
+    prompt: string,
+    options: EnhancementOptions
+  ): Promise<string> {
+    const requestBody = {
+      model: 'sonar',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an HKI Senior News Editor with web search capabilities. Search for recent information about the topic, then generate trilingual enhanced content with proper citations. Follow the exact JSON structure provided. Be concise and factual.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: options.maxTokens || 3000,
+      temperature: 0.2, // Lower temperature for consistency
+      search_recency_filter: options.recencyFilter || 'day',
+      return_related_questions: false,
+      ...(options.domainFilter && { search_domain_filter: options.domainFilter })
+    }
+
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(requestBody)
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Perplexity API error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    
+    // Store citations globally for this request
+    this.lastSearchResults = data.search_results || [];
+    this.lastCitations = data.citations || [];
+    
+    return data.choices[0]?.message?.content || '{}'
+  }
+
+  private parseTrilingualResponse(content: string, originalTitle: string): TrilingualResult {
+    console.log('Parsing trilingual response, content length:', content.length)
+    console.log('First 500 chars of response:', content.substring(0, 500))
+    
+    try {
+      const parsed = JSON.parse(content)
+      
+      // Validate structure
+      if (!parsed.en || !parsed.zh_HK || !parsed.zh_CN) {
+        console.error('Invalid response structure:', Object.keys(parsed))
+        throw new Error('Missing language versions in response')
+      }
+
+      // Validate and clean each language version
+      const languages = ['en', 'zh_HK', 'zh_CN'] as const
+      for (const lang of languages) {
+        const version = parsed[lang]
+        if (!version.title || !version.summary || !version.content) {
+          throw new Error(`Missing required fields in ${lang} version`)
+        }
+
+        // Ensure arrays exist
+        version.key_points = version.key_points || []
+        version.citations = version.citations || []
+
+        // If no citations in parsed response, use API search results
+        if (version.citations.length === 0 && this.lastSearchResults.length > 0) {
+          version.citations = this.lastSearchResults.map(result => ({
+            text: result.title || 'Source',
+            url: result.url
+          }));
+        }
+
+        // Validate citations
+        version.citations = this.validateCitations(version.citations)
+      }
+
+      return parsed as TrilingualResult
+    } catch (error) {
+      console.error('Failed to parse trilingual response:', error)
+      // Return a basic fallback structure
+      return this.createFallbackTrilingualResult(originalTitle)
+    }
+  }
+
+  private validateCitations(citations: any[]): Array<{text: string; url: string}> {
+    if (!Array.isArray(citations)) return []
+
+    return citations
+      .filter(c => c && typeof c === 'object' && c.url && c.text)
+      .filter(c => {
+        // Check if URL is from trusted domain
+        try {
+          const url = new URL(c.url)
+          const domain = url.hostname.replace('www.', '')
+          return this.TRUSTED_DOMAINS.some(trusted => domain.includes(trusted))
+        } catch {
+          return false
+        }
+      })
+      .slice(0, 5) // Limit to 5 citations
+  }
+
+  private createFallbackTrilingualResult(title: string): TrilingualResult {
+    const fallback = {
+      title: title,
+      summary: 'Enhanced content is being processed.',
+      content: '<p>Enhanced content is being processed.</p>',
+      key_points: ['Content is being enhanced'],
+      why_it_matters: 'This article is relevant to Hong Kong.',
+      citations: []
+    }
+
+    return {
+      en: { ...fallback },
+      zh_HK: {
+        ...fallback,
+        title: title,
+        summary: '增強內容正在處理中。',
+        content: '<p>增強內容正在處理中。</p>',
+        key_points: ['內容正在增強'],
+        why_it_matters: '這篇文章與香港相關。'
+      },
+      zh_CN: {
+        ...fallback,
+        title: title,
+        summary: '增强内容正在处理中。',
+        content: '<p>增强内容正在处理中。</p>',
+        key_points: ['内容正在增强'],
+        why_it_matters: '这篇文章与香港相关。'
+      }
+    }
+  }
 }
 
 // Export singleton instance
 export const perplexityEnhancerV2 = new PerplexityEnhancerV2()
 
 // Export interfaces for use in other files
-export type { EnhancementResult, EnhancementOptions, SourceCitation, ExtractedImage }
+export type { EnhancementResult, EnhancementOptions, SourceCitation, ExtractedImage, TrilingualResult }

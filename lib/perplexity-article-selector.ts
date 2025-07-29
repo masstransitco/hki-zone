@@ -100,16 +100,28 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
     console.log(`   ${actualIndex + 1}. [${timeAgo}] "${article.title.substring(0, 60)}..." (ID: ${article.id})`);
   });
   
-  const selectionPrompt = createArticleSelectionPrompt(deduplicatedArticles, count, recentlyEnhancedTopics);
+  // Limit candidates to top 15 by content quality + recency to reduce token usage
+  const topCandidates = deduplicatedArticles
+    .sort((a, b) => {
+      // Sort by content length + recency score
+      const aScore = a.content_length + (24 - getHoursAgo(new Date(a.created_at))) * 10;
+      const bScore = b.content_length + (24 - getHoursAgo(new Date(b.created_at))) * 10;
+      return bScore - aScore;
+    })
+    .slice(0, 15);
+  
+  console.log(`🎯 Sending top ${topCandidates.length} candidates to Perplexity (from ${deduplicatedArticles.length} available)`);
+  
+  const selectionPrompt = createArticleSelectionPrompt(topCandidates, count, recentlyEnhancedTopics);
 
   // 5. Call Perplexity API for intelligent selection
   const selectedIds = await callPerplexityForSelection(selectionPrompt);
 
   // 6. Map selected IDs back to full article objects
   console.log(`DEBUG: Perplexity returned ${selectedIds.length} selections`);
-  console.log(`DEBUG: Available deduplicated candidate count: ${deduplicatedArticles.length} articles`);
+  console.log(`DEBUG: Available top candidate count: ${topCandidates.length} articles`);
   
-  // Map sequential numbers (01, 02, 03...) back to deduplicated candidate articles
+  // Map sequential numbers (01, 02, 03...) back to top candidate articles
   const selectedArticles = selectedIds
     .map(selection => {
       // Remove leading zeros from ID
@@ -122,12 +134,12 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
       
       const index = parseInt(numericId) - 1; // Convert "1" to index 0, "2" to index 1, etc.
       
-      if (index < 0 || index >= deduplicatedArticles.length) {
-        console.log(`DEBUG: Selection ID ${selection.id} out of range (1-${deduplicatedArticles.length})`);
+      if (index < 0 || index >= topCandidates.length) {
+        console.log(`DEBUG: Selection ID ${selection.id} out of range (1-${topCandidates.length})`);
         return null;
       }
       
-      const article = deduplicatedArticles[index];
+      const article = topCandidates[index];
       console.log(`DEBUG: Mapped selection ${selection.id} to article ${article.id} (${article.title.substring(0, 50)}...)`);
       
       // Generate selection reason from rubric scores
@@ -152,11 +164,11 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   if (selectedArticles.length === 0 && selectedIds.length > 0) {
     console.error(`❌ Selection Mapping Error (${sessionId}): Perplexity selections did not map to any candidate articles`);
     console.error('Selected IDs:', selectedIds.map(s => s.id));
-    console.error('Valid range: 1 to', deduplicatedArticles.length);
+    console.error('Valid range: 1 to', topCandidates.length);
     
     // Fallback: if no articles selected but we have candidates, pick the most recent ones
     console.log(`🔄 Fallback Selection (${sessionId}): Selecting ${count} most recent articles`);
-    const fallbackArticles = deduplicatedArticles
+    const fallbackArticles = topCandidates
       .slice(0, count)
       .map((article, index) => ({
         ...article,
@@ -666,7 +678,8 @@ HARD RULES (reject if violated):
 • At least 3 distinct sources across final set (if possible)
 • No more than 1 article per category unless unavoidable  
 • All IDs must exist in the list above
-• Every selection must score ≥70
+• Every selection must score ≥80 (high quality threshold)
+• If fewer than ${count} articles score ≥80, return only those that qualify
 • Return ONLY the JSON array - no extra text
 
 OUTPUT FORMAT:
@@ -698,9 +711,9 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
             content: prompt
           }
         ],
-        temperature: 0.3, // Lower temperature for more focused selection
+        temperature: 0.2, // Lower temperature for more consistent selection
         top_p: 0.9,
-        max_tokens: 2000
+        max_tokens: 1000 // Reduced from 2000 - sufficient for 3 selections
       })
     });
 
@@ -770,6 +783,12 @@ function getDateHoursAgo(hours: number): string {
   const date = new Date();
   date.setTime(date.getTime() - (hours * 60 * 60 * 1000)); // Use setTime instead of setHours to handle date boundaries correctly
   return date.toISOString();
+}
+
+function getHoursAgo(date: Date): number {
+  const now = new Date();
+  const diffInMs = now.getTime() - date.getTime();
+  return Math.floor(diffInMs / (1000 * 60 * 60));
 }
 
 function getTimeAgo(date: Date): string {
@@ -905,6 +924,49 @@ async function getRecentlyEnhancedTopics(): Promise<Array<{ title: string, summa
   }
 }
 
+// Helper function to normalize titles for comparison
+function normalizeTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\w\s]/g, ' ') // Remove punctuation
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+}
+
+// Calculate Jaccard similarity between two strings
+function calculateJaccardSimilarity(text1: string, text2: string): number {
+  const words1 = new Set(text1.split(' ').filter(w => w.length > 2));
+  const words2 = new Set(text2.split(' ').filter(w => w.length > 2));
+  
+  if (words1.size === 0 || words2.size === 0) return 0;
+  
+  const intersection = new Set([...words1].filter(x => words2.has(x)));
+  const union = new Set([...words1, ...words2]);
+  
+  return intersection.size / union.size;
+}
+
+// Calculate keyword overlap between texts
+function calculateKeywordOverlap(text1: string, text2: string): number {
+  // Extract important keywords (longer words, numbers, proper nouns)
+  const extractKeywords = (text: string): Set<string> => {
+    const words = text.toLowerCase().split(/\W+/);
+    return new Set(words.filter(w => 
+      w.length > 4 || // Longer words
+      /\d/.test(w) || // Contains numbers
+      /^[A-Z]/.test(text.split(/\W+/).find(orig => orig.toLowerCase() === w) || '') // Was capitalized
+    ));
+  };
+  
+  const keywords1 = extractKeywords(text1);
+  const keywords2 = extractKeywords(text2);
+  
+  if (keywords1.size === 0 || keywords2.size === 0) return 0;
+  
+  const overlap = [...keywords1].filter(k => keywords2.has(k)).length;
+  return overlap / Math.min(keywords1.size, keywords2.size);
+}
+
 // Filter out articles with similar topics to recently enhanced ones
 async function filterSimilarTopics(
   candidateArticles: CandidateArticle[], 
@@ -916,45 +978,48 @@ async function filterSimilarTopics(
     return candidateArticles;
   }
 
-  if (!process.env.PERPLEXITY_API_KEY) {
-    console.log('⚠️ Perplexity API key not available for topic deduplication, using fallback keyword filtering...');
-    return applyFallbackKeywordFiltering(candidateArticles, recentlyEnhancedTopics);
-  }
-
-  try {
-    console.log('🔍 Using AI-powered topic similarity detection via Perplexity...');
-    
-    // Use AI-powered similarity detection for comprehensive topic coverage
-    const similarityPrompt = createTopicSimilarityPrompt(candidateArticles, recentlyEnhancedTopics);
-    const similarArticleIds = await callPerplexityForSimilarity(similarityPrompt);
-    
-    if (similarArticleIds.length === 0) {
-      console.log('✅ No similar topics found, keeping all candidate articles');
-      return candidateArticles;
-    }
-    
-    console.log(`🔍 AI detected ${similarArticleIds.length} similar articles to filter out`);
-    
-    // Filter out articles identified as similar by AI
-    const uniqueArticles = candidateArticles.filter((article, index) => {
-      const sequentialId = (index + 1).toString(); // Convert to 1-based string
-      const isSimilar = similarArticleIds.includes(sequentialId);
+  console.log('🔍 Using deterministic topic similarity detection...');
+  
+  // Use combined approach: Jaccard similarity + keyword matching
+  const uniqueArticles = candidateArticles.filter((article) => {
+    // Check similarity against all recently enhanced topics
+    const isSimilar = recentlyEnhancedTopics.some(enhancedTopic => {
+      // 1. Jaccard similarity on normalized titles
+      const titleSimilarity = calculateJaccardSimilarity(
+        normalizeTitle(article.title),
+        normalizeTitle(enhancedTopic.title)
+      );
       
-      if (isSimilar) {
-        console.log(`   ⚠️ AI filtered out similar article: "${article.title.substring(0, 60)}..."`);
+      // 2. Keyword overlap check
+      const keywordOverlap = calculateKeywordOverlap(
+        article.title + ' ' + (article.summary || ''),
+        enhancedTopic.title + ' ' + (enhancedTopic.summary || '')
+      );
+      
+      // Combined similarity score
+      const combinedScore = (titleSimilarity * 0.6) + (keywordOverlap * 0.4);
+      
+      // Consider similar if combined score > 0.5 (50% similarity)
+      if (combinedScore > 0.5) {
+        console.log(`   ⚠️ Filtered out similar article: "${article.title.substring(0, 60)}..." (similarity: ${Math.round(combinedScore * 100)}%)`);
+        return true;
       }
       
-      return !isSimilar;
+      return false;
     });
     
-    console.log(`✅ AI-powered deduplication complete: ${candidateArticles.length} → ${uniqueArticles.length} unique articles`);
-    return uniqueArticles;
-
-  } catch (error) {
-    console.error('❌ Error in AI topic similarity detection:', error);
-    console.log('📋 Falling back to keyword-based filtering...');
+    return !isSimilar;
+  });
+  
+  console.log(`✅ Deterministic deduplication complete: ${candidateArticles.length} → ${uniqueArticles.length} unique articles`);
+  
+  // If deterministic approach filtered out too many articles, fall back to keyword filtering
+  if (uniqueArticles.length < 5 && candidateArticles.length > 10) {
+    console.log('📋 Too few articles after deduplication, applying relaxed keyword filtering...');
     return applyFallbackKeywordFiltering(candidateArticles, recentlyEnhancedTopics);
   }
+  
+  return uniqueArticles;
 }
 
 // Fallback keyword-based filtering for when AI is unavailable
