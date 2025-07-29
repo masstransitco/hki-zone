@@ -185,6 +185,23 @@ export default function ArticleBottomSheet({
   const handleArticleSelect = (newArticleId: string) => {
     if (onArticleChange) {
       onArticleChange(newArticleId)
+      
+      // Scroll to top when article changes - iOS compatible
+      setTimeout(() => {
+        const scrollContainer = document.querySelector('.flex-1.overflow-y-auto.overscroll-contain')
+        if (scrollContainer) {
+          // Force immediate scroll to top (works better on iOS)
+          scrollContainer.scrollTop = 0
+          
+          // Also try smooth scroll for enhancement
+          try {
+            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' })
+          } catch (e) {
+            // Fallback for iOS Safari
+            scrollContainer.scrollTop = 0
+          }
+        }
+      }, 50)
     }
   }
 
