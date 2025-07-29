@@ -93,7 +93,11 @@ export const SOURCE_FAVICON_MAP: SourceFaviconMapping = {
   "Commercial Radio Hong Kong": "crhk.ico",
   
   "am730": "am730.ico",
-  "AM730": "am730.ico"
+  "AM730": "am730.ico",
+
+  // Bloomberg
+  "bloomberg": "bloomberg.png",
+  "Bloomberg": "bloomberg.png"
 }
 
 // Normalize source name for lookup
@@ -141,7 +145,8 @@ export function getFaviconForSource(source: string): string | null {
     "bastille": "bastille.png",
     "metro": "metroradio.png",
     "881903": "crhk.ico",
-    "am730": "am730.ico"
+    "am730": "am730.ico",
+    "bloomberg": "bloomberg.png"
   }
   
   for (const [pattern, favicon] of Object.entries(partialMatches)) {
