@@ -10,6 +10,7 @@ const OUTLET_NAMES = {
   '28car': "28car",
   am730: "AM730",
   scmp: "SCMP",
+  bloomberg: "Bloomberg",
 }
 
 export async function POST(

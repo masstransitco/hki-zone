@@ -134,7 +134,7 @@ export async function getBalancedArticles(page = 0, limit = 10, filters?: { sour
     }
 
     // Define known sources and their desired proportions
-    const sources = ['HK01', 'on.cc', 'SingTao', 'RTHK', 'HKFP', 'ONCC', 'am730', 'scmp']
+    const sources = ['HK01', 'on.cc', 'SingTao', 'RTHK', 'HKFP', 'ONCC', 'am730', 'scmp', 'bloomberg']
     const articlesPerSource = Math.max(1, Math.floor(limit / sources.length))
     const extraArticles = limit % sources.length
     

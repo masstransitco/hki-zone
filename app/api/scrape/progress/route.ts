@@ -30,6 +30,7 @@ let currentProgress: {
     '28car': { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
     am730: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
     scmp: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
+    bloomberg: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
   },
   overall: {
     progress: 0,
