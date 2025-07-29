@@ -11,6 +11,7 @@ import ArticleDetailSkeleton from "./article-detail-skeleton"
 import PublicSources from "./public-sources"
 import AIEnhancedContent from "./ai-enhanced-content"
 import OutletFavicon from "./outlet-favicon"
+import { getSourceDisplayNameWithAI } from "@/lib/source-display-name"
 
 interface ArticleDetailSheetProps {
   articleId: string
@@ -102,8 +103,7 @@ export default function ArticleDetailSheet({ articleId }: ArticleDetailSheetProp
                   showFallback={true}
                 />
                 <span className="text-sm text-primary font-medium">
-                  {article.source.replace(' (AI Enhanced)', '')}
-                  {article.isAiEnhanced && ' + AI Enhanced'}
+                  {getSourceDisplayNameWithAI(article.source, article.isAiEnhanced)}
                 </span>
               </div>
             )}
