@@ -188,7 +188,12 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {user.profile?.username ? `@${user.profile.username}` : 'User'}
+                            {user.profile?.username 
+                              ? `@${user.profile.username}` 
+                              : user.email 
+                                ? `@${user.email.split('@')[0]}` 
+                                : 'User'
+                            }
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {user.email}

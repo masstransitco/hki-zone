@@ -1,6 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux'
 import { useCallback, useEffect } from 'react'
 import type { RootState, AppDispatch } from '@/store'
+import { store } from '@/store'
 import {
   initializeAuth,
   signUp,
@@ -103,8 +104,11 @@ export const useAuth = () => {
         
         // Create a basic profile if user exists but profile is missing
         if (session?.user) {
-          const currentAuth = auth || {}
-          if (!currentAuth.profile) {
+          const currentState = store.getState()
+          const currentAuth = currentState?.auth || {}
+          
+          // Only create profile if user exists but profile is truly missing
+          if (!currentAuth.profile || !currentAuth.user?.profile) {
             console.log('👤 Creating basic profile for user (skipping database)')
             const basicProfile = {
               id: session.user.id,
