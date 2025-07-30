@@ -19,6 +19,8 @@ import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
 import LoadingSkeleton from "./loading-skeleton"
+import { useRealtimeGovernmentBulletin } from "@/hooks/use-realtime-government-bulletin"
+import { useLanguage } from "@/components/language-provider"
 
 interface BulletinItem {
   id: string
@@ -40,30 +42,52 @@ interface BulletinItem {
 // Map source slugs to their government favicon paths
 const getSourceFavicon = (sourceSlug: string): string => {
   const faviconMap: { [key: string]: string } = {
-    // HKMA - Hong Kong Monetary Authority
+    // HKMA - Hong Kong Monetary Authority (English)
     'hkma_press': '/gov-favicons-output/hkma.jpg',
     'hkma_speeches': '/gov-favicons-output/hkma.jpg',
     'hkma_guidelines': '/gov-favicons-output/hkma.jpg',
     'hkma_circulars': '/gov-favicons-output/hkma.jpg',
     
+    // HKMA - Hong Kong Monetary Authority (Chinese)
+    'hkma_press_zh_tw': '/gov-favicons-output/hkma.jpg',
+    'hkma_speeches_zh_tw': '/gov-favicons-output/hkma.jpg',
+    'hkma_guidelines_zh_tw': '/gov-favicons-output/hkma.jpg',
+    'hkma_circulars_zh_tw': '/gov-favicons-output/hkma.jpg',
+    
     // Government news
     'news_gov_top': '/gov-favicons-output/gov_hk.ico',
     
-    // Transport Department
+    // Transport Department (English)
     'td_notices': '/gov-favicons-output/td/raw/td.png',
     'td_press': '/gov-favicons-output/td/raw/td.png',
     'td_special': '/gov-favicons-output/td/raw/td.png',
     
-    // Hong Kong Observatory
+    // Transport Department (Chinese)
+    'td_notices_zh_tw': '/gov-favicons-output/td/raw/td.png',
+    'td_notices_zh_cn': '/gov-favicons-output/td/raw/td.png',
+    'td_press_zh_tw': '/gov-favicons-output/td/raw/td.png',
+    'td_press_zh_cn': '/gov-favicons-output/td/raw/td.png',
+    
+    // Hong Kong Observatory (English)
     'hko_warn': '/gov-favicons-output/hko.ico',
     'hko_eq': '/gov-favicons-output/hko.ico',
     'hko_felt_earthquake': '/gov-favicons-output/hko.ico',
     
-    // Centre for Health Protection
+    // Hong Kong Observatory (Chinese)
+    'hko_warn_zh_tw': '/gov-favicons-output/hko.ico',
+    'hko_eq_zh_tw': '/gov-favicons-output/hko.ico',
+    'hko_felt_earthquake_zh_tw': '/gov-favicons-output/hko.ico',
+    
+    // Centre for Health Protection (English)
     'chp_press': '/gov-favicons-output/dh.ico',
     'chp_disease': '/gov-favicons-output/dh.ico',
     'chp_ncd': '/gov-favicons-output/dh.ico',
     'chp_guidelines': '/gov-favicons-output/dh.ico',
+    
+    // Centre for Health Protection (Chinese)
+    'chp_press_zh_tw': '/gov-favicons-output/dh.ico',
+    'chp_ncd_zh_tw': '/gov-favicons-output/dh.ico',
+    'chp_guidelines_zh_tw': '/gov-favicons-output/dh.ico',
     
     // Hospital Authority
     'ha_ae_waiting': '/gov-favicons-output/healthbureau.ico',
@@ -102,6 +126,8 @@ export default function GovernmentBulletin({
   const [loadingMore, setLoadingMore] = useState(false)
   const { setScrollPosition } = useHeaderVisibility()
   const tickingRef = useRef(false)
+  const { t, language } = useLanguage()
+  const [isLanguageReady, setIsLanguageReady] = useState(false)
   
   // Infinite scroll trigger
   const { ref: loadMoreRef, inView } = useInView({
@@ -109,45 +135,33 @@ export default function GovernmentBulletin({
     rootMargin: '100px'
   })
 
-  useEffect(() => {
-    loadBulletinItems(0)
-  }, [])
+  // Set up real-time subscription
+  const { isConnected } = useRealtimeGovernmentBulletin({
+    queryKey: ['government-bulletins', page, limit],
+    enabled: isActive && autoRefresh
+  })
 
-  useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(() => {
-        handleRefresh()
-      }, refreshInterval)
-      return () => clearInterval(interval)
-    }
-  }, [autoRefresh, refreshInterval])
-
-  // Infinite scroll effect
-  useEffect(() => {
-    if (inView && hasMore && !loadingMore && !loading) {
-      handleLoadMore()
-    }
-  }, [inView, hasMore, loadingMore, loading])
-
-  const loadBulletinItems = async (pageNum: number) => {
+  // Define loadBulletinItems first
+  const loadBulletinItems = useCallback(async (pageNum: number) => {
     try {
       if (pageNum === 0) setLoading(true)
       else setLoadingMore(true)
 
       const params = new URLSearchParams({
         page: pageNum.toString(),
-        limit: limit.toString()
+        limit: limit.toString(),
+        language: language || 'en' // Pass user's language preference
       })
 
-      const response = await fetch(`/api/signals?${params.toString()}`)
+      const response = await fetch(`/api/signals-unified?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch bulletin items')
 
       const data = await response.json()
       
       if (pageNum === 0) {
-        setItems(data.articles || [])
+        setItems(data.signals || [])
       } else {
-        setItems(prev => [...prev, ...(data.articles || [])])
+        setItems(prev => [...prev, ...(data.signals || [])])
       }
       
       setHasMore(data.hasMore || false)
@@ -158,13 +172,42 @@ export default function GovernmentBulletin({
       setLoading(false)
       setLoadingMore(false)
     }
-  }
+  }, [language, limit])
+
+  // Track when language is ready (after hydration)
+  useEffect(() => {
+    // Small delay to ensure language provider has loaded saved preference
+    const timer = setTimeout(() => {
+      setIsLanguageReady(true)
+    }, 50)
+    return () => clearTimeout(timer)
+  }, [])
+
+  // Load data when language is ready or changes
+  useEffect(() => {
+    if (isLanguageReady) {
+      loadBulletinItems(0)
+    }
+  }, [language, isLanguageReady, loadBulletinItems]) // Reload when language changes or becomes ready
 
   const handleRefresh = useCallback(async () => {
-    console.log('🔄 [GOV-BULLETIN] Refresh START')
+    console.log('🔄 [GOV-BULLETIN] Manual refresh START')
     await loadBulletinItems(0)
-    console.log('✅ [GOV-BULLETIN] Refresh COMPLETED')
-  }, [])
+    console.log('✅ [GOV-BULLETIN] Manual refresh COMPLETED')
+  }, [loadBulletinItems])
+
+  const handleLoadMore = useCallback(() => {
+    if (hasMore && !loadingMore) {
+      loadBulletinItems(page + 1)
+    }
+  }, [hasMore, loadingMore, loadBulletinItems, page])
+
+  // Infinite scroll effect
+  useEffect(() => {
+    if (inView && hasMore && !loadingMore && !loading) {
+      handleLoadMore()
+    }
+  }, [inView, hasMore, loadingMore, loading, handleLoadMore])
 
   // Use pull-to-refresh hook
   const {
@@ -216,12 +259,6 @@ export default function GovernmentBulletin({
     }
   }, [isActive, setScrollPosition])
 
-  const handleLoadMore = () => {
-    if (hasMore && !loadingMore) {
-      loadBulletinItems(page + 1)
-    }
-  }
-
   const toggleExpanded = (itemId: string) => {
     const newExpanded = new Set(expandedItems)
     if (newExpanded.has(itemId)) {
@@ -242,7 +279,7 @@ export default function GovernmentBulletin({
       'hkma_circulars': 'HKMA',
       
       // Government news
-      'news_gov_top': 'Gov+',
+      'news_gov_top': 'Gov',
       
       // Transport Department
       'td_notices': 'Transport',
@@ -351,6 +388,13 @@ export default function GovernmentBulletin({
         <div className="h-[113px] w-full" aria-hidden="true" />
         
         <div className="pt-6 space-y-4 px-6">
+          {/* Real-time connection status */}
+          {autoRefresh && (
+            <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
+              <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
+              <span>{isConnected ? t('realtime.active') : t('realtime.connecting')}</span>
+            </div>
+          )}
 
       {/* Bulletin List */}
       <div className="space-y-2">

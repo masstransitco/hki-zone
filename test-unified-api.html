@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Unified API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .language-section { margin-bottom: 30px; border: 1px solid #ccc; padding: 15px; }
+        .signal { margin-bottom: 15px; padding: 10px; background: #f5f5f5; }
+        .metadata { font-size: 0.9em; color: #666; }
+        h2 { color: #333; }
+        .error { color: red; }
+        .converted { background: #fff3cd; }
+    </style>
+</head>
+<body>
+    <h1>Unified Government Feeds API Test</h1>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testAPI() {
+            const resultsDiv = document.getElementById('results');
+            const languages = ['en', 'zh-TW', 'zh-CN'];
+            
+            for (const lang of languages) {
+                const section = document.createElement('div');
+                section.className = 'language-section';
+                section.innerHTML = `<h2>Language: ${lang}</h2>`;
+                
+                try {
+                    const response = await fetch(`/api/signals-unified?language=${lang}&limit=5`);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        section.innerHTML += `<div class="error">Error: ${data.error}</div>`;
+                    } else if (data.signals && data.signals.length > 0) {
+                        section.innerHTML += `<p>Total signals: ${data.signals.length}</p>`;
+                        
+                        data.signals.forEach((signal, index) => {
+                            const signalDiv = document.createElement('div');
+                            signalDiv.className = signal.is_converted ? 'signal converted' : 'signal';
+                            signalDiv.innerHTML = `
+                                <strong>${index + 1}. ${signal.title}</strong><br>
+                                <div class="metadata">
+                                    Source: ${signal.source}<br>
+                                    Has translation: ${signal.has_translation}<br>
+                                    Original language: ${signal.original_language}<br>
+                                    ${signal.is_converted ? 'Content converted from Traditional to Simplified Chinese' : ''}
+                                </div>
+                            `;
+                            section.appendChild(signalDiv);
+                        });
+                    } else {
+                        section.innerHTML += '<p>No signals found</p>';
+                    }
+                } catch (error) {
+                    section.innerHTML += `<div class="error">Fetch error: ${error.message}</div>`;
+                }
+                
+                resultsDiv.appendChild(section);
+            }
+            
+            // Test language coverage
+            try {
+                const response = await fetch('/api/signals-unified?language=en&limit=1');
+                const data = await response.json();
+                
+                if (data.metadata?.language_coverage) {
+                    const coverageSection = document.createElement('div');
+                    coverageSection.className = 'language-section';
+                    coverageSection.innerHTML = '<h2>Feed Language Coverage</h2>';
+                    
+                    const table = document.createElement('table');
+                    table.innerHTML = `
+                        <tr>
+                            <th>Feed</th>
+                            <th>English</th>
+                            <th>Traditional Chinese</th>
+                            <th>Simplified Chinese</th>
+                            <th>Status</th>
+                        </tr>
+                    `;
+                    
+                    data.metadata.language_coverage.forEach(feed => {
+                        const row = table.insertRow();
+                        row.innerHTML = `
+                            <td>${feed.base_slug}</td>
+                            <td>${feed.has_english ? '✓' : '✗'}</td>
+                            <td>${feed.has_traditional_chinese ? '✓' : '✗'}</td>
+                            <td>${feed.has_simplified_chinese ? '✓' : '✗'}</td>
+                            <td>${feed.coverage_status}</td>
+                        `;
+                    });
+                    
+                    coverageSection.appendChild(table);
+                    resultsDiv.appendChild(coverageSection);
+                }
+            } catch (error) {
+                console.error('Coverage fetch error:', error);
+            }
+        }
+        
+        // Run test when page loads
+        testAPI();
+    </script>
+</body>
+</html>

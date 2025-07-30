@@ -4,6 +4,7 @@ import { FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from 'redux-persist
 import authReducer from './authSlice'
 import ttsReducer from './ttsSlice'
 import audioReducer from './audioSlice'
+import languageReducer from './languageSlice'
 import { ttsMiddleware, visualizationMiddleware } from './middleware/ttsMiddleware'
 
 // Custom storage implementation with better error handling
@@ -83,7 +84,7 @@ const persistConfig = {
   key: 'panora-auth-v2', // Updated key to avoid conflicts
   storage: createRobustStorage(),
   transforms: [authTransform],
-  whitelist: ['auth'], // Only persist auth slice (TTS state should not be persisted)
+  whitelist: ['auth', 'language'], // Persist auth and language slices
   timeout: 10000, // 10 second timeout for storage operations
   throttle: 1000, // Throttle persistence to avoid excessive writes
 }
@@ -93,6 +94,7 @@ const rootReducer = combineReducers({
   auth: authReducer,
   tts: ttsReducer,
   audio: audioReducer,
+  language: languageReducer,
 })
 
 // Persisted reducer

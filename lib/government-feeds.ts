@@ -4,6 +4,8 @@ import { XMLParser } from 'fast-xml-parser'
 import crypto from 'node:crypto'
 import type { Incident, IncidentCategory, GovFeed } from './types'
 
+type ContentLanguage = 'en' | 'zh-TW' | 'zh-CN'
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -27,6 +29,8 @@ interface ParsedIncident {
   starts_at?: string
   source_updated_at: string
   relevance_score: number
+  language: ContentLanguage
+  parent_incident_id?: string // For linking multilingual versions
 }
 
 class GovernmentFeeds {
@@ -65,6 +69,15 @@ class GovernmentFeeds {
   }
 
   /**
+   * Detect language from feed slug or content
+   */
+  private detectLanguage(feed: GovFeed): ContentLanguage {
+    if (feed.slug.endsWith('_zh_tw')) return 'zh-TW'
+    if (feed.slug.endsWith('_zh_cn')) return 'zh-CN'
+    return 'en'
+  }
+
+  /**
    * Parse standard RSS feed
    */
   private async parseRssFeed(xml: string, feed: GovFeed): Promise<ParsedIncident[]> {
@@ -87,7 +100,8 @@ class GovernmentFeeds {
           category: this.mapCategory(feed.slug, item.title, item.contentSnippet || item.description),
           severity: this.calculateSeverity(item.title, item.description),
           source_updated_at: new Date(item.isoDate || item.pubDate).toISOString(),
-          relevance_score: this.calculateRelevanceScore(item.title, item.description, feed.slug)
+          relevance_score: this.calculateRelevanceScore(item.title, item.description, feed.slug),
+          language: this.detectLanguage(feed)
         }
       })
     } catch (error) {
@@ -123,7 +137,8 @@ class GovernmentFeeds {
           longitude: item.longitude ? Number(item.longitude) : undefined,
           starts_at: item.startTime ? new Date(item.startTime).toISOString() : undefined,
           source_updated_at: new Date(item.pubDate).toISOString(),
-          relevance_score: this.calculateRelevanceScore(item.title, item.description, feed.slug)
+          relevance_score: this.calculateRelevanceScore(item.title, item.description, feed.slug),
+          language: this.detectLanguage(feed)
         }
       })
     } catch (error) {
@@ -167,7 +182,8 @@ class GovernmentFeeds {
             category: 'utility' as IncidentCategory,
             severity: severity,
             source_updated_at: new Date().toISOString(),
-            relevance_score: this.calculateAeRelevanceScore(waitTime, waitTime)
+            relevance_score: this.calculateAeRelevanceScore(waitTime, waitTime),
+            language: this.detectLanguage(feed)
           }
         })
       }
@@ -204,7 +220,8 @@ class GovernmentFeeds {
             category: 'utility' as IncidentCategory,
             severity: severity,
             source_updated_at: new Date().toISOString(),
-            relevance_score: this.calculateAeRelevanceScore(waitTime, waitTime)
+            relevance_score: this.calculateAeRelevanceScore(waitTime, waitTime),
+            language: this.detectLanguage(feed)
           }
         })
       }
@@ -258,7 +275,8 @@ class GovernmentFeeds {
           latitude: item.latitude ? Number(item.latitude) : undefined,
           longitude: item.longitude ? Number(item.longitude) : undefined,
           source_updated_at: item.date || item.timestamp || item.updated || new Date().toISOString(),
-          relevance_score: this.calculateRelevanceScore(title, description, feed.slug)
+          relevance_score: this.calculateRelevanceScore(title, description, feed.slug),
+          language: this.detectLanguage(feed)
         }
       })
     } catch (error) {
@@ -296,82 +314,24 @@ class GovernmentFeeds {
    * Map feed slug to incident category with content-based classification
    */
   private mapCategory(slug: string, title: string = '', description: string = ''): IncidentCategory {
-    const text = `${title} ${description}`.toLowerCase()
+    // Simplified approach: All government RSS feeds are labeled as 'gov' category
+    // instead of trying to categorize them as different incident types
     
-    // Transport Department feeds - enhanced categorization
-    if (slug.startsWith('td_')) {
-      return this.mapTransportCategory(slug, title, description)
+    // Government department feeds - all categorized as 'gov'
+    if (slug.startsWith('td_') ||     // Transport Department
+        slug.startsWith('chp_') ||    // Centre for Health Protection  
+        slug.startsWith('hkma_') ||   // Hong Kong Monetary Authority
+        slug.startsWith('hko_') ||    // Hong Kong Observatory
+        slug.startsWith('news_gov') || // Government News
+        slug.startsWith('ha_') ||     // Hospital Authority
+        slug.startsWith('emsd_') ||   // Electrical & Mechanical Services
+        slug.startsWith('mtr_')) {    // MTR Corporation
+      return 'gov'
     }
     
-    // Health feeds - content-based categorization
-    if (slug.startsWith('chp_')) {
-      if (text.includes('heat') || text.includes('hot weather')) return 'weather' // Heat warnings better fit weather
-      if (slug === 'chp_disease' || slug === 'chp_ncd' || slug === 'chp_guidelines') return 'environment' // CHP health sources -> Environment category
-      if (text.includes('disease') || text.includes('virus') || text.includes('infection')) return 'environment' // Disease-related content -> Environment
-      if (text.includes('arrest') || text.includes('regulatory')) return 'utility'
-      return 'environment' // Map most health content to environment instead of utility
-    }
-    
-    // Financial feeds - content-based categorization  
-    if (slug.startsWith('hkma_')) {
-      if (slug === 'hkma_press' || slug === 'hkma_speeches') return 'top_signals' // HKMA_PRESS & HKMA_SPEECHES -> Top Signals
-      if (text.includes('fraud') || text.includes('scam') || text.includes('phishing')) return 'utility' // Use utility for fraud alerts
-      if (text.includes('market') || text.includes('exchange') || text.includes('rate')) return 'utility'
-      if (text.includes('regulation') || text.includes('policy') || text.includes('guideline')) return 'utility'
-      return 'utility' // Map other financial to utility for now
-    }
-    
-    // Weather feeds - enhanced categorization
-    if (slug.startsWith('hko_')) {
-      if (text.includes('earthquake') || text.includes('seismic')) return 'weather'
-      if (text.includes('typhoon') || text.includes('storm') || text.includes('rain')) return 'weather'
-      return 'weather'
-    }
-    
-    // Existing mappings
-    if (slug === 'mtr_rail') return 'rail'
-    if (slug.startsWith('ha_')) return 'utility' // Hospital Authority A&E feeds -> utility category (excluded from signals)
-    if (slug.startsWith('emsd_')) return 'utility'
-    if (slug === 'news_gov_top') return 'top_signals' // NEWS_GOV_TOP -> Top Signals
-    if (slug.startsWith('news_gov_')) return 'utility' // Map other government news to utility for now
-    
-    return 'road' // Default fallback
+    return 'road' // Default fallback for non-government feeds
   }
   
-  /**
-   * Enhanced Transport Department categorization based on content
-   */
-  private mapTransportCategory(slug: string, title: string, description: string): IncidentCategory {
-    const text = `${title} ${description}`.toLowerCase()
-    
-    if (slug === 'td_special') {
-      // Special traffic news - actual incidents
-      if (text.includes('accident') || text.includes('crash') || text.includes('collision')) return 'road'
-      if (text.includes('closed') || text.includes('blocked') || text.includes('suspended')) return 'road'
-      if (text.includes('jam') || text.includes('congestion') || text.includes('slow')) return 'road'
-      return 'road'
-    }
-    
-    if (slug === 'td_notices') {
-      // Traffic notices - check for rail/bus content
-      if (text.includes('mtr') || text.includes('railway') || text.includes('train')) return 'rail'
-      if (text.includes('bus') || text.includes('minibus') || text.includes('route')) return 'road'
-      if (text.includes('temporary') && text.includes('arrangement')) return 'road'
-      if (text.includes('parking') || text.includes('meter')) return 'road'
-      return 'road'
-    }
-    
-    if (slug === 'td_press') {
-      // Press releases - check for policy vs operational content
-      if (text.includes('fraud') || text.includes('scam')) return 'utility' // Fraud alerts better fit utility
-      if (text.includes('mtr') || text.includes('railway') || text.includes('train')) return 'rail'
-      if (text.includes('regulation') || text.includes('policy')) return 'utility' // Policy better fits utility
-      if (text.includes('ballot') || text.includes('registration')) return 'utility' // Administrative better fits utility
-      return 'road' // Default for transport department
-    }
-    
-    return 'road' // Default fallback
-  }
 
   /**
    * Calculate severity based on title and content
@@ -592,7 +552,9 @@ class GovernmentFeeds {
       return items // First run, process all items
     }
     
-    const lastSeen = new Date(feed.last_seen_pubdate)
+    // Subtract 5 minutes from last seen to handle edge cases and ensure content parity
+    // Government feeds often publish the same content simultaneously in multiple languages
+    const lastSeen = new Date(new Date(feed.last_seen_pubdate).getTime() - 5 * 60 * 1000)
     return items.filter(item => {
       const itemDate = new Date(item.source_updated_at)
       return itemDate > lastSeen
@@ -615,15 +577,74 @@ class GovernmentFeeds {
   }
 
   /**
+   * Merge multilingual incidents into single records
+   */
+  private async mergeMultilingualIncidents(incidents: ParsedIncident[]): Promise<ParsedIncident[]> {
+    const processedIncidents = new Map<string, ParsedIncident>()
+    const multilingualContent = new Map<string, any>()
+    
+    for (const incident of incidents) {
+      const language = incident.language
+      
+      // Generate base ID without language suffix for grouping
+      let baseId = incident.id
+      if (incident.source_slug.endsWith('_zh_tw') || incident.source_slug.endsWith('_zh_cn')) {
+        const baseFeed = incident.source_slug.replace(/_zh_(tw|cn)$/, '')
+        baseId = incident.id.replace(incident.source_slug, baseFeed)
+      }
+      
+      if (processedIncidents.has(baseId)) {
+        // Update existing incident with multilingual content
+        const existing = processedIncidents.get(baseId)!
+        const existingContent = multilingualContent.get(baseId) || {
+          [existing.language]: { title: existing.title, body: existing.body }
+        }
+        
+        existingContent[language] = { title: incident.title, body: incident.body }
+        multilingualContent.set(baseId, existingContent)
+      } else {
+        // First occurrence - use English feed as base
+        if (language === 'en') {
+          processedIncidents.set(baseId, incident)
+          multilingualContent.set(baseId, {
+            [language]: { title: incident.title, body: incident.body }
+          })
+        } else {
+          // Create base incident from non-English if no English exists
+          // Keep the original language but store with base ID for grouping
+          const baseIncident = { ...incident, id: baseId, language: incident.language }
+          processedIncidents.set(baseId, baseIncident)
+          multilingualContent.set(baseId, {
+            [language]: { title: incident.title, body: incident.body }
+          })
+        }
+      }
+    }
+    
+    // Convert back to incidents with multilingual content
+    return Array.from(processedIncidents.values()).map(incident => {
+      const content = multilingualContent.get(incident.id)
+      return {
+        ...incident,
+        multilingual_content: content
+      } as any
+    })
+  }
+
+  /**
    * Upsert incidents to database
    */
   private async upsertIncidents(incidents: ParsedIncident[]): Promise<number> {
     if (incidents.length === 0) return 0
     
     try {
+      // Store each language version as separate incident for now
+      // TODO: Implement proper multilingual merging later if needed
+      const processedIncidents = incidents
+      
       const { data, error } = await supabase
         .from('incidents')
-        .upsert(incidents, { onConflict: 'id' })
+        .upsert(processedIncidents, { onConflict: 'id' })
         .select('id')
       
       if (error) {
@@ -684,9 +705,10 @@ class GovernmentFeeds {
       // Parse based on feed type and content
       let allIncidents: ParsedIncident[] = []
       
-      if (feed.slug === 'ha_ae_waiting') {
-        // Hospital A&E waiting times JSON API
-        allIncidents = this.parseHospitalAeJson(content, feed)
+      if (feed.slug.startsWith('ha_ae_waiting')) {
+        // Skip A&E waiting times - these should be handled separately
+        console.log(`⚠️ Skipping A&E feed ${feed.slug} - A&E data should be processed separately`)
+        return { feed: feed.slug, incidents: 0, errors: ['A&E feeds excluded from RSS processing'] }
       } else if (feed.slug.startsWith('td_') && !content.includes('<rss')) {
         // Transport Department custom XML format
         allIncidents = this.parseTransportDeptXml(content, feed)

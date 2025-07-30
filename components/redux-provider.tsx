@@ -26,7 +26,11 @@ export default function ReduxProvider({ children }: ReduxProviderProps) {
         loading={<PersistenceLoader />} 
         persistor={persistor}
         onBeforeLift={() => {
-          // Optional: Perform any pre-hydration logic
+          // Ensure language is hydrated
+          const state = store.getState()
+          if (!state.language?.isHydrated) {
+            store.dispatch({ type: 'language/hydrate' })
+          }
           console.log('Redux store hydrating...')
         }}
       >
