@@ -17,13 +17,17 @@ interface UseRealtimeArticlesOptions {
   isAiEnhanced?: boolean
   language?: string
   enabled?: boolean
+  onUpdate?: (article: Article) => void
+  onDelete?: (articleId: string) => void
 }
 
 export function useRealtimeArticles({ 
   queryKey, 
   isAiEnhanced, 
   language,
-  enabled = true 
+  enabled = true,
+  onUpdate,
+  onDelete
 }: UseRealtimeArticlesOptions) {
   const queryClient = useQueryClient()
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
@@ -68,27 +72,32 @@ export function useRealtimeArticles({
       language: newArticle.enhancement_metadata?.language
     }
 
-    // Update React Query cache by prepending new article to the first page
-    queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
-      if (!oldData) return oldData
+    // If Redux callback provided, use it instead of React Query
+    if (onUpdate) {
+      onUpdate(transformedArticle)
+    } else {
+      // Update React Query cache by prepending new article to the first page
+      queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
+        if (!oldData) return oldData
 
-      const updatedPages = [...oldData.pages]
-      if (updatedPages[0]) {
-        updatedPages[0] = {
-          ...updatedPages[0],
-          articles: [transformedArticle, ...updatedPages[0].articles]
+        const updatedPages = [...oldData.pages]
+        if (updatedPages[0]) {
+          updatedPages[0] = {
+            ...updatedPages[0],
+            articles: [transformedArticle, ...updatedPages[0].articles]
+          }
         }
-      }
 
-      return {
-        ...oldData,
-        pages: updatedPages
-      }
-    })
+        return {
+          ...oldData,
+          pages: updatedPages
+        }
+      })
 
-    // Invalidate query to trigger UI update
-    queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
-  }, [queryClient, isAiEnhanced, language])
+      // Invalidate query to trigger UI update
+      queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
+    }
+  }, [queryClient, isAiEnhanced, language, onUpdate])
 
   // Handle article updates
   const handleArticleUpdate = useCallback((payload: ArticleChange) => {
@@ -113,26 +122,31 @@ export function useRealtimeArticles({
       language: updatedArticle.enhancement_metadata?.language
     }
 
-    // Update React Query cache by finding and updating the specific article
-    queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
-      if (!oldData) return oldData
+    // If Redux callback provided, use it instead of React Query
+    if (onUpdate) {
+      onUpdate(transformedArticle)
+    } else {
+      // Update React Query cache by finding and updating the specific article
+      queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
+        if (!oldData) return oldData
 
-      const updatedPages = oldData.pages.map((page: any) => ({
-        ...page,
-        articles: page.articles.map((article: Article) =>
-          article.id === transformedArticle.id ? transformedArticle : article
-        )
-      }))
+        const updatedPages = oldData.pages.map((page: any) => ({
+          ...page,
+          articles: page.articles.map((article: Article) =>
+            article.id === transformedArticle.id ? transformedArticle : article
+          )
+        }))
 
-      return {
-        ...oldData,
-        pages: updatedPages
-      }
-    })
+        return {
+          ...oldData,
+          pages: updatedPages
+        }
+      })
 
-    // Invalidate query to trigger UI update
-    queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
-  }, [queryClient])
+      // Invalidate query to trigger UI update
+      queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
+    }
+  }, [queryClient, onUpdate])
 
   // Handle article deletions
   const handleArticleDelete = useCallback((payload: ArticleChange) => {
@@ -141,24 +155,29 @@ export function useRealtimeArticles({
     const deletedArticleId = payload.old.id
     console.log(`📰 [REALTIME] Article deleted: ${deletedArticleId}`)
 
-    // Update React Query cache by removing the deleted article
-    queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
-      if (!oldData) return oldData
+    // If Redux callback provided, use it instead of React Query
+    if (onDelete) {
+      onDelete(deletedArticleId)
+    } else {
+      // Update React Query cache by removing the deleted article
+      queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
+        if (!oldData) return oldData
 
-      const updatedPages = oldData.pages.map((page: any) => ({
-        ...page,
-        articles: page.articles.filter((article: Article) => article.id !== deletedArticleId)
-      }))
+        const updatedPages = oldData.pages.map((page: any) => ({
+          ...page,
+          articles: page.articles.filter((article: Article) => article.id !== deletedArticleId)
+        }))
 
-      return {
-        ...oldData,
-        pages: updatedPages
-      }
-    })
+        return {
+          ...oldData,
+          pages: updatedPages
+        }
+      })
 
-    // Invalidate query to trigger UI update
-    queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
-  }, [queryClient])
+      // Invalidate query to trigger UI update
+      queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
+    }
+  }, [queryClient, onDelete])
 
   // Set up real-time subscription
   useEffect(() => {

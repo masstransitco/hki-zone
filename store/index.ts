@@ -5,6 +5,7 @@ import authReducer from './authSlice'
 import ttsReducer from './ttsSlice'
 import audioReducer from './audioSlice'
 import languageReducer from './languageSlice'
+import articlesReducer from './articlesSlice'
 import { ttsMiddleware, visualizationMiddleware } from './middleware/ttsMiddleware'
 
 // Custom storage implementation with better error handling
@@ -95,6 +96,7 @@ const rootReducer = combineReducers({
   tts: ttsReducer,
   audio: audioReducer,
   language: languageReducer,
+  articles: articlesReducer,
 })
 
 // Persisted reducer

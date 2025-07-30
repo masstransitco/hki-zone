@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { ContentType } from './content-type-selector';
-import TopicsFeed from './topics-feed';
+import TopicsFeedRedux from './topics-feed-redux';
 import NewsFeedMasonry from './news-feed-masonry';
 import GovernmentBulletin from './government-bulletin';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ export default function MainContent({ contentType }: MainContentProps) {
         )}
       >
         <div className="relative h-full">
-          <TopicsFeed 
+          <TopicsFeedRedux 
             isActive={contentType === 'headlines'}
           />
         </div>
