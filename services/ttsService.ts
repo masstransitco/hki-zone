@@ -1,91 +1,91 @@
 import { TTSConfig } from '@/store/ttsSlice'
 
-// Professional broadcast voices optimized for news/authoritative delivery
+// Professional broadcast voices optimized for radio news delivery
 const getLanguageConfig = (language: string) => {
   switch (language) {
     case 'en':
       return {
         languageCode: 'en-US',
-        name: 'en-US-Studio-O', // Studio tier for broadcast/news narration
-        ssmlGender: 'FEMALE'
-      }
-    case 'zh-TW': // Traditional Chinese (Cantonese) - Using male voice
-      return {
-        languageCode: 'yue-HK',
-        name: 'yue-HK-Standard-B', // Male Cantonese voice
+        name: 'en-US-Studio-Q', // Male Studio voice - authoritative radio news anchor
         ssmlGender: 'MALE'
       }
-    case 'zh-CN': // Simplified Chinese (Mandarin) - Using correct language code
+    case 'zh-TW': // Traditional Chinese (Cantonese) - Radio news voice
+      return {
+        languageCode: 'yue-HK',
+        name: 'yue-HK-Standard-B', // Male Cantonese voice for authoritative news
+        ssmlGender: 'MALE'
+      }
+    case 'zh-CN': // Simplified Chinese (Mandarin) - News anchor voice
       return {
         languageCode: 'cmn-CN',
-        name: 'cmn-CN-Wavenet-A', // Premium Wavenet voice for Mainland Chinese
-        ssmlGender: 'FEMALE'
+        name: 'cmn-CN-Wavenet-C', // Male Wavenet voice for authoritative news
+        ssmlGender: 'MALE'
       }
     default:
       return {
         languageCode: 'en-US',
-        name: 'en-US-Studio-O',
-        ssmlGender: 'FEMALE'
+        name: 'en-US-Studio-Q',
+        ssmlGender: 'MALE'
       }
   }
 }
 
-// Enhanced fallback voices with premium alternatives
+// Enhanced fallback voices for radio broadcast style
 const getFallbackLanguageConfig = (language: string) => {
   switch (language) {
     case 'en':
       return {
         languageCode: 'en-US',
-        name: 'en-US-Neural2-C', // Neural2 fallback instead of News-L
-        ssmlGender: 'FEMALE'
+        name: 'en-US-Neural2-D', // Male Neural2 for consistent news tone
+        ssmlGender: 'MALE'
       }
     case 'zh-TW':
       return {
         languageCode: 'yue-HK',
-        name: 'yue-HK-Standard-D', // Alternative male Cantonese voice
+        name: 'yue-HK-Standard-D', // Alternative male Cantonese voice  
         ssmlGender: 'MALE'
       }
     case 'zh-CN':
       return {
         languageCode: 'cmn-CN',
-        name: 'cmn-CN-Wavenet-B', // Alternative premium Wavenet voice
+        name: 'cmn-CN-Wavenet-B', // Alternative male Wavenet voice
         ssmlGender: 'MALE'
       }
     default:
       return {
         languageCode: 'en-US',
-        name: 'en-US-Neural2-C',
-        ssmlGender: 'FEMALE'
+        name: 'en-US-Neural2-D',
+        ssmlGender: 'MALE'
       }
   }
 }
 
-// Final fallback for basic compatibility
+// Final fallback for basic compatibility - radio news style
 const getBasicFallbackConfig = (language: string) => {
   switch (language) {
     case 'en':
       return {
         languageCode: 'en-US',
-        name: 'en-US-Standard-C',
-        ssmlGender: 'FEMALE'
+        name: 'en-US-Standard-D', // Male standard voice for consistency
+        ssmlGender: 'MALE'
       }
     case 'zh-TW':
       return {
         languageCode: 'yue-HK',
-        name: 'yue-HK-Standard-C', // Female Cantonese voice as final fallback
+        name: 'yue-HK-Standard-A', // Female Cantonese voice as final fallback
         ssmlGender: 'FEMALE'
       }
     case 'zh-CN':
       return {
         languageCode: 'cmn-CN',
-        name: 'cmn-CN-Standard-A', // Basic fallback for compatibility
-        ssmlGender: 'FEMALE'
+        name: 'cmn-CN-Standard-C', // Male Mandarin voice for authoritative delivery
+        ssmlGender: 'MALE'
       }
     default:
       return {
         languageCode: 'en-US',
-        name: 'en-US-Standard-C',
-        ssmlGender: 'FEMALE'
+        name: 'en-US-Standard-D',
+        ssmlGender: 'MALE'
       }
   }
 }
@@ -113,17 +113,33 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
   cleanText = cleanText.replace(/\(Photo[^)]*\)/gi, '') // Remove photo captions
   cleanText = cleanText.replace(/\[Advertisement\]/gi, '') // Remove ad markers
   
-  // Enhanced AI-enhanced article structure cleanup
-  // Remove section headers with better patterns for all three languages
-  const sectionHeaders = {
-    en: /^(Summary|Key Points|What it matters|Breaking|Update|Analysis)[\s]*:?[\s]*/gmi,
-    zhTW: /^(摘要|重點|為什麼重要|突發|更新|分析)[\s]*:?[\s]*/gmi,
-    zhCN: /^(摘要|要点|为什么重要|突发|更新|分析)[\s]*:?[\s]*/gmi
-  }
+  // Enhanced section header removal for radio broadcast
+  // More comprehensive patterns to catch section headers in various formats
+  const sectionHeaderPatterns = [
+    // English patterns - more comprehensive
+    /^(Summary|Key Points|Why it matters|Breaking|Update|Analysis|In Brief|The Details|Background|What to know|What happened|The bottom line|At a glance)[\s]*:?[\s]*/gmi,
+    // Handle bullet points and numbered sections
+    /^\s*[\•\-\*]\s*(Summary|Key Points|Why it matters|Breaking|Update|Analysis)[\s]*:?[\s]*/gmi,
+    /^\s*\d+\.\s*(Summary|Key Points|Why it matters|Breaking|Update|Analysis)[\s]*:?[\s]*/gmi,
+    
+    // Traditional Chinese patterns
+    /^(摘要|重點|為什麼重要|突發|更新|分析|簡述|詳情|背景|需要知道|發生什麼|底線|一覽)[\s]*:?[\s]*/gmi,
+    /^\s*[\•\-\*]\s*(摘要|重點|為什麼重要|突發|更新|分析)[\s]*:?[\s]*/gmi,
+    /^\s*\d+\.\s*(摘要|重點|為什麼重要|突發|更新|分析)[\s]*:?[\s]*/gmi,
+    
+    // Simplified Chinese patterns  
+    /^(摘要|要点|为什么重要|突发|更新|分析|简述|详情|背景|需要知道|发生什么|底线|一览)[\s]*:?[\s]*/gmi,
+    /^\s*[\•\-\*]\s*(摘要|要点|为什么重要|突发|更新|分析)[\s]*:?[\s]*/gmi,
+    /^\s*\d+\.\s*(摘要|要点|为什么重要|突发|更新|分析)[\s]*:?[\s]*/gmi
+  ]
   
-  Object.values(sectionHeaders).forEach(pattern => {
+  // Apply all patterns to remove section headers
+  sectionHeaderPatterns.forEach(pattern => {
     cleanText = cleanText.replace(pattern, '')
   })
+  
+  // Remove standalone section headers that might be on their own lines
+  cleanText = cleanText.replace(/^(Summary|Key Points|Why it matters|Breaking|Update|Analysis|摘要|重點|為什麼重要|突發|更新|分析|要点|为什么重要|突发)[\s]*$/gmi, '')
   
   // Remove numbered citations and references
   cleanText = cleanText.replace(/\[\d+\]/g, '') // [1], [2], etc.
@@ -134,10 +150,35 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
   cleanText = cleanText.replace(/#+/g, '') // Hash marks
   cleanText = cleanText.replace(/_{2,}/g, '') // Multiple underscores
   
-  // Enhanced whitespace normalization
+  // Enhanced whitespace and formatting normalization for radio broadcast
   cleanText = cleanText.replace(/\n\s*\n\s*\n/g, '\n\n') // Triple+ line breaks to double
   cleanText = cleanText.replace(/\n\s*\n/g, '. ') // Double line breaks to sentence breaks
   cleanText = cleanText.replace(/\s+/g, ' ').trim() // Normalize whitespace
+  
+  // Radio-specific text improvements
+  // Remove common web/app interface elements that don't belong in audio
+  cleanText = cleanText.replace(/\b(Read more|Continue reading|Click here|Tap to|Swipe to|Share this|Subscribe|Follow us)\b[^.]*?[.!?]/gi, '')
+  cleanText = cleanText.replace(/\b(Photo|Image|Video):?\s*[^.!?]*[.!?]/gi, '') // Remove media captions
+  cleanText = cleanText.replace(/\([Cc]redit:?[^)]*\)/gi, '') // Remove photo credits
+  
+  // Fix common abbreviations for better pronunciation
+  cleanText = cleanText.replace(/\bUS\b/g, 'United States')
+  cleanText = cleanText.replace(/\bUK\b/g, 'United Kingdom') 
+  cleanText = cleanText.replace(/\bEU\b/g, 'European Union')
+  cleanText = cleanText.replace(/\bUN\b/g, 'United Nations')
+  cleanText = cleanText.replace(/\bWHO\b/g, 'World Health Organization')
+  cleanText = cleanText.replace(/\bCEO\b/g, 'C E O')
+  cleanText = cleanText.replace(/\bCFO\b/g, 'C F O')
+  cleanText = cleanText.replace(/\bIPO\b/g, 'I P O')
+  
+  // Improve time/date pronunciation
+  cleanText = cleanText.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/g, '$2/$1/$3') // MM/DD/YYYY format
+  cleanText = cleanText.replace(/\b(\d{1,2}):(\d{2})\s*(AM|PM)\b/gi, '$1:$2 $3')
+  
+  // Fix common measurement units
+  cleanText = cleanText.replace(/(\d+)\s*km\b/gi, '$1 kilometers')
+  cleanText = cleanText.replace(/(\d+)\s*ft\b/gi, '$1 feet')
+  cleanText = cleanText.replace(/(\d+)\s*lb\b/gi, '$1 pounds')
   
   // Split into sentences with improved pattern for multi-language support
   const sentencePattern = language.startsWith('zh') 
@@ -150,23 +191,31 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
   const isNeural2Voice = voiceName.includes('Neural2')
   const isChirpVoice = voiceName.includes('Chirp')
   
-  // Enhanced sentence processing with professional SSML markup
+  // Enhanced sentence processing with radio broadcast SSML markup
   const processedSentences = sentences.map((sentence, index) => {
     let processed = sentence.trim()
     
-    // Enhanced number and financial emphasis for news content
+    // Radio-style emphasis for key information
     if (!isStudioVoice && !isChirpVoice) { // Studio and Chirp voices handle emphasis differently
-      // Financial amounts with better pattern matching
+      // Financial amounts with better pattern matching - more emphasis for radio
       processed = processed.replace(/(\$[\d,]+(?:\.\d+)?(?:\s*(?:billion|million|thousand|万|億|万亿))?)/gi, 
-        '<emphasis level="moderate">$1</emphasis>')
-      // Percentages and statistics
+        '<emphasis level="strong">$1</emphasis>')
+      // Percentages and statistics - stronger emphasis for radio clarity
       processed = processed.replace(/(\d+(?:\.\d+)?(?:\s*(?:percent|%|％)))/gi, 
-        '<emphasis level="moderate">$1</emphasis>')
-      // Dates and times for better clarity
+        '<emphasis level="strong">$1</emphasis>')
+      // Dates and times for better clarity - moderate emphasis
       processed = processed.replace(/(\d{1,2}:\d{2}(?:\s*(?:AM|PM|am|pm))?)/gi,
         '<emphasis level="moderate">$1</emphasis>')
       processed = processed.replace(/(\d{4}年\d{1,2}月\d{1,2}日|\d{1,2}\/\d{1,2}\/\d{4})/gi,
         '<emphasis level="moderate">$1</emphasis>')
+      
+      // Key people and organizations - radio news style
+      processed = processed.replace(/\b(President|Prime Minister|CEO|Director|Minister|Secretary)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi,
+        '<emphasis level="moderate">$1 $2</emphasis>')
+      
+      // Numbers in general - lighter emphasis for better flow
+      processed = processed.replace(/\b(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\b/g,
+        '<emphasis level="reduced">$1</emphasis>')
     }
     
     // Language-specific pronunciation improvements
@@ -185,29 +234,36 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
       processed = processed.replace(/\bCCP\b/g, '<sub alias="中国共产党">CCP</sub>')
     }
     
-    // Enhanced emotional tone for premium voices
+    // Enhanced emotional tone for premium voices - radio broadcast style
     if (isNeural2Voice || isChirpVoice) {
       if (language === 'en') {
-        // Authoritative statements
-        if (/\b(announced|declared|confirmed|stated)\b/i.test(processed)) {
-          processed = `<prosody rate="0.95" pitch="-1st">${processed}</prosody>`
+        // Breaking news emphasis with radio urgency
+        if (/\b(breaking|urgent|alert|warning|developing)\b/i.test(processed)) {
+          processed = `<prosody rate="1.15" pitch="+1st" volume="+3dB">${processed}</prosody>`
         }
-        // Urgent/breaking news tone
-        if (/\b(breaking|urgent|alert|warning)\b/i.test(processed)) {
-          processed = `<prosody rate="1.1" pitch="+1st">${processed}</prosody>`
+        // Key facts and headlines - punchy delivery
+        else if (index === 0 || /^(\d+\.|•|-)\s*/.test(processed)) {
+          processed = `<prosody rate="1.05" pitch="+0.5st" volume="+1dB">${processed}</prosody>`
+        }
+        // Authoritative statements - maintain pace
+        else if (/\b(announced|declared|confirmed|stated|reported)\b/i.test(processed)) {
+          processed = `<prosody rate="1.0" pitch="-0.5st">${processed}</prosody>`
         }
       }
     }
     
-    // Add appropriate pauses for sentence structure
-    const pauseDuration = index === 0 ? '300ms' : '400ms' // Shorter pause for first sentence
+    // Add appropriate pauses for sentence structure - radio style
+    // Radio news uses shorter pauses for faster pacing and urgency
+    const pauseDuration = index === 0 ? '150ms' : '250ms' // Tighter pauses for broadcast pacing
     return `<p><break time="${pauseDuration}"/>${processed}</p>`
   })
   
-  // Join with appropriate breaks between paragraphs
-  const ssmlContent = processedSentences.join('<break time="400ms"/>')
+  // Join with appropriate breaks between paragraphs - radio style
+  // Radio news uses minimal paragraph breaks to maintain momentum
+  const ssmlContent = processedSentences.join('<break time="300ms"/>')
   
-  return `<speak>${ssmlContent}</speak>`
+  // Add prosody wrapper for overall broadcast characteristics
+  return `<speak><prosody rate="1.0" pitch="+0st" volume="+2dB">${ssmlContent}</prosody></speak>`
 }
 
 // Chunk text for Studio voices (≤5000 bytes limit)
@@ -255,15 +311,17 @@ export class TTSService {
   
   // Get optimal speaking rate for news delivery by language and voice type
   private getOptimalSpeakingRate(language: string, isStudioVoice: boolean): number {
-    const baseRate = isStudioVoice ? 1.0 : 1.05 // Studio voices work best at normal rate
+    // Radio news broadcasts typically run at 160-180 words per minute
+    // Google TTS baseline is ~150 wpm at 1.0x
+    const baseRate = isStudioVoice ? 1.18 : 1.22 // Increased baseline for faster news pacing
     
     switch (language) {
       case 'en':
-        return baseRate // English news anchor pace
-      case 'zh-TW': // Cantonese needs slower rate for tonal clarity and naturalness
-        return baseRate * 0.90 // Slower for better Cantonese pronunciation
-      case 'zh-CN': // Mandarin optimal pace
-        return baseRate * 0.98
+        return baseRate // English news anchor pace (175-185 wpm)
+      case 'zh-TW': // Cantonese radio news pace - still needs clarity
+        return baseRate * 0.90 // ~160-170 wpm for tonal clarity
+      case 'zh-CN': // Mandarin news broadcast pace
+        return baseRate * 0.93 // ~165-175 wpm
       default:
         return baseRate
     }
@@ -273,15 +331,16 @@ export class TTSService {
   private getOptimalPitch(language: string, gender: string): number {
     const isFemale = gender.toUpperCase() === 'FEMALE'
     
+    // Radio news broadcasts use more neutral pitch for clarity and urgency
     switch (language) {
       case 'en':
-        return isFemale ? -0.8 : -1.2 // Professional authority range
+        return isFemale ? -0.5 : -0.8 // Less dramatic pitch shift for radio clarity
       case 'zh-TW': // Cantonese tonal considerations
-        return isFemale ? -0.6 : -1.0 // Less pitch adjustment for tonal languages
+        return isFemale ? -0.3 : -0.6 // Minimal adjustment to preserve tones
       case 'zh-CN': // Mandarin tonal considerations  
-        return isFemale ? -0.7 : -1.1
+        return isFemale ? -0.4 : -0.7
       default:
-        return isFemale ? -0.8 : -1.2
+        return isFemale ? -0.5 : -0.8
     }
   }
   
@@ -338,12 +397,12 @@ export class TTSService {
             voice: voiceConfig,
             audioConfig: {
               audioEncoding: 'MP3',
-              // Professional news-anchor quality audio settings
+              // Radio broadcast optimized audio settings
               sampleRateHertz: 48000, // High quality for all devices
               speakingRate: this.getOptimalSpeakingRate(this.config.language, isStudioVoice),
               pitch: this.getOptimalPitch(this.config.language, voiceConfig.ssmlGender),
-              volumeGainDb: 0.0,
-              effectsProfileId: ['large-home-entertainment-class-device'] // Studio quality for all
+              volumeGainDb: 3.0, // Boost volume for radio presence
+              effectsProfileId: ['large-home-entertainment-class-device'] // Studio quality
             }
           })
         })

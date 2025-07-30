@@ -19,7 +19,7 @@ interface SideMenuProps {
 }
 
 export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
-  const { user, signOut, loading } = useAuth()
+  const { user, session, signOut, loading, sessionValid } = useAuth()
   const { t } = useLanguage()
   const menuRef = React.useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = React.useState(false)
@@ -180,7 +180,7 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
                       <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       {t('menu.loading')}
                     </div>
-                  ) : user ? (
+                  ) : user && session && sessionValid ? (
                     <div className="space-y-2">
                       <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                         <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center">

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/hooks/redux-auth"
 import { useAuthModal } from "@/contexts/auth-modal-context"
-import { useBookmarks } from "@/contexts/bookmark-context"
+import { useUnifiedBookmarks } from "@/hooks/use-bookmarks"
 import { analytics } from "@/lib/analytics"
 
 interface BookmarkButtonProps {
@@ -25,10 +25,9 @@ export default function BookmarkButton({
 }: BookmarkButtonProps) {
   const { user } = useAuth()
   const { showAuthModal } = useAuthModal()
-  const { isBookmarked, toggleBookmark, loading: bookmarksLoading } = useBookmarks()
+  const { isBookmarked, toggleBookmark, isToggling, loading: bookmarksLoading } = useUnifiedBookmarks()
   
   const isArticleBookmarked = isBookmarked(articleId)
-  const [loading, setLoading] = useState(false)
 
   const handleBookmarkToggle = async (e: React.MouseEvent) => {
     // Prevent both default action and event bubbling to parent Card
@@ -44,26 +43,22 @@ export default function BookmarkButton({
       return
     }
 
-    if (loading) return
-
-    setLoading(true)
+    if (isToggling) return
 
     try {
-      const newBookmarkStatus = await toggleBookmark(articleId, articleTitle)
+      await toggleBookmark(articleId, articleTitle)
       
       // Track analytics
       analytics.track('bookmark_toggled', {
         article_id: articleId,
         article_title: articleTitle,
-        action: newBookmarkStatus ? 'added' : 'removed',
-        is_bookmarked: newBookmarkStatus
+        action: isArticleBookmarked ? 'removed' : 'added',
+        is_bookmarked: !isArticleBookmarked
       })
 
-      console.log(`Article ${newBookmarkStatus ? 'added to' : 'removed from'} bookmarks: ${articleTitle || articleId}`)
+      console.log(`Article ${!isArticleBookmarked ? 'added to' : 'removed from'} bookmarks: ${articleTitle || articleId}`)
     } catch (error) {
       console.error('Error toggling bookmark:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -79,14 +74,14 @@ export default function BookmarkButton({
     return (
       <button
         onClick={handleBookmarkToggle}
-        disabled={loading}
+        disabled={isToggling}
         className={cn(
           "flex items-center justify-center p-1 transition-colors duration-200",
           "hover:text-stone-700 dark:hover:text-stone-300",
           isArticleBookmarked 
             ? "text-blue-600 dark:text-blue-400" 
             : "text-stone-500 dark:text-neutral-400",
-          loading && "opacity-50 cursor-not-allowed",
+          isToggling && "opacity-50 cursor-not-allowed",
           className
         )}
         aria-label={isArticleBookmarked ? "Remove bookmark" : "Add bookmark"}
@@ -102,13 +97,13 @@ export default function BookmarkButton({
       variant="ghost"
       size="sm"
       onClick={handleBookmarkToggle}
-      disabled={loading}
+      disabled={isToggling}
       className={cn(
         "h-10 w-10 p-0 rounded-full transition-all duration-200",
         isArticleBookmarked
           ? "text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/20"
           : "text-muted-foreground hover:text-foreground hover:bg-muted",
-        loading && "opacity-50 cursor-not-allowed",
+        isToggling && "opacity-50 cursor-not-allowed",
         className
       )}
       aria-label={isArticleBookmarked ? "Remove bookmark" : "Add bookmark"}

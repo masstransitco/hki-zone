@@ -27,44 +27,73 @@ import { supabaseAuth } from '@/lib/supabase-auth'
 export const useAppDispatch = () => useDispatch<AppDispatch>()
 export const useAppSelector = <T>(selector: (state: RootState) => T) => useSelector(selector)
 
+// Global auth listener management to prevent multiple listeners
+let globalAuthListener: any = null
+let globalAuthInitialized = false
+
+// Cleanup function for auth listener
+export const cleanupAuthListener = () => {
+  if (globalAuthListener) {
+    globalAuthListener.unsubscribe()
+    globalAuthListener = null
+  }
+  globalAuthInitialized = false
+}
+
 // Auth-specific hooks
 export const useAuth = () => {
   const dispatch = useAppDispatch()
   const auth = useAppSelector(selectAuth)
   
-  // Initialize auth on first use with guard
+  // Initialize auth on first use with guard (only once globally)
   useEffect(() => {
-    if (auth.initializing && !auth.loading) {
+    if (!globalAuthInitialized && auth.initializing && !auth.loading) {
       console.log('🚀 Starting auth initialization...')
+      globalAuthInitialized = true
       dispatch(initializeAuth())
     }
   }, [dispatch, auth.initializing, auth.loading])
 
-  // Set up auth state change listener (only once)
+  // Set up auth state change listener (only once globally)
   useEffect(() => {
+    if (globalAuthListener) {
+      return // Listener already exists
+    }
+
     let isProcessing = false
-    let lastSessionId = ''
+    let lastEvent = ''
+    let lastTimestamp = 0
     
     const { data: { subscription } } = supabaseAuth.auth.onAuthStateChange(
       async (event, session) => {
-        const currentSessionId = session?.access_token || 'no-session'
+        const currentTimestamp = Date.now()
+        const currentUserId = session?.user?.id || 'no-user'
+        const eventKey = `${event}-${currentUserId}`
         
-        // Skip if we're already processing the same session
-        if (isProcessing || lastSessionId === currentSessionId) {
-          console.log('🚫 Skipping duplicate auth event')
+        // Skip if we're already processing or duplicate event within 100ms
+        if (isProcessing || (lastEvent === eventKey && currentTimestamp - lastTimestamp < 100)) {
+          return
+        }
+        
+        // Skip excessive INITIAL_SESSION events after sign out
+        if (event === 'INITIAL_SESSION' && !session?.user && lastEvent.includes('INITIAL_SESSION')) {
           return
         }
         
         isProcessing = true
-        lastSessionId = currentSessionId
+        lastEvent = eventKey
+        lastTimestamp = currentTimestamp
         
-        console.log('Auth state changed:', {
-          event,
-          userId: session?.user?.id,
-          email: session?.user?.email,
-          hasSession: !!session,
-          timestamp: new Date().toISOString()
-        })
+        // Only log meaningful auth events
+        if (session?.user || event === 'SIGNED_OUT') {
+          console.log('Auth state changed:', {
+            event,
+            userId: session?.user?.id,
+            email: session?.user?.email,
+            hasSession: !!session,
+            timestamp: new Date().toISOString()
+          })
+        }
         
         // Update session in Redux
         dispatch(updateSession({ 
@@ -73,31 +102,42 @@ export const useAuth = () => {
         }))
         
         // Create a basic profile if user exists but profile is missing
-        if (session?.user && auth.profile === undefined) {
-          console.log('👤 Creating basic profile for user (skipping database)')
-          // Create a basic profile without database dependency
-          const basicProfile = {
-            id: session.user.id,
-            username: session.user.email?.split('@')[0] || `user_${session.user.id.slice(0, 8)}`,
-            email: session.user.email || '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+        if (session?.user) {
+          const currentAuth = auth || {}
+          if (!currentAuth.profile) {
+            console.log('👤 Creating basic profile for user (skipping database)')
+            const basicProfile = {
+              id: session.user.id,
+              username: session.user.email?.split('@')[0] || `user_${session.user.id.slice(0, 8)}`,
+              email: session.user.email || '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+            dispatch(updateProfile(basicProfile))
           }
-          dispatch(updateProfile(basicProfile))
-        }
-        
-        // Clear profile if no user
-        if (!session?.user) {
+        } else if (event === 'SIGNED_OUT') {
+          // Only clear profile on explicit sign out, not on initial session checks
+          console.log('🚪 Clearing user profile - explicit sign out')
           dispatch(updateProfile(null))
         }
         
         // Reset processing flag
-        isProcessing = false
+        setTimeout(() => {
+          isProcessing = false
+        }, 50)
       }
     )
 
-    return () => subscription.unsubscribe()
-  }, [dispatch]) // Remove auth.profile dependency to prevent re-setup
+    globalAuthListener = subscription
+    
+    // Cleanup function
+    return () => {
+      if (globalAuthListener === subscription) {
+        globalAuthListener.unsubscribe()
+        globalAuthListener = null
+      }
+    }
+  }, [dispatch]) // Only depend on dispatch
 
   // Action creators with error handling
   const handleSignUp = useCallback(async (email: string, password: string, username: string) => {
@@ -121,7 +161,16 @@ export const useAuth = () => {
   const handleSignOut = useCallback(async () => {
     try {
       const result = await dispatch(signOut())
-      return { error: result.type.includes('rejected') ? new Error(result.payload as string) : null }
+      if (result.type.includes('rejected')) {
+        const errorMessage = result.payload as string
+        // Don't treat session missing as an error for the user
+        if (errorMessage.includes('Auth session missing') || errorMessage.includes('session_not_found')) {
+          console.log('Sign out completed - session was already cleared')
+          return { error: null }
+        }
+        return { error: new Error(errorMessage) }
+      }
+      return { error: null }
     } catch (error) {
       return { error: error as Error }
     }

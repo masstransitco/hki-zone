@@ -205,11 +205,17 @@ export const performStoreHealthCheck = () => {
 }
 
 // Emergency reset function
-export const emergencyResetAuth = () => {
+export const emergencyResetAuth = async () => {
   try {
+    // Clean up auth listener first
+    const { cleanupAuthListener } = await import('@/hooks/redux-auth')
+    cleanupAuthListener()
+    
     if (typeof window !== 'undefined') {
       localStorage.removeItem('persist:panora-auth-v2')
       localStorage.removeItem('panora-auth-token')
+      localStorage.removeItem('sb-egyuetfeubznhcvmtary-auth-token')
+      localStorage.removeItem('supabase.auth.token')
     }
     
     // Reset store state

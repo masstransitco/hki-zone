@@ -196,16 +196,47 @@ export const signIn = createAsyncThunk(
 // Async thunk for user sign out
 export const signOut = createAsyncThunk(
   'auth/signOut',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
     try {
       const { error } = await supabaseAuth.auth.signOut()
       if (error) {
+        // If session is missing, we should still clear the local state
+        if (error.message.includes('Auth session missing') || error.message.includes('session_not_found')) {
+          console.warn('Session already missing during sign out, clearing local state anyway')
+          // Clear any auth-related localStorage items
+          if (typeof window !== 'undefined') {
+            try {
+              localStorage.removeItem('sb-egyuetfeubznhcvmtary-auth-token')
+              localStorage.removeItem('supabase.auth.token')
+            } catch (storageError) {
+              console.warn('Failed to clear auth tokens from localStorage:', storageError)
+            }
+          }
+          return true
+        }
         return rejectWithValue(error.message)
       }
       return true
     } catch (error) {
       console.error('Error in signOut:', error)
-      return rejectWithValue(error instanceof Error ? error.message : 'Unknown error')
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      
+      // If session is missing, we should still clear the local state
+      if (errorMessage.includes('Auth session missing') || errorMessage.includes('session_not_found')) {
+        console.warn('Session already missing during sign out, clearing local state anyway')
+        // Clear any auth-related localStorage items
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.removeItem('sb-egyuetfeubznhcvmtary-auth-token')
+            localStorage.removeItem('supabase.auth.token')
+          } catch (storageError) {
+            console.warn('Failed to clear auth tokens from localStorage:', storageError)
+          }
+        }
+        return true
+      }
+      
+      return rejectWithValue(errorMessage)
     }
   }
 )
@@ -381,6 +412,7 @@ const authSlice = createSlice({
         state.profile = null
         state.sessionValid = false
         state.lastActivity = null
+        state.error = null // Clear any previous errors on successful sign out
       })
       .addCase(signOut.rejected, (state, action) => {
         state.loading = false

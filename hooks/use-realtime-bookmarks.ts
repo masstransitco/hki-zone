@@ -105,7 +105,7 @@ export function useRealtimeBookmarks() {
     }
   }, [user, bookmarkedArticles])
 
-  // Load initial bookmarks
+  // Load initial bookmarks with improved auth checking
   const loadInitialBookmarks = useCallback(async () => {
     if (!user) {
       setBookmarkedArticles(new Set())
@@ -116,10 +116,14 @@ export function useRealtimeBookmarks() {
     setLoading(true)
     
     try {
+      // Double-check that we have a valid session
       const session = await supabaseAuth.auth.getSession()
       const token = session.data.session?.access_token
+      const sessionUser = session.data.session?.user
 
-      if (!token) {
+      // More robust session validation
+      if (!token || !sessionUser || sessionUser.id !== user.id) {
+        console.log('📚 [BOOKMARKS] Invalid or expired session, skipping bookmark load')
         setBookmarkedArticles(new Set())
         setLoading(false)
         return
@@ -145,13 +149,17 @@ export function useRealtimeBookmarks() {
           data.bookmarks.map((bookmark: any) => bookmark.id || bookmark.article_id)
         )
         setBookmarkedArticles(articleIds)
+        console.log(`📚 [BOOKMARKS] Loaded ${articleIds.size} bookmarks for user ${user.id}`)
+      } else if (response.status === 401) {
+        console.log('📚 [BOOKMARKS] Authentication failed, clearing bookmarks')
+        setBookmarkedArticles(new Set())
       } else {
-        console.error('Failed to load initial bookmarks:', response.statusText)
+        console.error('Failed to load initial bookmarks:', response.status, response.statusText)
         setBookmarkedArticles(new Set())
       }
     } catch (error) {
       if (error.name === 'AbortError') {
-        console.warn('Bookmark loading was aborted due to timeout')
+        console.warn('📚 [BOOKMARKS] Loading was aborted due to timeout')
       } else {
         console.error('Error loading initial bookmarks:', error)
       }
@@ -178,7 +186,7 @@ export function useRealtimeBookmarks() {
     })
   }, [])
 
-  // Set up real-time subscription
+  // Set up real-time subscription with debouncing
   useEffect(() => {
     if (!user) {
       // Clean up subscription if user logs out
@@ -191,8 +199,10 @@ export function useRealtimeBookmarks() {
       return
     }
 
-    // Load initial bookmarks
-    loadInitialBookmarks()
+    // Debounce bookmark loading to prevent rapid successive calls
+    const timeoutId = setTimeout(() => {
+      loadInitialBookmarks()
+    }, 200) // 200ms debounce
 
     // Set up real-time subscription for user's bookmarks
     const bookmarkChannel = supabaseAuth
@@ -215,9 +225,10 @@ export function useRealtimeBookmarks() {
 
     // Cleanup on unmount or user change
     return () => {
+      clearTimeout(timeoutId)
       supabaseAuth.removeChannel(bookmarkChannel)
     }
-  }, [user])
+  }, [user, loadInitialBookmarks])
 
   return {
     bookmarkedArticles,
