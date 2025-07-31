@@ -12,7 +12,6 @@ import {
   ChevronDown,
   ChevronUp,
   RefreshCw,
-  Filter,
   X
 } from "lucide-react"
 import Image from "next/image"
@@ -112,18 +111,18 @@ interface GovernmentBulletinProps {
   isActive?: boolean
 }
 
-// Available categories for filtering - using translation keys
+// Available categories for filtering - using translation keys with emojis
 const AVAILABLE_CATEGORIES = [
-  { value: 'all', labelKey: 'filters.all' },
-  { value: 'HKMA', labelKey: 'filters.hkma' },
-  { value: 'Gov', labelKey: 'filters.gov' },
-  { value: 'Road', labelKey: 'filters.road' },
-  { value: 'Transport', labelKey: 'filters.transport' },
-  { value: 'Weather', labelKey: 'filters.weather' },
-  { value: 'Health', labelKey: 'filters.health' },
-  { value: 'Hospital', labelKey: 'filters.hospital' },
-  { value: 'Utility', labelKey: 'filters.utility' },
-  { value: 'Rail', labelKey: 'filters.rail' }
+  { value: 'all', labelKey: 'filters.all', emoji: '' },
+  { value: 'HKMA', labelKey: 'filters.hkma', emoji: '🏦' },
+  { value: 'Gov', labelKey: 'filters.gov', emoji: '🏛️' },
+  { value: 'Road', labelKey: 'filters.road', emoji: '🛣️' },
+  { value: 'Transport', labelKey: 'filters.transport', emoji: '🚦' },
+  { value: 'Weather', labelKey: 'filters.weather', emoji: '🌤️' },
+  { value: 'Health', labelKey: 'filters.health', emoji: '🩺' },
+  { value: 'Hospital', labelKey: 'filters.hospital', emoji: '🏥' },
+  { value: 'Utility', labelKey: 'filters.utility', emoji: '⚡' },
+  { value: 'Rail', labelKey: 'filters.rail', emoji: '🚆' }
 ]
 
 export default function GovernmentBulletin({
@@ -310,6 +309,12 @@ export default function GovernmentBulletin({
     }
   }, [showCategoryFilter])
 
+  // Helper function to get emoji for a category
+  const getCategoryEmoji = useCallback((categoryLabel: string) => {
+    const category = AVAILABLE_CATEGORIES.find(cat => cat.value === categoryLabel)
+    return category?.emoji || ''
+  }, [])
+
   const getCategoryLabel = useCallback((category: string, sourceSlug: string) => {
     // Enhanced categorization for all government feeds
     const sourceLabels: { [key: string]: string } = {
@@ -450,7 +455,9 @@ export default function GovernmentBulletin({
                 onClick={() => setShowCategoryFilter(!showCategoryFilter)}
                 className="h-7 px-3 text-xs border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
               >
-                <Filter className="h-3 w-3 mr-1.5" />
+                <span className="mr-1.5">
+                  {selectedCategory === 'all' ? '🇭🇰' : getCategoryEmoji(selectedCategory)}
+                </span>
                 {selectedCategory === 'all' ? t('filters.all') : t(`filters.${selectedCategory.toLowerCase()}`)}
                 <ChevronDown className="h-3 w-3 ml-1.5" />
               </Button>
@@ -469,6 +476,7 @@ export default function GovernmentBulletin({
                             : 'text-neutral-700 dark:text-neutral-300'
                         }`}
                       >
+                        {category.emoji && <span className="mr-2">{category.emoji}</span>}
                         {t(category.labelKey)}
                         {selectedCategory === category.value && (
                           <span className="ml-2 text-neutral-500">✓</span>
