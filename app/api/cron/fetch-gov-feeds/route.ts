@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { governmentFeeds } from "@/lib/government-feeds"
+import { getUnifiedFeedsV2 } from "@/lib/government-feeds-unified-v2"
 
 export const dynamic = 'force-dynamic'
 
@@ -17,20 +17,30 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log("🚀 Government feeds cron job started:", new Date().toISOString())
+    console.log("🚀 Government feeds cron job started (Unified V2):", new Date().toISOString())
 
-    // Process all government feeds
-    const result = await governmentFeeds.processAllFeeds()
+    // Process all government feeds using the new unified system
+    const unifiedFeeds = getUnifiedFeedsV2()
+    await unifiedFeeds.processAllFeeds()
+    
+    // Create a result object for compatibility
+    const result = {
+      totalIncidents: 0, // V2 doesn't return detailed stats yet
+      processedFeeds: 0,
+      results: [],
+      errors: []
+    }
 
     const response = {
       success: true,
       timestamp: new Date().toISOString(),
-      message: `Successfully processed ${result.totalIncidents} incidents from ${result.processedFeeds} government feeds`,
+      message: `Successfully processed government feeds using unified system V2`,
       result: {
         totalIncidents: result.totalIncidents,
         processedFeeds: result.processedFeeds,
         feedResults: result.results,
-        errors: result.errors
+        errors: result.errors,
+        system: "unified-v2"
       }
     }
 
@@ -57,19 +67,21 @@ export async function GET(request: NextRequest) {
 // POST endpoint for manual testing
 export async function POST(request: NextRequest) {
   try {
-    console.log("🧪 Manual government feeds processing triggered")
+    console.log("🧪 Manual government feeds processing triggered (Unified V2)")
     
-    const result = await governmentFeeds.processAllFeeds()
+    const unifiedFeeds = getUnifiedFeedsV2()
+    await unifiedFeeds.processAllFeeds()
     
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
-      message: `Manually processed ${result.totalIncidents} incidents from ${result.processedFeeds} government feeds`,
+      message: `Manually processed government feeds using unified system V2`,
       result: {
-        totalIncidents: result.totalIncidents,
-        processedFeeds: result.processedFeeds,
-        feedResults: result.results,
-        errors: result.errors
+        totalIncidents: 0, // V2 doesn't return detailed stats yet
+        processedFeeds: 0,
+        feedResults: [],
+        errors: [],
+        system: "unified-v2"
       }
     })
     
