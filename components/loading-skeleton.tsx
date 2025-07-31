@@ -144,10 +144,16 @@ export default function LoadingSkeleton({
           <div className="h-[113px] w-full" aria-hidden="true" />
           
           <div className="pt-6 space-y-4 px-4 md:px-6 lg:px-8">
-            {/* Real-time connection status skeleton */}
-            <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
-              <div className={cn("h-2 w-2 rounded-full bg-neutral-300 dark:bg-neutral-700", shimmerClass)} />
-              <div className={cn("h-3 w-20 bg-neutral-200 dark:bg-neutral-800 rounded", shimmerClass)} />
+            {/* Filter and Real-time status row skeleton */}
+            <div className="flex items-center justify-between text-xs">
+              {/* Category filter skeleton on the left */}
+              <div className={cn("h-7 w-28 bg-neutral-200 dark:bg-neutral-800 rounded border", shimmerClass)} />
+              
+              {/* Real-time connection status skeleton on the right */}
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className={cn("h-2 w-2 rounded-full bg-neutral-300 dark:bg-neutral-700", shimmerClass)} />
+                <div className={cn("h-3 w-20 bg-neutral-200 dark:bg-neutral-800 rounded", shimmerClass)} />
+              </div>
             </div>
 
             {/* Bulletin List skeleton */}

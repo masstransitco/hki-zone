@@ -467,6 +467,18 @@ const translations = {
     "bookmarks.search.noResults": "No bookmarks found",
     "bookmarks.search.noResultsDesc": "No bookmarks match \"{query}\". Try a different search term.",
     "bookmarks.search.clearSearch": "Clear search",
+
+    // Filter Categories
+    "filters.all": "All",
+    "filters.hkma": "HKMA",
+    "filters.gov": "Gov",
+    "filters.road": "Road",
+    "filters.transport": "Transport",
+    "filters.weather": "Weather",
+    "filters.health": "Health",
+    "filters.hospital": "Hospital",
+    "filters.utility": "Utility",
+    "filters.rail": "Rail",
   },
   "zh-CN": {
     // Header
@@ -926,6 +938,18 @@ const translations = {
     "bookmarks.search.noResults": "未找到书签",
     "bookmarks.search.noResultsDesc": "没有书签匹配 \"{query}\"。请尝试其他搜索词。",
     "bookmarks.search.clearSearch": "清除搜索",
+
+    // Filter Categories
+    "filters.all": "全部",
+    "filters.hkma": "金管局",
+    "filters.gov": "政府",
+    "filters.road": "道路",
+    "filters.transport": "交通",
+    "filters.weather": "天气",
+    "filters.health": "健康",
+    "filters.hospital": "医院",
+    "filters.utility": "公用",
+    "filters.rail": "铁路",
   },
   "zh-TW": {
     // Header
@@ -1385,6 +1409,18 @@ const translations = {
     "bookmarks.search.noResults": "未找到書籤",
     "bookmarks.search.noResultsDesc": "沒有書籤匹配 \"{query}\"。請嘗試其他搜尋詞。",
     "bookmarks.search.clearSearch": "清除搜尋",
+
+    // Filter Categories
+    "filters.all": "全部",
+    "filters.hkma": "金管局",
+    "filters.gov": "政府",
+    "filters.road": "道路",
+    "filters.transport": "交通",
+    "filters.weather": "天氣",
+    "filters.health": "健康",
+    "filters.hospital": "醫院",
+    "filters.utility": "公用",
+    "filters.rail": "鐵路",
   },
 }
 

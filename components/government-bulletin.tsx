@@ -11,7 +11,9 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
-  RefreshCw
+  RefreshCw,
+  Filter,
+  X
 } from "lucide-react"
 import Image from "next/image"
 import { format } from "date-fns"
@@ -110,6 +112,20 @@ interface GovernmentBulletinProps {
   isActive?: boolean
 }
 
+// Available categories for filtering - using translation keys
+const AVAILABLE_CATEGORIES = [
+  { value: 'all', labelKey: 'filters.all' },
+  { value: 'HKMA', labelKey: 'filters.hkma' },
+  { value: 'Gov', labelKey: 'filters.gov' },
+  { value: 'Road', labelKey: 'filters.road' },
+  { value: 'Transport', labelKey: 'filters.transport' },
+  { value: 'Weather', labelKey: 'filters.weather' },
+  { value: 'Health', labelKey: 'filters.health' },
+  { value: 'Hospital', labelKey: 'filters.hospital' },
+  { value: 'Utility', labelKey: 'filters.utility' },
+  { value: 'Rail', labelKey: 'filters.rail' }
+]
+
 export default function GovernmentBulletin({
   limit = 20,
   autoRefresh = true,
@@ -124,10 +140,13 @@ export default function GovernmentBulletin({
   const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<string>('all')
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false)
   const { setScrollPosition } = useHeaderVisibility()
   const tickingRef = useRef(false)
   const { t, language } = useLanguage()
   const [isLanguageReady, setIsLanguageReady] = useState(false)
+  const filterDropdownRef = useRef<HTMLDivElement>(null)
   
   // Infinite scroll trigger
   const { ref: loadMoreRef, inView } = useInView({
@@ -269,7 +288,29 @@ export default function GovernmentBulletin({
     setExpandedItems(newExpanded)
   }
 
-  const getCategoryLabel = (category: string, sourceSlug: string) => {
+  const handleCategoryFilter = (category: string) => {
+    setSelectedCategory(category)
+    setShowCategoryFilter(false)
+  }
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
+        setShowCategoryFilter(false)
+      }
+    }
+
+    if (showCategoryFilter) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showCategoryFilter])
+
+  const getCategoryLabel = useCallback((category: string, sourceSlug: string) => {
     // Enhanced categorization for all government feeds
     const sourceLabels: { [key: string]: string } = {
       // HKMA feeds
@@ -278,13 +319,25 @@ export default function GovernmentBulletin({
       'hkma_guidelines': 'HKMA',
       'hkma_circulars': 'HKMA',
       
+      // HKMA - Hong Kong Monetary Authority (Chinese)
+      'hkma_press_zh_tw': 'HKMA',
+      'hkma_speeches_zh_tw': 'HKMA',
+      'hkma_guidelines_zh_tw': 'HKMA',
+      'hkma_circulars_zh_tw': 'HKMA',
+      
       // Government news
       'news_gov_top': 'Gov',
       
-      // Transport Department
-      'td_notices': 'Transport',
+      // Transport Department (English)
+      'td_notices': 'Road',
       'td_press': 'Transport',
       'td_special': 'Transport',
+      
+      // Transport Department (Chinese)
+      'td_notices_zh_tw': 'Road',
+      'td_notices_zh_cn': 'Road',
+      'td_press_zh_tw': 'Transport',
+      'td_press_zh_cn': 'Transport',
       
       // Hong Kong Observatory
       'hko_warn': 'Weather',
@@ -326,7 +379,15 @@ export default function GovernmentBulletin({
     }
     
     return categoryMap[category] || category.charAt(0).toUpperCase() + category.slice(1)
-  }
+  }, [])
+
+  // Filter items based on selected category
+  const filteredItems = selectedCategory === 'all' 
+    ? items 
+    : items.filter(item => {
+        const categoryLabel = getCategoryLabel(item.category, item.source_slug)
+        return categoryLabel === selectedCategory
+      })
 
   const getCategoryColor = () => {
     // Enhanced semantic color system - warm neutral colors
@@ -379,24 +440,67 @@ export default function GovernmentBulletin({
         <div className="h-[113px] w-full" aria-hidden="true" />
         
         <div className="pt-6 space-y-4 px-4 md:px-6 lg:px-8">
-          {/* Real-time connection status */}
-          {autoRefresh && (
-            <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
-              <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
-              <span>{isConnected ? t('realtime.active') : t('realtime.connecting')}</span>
+          {/* Filter and Real-time status row */}
+          <div className="flex items-center justify-between text-xs">
+            {/* Category filter on the left */}
+            <div className="relative" ref={filterDropdownRef}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+                className="h-7 px-3 text-xs border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              >
+                <Filter className="h-3 w-3 mr-1.5" />
+                {selectedCategory === 'all' ? t('filters.all') : t(`filters.${selectedCategory.toLowerCase()}`)}
+                <ChevronDown className="h-3 w-3 ml-1.5" />
+              </Button>
+              
+              {/* Dropdown menu */}
+              {showCategoryFilter && (
+                <div className="absolute top-8 left-0 z-50 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg min-w-[140px]">
+                  <div className="py-1">
+                    {AVAILABLE_CATEGORIES.map((category) => (
+                      <button
+                        key={category.value}
+                        onClick={() => handleCategoryFilter(category.value)}
+                        className={`w-full text-left px-3 py-1.5 text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors ${
+                          selectedCategory === category.value
+                            ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                            : 'text-neutral-700 dark:text-neutral-300'
+                        }`}
+                      >
+                        {t(category.labelKey)}
+                        {selectedCategory === category.value && (
+                          <span className="ml-2 text-neutral-500">✓</span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Real-time connection status on the right */}
+            {autoRefresh && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
+                <span>{isConnected ? t('realtime.active') : t('realtime.connecting')}</span>
+              </div>
+            )}
+          </div>
 
       {/* Bulletin List */}
       <div className="space-y-2">
-        {items.length === 0 ? (
+        {filteredItems.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center text-muted-foreground">
-              No bulletin items found
+              {selectedCategory === 'all' 
+                ? 'No bulletin items found' 
+                : `No ${t(`filters.${selectedCategory.toLowerCase()}`)} items found`}
             </CardContent>
           </Card>
         ) : (
-          items.map((item) => {
+          filteredItems.map((item) => {
             const isExpanded = expandedItems.has(item.id)
             const isEnriched = item.enrichment_status === 'enriched' || item.enrichment_status === 'ready'
             const displayTitle = isEnriched ? (item.enriched_title || item.title) : item.title
