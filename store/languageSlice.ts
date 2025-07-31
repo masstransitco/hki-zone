@@ -457,6 +457,16 @@ const translations = {
     // Real-time updates
     "realtime.active": "Real-time updates active",
     "realtime.connecting": "Connecting to real-time updates...",
+
+    // Bookmarks Empty State
+    "bookmarks.emptyState.title": "Your reading list awaits",
+    "bookmarks.emptyState.description": "Save articles that matter to you.\nRead them anytime, anywhere.",
+    
+    // Bookmarks Search
+    "bookmarks.search.placeholder": "Search bookmarks...",
+    "bookmarks.search.noResults": "No bookmarks found",
+    "bookmarks.search.noResultsDesc": "No bookmarks match \"{query}\". Try a different search term.",
+    "bookmarks.search.clearSearch": "Clear search",
   },
   "zh-CN": {
     // Header
@@ -906,6 +916,16 @@ const translations = {
     // Real-time updates
     "realtime.active": "实时更新已启动",
     "realtime.connecting": "正在连接实时更新...",
+
+    // Bookmarks Empty State
+    "bookmarks.emptyState.title": "您的阅读清单正在等待",
+    "bookmarks.emptyState.description": "保存对您重要的文章。\n随时随地阅读。",
+    
+    // Bookmarks Search
+    "bookmarks.search.placeholder": "搜索书签...",
+    "bookmarks.search.noResults": "未找到书签",
+    "bookmarks.search.noResultsDesc": "没有书签匹配 \"{query}\"。请尝试其他搜索词。",
+    "bookmarks.search.clearSearch": "清除搜索",
   },
   "zh-TW": {
     // Header
@@ -1355,6 +1375,16 @@ const translations = {
     // Real-time updates
     "realtime.active": "實時更新已啟動",
     "realtime.connecting": "正在連接實時更新...",
+
+    // Bookmarks Empty State
+    "bookmarks.emptyState.title": "您的閱讀清單正在等待",
+    "bookmarks.emptyState.description": "保存對您重要的文章。\n隨時隨地閱讀。",
+    
+    // Bookmarks Search
+    "bookmarks.search.placeholder": "搜尋書籤...",
+    "bookmarks.search.noResults": "未找到書籤",
+    "bookmarks.search.noResultsDesc": "沒有書籤匹配 \"{query}\"。請嘗試其他搜尋詞。",
+    "bookmarks.search.clearSearch": "清除搜尋",
   },
 }
 

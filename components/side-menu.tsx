@@ -132,6 +132,7 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
         <div 
           className={cn(
             "fixed inset-0 z-[95] bg-black/20 backdrop-blur-sm transition-opacity duration-300",
+            "md:bg-black/10", // Lighter backdrop on desktop
             isDragging ? "transition-none" : ""
           )}
           style={{
@@ -145,8 +146,8 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
       <div
         ref={menuRef}
         className={cn(
-          "fixed left-0 top-0 h-full w-80 max-w-[80vw] z-[96] bg-background border-r border-border shadow-lg",
-          "flex flex-col gap-6 p-6 transition-transform ease-out",
+          "fixed left-0 top-0 h-full w-80 max-w-[85vw] sm:max-w-[400px] md:max-w-[360px] z-[96] bg-background border-r border-border shadow-lg",
+          "flex flex-col gap-4 sm:gap-6 p-4 sm:p-6 transition-transform ease-out",
           isOpen ? "translate-x-0" : "-translate-x-full",
           isDragging ? "duration-0" : "duration-300"
         )}
@@ -161,15 +162,13 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           {/* Logo */}
-          <div className="flex-1 flex items-center">
+          <div className="flex-1 min-w-0">
             <LongLogo 
-              className="object-contain"
+              className="object-contain w-full h-auto max-w-[140px] sm:max-w-[160px] md:max-w-[180px]"
               style={{
-                width: '35vw',
-                maxWidth: '280px',
-                height: 'auto'
+                maxHeight: '28px'
               }}
             />
           </div>
@@ -178,7 +177,7 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="w-11 h-11 p-0 text-foreground hover:bg-muted touch-manipulation flex-shrink-0"
+            className="w-9 h-9 p-0 text-foreground hover:bg-muted touch-manipulation flex-shrink-0"
             onClick={() => {
               if (authView) {
                 setAuthView(null)
@@ -188,7 +187,7 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
             }}
             aria-label={authView ? t('menu.backToMenu') : t('menu.closeMenu')}
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </Button>
         </div>
         
