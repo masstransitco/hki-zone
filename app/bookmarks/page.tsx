@@ -5,6 +5,7 @@ import { useInView } from "react-intersection-observer"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useBookmarksPage } from "@/hooks/use-bookmarks"
+import { useUIRedux } from "@/hooks/use-ui-redux"
 import AuthProtectedPage from "@/components/auth-protected-page"
 import ArticleCard from "@/components/article-card"
 import ArticleBottomSheet from "@/components/article-bottom-sheet"
@@ -15,9 +16,9 @@ import TurnedInIcon from '@mui/icons-material/TurnedIn'
 export default function BookmarksPage() {
   const { ref, inView } = useInView()
   const { setScrollPosition } = useHeaderVisibility()
+  const { isMenuOpen, setMenuOpen } = useUIRedux()
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const ticking = useRef(false)
 
   // Use the new bookmarks hook
@@ -290,7 +291,7 @@ export default function BookmarksPage() {
   return (
     <AuthProtectedPage
       isMenuOpen={isMenuOpen}
-      onMenuOpenChange={setIsMenuOpen}
+      onMenuOpenChange={setMenuOpen}
       fallback={bookmarksFallback}
     >
       {renderBookmarksContent()}

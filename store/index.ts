@@ -6,6 +6,7 @@ import ttsReducer from './ttsSlice'
 import audioReducer from './audioSlice'
 import languageReducer from './languageSlice'
 import articlesReducer from './articlesSlice'
+import uiReducer from '../redux/slices/uiSlice'
 import { ttsMiddleware, visualizationMiddleware } from './middleware/ttsMiddleware'
 
 // Custom storage implementation with better error handling
@@ -85,7 +86,7 @@ const persistConfig = {
   key: 'panora-auth-v2', // Updated key to avoid conflicts
   storage: createRobustStorage(),
   transforms: [authTransform],
-  whitelist: ['auth', 'language'], // Persist auth and language slices
+  whitelist: ['auth', 'language', 'ui'], // Persist auth, language, and ui slices
   timeout: 10000, // 10 second timeout for storage operations
   throttle: 1000, // Throttle persistence to avoid excessive writes
 }
@@ -97,6 +98,7 @@ const rootReducer = combineReducers({
   audio: audioReducer,
   language: languageReducer,
   articles: articlesReducer,
+  ui: uiReducer,
 })
 
 // Persisted reducer

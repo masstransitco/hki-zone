@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useRef } from "react"
 import UnifiedHeader from "@/components/unified-header"
 import FooterNav from "@/components/footer-nav"
 import MainContent from "@/components/main-content-with-selector"
@@ -8,17 +8,22 @@ import SideMenu from "@/components/side-menu"
 import StickyCategorySelector from "@/components/sticky-category-selector"
 import { ContentType } from "@/components/content-type-selector"
 import { useEdgeSwipe, useSwipeGesture } from "@/hooks/use-swipe-gesture"
+import { useUIRedux } from "@/hooks/use-ui-redux"
 
 const contentTypes: ContentType[] = ['headlines', 'news', 'bulletin'];
 
 export default function HomePage() {
-  const [contentType, setContentType] = useState<ContentType>('headlines')
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const mainContentRef = useRef<HTMLDivElement>(null)
+  const { 
+    contentType, 
+    isMenuOpen, 
+    setContentType, 
+    setMenuOpen 
+  } = useUIRedux()
 
   // Enable edge swipe to open menu
   useEdgeSwipe({
-    onSwipeFromLeft: () => setIsMenuOpen(true),
+    onSwipeFromLeft: () => setMenuOpen(true),
     edgeWidth: 30,
     enabled: !isMenuOpen
   })
@@ -57,7 +62,7 @@ export default function HomePage() {
   return (
     <>
       {/* Side menu as pure overlay */}
-      <SideMenu isOpen={isMenuOpen} onOpenChange={setIsMenuOpen} />
+      <SideMenu isOpen={isMenuOpen} onOpenChange={setMenuOpen} />
       
       {/* Screen reader announcements */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -76,7 +81,7 @@ export default function HomePage() {
         {/* Unified header - floating overlay */}
         <UnifiedHeader 
           isMenuOpen={isMenuOpen}
-          onMenuOpenChange={setIsMenuOpen}
+          onMenuOpenChange={setMenuOpen}
         />
 
         {/* Sticky category selector - floating overlay */}

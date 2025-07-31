@@ -43,17 +43,10 @@ export function usePullToRefresh({
       if (scrollTop === 0) {
         stateRef.current.touchStartY = touch.clientY
         stateRef.current.startedAtTop = true
-        console.log('✅ At top - pull-to-refresh enabled', {
-          element: element.className,
-          scrollHeight: element.scrollHeight,
-          clientHeight: element.clientHeight
-        })
+        // At top - pull-to-refresh enabled
       } else {
         setPullDistance(0)
-        console.log('❌ Not at top - pull-to-refresh disabled', {
-          scrollTop,
-          element: element.className
-        })
+        // Not at top - pull-to-refresh disabled
       }
     }
 
@@ -85,9 +78,7 @@ export function usePullToRefresh({
           const distance = Math.min(deltaY * resistance, threshold * 2)
           setPullDistance(distance)
           
-          if (distance > 0) {
-            console.log('📏 Pulling down at top, distance:', Math.round(distance), 'px')
-          }
+          // Pulling down at top
         } else if (deltaY < 0 && pullDistance > 0) {
           // User is moving finger up while pulling - reduce pull distance
           const resistance = 0.5
@@ -96,9 +87,7 @@ export function usePullToRefresh({
         }
       } else {
         // Not at top - immediately cancel any pull
-        if (stateRef.current.isPulling || pullDistance > 0) {
-          console.log('❌ Not at top - cancelling pull, scrollTop:', scrollTop)
-        }
+        // Not at top - cancelling pull
         stateRef.current.isPulling = false
         stateRef.current.startedAtTop = false
         setPullDistance(0)
@@ -118,14 +107,14 @@ export function usePullToRefresh({
       
       // Simple check - if at top and pulled far enough, refresh
       if (scrollTop === 0 && pullDistance >= threshold) {
-        console.log('🔄 Pull-to-refresh triggered!')
+        // Pull-to-refresh triggered
         setIsRefreshing(true)
         setPullDistance(threshold)
         
         try {
           await onRefresh()
         } finally {
-          console.log('✅ Pull-to-refresh completed')
+          // Pull-to-refresh completed
           setIsRefreshing(false)
           setPullDistance(0)
         }

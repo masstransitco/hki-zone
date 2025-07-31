@@ -80,42 +80,83 @@ export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
     enabled: !isBottomSheetOpen
   })
 
+  // Force re-initialization of scroll listeners after refresh completes
+  const prevIsRefreshing = useRef(isPullRefreshing)
+  useEffect(() => {
+    if (prevIsRefreshing.current && !isPullRefreshing) {
+      // Refresh just completed - reset scroll position
+      const element = scrollRef.current
+      if (element) {
+        setTimeout(() => {
+          setScrollPosition(element.scrollTop)
+        }, 100)
+      }
+    }
+    prevIsRefreshing.current = isPullRefreshing
+  }, [isPullRefreshing, setScrollPosition])
+
   // Handle scroll events for header visibility
   useEffect(() => {
     if (!isActive) return
 
-    const handleScroll = () => {
-      const element = scrollRef.current
-      if (!element) return
+    let timeoutId: NodeJS.Timeout | null = null
+    let attachedElement: HTMLElement | null = null
 
-      if (!ticking.current) {
+    const handleScroll = () => {
+      if (!ticking.current && scrollRef.current) {
         window.requestAnimationFrame(() => {
-          setScrollPosition(element.scrollTop)
+          if (scrollRef.current) {
+            setScrollPosition(scrollRef.current.scrollTop)
+          }
           ticking.current = false
         })
         ticking.current = true
       }
     }
 
-    const checkInterval = setInterval(() => {
+    const attachScrollListener = () => {
       const element = scrollRef.current
-      if (element) {
+      if (!element || element === attachedElement) return
+      
+      // Remove from old element if exists
+      if (attachedElement) {
+        attachedElement.removeEventListener('scroll', handleScroll)
+      }
+      
+      // Attach to new element
+      element.addEventListener('scroll', handleScroll, { passive: true })
+      attachedElement = element
+      
+      // Update initial position
+      setScrollPosition(element.scrollTop)
+    }
+
+    // Check and attach immediately
+    attachScrollListener()
+
+    // Set up polling to catch the element when it becomes available
+    const checkInterval = setInterval(() => {
+      if (scrollRef.current && scrollRef.current !== attachedElement) {
+        attachScrollListener()
         clearInterval(checkInterval)
-        element.addEventListener('scroll', handleScroll, { passive: true })
-        // Initial check
-        setScrollPosition(element.scrollTop)
       }
     }, 100)
 
-    return () => {
+    // Set timeout to stop checking after 5 seconds
+    timeoutId = setTimeout(() => {
       clearInterval(checkInterval)
-      const element = scrollRef.current
-      if (element) {
-        element.removeEventListener('scroll', handleScroll)
+    }, 5000)
+
+    // Cleanup function
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+      clearInterval(checkInterval)
+      if (attachedElement) {
+        attachedElement.removeEventListener('scroll', handleScroll)
       }
       ticking.current = false
     }
-  }, [isActive, setScrollPosition])
+  }, [isActive, setScrollPosition, isPullRefreshing])
 
   // Infinite scroll
   useEffect(() => {

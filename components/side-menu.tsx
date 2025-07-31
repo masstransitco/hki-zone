@@ -8,6 +8,7 @@ import LanguageSelector from "./language-selector"
 import ThemeToggle from "./theme-toggle"
 import LoginForm from "./auth/login-form"
 import RegisterForm from "./auth/register-form"
+import LongLogo from "./long-logo"
 import { cn } from "@/lib/utils"
 import { useSwipeGesture } from "@/hooks/use-swipe-gesture"
 import { useAuth } from "@/hooks/redux-auth"
@@ -26,6 +27,18 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
   const [dragX, setDragX] = React.useState(0)
   const touchStartX = React.useRef(0)
   const [authView, setAuthView] = React.useState<'login' | 'register' | null>(null)
+  const [shouldRender, setShouldRender] = React.useState(false)
+
+  // Control when menu should be rendered (for animation and to avoid Next.js warnings)
+  React.useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true)
+    } else {
+      // Delay removal to allow close animation
+      const timer = setTimeout(() => setShouldRender(false), 300)
+      return () => clearTimeout(timer)
+    }
+  }, [isOpen])
 
   // Use swipe gesture for menu dismissal
   useSwipeGesture(menuRef, {
@@ -107,6 +120,11 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
     }
   }, [isOpen])
 
+  // Don't render anything if menu shouldn't be visible
+  if (!shouldRender) {
+    return null
+  }
+
   return (
     <>
       {/* Backdrop */}
@@ -136,15 +154,31 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
           transform: isOpen ? `translateX(${dragX}px)` : 'translateX(-100%)',
           willChange: 'transform'
         }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('menu.sideMenu') || 'Side menu'}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex-1 flex items-center">
+            <LongLogo 
+              className="object-contain"
+              style={{
+                width: '35vw',
+                maxWidth: '280px',
+                height: 'auto'
+              }}
+            />
+          </div>
+          
+          {/* Close button */}
           <Button
             variant="ghost"
             size="sm"
-            className="w-11 h-11 p-0 text-foreground hover:bg-muted touch-manipulation"
+            className="w-11 h-11 p-0 text-foreground hover:bg-muted touch-manipulation flex-shrink-0"
             onClick={() => {
               if (authView) {
                 setAuthView(null)

@@ -8,11 +8,12 @@ import StickyMarketplaceSelector from "@/components/sticky-marketplace-selector"
 import MarketplaceContent from "@/components/marketplace-content"
 import { MarketplaceCategoryType } from "@/components/marketplace-category-selector"
 import { useSwipeGesture } from "@/hooks/use-swipe-gesture"
+import { useUIRedux } from "@/hooks/use-ui-redux"
 
 const categoryTypes: MarketplaceCategoryType[] = ['cars', 'carparks'];
 
 export default function MarketplacePage() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const { isMenuOpen, setMenuOpen } = useUIRedux()
   const [category, setCategory] = useState<MarketplaceCategoryType>('cars')
   const mainContentRef = useRef<HTMLDivElement>(null)
 
@@ -43,7 +44,7 @@ export default function MarketplacePage() {
 
   return (
     <>
-      <SideMenu isOpen={isMenuOpen} onOpenChange={setIsMenuOpen} />
+      <SideMenu isOpen={isMenuOpen} onOpenChange={setMenuOpen} />
       
       {/* Fixed container - matches main app structure */}
       <div className="fixed inset-0 overflow-hidden">
@@ -53,7 +54,7 @@ export default function MarketplacePage() {
         </main>
 
         {/* Fixed header */}
-        <UnifiedHeader isMenuOpen={isMenuOpen} onMenuOpenChange={setIsMenuOpen} />
+        <UnifiedHeader isMenuOpen={isMenuOpen} onMenuOpenChange={setMenuOpen} />
 
         {/* Sticky category selector */}
         <StickyMarketplaceSelector 
