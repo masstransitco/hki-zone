@@ -32,6 +32,10 @@ export default function UnifiedHeader({
         "transition-transform duration-300 ease-out",
         shouldHide && "-translate-y-full"
       )}
+      style={{
+        overscrollBehavior: 'none',
+        touchAction: 'pan-x pinch-zoom'
+      }}
     >
       {/* Top section with logo and menu */}
       <div className="flex items-center justify-between px-4 py-3">

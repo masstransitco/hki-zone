@@ -20,7 +20,9 @@ export default function Header({ isMenuOpen = false, onMenuOpenChange }: HeaderP
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
       style={{
-        transform: isVisible ? 'translateY(0)' : 'translateY(-100%)'
+        transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
+        overscrollBehavior: 'none',
+        touchAction: 'pan-x pinch-zoom'
       }}
     >
       <div className="flex items-center justify-between px-4 py-3">

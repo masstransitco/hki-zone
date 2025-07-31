@@ -68,7 +68,13 @@ export default function FooterNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe">
+      <nav 
+        className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe"
+        style={{
+          overscrollBehavior: 'none',
+          touchAction: 'pan-x pinch-zoom'
+        }}
+      >
         <div className="flex items-center justify-around py-2 px-2">
           {navItems.map(({ href, icon, label }) => {
             const isActive = pathname === href
