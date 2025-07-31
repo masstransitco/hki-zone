@@ -12,6 +12,9 @@ import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
 import { LoadingSpinner } from "./loading-spinner"
 import { useRealtimeArticles } from "@/hooks/use-realtime-articles"
+import { Button } from "@/components/ui/button"
+import { ChevronDown, ChevronUp } from "lucide-react"
+import OutletFavicon from "./outlet-favicon"
 import type { Article } from "@/lib/types"
 
 async function fetchArticles({ pageParam = 0 }): Promise<{ articles: Article[]; nextPage: number | null }> {
@@ -47,6 +50,70 @@ function getRandomAspectRatio(articleId: string): AspectRatio {
   return ASPECT_RATIOS[0].class // fallback
 }
 
+// Predefined list of all available news sources - always shows full list regardless of loaded articles
+const ALL_AVAILABLE_SOURCES = [
+  "Bloomberg",
+  "SCMP", 
+  "HKFP",
+  "RTHK",
+  "HK01",
+  "TVB",
+  "AM730",
+  "HKEJ",
+  "On.cc",
+  "SingTao",
+  "Ming Pao",
+  "Oriental Daily",
+  "The Standard",
+  "Now News",
+  "InMedia",
+  "Coconuts Hong Kong",
+  "Hong Kong Government News",
+  "Bastille Post",
+  "Metro Radio",
+  "Commercial Radio"
+].sort()
+
+// Map between display names and actual source names for filtering
+const SOURCE_MAPPING = {
+  // Display Name -> Possible actual source names (case-insensitive matching)
+  "Bloomberg": ["bloomberg", "Bloomberg"],
+  "SCMP": ["scmp", "SCMP", "South China Morning Post"],
+  "HKFP": ["hkfp", "HKFP", "Hong Kong Free Press"],
+  "RTHK": ["rthk", "RTHK", "Radio Television Hong Kong"],
+  "HK01": ["hk01", "HK01", "Hong Kong 01", "HK 01"],
+  "TVB": ["tvb", "TVB", "TVB News", "Television Broadcasts Limited"],
+  "AM730": ["am730", "AM730"],
+  "HKEJ": ["hkej", "HKEJ", "Hong Kong Economic Journal", "Economic Journal"],
+  "On.cc": ["on.cc", "On.cc", "ON.CC", "ONCC"],
+  "SingTao": ["singtao", "SingTao", "Sing Tao Daily", "Sing Tao"],
+  "Ming Pao": ["mingpao", "Ming Pao", "Ming Pao Daily"],
+  "Oriental Daily": ["oriental", "Oriental Daily", "Oriental Daily News"],
+  "The Standard": ["standard", "The Standard", "The Standard HK"],
+  "Now News": ["nownews", "Now News", "Now TV", "Now"],
+  "InMedia": ["inmedia", "InMedia", "InMedia HK"],
+  "Coconuts Hong Kong": ["coconuts", "Coconuts", "Coconuts Hong Kong"],
+  "Hong Kong Government News": ["newsgov", "Gov News", "Government News", "Hong Kong Government News"],
+  "Bastille Post": ["bastille", "Bastille", "Bastille Post"],
+  "Metro Radio": ["metro", "metroradio", "Metro Radio", "Metro Broadcast"],
+  "Commercial Radio": ["crhk", "881903", "Commercial Radio", "Commercial Radio Hong Kong"]
+}
+
+// Get translated source name
+const getTranslatedSourceName = (source: string, t: (key: string) => string): string => {
+  return t(`outlets.${source}`) || source
+}
+
+// Check if an article matches a selected display source
+const articleMatchesSource = (article: Article, selectedDisplaySource: string): boolean => {
+  const possibleSources = SOURCE_MAPPING[selectedDisplaySource as keyof typeof SOURCE_MAPPING] || []
+  const articleSource = article.source.replace(' (AI Enhanced)', '').replace(/ \+ AI$/, '').trim()
+  
+  return possibleSources.some(possibleSource => 
+    articleSource.toLowerCase() === possibleSource.toLowerCase()
+  )
+}
+
 interface NewsFeedMasonryProps {
   isActive?: boolean
 }
@@ -62,6 +129,49 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
   const visibilityCheckInterval = useRef<NodeJS.Timeout | null>(null)
   const { setScrollPosition } = useHeaderVisibility()
   const tickingRef = useRef(false)
+  const [selectedSource, setSelectedSource] = useState<string>('all')
+  const [showSourceFilter, setShowSourceFilter] = useState(false)
+  const filterDropdownRef = useRef<HTMLDivElement>(null)
+  
+  // State for tracking database-available sources
+  const [databaseAvailableSources, setDatabaseAvailableSources] = useState<Set<string>>(new Set())
+  const [useHardcodedSources, setUseHardcodedSources] = useState(false) // Default to database approach
+  const [sourcesLoading, setSourcesLoading] = useState(false)
+
+  // Fetch available sources from database
+  const checkDatabaseAvailableSources = useCallback(async () => {
+    try {
+      setSourcesLoading(true)
+      const response = await fetch('/api/articles/available-sources')
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📊 [NEWS-FILTER] Available sources response:', data)
+        
+        const availableSet = new Set(data.sources || [])
+        console.log('📊 [NEWS-FILTER] Setting available sources:', Array.from(availableSet))
+        setDatabaseAvailableSources(availableSet)
+        
+        // If database failed, fall back to hardcoded sources
+        if (data.usingFallbackData) {
+          console.warn('Database not available, using fallback sources')
+          setUseHardcodedSources(true)
+        }
+      } else {
+        console.error('Failed to fetch available sources, using hardcoded fallback')
+        setUseHardcodedSources(true)
+      }
+    } catch (error) {
+      console.error('Error fetching available sources:', error)
+      setUseHardcodedSources(true)
+    } finally {
+      setSourcesLoading(false)
+    }
+  }, [])
+
+  // Check database sources on mount
+  useEffect(() => {
+    checkDatabaseAvailableSources()
+  }, [checkDatabaseAvailableSources])
 
   const handleReadMore = (articleId: string) => {
     setSelectedArticleId(articleId)
@@ -79,6 +189,28 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
     setSelectedArticleId(articleId)
     // Keep the bottom sheet open when switching articles
   }
+
+  const handleSourceFilter = (source: string) => {
+    setSelectedSource(source)
+    setShowSourceFilter(false)
+  }
+
+  // Close filter dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
+        setShowSourceFilter(false)
+      }
+    }
+
+    if (showSourceFilter) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showSourceFilter])
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, error, refetch } = useInfiniteQuery({
     queryKey: ["articles"],
@@ -283,6 +415,46 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
 
   const articles = data?.pages.flatMap((page) => page.articles) ?? []
 
+  // Hardcoded list of sources we know have content available
+  // This should be updated based on actual content availability
+  const KNOWN_AVAILABLE_SOURCES = new Set([
+    "Bloomberg",
+    "SCMP", 
+    "HKFP",
+    "RTHK",
+    "HK01",
+    "TVB",
+    "The Standard",
+    "Now News",
+    "Hong Kong Government News"
+    // Add more as content becomes available
+  ])
+
+  // Use database sources if available, otherwise fallback to hardcoded
+  const sourcesWithArticles = useHardcodedSources 
+    ? KNOWN_AVAILABLE_SOURCES 
+    : databaseAvailableSources
+    
+  // For enabling/disabling, check if the display source has a match in database sources
+  const isSourceAvailable = (displaySource: string): boolean => {
+    if (useHardcodedSources) {
+      return KNOWN_AVAILABLE_SOURCES.has(displaySource)
+    }
+    
+    // Check if any database source matches this display source
+    const possibleSources = SOURCE_MAPPING[displaySource as keyof typeof SOURCE_MAPPING] || []
+    return Array.from(databaseAvailableSources).some(dbSource => 
+      possibleSources.some(possibleSource => 
+        dbSource.toLowerCase() === possibleSource.toLowerCase()
+      )
+    )
+  }
+
+  // Filter articles based on selected source using the new matching system
+  const filteredArticles = selectedSource === 'all' 
+    ? articles 
+    : articles.filter(article => articleMatchesSource(article, selectedSource))
+
   if (articles.length === 0) {
     return (
       <div className="p-8 text-center text-2">
@@ -323,30 +495,117 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
         {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
         <div className="h-[113px] w-full" aria-hidden="true" />
         
-        {/* Real-time connection status */}
-        {isActive && (
-          <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground px-4 md:px-6 lg:px-8 pb-3">
-            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
-            <span>{isConnected ? t('realtime.active') : t('realtime.connecting')}</span>
+        <div className="pt-6 space-y-4 px-4 md:px-6 lg:px-8">
+          {/* Filter and Real-time status row */}
+          <div className="flex items-center justify-between text-xs">
+            {/* Source filter on the left */}
+            <div className="relative" ref={filterDropdownRef}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSourceFilter(!showSourceFilter)}
+                className="h-7 px-3 text-xs border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              >
+                <span className="mr-1.5">📰</span>
+                {selectedSource === 'all' ? t('outlets.allSources') : getTranslatedSourceName(selectedSource, t)}
+                <ChevronDown className="h-3 w-3 ml-1.5" />
+              </Button>
+              
+              {/* Dropdown menu */}
+              {showSourceFilter && (
+                <div className="absolute top-8 left-0 z-50 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-md shadow-lg min-w-[140px] max-h-60 overflow-y-auto">
+                  <div className="py-1">
+                    {sourcesLoading ? (
+                      <div className="px-3 py-2 text-xs text-muted-foreground text-center">
+                        Loading sources...
+                      </div>
+                    ) : (
+                      <>
+                    
+                    <button
+                      onClick={() => handleSourceFilter('all')}
+                      className={`w-full text-left px-3 py-1.5 text-xs hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors ${
+                        selectedSource === 'all'
+                          ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100'
+                          : 'text-neutral-700 dark:text-neutral-300'
+                      }`}
+                    >
+                      <span className="mr-2">📰</span>
+                      {t('outlets.allSources')}
+                      {selectedSource === 'all' && (
+                        <span className="ml-2 text-neutral-500">✓</span>
+                      )}
+                    </button>
+                    {ALL_AVAILABLE_SOURCES.map((source) => {
+                      const hasArticles = isSourceAvailable(source)
+                      return (
+                        <button
+                          key={source}
+                          onClick={hasArticles ? () => handleSourceFilter(source) : undefined}
+                          disabled={!hasArticles}
+                          className={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center ${
+                            !hasArticles 
+                              ? 'cursor-not-allowed opacity-50 text-neutral-400 dark:text-neutral-600'
+                              : selectedSource === source
+                              ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                              : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                          }`}
+                        >
+                          <div className="mr-2 flex-shrink-0">
+                            <OutletFavicon 
+                              source={source} 
+                              size="sm" 
+                              showFallback={true}
+                            />
+                          </div>
+                          <span className="flex-1 truncate">{getTranslatedSourceName(source, t)}</span>
+                          {selectedSource === source && hasArticles && (
+                            <span className="ml-2 text-neutral-500 flex-shrink-0">✓</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Real-time connection status on the right */}
+            {isActive && (
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
+                <span>{isConnected ? t('realtime.active') : t('realtime.connecting')}</span>
+              </div>
+            )}
           </div>
-        )}
+        </div>
         
         {/* Masonry news feed container */}
         <div ref={feedRef} className="news-feed isolate">
-        {articles.map((article) => {
-          const aspectRatio = getRandomAspectRatio(article.id)
-          return (
-            <div key={article.id} className="news-card">
-              <ArticleCard 
-                article={article} 
-                onReadMore={handleReadMore}
-                className="w-full"
-                aspectRatio={aspectRatio}
-                showTimestamp={true}
-              />
-            </div>
-          )
-        })}
+        {filteredArticles.length === 0 ? (
+          <div className="p-8 text-center text-2">
+            {selectedSource === 'all' 
+              ? t('search.noResults') 
+              : `${t('search.noResults')} ${getTranslatedSourceName(selectedSource, t)}`}
+          </div>
+        ) : (
+          filteredArticles.map((article) => {
+            const aspectRatio = getRandomAspectRatio(article.id)
+            return (
+              <div key={article.id} className="news-card">
+                <ArticleCard 
+                  article={article} 
+                  onReadMore={handleReadMore}
+                  className="w-full"
+                  aspectRatio={aspectRatio}
+                  showTimestamp={true}
+                />
+              </div>
+            )
+          })
+        )}
       </div>
 
       {/* Infinite scroll sentinel - separate from loading content */}
