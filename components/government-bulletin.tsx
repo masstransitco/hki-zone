@@ -502,9 +502,10 @@ export default function GovernmentBulletin({
         ) : (
           filteredItems.map((item) => {
             const isExpanded = expandedItems.has(item.id)
-            const isEnriched = item.enrichment_status === 'enriched' || item.enrichment_status === 'ready'
-            const displayTitle = isEnriched ? (item.enriched_title || item.title) : item.title
-            const displayContent = isEnriched && item.enriched_summary ? item.enriched_summary : item.body
+            
+            // Simplified content display - prioritize enriched content if available, otherwise use original body
+            const displayTitle = item.enriched_title || item.title
+            const displayContent = item.enriched_summary || item.body
 
             return (
               <Card 
@@ -584,8 +585,8 @@ export default function GovernmentBulletin({
                           {displayContent}
                         </p>
                         
-                        {/* AI-Enhanced Content - only for enriched items */}
-                        {isEnriched && (
+                        {/* AI-Enhanced Content - only show if enriched fields exist */}
+                        {(item.key_points?.length > 0 || item.why_it_matters) && (
                           <div className="mt-4 space-y-3">
                             {item.key_points && item.key_points.length > 0 && (
                               <div>
