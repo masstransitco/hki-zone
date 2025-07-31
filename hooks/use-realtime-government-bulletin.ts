@@ -26,6 +26,10 @@ export function useRealtimeGovernmentBulletin({
   const [channel, setChannel] = useState<RealtimeChannel | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('disconnected')
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const reconnectAttemptsRef = useRef(0)
+  const maxReconnectAttempts = 5
+  const isReconnectingRef = useRef(false)
 
   const queryKeyRef = useRef(queryKey)
   queryKeyRef.current = queryKey
@@ -131,23 +135,34 @@ export function useRealtimeGovernmentBulletin({
     queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
   }, [queryClient])
 
-  // Set up real-time subscription
-  useEffect(() => {
-    if (!enabled) {
-      // Clean up existing subscription if disabled
-      if (channelRef.current) {
-        supabaseAuth.removeChannel(channelRef.current)
-        channelRef.current = null
-        setChannel(null)
-        setConnectionStatus('disconnected')
-      }
+  // Calculate exponential backoff delay
+  const getReconnectDelay = useCallback((attempt: number) => {
+    return Math.min(1000 * Math.pow(2, attempt), 30000) // Max 30 seconds
+  }, [])
+
+  // Setup subscription with reconnection logic
+  const setupSubscription = useCallback(() => {
+    if (!enabled || isReconnectingRef.current) {
       return
     }
 
+    // Clean up existing subscription
+    if (channelRef.current) {
+      supabaseAuth.removeChannel(channelRef.current)
+      channelRef.current = null
+      setChannel(null)
+    }
+
+    // Clear any pending reconnection
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current)
+      reconnectTimeoutRef.current = null
+    }
+
     // Create channel name based on filter criteria
-    const channelName = `bulletins-${category || 'all'}`
+    const channelName = `bulletins-${category || 'all'}-${Date.now()}`
     
-    console.log(`📢 [REALTIME] Setting up subscription: ${channelName}`)
+    console.log(`📢 [REALTIME] Setting up subscription: ${channelName} (attempt ${reconnectAttemptsRef.current + 1})`)
     setConnectionStatus('connecting')
 
     // Note: Using 'incidents' table as that's what the API uses
@@ -182,24 +197,102 @@ export function useRealtimeGovernmentBulletin({
       )
       .subscribe((status) => {
         console.log(`📢 [REALTIME] Subscription status for ${channelName}:`, status)
-        setConnectionStatus(
-          status === 'SUBSCRIBED' ? 'connected' : 
-          status === 'CLOSED' ? 'disconnected' : 'connecting'
-        )
+        
+        if (status === 'SUBSCRIBED') {
+          setConnectionStatus('connected')
+          reconnectAttemptsRef.current = 0 // Reset on successful connection
+          console.log(`✅ [REALTIME] Successfully connected: ${channelName}`)
+        } else if (status === 'CLOSED') {
+          setConnectionStatus('disconnected')
+          console.log(`❌ [REALTIME] Connection closed: ${channelName}`)
+          
+          // Attempt reconnection if enabled and under max attempts
+          if (enabled && reconnectAttemptsRef.current < maxReconnectAttempts && !isReconnectingRef.current) {
+            isReconnectingRef.current = true
+            const delay = getReconnectDelay(reconnectAttemptsRef.current)
+            console.log(`🔄 [REALTIME] Scheduling reconnection in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`)
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+              reconnectAttemptsRef.current++
+              isReconnectingRef.current = false
+              setupSubscription()
+            }, delay)
+          } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+            console.log(`❌ [REALTIME] Max reconnection attempts reached for ${channelName}`)
+          }
+        } else {
+          setConnectionStatus('connecting')
+        }
       })
 
     setChannel(bulletinChannel)
     channelRef.current = bulletinChannel
+  }, [enabled, category, handleBulletinInsert, handleBulletinUpdate, handleBulletinDelete, getReconnectDelay])
+
+  // Set up real-time subscription
+  useEffect(() => {
+    if (!enabled) {
+      // Clean up existing subscription if disabled
+      if (channelRef.current) {
+        supabaseAuth.removeChannel(channelRef.current)
+        channelRef.current = null
+        setChannel(null)
+        setConnectionStatus('disconnected')
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
+      }
+      return
+    }
+
+    setupSubscription()
 
     // Cleanup on unmount or dependency change
     return () => {
       if (channelRef.current) {
-        console.log(`📢 [REALTIME] Cleaning up subscription: ${channelName}`)
+        console.log(`📢 [REALTIME] Cleaning up subscription`)
         supabaseAuth.removeChannel(channelRef.current)
         channelRef.current = null
       }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
+      }
+      isReconnectingRef.current = false
     }
-  }, [enabled, category, handleBulletinInsert, handleBulletinUpdate, handleBulletinDelete])
+  }, [enabled, setupSubscription])
+
+  // Handle visibility changes for reconnection
+  useEffect(() => {
+    if (!enabled) return
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && connectionStatus === 'disconnected') {
+        console.log('📢 [REALTIME] Page became visible, attempting reconnection')
+        reconnectAttemptsRef.current = 0 // Reset attempts when page becomes visible
+        isReconnectingRef.current = false
+        setupSubscription()
+      }
+    }
+
+    const handleOnline = () => {
+      if (connectionStatus === 'disconnected') {
+        console.log('📢 [REALTIME] Network came online, attempting reconnection')
+        reconnectAttemptsRef.current = 0 // Reset attempts when network comes back
+        isReconnectingRef.current = false
+        setupSubscription()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleOnline)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [enabled, connectionStatus, setupSubscription])
 
   return {
     channel,

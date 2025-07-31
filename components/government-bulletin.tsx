@@ -348,16 +348,7 @@ export default function GovernmentBulletin({
   }
 
   if (loading) {
-    return (
-      <div className="relative h-full overflow-hidden">
-        <div className="h-full overflow-auto">
-          <div className="h-[113px] w-full" aria-hidden="true" />
-          <div className="pt-6 px-6">
-            <LoadingSkeleton variant="bulletin" count={5} />
-          </div>
-        </div>
-      </div>
-    )
+    return <LoadingSkeleton variant="bulletin-full" count={5} />
   }
 
   return (
@@ -533,12 +524,9 @@ export default function GovernmentBulletin({
 
       {/* Infinite scroll trigger */}
       {hasMore && (
-        <div ref={loadMoreRef} className="flex justify-center pt-4 h-20">
+        <div ref={loadMoreRef} className="pt-4">
           {loadingMore && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span className="text-sm">Loading more...</span>
-            </div>
+            <LoadingSkeleton variant="bulletin" count={3} />
           )}
         </div>
       )}

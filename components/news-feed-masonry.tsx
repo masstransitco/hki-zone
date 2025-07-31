@@ -267,16 +267,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
 
   // Conditional returns must come after all hooks
   if (isLoading) {
-    return (
-      <div className="relative h-full">
-        <div className="h-full">
-          <div className="h-[113px] w-full" aria-hidden="true" />
-          <div className="news-feed isolate">
-            <LoadingSkeleton variant="masonry" count={15} />
-          </div>
-        </div>
-      </div>
-    )
+    return <LoadingSkeleton variant="masonry-full" count={12} />
   }
   
   if (error) return (
@@ -332,6 +323,14 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
         {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
         <div className="h-[113px] w-full" aria-hidden="true" />
         
+        {/* Real-time connection status */}
+        {isActive && (
+          <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground px-4 md:px-6 lg:px-8 pb-3">
+            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
+            <span>{isConnected ? t('realtime.active') : t('realtime.connecting')}</span>
+          </div>
+        )}
+        
         {/* Masonry news feed container */}
         <div ref={feedRef} className="news-feed isolate">
         {articles.map((article) => {
@@ -355,19 +354,8 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
       
       {/* Loading skeleton for infinite scroll */}
       {isFetchingNextPage && (
-        <div className="news-feed isolate px-1">
-          {Array.from({ length: 6 }).map((_, i) => {
-            // Vary heights for visual variety
-            const heights = ['h-48', 'h-64', 'h-52', 'h-56', 'h-60', 'h-44'];
-            const height = heights[i % heights.length];
-            
-            return (
-              <div key={i} className="news-card">
-                <div className={`animate-pulse ${height} bg-surface-3 rounded-lg`}>
-                </div>
-              </div>
-            );
-          })}
+        <div className="news-feed isolate">
+          <LoadingSkeleton variant="masonry" count={6} />
         </div>
       )}
       </div>

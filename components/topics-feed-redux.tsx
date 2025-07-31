@@ -5,14 +5,14 @@ import { useInView } from "react-intersection-observer"
 import { useSelector } from "react-redux"
 import ArticleCard from "./article-card"
 import ArticleBottomSheet from "./article-bottom-sheet"
-import TopicsFeedSkeleton from "./topics-feed-skeleton"
-import TopicsFeedLoadingMore from "./topics-feed-loading-more"
+import LoadingSkeleton from "./loading-skeleton"
 import PullRefreshIndicator from "./pull-refresh-indicator"
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
 import { useRealtimeArticles } from "@/hooks/use-realtime-articles"
 import { useTopicsRedux } from "@/hooks/use-topics-redux"
 import { selectLanguage } from "@/store/languageSlice"
+import { useLanguage } from "@/components/language-provider"
 import type { RootState } from "@/store"
 
 interface TopicsFeedProps {
@@ -22,6 +22,7 @@ interface TopicsFeedProps {
 export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
   const { ref, inView } = useInView()
   const language = useSelector(selectLanguage)
+  const { t } = useLanguage()
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null)
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
   const { setScrollPosition } = useHeaderVisibility()
@@ -167,7 +168,7 @@ export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
 
   // Show skeleton during initial load or refresh
   if ((isLoading && articles.length === 0) || (isRefreshing && articles.length === 0)) {
-    return <TopicsFeedSkeleton count={12} />
+    return <LoadingSkeleton variant="topics" count={12} />
   }
   
   if (error) return (
@@ -265,7 +266,7 @@ export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
         {isActive && (
           <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground px-4 md:px-6 lg:px-8 pb-3">
             <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
-            <span>{isConnected ? 'Real-time active' : 'Connecting...'}</span>
+            <span>{isConnected ? t('realtime.active') : t('realtime.connecting')}</span>
           </div>
         )}
         
@@ -284,7 +285,7 @@ export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
         {/* Infinite scroll trigger */}
         {hasMore && (
           <div ref={ref} className="pt-4">
-            {isLoadingMore && <TopicsFeedLoadingMore />}
+            {isLoadingMore && <LoadingSkeleton variant="topics-loading-more" />}
           </div>
         )}
         </div>
