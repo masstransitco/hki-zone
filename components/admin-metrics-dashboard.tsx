@@ -341,7 +341,7 @@ export default function AdminMetricsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {availableSources.map(source => (
+              {availableSources.filter(source => !source.includes('(AI Enhanced)')).map(source => (
                 <div key={source} className={`flex items-center space-x-2 transition-opacity duration-200 ${isFilterUpdating ? 'opacity-60' : ''}`}>
                   <Checkbox
                     id={source}
@@ -455,13 +455,52 @@ export default function AdminMetricsDashboard() {
             <CardDescription>Volume distribution across news outlets</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.sourceBreakdown.slice(0, 10)} layout="horizontal">
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart 
+                data={data.sourceBreakdown
+                  .filter(source => !source.source.includes('(AI Enhanced)'))
+                  .sort((a, b) => b.total_count - a.total_count)
+                  .slice(0, 12)
+                  .map((item, index) => ({
+                    ...item,
+                    color: COLORS[index % COLORS.length]
+                  }))
+                } 
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 5, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis dataKey="source" type="category" width={80} />
-                <Tooltip formatter={(value) => formatNumber(value)} />
-                <Bar dataKey="total_count" fill="#8884d8" />
+                <YAxis 
+                  dataKey="source" 
+                  type="category" 
+                  width={180}
+                  tick={{ fontSize: 12 }}
+                  interval={0}
+                />
+                <Tooltip 
+                  formatter={(value, name) => [formatNumber(value), 'Articles']}
+                  labelFormatter={(label) => `Source: ${label}`}
+                />
+                <Bar 
+                  dataKey="total_count" 
+                  radius={[0, 4, 4, 0]}
+                  label={{ 
+                    position: 'right', 
+                    fill: '#374151',
+                    fontSize: 12,
+                    formatter: (value) => formatNumber(value)
+                  }}
+                >
+                  {data.sourceBreakdown
+                    .filter(source => !source.source.includes('(AI Enhanced)'))
+                    .sort((a, b) => b.total_count - a.total_count)
+                    .slice(0, 12)
+                    .map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))
+                  }
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -474,13 +513,17 @@ export default function AdminMetricsDashboard() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data.sourceBreakdown.slice(0, 10)}>
+              <BarChart data={data.sourceBreakdown
+                .filter(source => source.enhancement_rate < 100)
+                .slice(0, 10)
+              }>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="source" 
                   angle={-45}
                   textAnchor="end"
                   height={100}
+                  interval={0}
                 />
                 <YAxis />
                 <Tooltip formatter={(value) => [`${value}%`, 'Enhancement Rate']} />

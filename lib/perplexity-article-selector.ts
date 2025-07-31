@@ -205,7 +205,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 async function getCandidateArticles(): Promise<CandidateArticle[]> {
   try {
     // Get recent scraped articles that haven't been AI enhanced and haven't been selected before
-    const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp'];  // Note: am730 and scmp are lowercase in database
+    const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg'];  // Note: am730, scmp, and bloomberg are lowercase in database
     
     // First, get recently selected article titles to avoid re-selecting similar content
     const { data: recentlySelected } = await supabase
@@ -1211,7 +1211,7 @@ async function callPerplexityForSimilarity(prompt: string): Promise<string[]> {
 
 // Debug function to understand why no articles are available
 async function debugArticleAvailability() {
-  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp'];
+  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg'];
   const sixHoursAgo = getDateHoursAgo(6);
   
   const { count: totalCount } = await supabase
