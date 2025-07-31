@@ -76,7 +76,7 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
 
   return (
     <Card 
-      className={`group hover:shadow-lg hover:shadow-stone-200/30 dark:hover:shadow-neutral-900/40 transition-all duration-200 border-stone-200/60 dark:border-neutral-700/60 bg-stone-50/95 dark:bg-neutral-900/95 backdrop-blur-sm cursor-pointer ${className || ''}`}
+      className={`group article-card cursor-pointer ${className || ''}`}
       onClick={() => {
         handleArticleClick()
         onReadMore?.(article.id)
@@ -85,7 +85,7 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
       <CardContent className="card-content h-full flex flex-col px-3 pt-3 pb-3">
         {/* Article image with dynamic aspect ratio */}
         {article.imageUrl && (
-          <div className={`relative w-full overflow-hidden rounded-lg bg-surface ${aspectRatio || 'aspect-video'} mb-4`}>
+          <div className={`relative w-full overflow-hidden rounded-lg bg-surface-2 ${aspectRatio || 'aspect-video'} mb-4`}>
             <img
               src={article.imageUrl || "/placeholder.svg"}
               alt={article.title}
@@ -96,16 +96,16 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
         )}
 
         {/* Title */}
-        <h3 className="font-semibold text-stone-900 dark:text-neutral-50 line-clamp-3 text-base leading-tight group-hover:text-stone-800 dark:group-hover:text-neutral-100 transition-colors mb-4">
+        <h3 className="article-card-title line-clamp-3 text-base leading-tight transition-colors mb-4">
           {article.title}
         </h3>
 
         {/* Sources and time aligned to bottom */}
-        <div className="flex items-center justify-between text-xs text-stone-500 dark:text-neutral-400 mt-auto">
+        <div className="flex items-center justify-between text-xs article-card-meta mt-auto">
           <div className="flex items-center gap-2">
             {showHkiLogo && article.isAiEnhanced ? (
               <div className="flex items-center gap-2">
-                <div className="flex-shrink-0 flex items-center justify-center w-4 h-4 bg-black dark:bg-neutral-800 rounded-sm">
+                <div className="flex-shrink-0 flex items-center justify-center w-4 h-4 bg-text-1 rounded-sm">
                   <img
                     src="/hki-logo-white.png"
                     alt="HKI logo"

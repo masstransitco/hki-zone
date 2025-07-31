@@ -52,7 +52,32 @@ module.exports = {
           foreground: "rgb(var(--card-foreground))",
         },
         
-        /* News-specific semantic colors */
+        /* Enhanced semantic surface system */
+        'surface-1': 'rgb(var(--color-surface-100))',
+        'surface-2': 'rgb(var(--color-surface-200))',
+        'surface-3': 'rgb(var(--color-surface-300))',
+        'surface-4': 'rgb(var(--color-surface-400))',
+        
+        /* Enhanced semantic text system */
+        'text-1': 'rgb(var(--color-text-100))',
+        'text-2': 'rgb(var(--color-text-200))',
+        'text-3': 'rgb(var(--color-text-300))',
+        'text-4': 'rgb(var(--color-text-400))',
+        
+        /* Enhanced accent system */
+        'accent-1': 'rgb(var(--color-accent-primary))',
+        'accent-2': 'rgb(var(--color-accent-secondary))',
+        'accent-hover': 'rgb(var(--color-accent-hover))',
+        'accent-pressed': 'rgb(var(--color-accent-pressed))',
+        
+        /* Component-specific semantic colors */
+        'nav-active': 'rgb(var(--color-nav-active))',
+        'nav-inactive': 'rgb(var(--color-nav-inactive))',
+        'card-border': 'rgb(var(--color-card-border))',
+        'card-hover': 'rgb(var(--color-card-hover))',
+        'card-background': 'rgb(var(--color-card-background))',
+        
+        /* Legacy semantic colors - kept for compatibility */
         surface: {
           DEFAULT: "rgb(var(--surface))",
           secondary: "rgb(var(--surface-secondary))",

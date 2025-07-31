@@ -21,7 +21,7 @@ export default function StickyCategorySelector({ value, onChange }: StickyCatego
       "transition-transform duration-300 ease-out",
       shouldHide && "-translate-y-full"
     )}>
-      <div className="px-4 py-3">
+      <div className="px-4 md:px-6 lg:px-8 py-3">
         <ContentTypeSelector value={value} onChange={onChange} />
       </div>
     </div>

@@ -283,7 +283,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
     <div className="relative h-full">
       <div className="h-full">
         <div className="h-[113px] w-full" aria-hidden="true" />
-        <div className="p-8 text-center text-red-600 dark:text-red-400">
+        <div className="p-8 text-center text-red-600">
           {t("error.failedToLoad")} articles
         </div>
       </div>
@@ -294,7 +294,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
 
   if (articles.length === 0) {
     return (
-      <div className="p-8 text-center text-neutral-600 dark:text-neutral-400">
+      <div className="p-8 text-center text-2">
         No articles found
       </div>
     )
@@ -363,7 +363,7 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
             
             return (
               <div key={i} className="news-card">
-                <div className={`animate-pulse ${height} bg-neutral-200 dark:bg-neutral-700 rounded-lg`}>
+                <div className={`animate-pulse ${height} bg-surface-3 rounded-lg`}>
                 </div>
               </div>
             );

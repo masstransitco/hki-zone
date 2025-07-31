@@ -329,8 +329,8 @@ export default function GovernmentBulletin({
   }
 
   const getCategoryColor = () => {
-    // Match the newsfeed/topics color system - neutral stone colors
-    return "bg-stone-100 text-stone-600 dark:bg-neutral-800 dark:text-neutral-400"
+    // Enhanced semantic color system - warm neutral colors
+    return "bg-surface-2 text-text-2"
   }
 
   const getSeverityColor = (severity: number) => {
@@ -387,7 +387,7 @@ export default function GovernmentBulletin({
         {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
         <div className="h-[113px] w-full" aria-hidden="true" />
         
-        <div className="pt-6 space-y-4 px-6">
+        <div className="pt-6 space-y-4 px-4 md:px-6 lg:px-8">
           {/* Real-time connection status */}
           {autoRefresh && (
             <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground">
@@ -414,7 +414,7 @@ export default function GovernmentBulletin({
             return (
               <Card 
                 key={item.id} 
-                className="group hover:shadow-lg hover:shadow-stone-200/30 dark:hover:shadow-neutral-900/40 transition-all duration-200 border-stone-200/60 dark:border-neutral-700/60 bg-stone-50/95 dark:bg-neutral-900/95 backdrop-blur-sm cursor-pointer"
+                className="group article-card cursor-pointer"
               >
                 <CardContent className="p-3">
                   <div className="space-y-4">
@@ -438,12 +438,12 @@ export default function GovernmentBulletin({
                       {/* Content area */}
                       <div className="flex-1 min-w-0">
                         {/* Title */}
-                        <h3 className="font-semibold text-stone-900 dark:text-neutral-50 leading-tight mb-2 group-hover:text-stone-800 dark:group-hover:text-neutral-100">
+                        <h3 className="article-card-title leading-tight mb-2">
                           {displayTitle}
                         </h3>
                         
                         {/* Metadata row */}
-                        <div className="flex items-center gap-3 text-xs text-stone-500 dark:text-neutral-400">
+                        <div className="flex items-center gap-3 text-xs article-card-meta">
                           <Badge 
                             variant="outline" 
                             className={getCategoryColor()}
@@ -471,7 +471,7 @@ export default function GovernmentBulletin({
                           variant="ghost"
                           size="sm"
                           onClick={() => toggleExpanded(item.id)}
-                          className="h-8 w-8 p-0 flex-shrink-0 text-stone-400 hover:text-stone-600 dark:text-neutral-500 dark:hover:text-neutral-300"
+                          className="h-8 w-8 p-0 flex-shrink-0 text-text-4 hover:text-text-2"
                         >
                           {isExpanded ? (
                             <ChevronUp className="h-4 w-4" />
@@ -484,8 +484,8 @@ export default function GovernmentBulletin({
 
                     {/* Expandable content */}
                     {isExpanded && displayContent && displayContent.trim().length > 0 && (
-                      <div className="pt-3 mt-1 border-t border-stone-200/60 dark:border-neutral-700/60">
-                        <p className="text-sm text-stone-600 dark:text-neutral-300 leading-relaxed">
+                      <div className="pt-3 mt-1 border-t border-card-border/60">
+                        <p className="text-sm text-2 leading-relaxed">
                           {displayContent}
                         </p>
                         
@@ -494,13 +494,13 @@ export default function GovernmentBulletin({
                           <div className="mt-4 space-y-3">
                             {item.key_points && item.key_points.length > 0 && (
                               <div>
-                                <h4 className="text-xs font-medium text-stone-700 dark:text-neutral-300 mb-2">
+                                <h4 className="text-xs font-medium text-2 mb-2">
                                   Key Points:
                                 </h4>
-                                <ul className="text-xs text-stone-600 dark:text-neutral-400 space-y-1">
+                                <ul className="text-xs text-3 space-y-1">
                                   {item.key_points.map((point, index) => (
                                     <li key={index} className="flex items-start gap-2">
-                                      <span className="text-stone-400 mt-1">•</span>
+                                      <span className="text-text-4 mt-1">•</span>
                                       <span>{point}</span>
                                     </li>
                                   ))}
@@ -510,10 +510,10 @@ export default function GovernmentBulletin({
                             
                             {item.why_it_matters && (
                               <div>
-                                <h4 className="text-xs font-medium text-stone-700 dark:text-neutral-300 mb-2">
+                                <h4 className="text-xs font-medium text-2 mb-2">
                                   Why It Matters:
                                 </h4>
-                                <p className="text-xs text-stone-600 dark:text-neutral-400">
+                                <p className="text-xs text-3">
                                   {item.why_it_matters}
                                 </p>
                               </div>

@@ -28,45 +28,71 @@ body {
 
 @layer base {
   :root {
-    /* Sophisticated white and warm gray color system */
-    --background: 250 250 249; /* Stone-50: Warm off-white base */
-    --surface: 245 245 244; /* Stone-100: Subtle warm surface */
+    /* Enhanced Semantic Color System - Light Mode (Fine-tuned for balance) */
+    /* Surface hierarchy for depth and elevation - warmer, less stark */
+    --color-surface-100: 245 245 244; /* Stone-100: Softer base (was Stone-50) */
+    --color-surface-200: 241 241 240; /* Stone-150: Subtle surface */
+    --color-surface-300: 231 229 228; /* Stone-200: Medium surface */
+    --color-surface-400: 214 211 209; /* Stone-300: Elevated surface */
+    
+    /* Text hierarchy for optimal readability - enhanced contrast */
+    --color-text-100: 28 25 23;       /* Stone-800: Deeper primary text (was Stone-700) */
+    --color-text-200: 68 64 60;       /* Stone-600: Rich secondary text */
+    --color-text-300: 87 83 78;       /* Stone-600: Muted text (was Stone-500) */
+    --color-text-400: 120 113 108;    /* Stone-500: Subtle text (was Stone-400) */
+    
+    /* Accent colors for interactive elements - warmer and more defined */
+    --color-accent-primary: 68 64 60;    /* Stone-600: Rich warm primary */
+    --color-accent-secondary: 120 113 108; /* Stone-500: Warmer secondary */
+    --color-accent-hover: 57 53 52;      /* Stone-700: Deeper hover state */
+    --color-accent-pressed: 41 37 36;    /* Stone-700: Strong pressed state */
+    
+    /* Component-specific semantic colors - enhanced contrast for cards */
+    --color-nav-active: var(--color-accent-primary);
+    --color-nav-inactive: var(--color-text-300);
+    --color-card-border: var(--color-surface-300);
+    --color-card-hover: var(--color-surface-200);
+    --color-card-background: 255 255 255; /* Pure white for article cards - higher contrast */
+    
+    /* Legacy compatibility - keep existing variables */
+    --background: var(--color-surface-100);
+    --surface: var(--color-surface-200);
     --surface-secondary: 241 245 249; /* Warmer stone-100 variant */
-    --foreground: 41 37 36; /* Stone-700: Rich warm charcoal */
-    --foreground-secondary: 87 83 78; /* Stone-600: Medium warm gray */
-    --foreground-muted: 120 113 108; /* Stone-500: Warm muted gray */
+    --foreground: var(--color-text-100);
+    --foreground-secondary: var(--color-text-200);
+    --foreground-muted: var(--color-text-300);
     
     /* Semantic UI colors - warm white spectrum */
-    --card: 250 250 249; /* Stone-50: Subtle warm card background */
-    --card-foreground: 41 37 36; /* Stone-700 for readability */
-    --popover: 250 250 249; /* Warm white for overlays */
-    --popover-foreground: 41 37 36;
-    --primary: 87 83 78; /* Stone-600: Sophisticated warm primary */
-    --primary-foreground: 250 250 249;
-    --secondary: 245 245 244; /* Stone-100: Elegant warm secondary */
+    --card: var(--color-surface-100);
+    --card-foreground: var(--color-text-100);
+    --popover: var(--color-surface-100);
+    --popover-foreground: var(--color-text-100);
+    --primary: var(--color-accent-primary);
+    --primary-foreground: var(--color-surface-100);
+    --secondary: var(--color-surface-200);
     --secondary-foreground: 68 64 60; /* Stone-600 for contrast */
-    --muted: 250 250 249; /* Stone-50: Subtle muted background */
-    --muted-foreground: 120 113 108; /* Stone-500: Readable muted text */
-    --accent: 168 162 158; /* Stone-400: Subtle warm accent */
-    --accent-foreground: 250 250 249;
+    --muted: var(--color-surface-100);
+    --muted-foreground: var(--color-text-300);
+    --accent: var(--color-accent-secondary);
+    --accent-foreground: var(--color-surface-100);
     --destructive: 220 38 38; /* Red-600: Refined error color */
-    --destructive-foreground: 250 250 249;
-    --border: 231 229 228; /* Stone-200: Warm subtle borders */
-    --input: 250 250 249; /* Stone-50: Warm input backgrounds */
-    --ring: 87 83 78; /* Stone-600: Warm focus rings */
+    --destructive-foreground: var(--color-surface-100);
+    --border: var(--color-card-border);
+    --input: var(--color-surface-100);
+    --ring: var(--color-accent-primary);
     --radius: 0.5rem; /* 8px for modern minimal look */
 
     /* Enhanced news-specific semantic colors */
-    --text-primary: 41 37 36; /* Stone-700: Primary content */
-    --text-secondary: 87 83 78; /* Stone-600: Secondary content */
-    --text-muted: 120 113 108; /* Stone-500: Muted content */
-    --text-inverse: 250 250 249; /* Warm white for dark backgrounds */
-    --surface-elevated: 250 250 249; /* Warm white for highest elevation */
-    --surface-hover: 245 245 244; /* Stone-100: Gentle hover state */
-    --surface-pressed: 231 229 228; /* Stone-200: Pressed state */
-    --interactive-primary: 87 83 78; /* Stone-600: Warm interactive */
-    --interactive-hover: 68 64 60; /* Stone-600: Darker on hover */
-    --interactive-pressed: 57 53 52; /* Stone-700: Pressed interactive */
+    --text-primary: var(--color-text-100);
+    --text-secondary: var(--color-text-200);
+    --text-muted: var(--color-text-300);
+    --text-inverse: var(--color-surface-100);
+    --surface-elevated: var(--color-surface-100);
+    --surface-hover: var(--color-card-hover);
+    --surface-pressed: var(--color-surface-300);
+    --interactive-primary: var(--color-accent-primary);
+    --interactive-hover: var(--color-accent-hover);
+    --interactive-pressed: var(--color-accent-pressed);
     
     /* Apple-inspired TTS semantic colors - Light Theme */
     --tts-surface: 250 250 249; /* Stone-50: Warm translucent surface */
@@ -85,27 +111,53 @@ body {
   }
 
   .dark {
-    /* Sophisticated dark mode with warm undertones */
-    --background: 20 18 16; /* Warmer dark background */
-    --surface: 28 25 23; /* Stone-900: Primary surface */
-    --surface-secondary: 41 37 36; /* Stone-800: Secondary surface */
-    --foreground: 250 250 249; /* Stone-50: Warm white text */
-    --foreground-secondary: 214 211 209; /* Stone-300: Secondary text */
-    --foreground-muted: 168 162 158; /* Stone-400: Muted text */
+    /* Enhanced Semantic Color System - Dark Mode (Fine-tuned for comfort) */
+    /* Surface hierarchy for depth and elevation - warmer, less harsh */
+    --color-surface-100: 41 37 36;    /* Stone-800: Warmer base (was Stone-900) */
+    --color-surface-200: 50 46 43;    /* Custom: Softer elevated surface */
+    --color-surface-300: 57 53 52;    /* Stone-700: Medium surface */  
+    --color-surface-400: 68 64 60;    /* Stone-600: Elevated surface */
+    
+    /* Text hierarchy for optimal readability - balanced contrast */
+    --color-text-100: 245 245 244;    /* Stone-100: Softer primary text (was Stone-50) */
+    --color-text-200: 231 229 228;    /* Stone-200: Rich secondary text */
+    --color-text-300: 214 211 209;    /* Stone-300: Clear muted text */
+    --color-text-400: 168 162 158;    /* Stone-400: Subtle text */
+    
+    /* Accent colors for interactive elements - more vibrant */
+    --color-accent-primary: 214 211 209;  /* Stone-300: Clear warm primary */
+    --color-accent-secondary: 168 162 158; /* Stone-400: Balanced secondary */
+    --color-accent-hover: 231 229 228;    /* Stone-200: Brighter hover state */
+    --color-accent-pressed: 245 245 244;  /* Stone-100: Strong pressed state */
+    
+    /* Component-specific semantic colors - enhanced contrast for cards */
+    --color-nav-active: var(--color-accent-primary);
+    --color-nav-inactive: var(--color-text-300);
+    --color-card-border: var(--color-surface-300);
+    --color-card-hover: var(--color-surface-200);
+    --color-card-background: 32 29 27; /* Custom: Slightly lighter than base for article cards */
+    
+    /* Legacy compatibility - keep existing variables */
+    --background: var(--color-surface-100);
+    --surface: var(--color-surface-200);
+    --surface-secondary: var(--color-surface-200);
+    --foreground: var(--color-text-100);
+    --foreground-secondary: var(--color-text-200);
+    --foreground-muted: var(--color-text-300);
     
     /* Semantic UI colors - sophisticated dark */
-    --card: 28 25 23; /* Stone-900: Card backgrounds */
-    --card-foreground: 250 250 249; /* Stone-50: Card text */
-    --popover: 41 37 36; /* Stone-800: Elevated popovers */
-    --popover-foreground: 250 250 249;
-    --primary: 168 162 158; /* Stone-400: Visible warm primary */
-    --primary-foreground: 28 25 23; /* Dark contrast */
-    --secondary: 57 53 52; /* Stone-700: Subtle secondary */
+    --card: var(--color-surface-100);
+    --card-foreground: var(--color-text-100);
+    --popover: var(--color-surface-200);
+    --popover-foreground: var(--color-text-100);
+    --primary: var(--color-accent-primary);
+    --primary-foreground: var(--color-surface-100);
+    --secondary: var(--color-surface-300);
     --secondary-foreground: 231 229 228; /* Stone-200: Light contrast */
-    --muted: 41 37 36; /* Stone-800: Muted backgrounds */
-    --muted-foreground: 168 162 158; /* Stone-400: Muted text */
-    --accent: 214 211 209; /* Stone-300: Soft accent */
-    --accent-foreground: 28 25 23;
+    --muted: var(--color-surface-200);
+    --muted-foreground: var(--color-text-300);
+    --accent: var(--color-accent-secondary);
+    --accent-foreground: var(--color-surface-100);
     
     /* Apple-inspired TTS semantic colors - Dark Theme */
     --tts-surface: 28 28 30; /* Apple system gray 6 dark */
@@ -122,22 +174,22 @@ body {
     --tts-border: 58 58 60; /* Apple separator dark */
     --tts-shadow: 0 0 0 / 0.3; /* Deeper shadow for dark mode */
     --destructive: 239 68 68; /* Red-500: Balanced error color */
-    --destructive-foreground: 255 255 255;
-    --border: 57 53 52; /* Stone-700: Subtle warm borders */
-    --input: 28 25 23; /* Stone-900: Input backgrounds */
-    --ring: 168 162 158; /* Stone-400: Warm focus rings */
+    --destructive-foreground: var(--color-text-100);
+    --border: var(--color-card-border);
+    --input: var(--color-surface-100);
+    --ring: var(--color-accent-primary);
 
-    /* Enhanced dark mode semantic colors */
-    --text-primary: 250 250 249; /* Stone-50: Primary content */
-    --text-secondary: 214 211 209; /* Stone-300: Secondary content */
-    --text-muted: 168 162 158; /* Stone-400: Muted content */
-    --text-inverse: 28 25 23; /* Dark text for light backgrounds */
-    --surface-elevated: 41 37 36; /* Stone-800: Highest elevation */
-    --surface-hover: 57 53 52; /* Stone-700: Gentle hover */
-    --surface-pressed: 68 64 60; /* Stone-600: Pressed state */
-    --interactive-primary: 168 162 158; /* Stone-400: Warm interactive */
-    --interactive-hover: 214 211 209; /* Stone-300: Lighter on hover */
-    --interactive-pressed: 231 229 228; /* Stone-200: Pressed interactive */
+    /* Enhanced news-specific semantic colors */
+    --text-primary: var(--color-text-100);
+    --text-secondary: var(--color-text-200);
+    --text-muted: var(--color-text-300);
+    --text-inverse: var(--color-surface-100);
+    --surface-elevated: var(--color-surface-200);
+    --surface-hover: var(--color-card-hover);
+    --surface-pressed: var(--color-surface-400);
+    --interactive-primary: var(--color-accent-primary);
+    --interactive-hover: var(--color-accent-hover);
+    --interactive-pressed: var(--color-accent-pressed);
   }
 }
 
@@ -389,14 +441,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Streamlined Waterfall Masonry Layout - Compact spacing */
+/* Enhanced Waterfall Masonry Layout - Improved spacing */
 .news-feed {
   /* CSS Columns for true masonry effect with flexible heights */
   display: block; /* Ensure block context for columns */
   column-count: 2;
-  column-gap: 4px; /* gap-1 equivalent */
+  column-gap: 12px; /* Improved gap for mobile (was 4px) */
   column-fill: balance; /* Balance content across columns */
-  padding: 0 1px; /* px-[1px] equivalent */
+  padding: 0 16px; /* Better edge spacing (was 1px) */
   max-width: 100vw; /* Prevent horizontal overflow */
   overflow-x: hidden; /* Hide any overflow */
   box-sizing: border-box;
@@ -412,25 +464,25 @@ body {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: masonry;
-    gap: 4px;
+    gap: 12px;
     column-count: unset;
     column-gap: unset;
     column-fill: unset;
   }
 }
 
-/* Responsive breakpoints - maintaining 2-column minimum with compact spacing */
+/* Responsive breakpoints - improved spacing system */
 @media (min-width: 640px) {
   .news-feed {
     column-count: 2;
-    column-gap: 18px; /* md:gap-[18px] */
-    padding: 0 1px;
+    column-gap: 16px; /* Consistent with topics feed md:gap-4 */
+    padding: 0 24px; /* Match md:px-6 */
   }
   
   @supports (grid-template-rows: masonry) {
     .news-feed {
       grid-template-columns: repeat(2, 1fr);
-      gap: 18px;
+      gap: 16px;
       column-count: unset;
       column-gap: unset;
     }
@@ -440,14 +492,14 @@ body {
 @media (min-width: 768px) {
   .news-feed {
     column-count: 3;
-    column-gap: 18px; /* md:gap-[18px] */
-    padding: 0 1px;
+    column-gap: 16px; /* Consistent spacing */
+    padding: 0 24px;
   }
   
   @supports (grid-template-rows: masonry) {
     .news-feed {
       grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
+      gap: 16px;
       column-count: unset;
       column-gap: unset;
     }
@@ -457,13 +509,14 @@ body {
 @media (min-width: 1024px) {
   .news-feed {
     column-count: 4;
-    column-gap: 22px; /* lg:gap-[22px] */
+    column-gap: 20px; /* Match lg:gap-5 */
+    padding: 0 32px; /* Match lg:px-8 */
   }
   
   @supports (grid-template-rows: masonry) {
     .news-feed {
       grid-template-columns: repeat(4, 1fr);
-      gap: 22px;
+      gap: 20px;
       column-count: unset;
       column-gap: unset;
     }
@@ -473,13 +526,14 @@ body {
 @media (min-width: 1280px) {
   .news-feed {
     column-count: 5;
-    column-gap: 22px; /* lg:gap-[22px] */
+    column-gap: 20px; /* Consistent with desktop */
+    padding: 0 32px;
   }
   
   @supports (grid-template-rows: masonry) {
     .news-feed {
       grid-template-columns: repeat(5, 1fr);
-      gap: 22px;
+      gap: 20px;
       column-count: unset;
       column-gap: unset;
     }
@@ -490,7 +544,7 @@ body {
 .news-card {
   display: inline-block; /* Important for CSS columns */
   width: 100%;
-  margin-bottom: 4px; /* Spacing between cards */
+  margin-bottom: 12px; /* Improved spacing between cards (was 4px) */
   box-sizing: border-box;
   overflow: hidden;
   
@@ -506,22 +560,22 @@ body {
   
 }
 
-/* Responsive card spacing to match column gaps exactly */
+/* Responsive card spacing to match improved column gaps */
 @media (min-width: 640px) {
   .news-card {
-    margin-bottom: 18px; /* Match 18px column gap */
+    margin-bottom: 16px; /* Match 16px column gap */
   }
 }
 
 @media (min-width: 768px) {
   .news-card {
-    margin-bottom: 18px; /* Match 18px column gap */
+    margin-bottom: 16px; /* Match 16px column gap */
   }
 }
 
 @media (min-width: 1024px) {
   .news-card {
-    margin-bottom: 22px; /* Match 22px column gap */
+    margin-bottom: 20px; /* Match 20px column gap */
   }
 }
 
@@ -662,3 +716,122 @@ body {
 }
 
 /* CSS Columns masonry with flexible card heights */
+
+/* Visual Comfort & Accessibility Enhancements */
+@layer base {
+  :root {
+    /* WCAG AAA compliant contrast ratios */
+    --contrast-high: 21;    /* For critical text */
+    --contrast-medium: 7;   /* For body text */
+    --contrast-low: 4.5;    /* For secondary text */
+    
+    /* Visual comfort enhancements */
+    --reading-width: 65ch;    /* Optimal reading line length */
+    --line-height-comfortable: 1.6; /* Comfortable line spacing */
+    --color-temperature: 3200; /* Warm temperature bias */
+  }
+}
+
+/* Enhanced utility classes for visual comfort */
+.color-scheme-warm {
+  filter: sepia(0.05) saturate(1.1) hue-rotate(10deg);
+}
+
+.surface-glass {
+  background: rgb(var(--color-surface-100) / 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.text-comfortable {
+  color: rgb(var(--color-text-100));
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.border-subtle {
+  border-color: rgb(var(--color-card-border) / 0.6);
+}
+
+.hover-lift {
+  transition: all 0.2s ease;
+}
+
+.hover-lift:hover {
+  background: rgb(var(--color-card-hover));
+  box-shadow: 0 4px 12px rgb(var(--color-text-100) / 0.08);
+  transform: translateY(-1px);
+}
+
+/* Enhanced article card contrast */
+.article-card {
+  background: rgb(var(--color-card-background));
+  border: 1px solid rgb(var(--color-card-border) / 0.8);
+  box-shadow: 0 1px 3px rgb(var(--color-text-100) / 0.06);
+  transition: all 0.2s ease;
+}
+
+.article-card:hover {
+  border-color: rgb(var(--color-card-border));
+  box-shadow: 0 4px 12px rgb(var(--color-text-100) / 0.12);
+  transform: translateY(-1px);
+  background: rgb(var(--color-card-hover));
+}
+
+/* Higher contrast for article card text */
+.article-card-title {
+  color: rgb(var(--color-text-100));
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.article-card-meta {
+  color: rgb(var(--color-text-300));
+  font-weight: 500;
+}
+
+/* Enhanced visual hierarchy */
+:root {
+  /* Fine-tuned contrast ratios for improved readability */
+  --contrast-ratio-high: 8.5;    /* Article titles */
+  --contrast-ratio-medium: 5.2;  /* Body text */
+  --contrast-ratio-low: 3.8;     /* Metadata */
+}
+
+/* Warm color temperature adjustment */
+.color-scheme-warm {
+  filter: sepia(0.08) saturate(1.15) hue-rotate(12deg) brightness(1.02);
+}
+
+/* Enhanced Spacing System Utilities */
+:root {
+  /* Consistent spacing scale */
+  --spacing-container-sm: 16px;  /* Mobile container padding (px-4) */
+  --spacing-container-md: 24px;  /* Tablet container padding (px-6) */
+  --spacing-container-lg: 32px;  /* Desktop container padding (px-8) */
+  
+  --spacing-card-gap-sm: 12px;   /* Mobile card gaps (gap-3) */
+  --spacing-card-gap-md: 16px;   /* Tablet card gaps (gap-4) */
+  --spacing-card-gap-lg: 20px;   /* Desktop card gaps (gap-5) */
+}
+
+/* Content container utility */
+.content-container {
+  padding-left: var(--spacing-container-sm);
+  padding-right: var(--spacing-container-sm);
+}
+
+@media (min-width: 768px) {
+  .content-container {
+    padding-left: var(--spacing-container-md);
+    padding-right: var(--spacing-container-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .content-container {
+    padding-left: var(--spacing-container-lg);
+    padding-right: var(--spacing-container-lg);
+  }
+}

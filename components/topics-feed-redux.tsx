@@ -212,14 +212,14 @@ export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
               })
             }}
           >
-          <div className="p-6 text-center">
-            <h3 className="text-lg font-semibold text-stone-900 dark:text-neutral-50 mb-2">
+          <div className="px-4 md:px-6 lg:px-8 py-12 text-center">
+            <h3 className="text-lg font-semibold text-1 mb-2">
               No AI-enhanced articles yet
             </h3>
-            <p className="text-stone-600 dark:text-neutral-400 mb-4">
+            <p className="text-2 mb-4">
               AI-enhanced articles will appear here as they are processed
             </p>
-            <div className="text-sm text-stone-600 dark:text-neutral-400">
+            <div className="text-sm text-2">
               Pull down to refresh
             </div>
           </div>
@@ -263,14 +263,14 @@ export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
         
         {/* Real-time connection status */}
         {isActive && (
-          <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground px-4 pb-2">
+          <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground px-4 md:px-6 lg:px-8 pb-3">
             <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
             <span>{isConnected ? 'Real-time active' : 'Connecting...'}</span>
           </div>
         )}
         
         {/* Responsive grid layout: mobile 1col, tablet 2col, desktop 3col, large 4col */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-1 md:gap-[18px] lg:gap-[22px] isolate px-[1px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-5 isolate px-4 md:px-6 lg:px-8">
           {articles.map((article) => (
             <ArticleCard 
               key={article.id} 
