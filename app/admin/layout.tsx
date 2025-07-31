@@ -8,6 +8,7 @@ import AdminSidebar from "@/components/admin/admin-sidebar"
 import AdminHeader from "@/components/admin/admin-header"
 import { LanguageProvider } from "@/components/language-provider"
 import { QueryProvider } from "@/components/query-provider"
+import { Toaster } from "sonner"
 
 export default function AdminLayout({
   children,
@@ -28,6 +29,7 @@ export default function AdminLayout({
             </SidebarInset>
           </SidebarProvider>
         </div>
+        <Toaster richColors position="top-right" />
       </QueryProvider>
     </LanguageProvider>
   )

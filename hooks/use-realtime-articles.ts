@@ -41,6 +41,17 @@ export function useRealtimeArticles({
   const queryKeyRef = useRef(queryKey)
   queryKeyRef.current = queryKey
 
+  // Store filter values in refs to prevent re-renders
+  const isAiEnhancedRef = useRef(isAiEnhanced)
+  const languageRef = useRef(language)
+  const onUpdateRef = useRef(onUpdate)
+  const onDeleteRef = useRef(onDelete)
+  
+  isAiEnhancedRef.current = isAiEnhanced
+  languageRef.current = language
+  onUpdateRef.current = onUpdate
+  onDeleteRef.current = onDelete
+
   // Handle new articles being inserted
   const handleArticleInsert = useCallback((payload: ArticleChange) => {
     if (!payload.new) return
@@ -50,10 +61,10 @@ export function useRealtimeArticles({
 
     // Check if article matches our filter criteria
     const matchesFilter = 
-      (isAiEnhanced === undefined || newArticle.is_ai_enhanced === isAiEnhanced) &&
-      (language === undefined || 
-       (!newArticle.enhancement_metadata?.language && language === 'en') ||
-       newArticle.enhancement_metadata?.language === language)
+      (isAiEnhancedRef.current === undefined || newArticle.is_ai_enhanced === isAiEnhancedRef.current) &&
+      (languageRef.current === undefined || 
+       (!newArticle.enhancement_metadata?.language && languageRef.current === 'en') ||
+       newArticle.enhancement_metadata?.language === languageRef.current)
 
     if (!matchesFilter) {
       console.log(`📰 [REALTIME] Article filtered out: AI Enhanced: ${newArticle.is_ai_enhanced}, Language: ${newArticle.enhancement_metadata?.language}`)
@@ -77,8 +88,8 @@ export function useRealtimeArticles({
     }
 
     // If Redux callback provided, use it instead of React Query
-    if (onUpdate) {
-      onUpdate(transformedArticle)
+    if (onUpdateRef.current) {
+      onUpdateRef.current(transformedArticle)
     } else {
       // Update React Query cache by prepending new article to the first page
       queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
@@ -101,7 +112,7 @@ export function useRealtimeArticles({
       // Invalidate query to trigger UI update
       queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
     }
-  }, [queryClient, isAiEnhanced, language, onUpdate])
+  }, [queryClient])
 
   // Handle article updates
   const handleArticleUpdate = useCallback((payload: ArticleChange) => {
@@ -127,8 +138,8 @@ export function useRealtimeArticles({
     }
 
     // If Redux callback provided, use it instead of React Query
-    if (onUpdate) {
-      onUpdate(transformedArticle)
+    if (onUpdateRef.current) {
+      onUpdateRef.current(transformedArticle)
     } else {
       // Update React Query cache by finding and updating the specific article
       queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
@@ -150,7 +161,7 @@ export function useRealtimeArticles({
       // Invalidate query to trigger UI update
       queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
     }
-  }, [queryClient, onUpdate])
+  }, [queryClient])
 
   // Handle article deletions
   const handleArticleDelete = useCallback((payload: ArticleChange) => {
@@ -160,8 +171,8 @@ export function useRealtimeArticles({
     console.log(`📰 [REALTIME] Article deleted: ${deletedArticleId}`)
 
     // If Redux callback provided, use it instead of React Query
-    if (onDelete) {
-      onDelete(deletedArticleId)
+    if (onDeleteRef.current) {
+      onDeleteRef.current(deletedArticleId)
     } else {
       // Update React Query cache by removing the deleted article
       queryClient.setQueryData(queryKeyRef.current, (oldData: any) => {
@@ -181,16 +192,20 @@ export function useRealtimeArticles({
       // Invalidate query to trigger UI update
       queryClient.invalidateQueries({ queryKey: queryKeyRef.current })
     }
-  }, [queryClient, onDelete])
+  }, [queryClient])
 
   // Calculate exponential backoff delay
   const getReconnectDelay = useCallback((attempt: number) => {
     return Math.min(1000 * Math.pow(2, attempt), 30000) // Max 30 seconds
   }, [])
 
+  // Store enabled state in ref to prevent re-renders
+  const enabledRef = useRef(enabled)
+  enabledRef.current = enabled
+
   // Setup subscription with reconnection logic
   const setupSubscription = useCallback(() => {
-    if (!enabled || isReconnectingRef.current) {
+    if (!enabledRef.current || isReconnectingRef.current) {
       return
     }
 
@@ -208,14 +223,14 @@ export function useRealtimeArticles({
     }
 
     // Create channel name based on filter criteria
-    const channelName = `articles-${isAiEnhanced ? 'ai' : 'regular'}-${language || 'all'}-${Date.now()}`
+    const channelName = `articles-${isAiEnhancedRef.current ? 'ai' : 'regular'}-${languageRef.current || 'all'}-${Date.now()}`
     
     console.log(`📰 [REALTIME] Setting up subscription: ${channelName} (attempt ${reconnectAttemptsRef.current + 1})`)
     setConnectionStatus('connecting')
 
     // Create subscription with appropriate filters
     let filter = 'is_ai_enhanced=eq.true'
-    if (isAiEnhanced === false) {
+    if (isAiEnhancedRef.current === false) {
       filter = 'is_ai_enhanced=eq.false'
     }
 
@@ -263,7 +278,7 @@ export function useRealtimeArticles({
           console.log(`❌ [REALTIME] Connection closed: ${channelName}`)
           
           // Attempt reconnection if enabled and under max attempts
-          if (enabled && reconnectAttemptsRef.current < maxReconnectAttempts && !isReconnectingRef.current) {
+          if (enabledRef.current && reconnectAttemptsRef.current < maxReconnectAttempts && !isReconnectingRef.current) {
             isReconnectingRef.current = true
             const delay = getReconnectDelay(reconnectAttemptsRef.current)
             console.log(`🔄 [REALTIME] Scheduling reconnection in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`)
@@ -283,7 +298,7 @@ export function useRealtimeArticles({
 
     setChannel(articleChannel)
     channelRef.current = articleChannel
-  }, [enabled, isAiEnhanced, language, handleArticleInsert, handleArticleUpdate, handleArticleDelete, getReconnectDelay])
+  }, [handleArticleInsert, handleArticleUpdate, handleArticleDelete, getReconnectDelay])
 
   // Set up real-time subscription
   useEffect(() => {

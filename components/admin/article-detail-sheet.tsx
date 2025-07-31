@@ -1,19 +1,18 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -35,6 +34,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Progress } from "@/components/ui/progress"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { toast } from "sonner"
 import SourceCitations from "./source-citations"
 import ImageGallery from "./image-gallery"
@@ -51,11 +52,16 @@ import {
   RefreshCw,
   Sparkles,
   Loader2,
-  Maximize2,
   Edit,
   Save,
   X,
-  Wand2
+  Wand2,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Undo2,
+  Eye,
+  EyeOff
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import type { Article } from "@/lib/types"
@@ -64,14 +70,41 @@ interface ArticleDetailSheetProps {
   article: Article | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  onArticleUpdate?: (updatedArticle: Article) => void
+  onArticleDelete?: (articleId: string) => void
 }
 
-export default function ArticleDetailSheet({ article, open, onOpenChange }: ArticleDetailSheetProps) {
+interface SaveState {
+  status: 'idle' | 'saving' | 'saved' | 'error'
+  message?: string
+  lastSaved?: Date
+}
+
+interface UnsavedChanges {
+  [key: string]: boolean
+}
+
+export default function ArticleDetailSheet({ 
+  article, 
+  open, 
+  onOpenChange, 
+  onArticleUpdate,
+  onArticleDelete 
+}: ArticleDetailSheetProps) {
+  // Early return to avoid hook order issues
+  if (!article) {
+    return null
+  }
+
+  const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [saveState, setSaveState] = useState<SaveState>({ status: 'idle' })
+  const [unsavedChanges, setUnsavedChanges] = useState<UnsavedChanges>({})
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
+  const [previewMode, setPreviewMode] = useState(false)
+  const [activeTab, setActiveTab] = useState('content')
   
   // Form state for editing
   const [editForm, setEditForm] = useState({
@@ -83,42 +116,113 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
     language: '',
   })
   
-  // Initialize form when article changes or edit mode is entered
+  // Track the saved baseline to compare against for unsaved changes
+  const [savedBaseline, setSavedBaseline] = useState<typeof editForm | null>(null)
+  
+  // Reset all states when article changes
   useEffect(() => {
-    if (article && isEditing) {
-      setEditForm({
+    if (article) {
+      // Reset all editor states when article changes
+      setIsEditing(false)
+      setPreviewMode(false)
+      setUnsavedChanges({})
+      setSaveState({ status: 'idle' })
+      setSavedBaseline(null)
+      setActiveTab('content')
+      
+      // Initialize form with new article data
+      const initialForm = {
         title: article.title || '',
         summary: article.summary || '',
         content: article.content || '',
         imageUrl: article.imageUrl || '',
         category: article.category || 'General',
         language: article.language || 'en',
-      })
+      }
+      setEditForm(initialForm)
     }
-  }, [article, isEditing])
+  }, [article?.id])
 
-  if (!article) {
-    return null
-  }
+  // Initialize form when entering edit mode
+  useEffect(() => {
+    if (article && isEditing && !savedBaseline) {
+      const initialForm = {
+        title: article.title || '',
+        summary: article.summary || '',
+        content: article.content || '',
+        imageUrl: article.imageUrl || '',
+        category: article.category || 'General',
+        language: article.language || 'en',
+      }
+      setEditForm(initialForm)
+      setSavedBaseline(initialForm)
+      setUnsavedChanges({})
+      setSaveState({ status: 'idle' })
+    }
+  }, [article?.id, isEditing, savedBaseline])
 
-  const publishedDate = article.publishedAt ? new Date(article.publishedAt) : new Date()
-  const hasImage = article.imageUrl && !article.imageUrl.includes("placeholder")
-  const contentLength = article.content?.length || 0
-  const summaryLength = article.summary?.length || 0
-
-  const handleCopyUrl = () => {
-    navigator.clipboard.writeText(article.url)
-    toast.success("URL copied to clipboard")
-  }
-
-  const handleOpenOriginal = () => {
-    window.open(article.url, '_blank')
-  }
-  
-  const handleSave = async () => {
-    if (!article) return
+  // Handle form field changes with change tracking
+  const handleFieldChange = useCallback((field: keyof typeof editForm, value: string) => {
+    setEditForm(prev => ({ ...prev, [field]: value }))
+    setUnsavedChanges(prev => ({ ...prev, [field]: true }))
     
-    setIsSaving(true)
+    // Reset error state when user starts typing
+    if (saveState.status === 'error') {
+      setSaveState({ status: 'idle' })
+    }
+  }, [saveState.status])
+
+  // Handle image URL changes with automatic trilingual sync
+  const handleImageUrlChange = useCallback(async (newImageUrl: string) => {
+    // Update form state immediately
+    handleFieldChange('imageUrl', newImageUrl)
+    
+    // If this is an AI enhanced article, sync the image across trilingual versions
+    if (article.isAiEnhanced && newImageUrl) {
+      try {
+        const response = await fetch(`/api/admin/articles/${article.id}/sync-image`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageUrl: newImageUrl }),
+        })
+
+        const result = await response.json()
+
+        if (response.ok && result.success) {
+          toast.success(result.message, {
+            description: result.languages ? `Languages: ${result.languages}` : undefined
+          })
+        } else {
+          console.warn('Image sync failed:', result.error)
+          // Don't show error toast as the main update still worked
+        }
+      } catch (error) {
+        console.error('Error syncing image URL:', error)
+        // Silent fail - main update still worked
+      }
+    }
+  }, [article, handleFieldChange])
+
+  // Check for unsaved changes against saved baseline
+  const hasUnsavedChanges = useMemo(() => {
+    if (!savedBaseline || !isEditing) return false
+    return (
+      editForm.title !== savedBaseline.title ||
+      editForm.summary !== savedBaseline.summary ||
+      editForm.content !== savedBaseline.content ||
+      editForm.imageUrl !== savedBaseline.imageUrl ||
+      editForm.category !== savedBaseline.category ||
+      editForm.language !== savedBaseline.language
+    )
+  }, [savedBaseline, editForm, isEditing])
+
+  const handleSave = useCallback(async (isAutoSave = false) => {
+    if (saveState.status === 'saving') return
+    
+    setSaveState({ status: 'saving', message: isAutoSave ? 'Auto-saving...' : 'Saving...' })
+    
     try {
       const response = await fetch(`/api/admin/articles/${article.id}`, {
         method: 'PATCH',
@@ -141,24 +245,110 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
         throw new Error(data.error || 'Failed to update article')
       }
       
-      toast.success('Article updated successfully')
-      setIsEditing(false)
-      // Refresh the page to show updated data
-      window.location.reload()
+      // Create updated article object
+      const updatedArticle: Article = {
+        ...article,
+        title: editForm.title,
+        summary: editForm.summary,
+        content: editForm.content,
+        imageUrl: editForm.imageUrl || undefined,
+        category: editForm.category,
+        language: editForm.language === 'en' ? undefined : editForm.language,
+      }
+      
+      // Update React Query cache optimistically
+      queryClient.setQueryData(['admin-articles'], (oldData: any) => {
+        if (!oldData) return oldData
+        
+        const updatedPages = oldData.pages.map((page: any) => ({
+          ...page,
+          articles: page.articles.map((a: Article) => 
+            a.id === article.id ? updatedArticle : a
+          )
+        }))
+        
+        return { ...oldData, pages: updatedPages }
+      })
+      
+      // Call the parent update callback
+      if (onArticleUpdate) {
+        onArticleUpdate(updatedArticle)
+      }
+      
+      setSaveState({ 
+        status: 'saved', 
+        message: isAutoSave ? 'Auto-saved' : 'Saved successfully',
+        lastSaved: new Date()
+      })
+      
+      if (!isAutoSave) {
+        toast.success('Article updated successfully')
+        setIsEditing(false)
+      }
+      
+      setUnsavedChanges({})
+      
+      // Update the saved baseline to current form values
+      setSavedBaseline({ ...editForm })
+      
+      // Clear saved status after 3 seconds
+      setTimeout(() => {
+        setSaveState(prev => prev.status === 'saved' ? { status: 'idle' } : prev)
+      }, 3000)
+      
     } catch (error) {
       console.error('Error saving article:', error)
-      toast.error('Failed to save article', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      setSaveState({ 
+        status: 'error', 
+        message: error instanceof Error ? error.message : 'Failed to save'
       })
-    } finally {
-      setIsSaving(false)
+      
+      if (!isAutoSave) {
+        toast.error('Failed to save article', {
+          description: error instanceof Error ? error.message : 'Unknown error occurred'
+        })
+      }
     }
-  }
+  }, [article, editForm, queryClient, onArticleUpdate, saveState.status])
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!autoSaveEnabled || !hasUnsavedChanges || saveState.status === 'saving') return
+
+    const autoSaveTimer = setTimeout(() => {
+      handleSave(true) // true indicates auto-save
+    }, 3000) // Auto-save after 3 seconds of inactivity
+
+    return () => clearTimeout(autoSaveTimer)
+  }, [editForm, hasUnsavedChanges, autoSaveEnabled, saveState.status, handleSave])
+
+  const publishedDate = article.publishedAt ? new Date(article.publishedAt) : new Date()
+  const hasImage = article.imageUrl && !article.imageUrl.includes("placeholder")
+  const contentLength = article.content?.length || 0
+  const summaryLength = article.summary?.length || 0
+
+  const handleCopyUrl = useCallback(() => {
+    navigator.clipboard.writeText(article.url)
+    toast.success("URL copied to clipboard")
+  }, [article])
+
+  const handleCopyField = useCallback((fieldName: string, value: string) => {
+    if (!value) {
+      toast.error(`No ${fieldName} to copy`)
+      return
+    }
+    navigator.clipboard.writeText(value)
+    toast.success(`${fieldName} copied to clipboard`)
+  }, [])
+
+  const handleOpenOriginal = useCallback(() => {
+    window.open(article.url, '_blank')
+  }, [article])
   
-  const handleDelete = async () => {
-    if (!article) return
+  const handleDelete = useCallback(async () => {
     
-    setIsDeleting(true)
+    setSaveState({ status: 'saving', message: 'Deleting article...' })
+    
     try {
       const response = await fetch(`/api/admin/articles/${article.id}`, {
         method: 'DELETE',
@@ -170,23 +360,49 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
         throw new Error(data.error || 'Failed to delete article')
       }
       
+      // Update React Query cache optimistically
+      queryClient.setQueryData(['admin-articles'], (oldData: any) => {
+        if (!oldData) return oldData
+        
+        const updatedPages = oldData.pages.map((page: any) => ({
+          ...page,
+          articles: page.articles.filter((a: Article) => a.id !== article.id)
+        }))
+        
+        return { ...oldData, pages: updatedPages }
+      })
+      
+      // Call the parent delete callback
+      if (onArticleDelete) {
+        onArticleDelete(article.id)
+      }
+      
       toast.success('Article deleted successfully')
       onOpenChange(false)
-      // Refresh the page to update the list
-      window.location.reload()
+      
     } catch (error) {
       console.error('Error deleting article:', error)
+      setSaveState({ status: 'error', message: 'Failed to delete article' })
       toast.error('Failed to delete article', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     } finally {
-      setIsDeleting(false)
       setShowDeleteDialog(false)
     }
-  }
+  }, [article, queryClient, onArticleDelete, onOpenChange])
   
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
+    if (hasUnsavedChanges) {
+      const confirmDiscard = confirm('You have unsaved changes. Are you sure you want to discard them?')
+      if (!confirmDiscard) return
+    }
+    
     setIsEditing(false)
+    setPreviewMode(false)
+    setUnsavedChanges({})
+    setSaveState({ status: 'idle' })
+    setSavedBaseline(null) // Reset baseline so form reinitializes next time
+    
     // Reset form to original values
     if (article) {
       setEditForm({
@@ -198,10 +414,10 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
         language: article.language || 'en',
       })
     }
-  }
+  }, [hasUnsavedChanges, article])
 
-  const handleGenerateAIImage = async () => {
-    if (!article || !article.imageUrl) {
+  const handleGenerateAIImage = useCallback(async () => {
+    if (!article.imageUrl) {
       toast.error('No image URL available for generation')
       return
     }
@@ -225,9 +441,12 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
         throw new Error(data.error || 'Failed to generate AI image')
       }
 
+      // Update the form with the new image URL and sync across trilingual articles
+      if (data.imageUrl) {
+        await handleImageUrlChange(data.imageUrl)
+      }
+      
       toast.success(data.message || 'Generic scene generated and article updated successfully!')
-      // Refresh the page to show the updated image
-      window.location.reload()
     } catch (error) {
       console.error('AI image generation error:', error)
       toast.error('Failed to generate generic scene', {
@@ -236,7 +455,7 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
     } finally {
       setIsGeneratingImage(false)
     }
-  }
+  }, [article])
 
 
   return (
@@ -247,25 +466,75 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
             <div className="flex-1 min-w-0">
               <div className="flex items-start gap-2">
                 {isEditing ? (
-                  <Input
-                    value={editForm.title}
-                    onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                    className="text-xl font-semibold"
-                    placeholder="Article title"
-                  />
+                  <div className="flex-1">
+                    <div className="flex gap-1">
+                      <Input
+                        value={editForm.title}
+                        onChange={(e) => handleFieldChange('title', e.target.value)}
+                        className={`text-xl font-semibold transition-colors ${
+                          unsavedChanges.title ? 'border-amber-300 bg-amber-50/30' : ''
+                        }`}
+                        placeholder="Article title"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyField('Title', editForm.title)}
+                        className="h-14 px-3"
+                        title="Copy title"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    {unsavedChanges.title && (
+                      <div className="flex items-center gap-1 mt-1 text-xs text-amber-600">
+                        <Clock className="h-3 w-3" />
+                        <span>Unsaved changes</span>
+                      </div>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <SheetTitle className="text-xl font-semibold leading-tight line-clamp-3 flex-1">
                       {article.title}
                     </SheetTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyField('Title', article.title)}
+                      className="h-8 px-2 flex-shrink-0"
+                      title="Copy title"
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
                     {article.isAiEnhanced && (
                       <Sparkles className="h-5 w-5 text-purple-600 flex-shrink-0 mt-1" />
                     )}
                   </>
                 )}
               </div>
-              <SheetDescription className="mt-2 text-base">
-                {isEditing ? 'Edit article details' : 'Full-screen article editor and management'}
+              <SheetDescription className="mt-2 text-base flex items-center gap-2">
+                {isEditing ? (
+                  <>
+                    <span>Edit article details</span>
+                    {saveState.status !== 'idle' && (
+                      <div className="flex items-center gap-1">
+                        {saveState.status === 'saving' && (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        )}
+                        {saveState.status === 'saved' && (
+                          <CheckCircle2 className="h-3 w-3 text-green-500" />
+                        )}
+                        {saveState.status === 'error' && (
+                          <AlertCircle className="h-3 w-3 text-red-500" />
+                        )}
+                        <span className="text-xs">{saveState.message}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  'Full-screen article editor and management'
+                )}
               </SheetDescription>
             </div>
             <div className="flex flex-col gap-2">
@@ -288,34 +557,81 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                   )}
                 </>
               ) : (
-                <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                  >
-                    {isSaving ? (
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-1" />
-                    )}
-                    Save
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancel}
-                    disabled={isSaving}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Cancel
-                  </Button>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleSave(false)}
+                      disabled={saveState.status === 'saving'}
+                      className={hasUnsavedChanges ? 'bg-green-600 hover:bg-green-700' : ''}
+                    >
+                      {saveState.status === 'saving' ? (
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4 mr-1" />
+                      )}
+                      {hasUnsavedChanges ? 'Save Changes' : 'Save'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPreviewMode(!previewMode)}
+                      disabled={saveState.status === 'saving'}
+                    >
+                      {previewMode ? (
+                        <Edit className="h-4 w-4 mr-1" />
+                      ) : (
+                        <Eye className="h-4 w-4 mr-1" />
+                      )}
+                      {previewMode ? 'Edit' : 'Preview'}
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancel}
+                      disabled={saveState.status === 'saving'}
+                    >
+                      {hasUnsavedChanges ? (
+                        <Undo2 className="h-4 w-4 mr-1" />
+                      ) : (
+                        <X className="h-4 w-4 mr-1" />
+                      )}
+                      {hasUnsavedChanges ? 'Discard' : 'Cancel'}
+                    </Button>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        id="autosave"
+                        checked={autoSaveEnabled}
+                        onChange={(e) => setAutoSaveEnabled(e.target.checked)}
+                        className="h-3 w-3"
+                      />
+                      <label htmlFor="autosave">Auto-save</label>
+                    </div>
+                  </div>
+                  {saveState.lastSaved && (
+                    <div className="text-xs text-muted-foreground">
+                      Last saved: {formatDistanceToNow(saveState.lastSaved, { addSuffix: true })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </SheetHeader>
+
+        {/* Unsaved Changes Alert */}
+        {hasUnsavedChanges && isEditing && (
+          <Alert className="border-amber-200 bg-amber-50/30">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              You have unsaved changes. {autoSaveEnabled ? 'Changes will be auto-saved in a few seconds.' : 'Don\'t forget to save your changes.'}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-6">
           {/* Article Metadata */}
@@ -379,20 +695,46 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
             <CardContent>
               {isEditing ? (
                 <div className="space-y-3">
-                  <Label htmlFor="imageUrl">Image URL</Label>
-                  <Input
-                    id="imageUrl"
-                    type="url"
-                    value={editForm.imageUrl}
-                    onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="imageUrl">Image URL</Label>
+                    {article.isAiEnhanced && (
+                      <div className="flex items-center gap-1 text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                        <Sparkles className="h-3 w-3" />
+                        <span>Syncs across languages</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Input
+                      id="imageUrl"
+                      type="url"
+                      value={editForm.imageUrl}
+                      onChange={(e) => handleImageUrlChange(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className={unsavedChanges.imageUrl ? 'border-amber-300 bg-amber-50/30' : ''}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCopyField('Image URL', editForm.imageUrl)}
+                      className="px-3"
+                      title="Copy image URL"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {unsavedChanges.imageUrl && (
+                    <div className="flex items-center gap-1 text-xs text-amber-600">
+                      <Clock className="h-3 w-3" />
+                      <span>Unsaved changes</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Or</span>
                     <FileUploader
                       articleId={article.id}
-                      onUpload={(url) => setEditForm({ ...editForm, imageUrl: url })}
-                      disabled={isSaving}
+                      onUpload={(url) => handleImageUrlChange(url)}
+                      disabled={saveState.status === 'saving'}
                     />
                   </div>
                   {editForm.imageUrl && (
@@ -414,21 +756,36 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                 </div>
               ) : (
                 article.imageUrl && (
-                  <div className="relative aspect-video overflow-hidden rounded-lg bg-muted max-w-2xl">
-                    {hasImage ? (
-                      <img
-                        src={article.imageUrl}
-                        alt={article.title}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                          e.currentTarget.nextElementSibling?.classList.remove('hidden')
-                        }}
-                      />
-                    ) : null}
-                    <div className={`flex h-full w-full items-center justify-center ${hasImage ? 'hidden' : ''}`}>
-                      <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                      <span className="ml-2 text-muted-foreground">No image</span>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Image URL</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyField('Image URL', article.imageUrl)}
+                        className="h-8 px-2"
+                        title="Copy image URL"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
+                    <div className="relative aspect-video overflow-hidden rounded-lg bg-muted max-w-2xl">
+                      {hasImage ? (
+                        <img
+                          src={article.imageUrl}
+                          alt={article.title}
+                          className="h-full w-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : null}
+                      <div className={`flex h-full w-full items-center justify-center ${hasImage ? 'hidden' : ''}`}>
+                        <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        <span className="ml-2 text-muted-foreground">No image</span>
+                      </div>
                     </div>
                   </div>
                 )
@@ -449,16 +806,23 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                     <Input
                       id="category"
                       value={editForm.category}
-                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                      onChange={(e) => handleFieldChange('category', e.target.value)}
                       placeholder="General"
+                      className={unsavedChanges.category ? 'border-amber-300 bg-amber-50/30' : ''}
                     />
+                    {unsavedChanges.category && (
+                      <div className="flex items-center gap-1 text-xs text-amber-600">
+                        <Clock className="h-3 w-3" />
+                        <span>Unsaved changes</span>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
                     <Label htmlFor="language">Language</Label>
                     <Select
                       value={editForm.language || 'en'}
-                      onValueChange={(value) => setEditForm({ ...editForm, language: value })}
+                      onValueChange={(value) => handleFieldChange('language', value)}
                     >
                       <SelectTrigger id="language">
                         <SelectValue placeholder="Select language" />
@@ -472,28 +836,139 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="summary">Summary</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="summary">Summary</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyField('Summary', editForm.summary)}
+                        className="h-6 px-2 text-xs"
+                        title="Copy summary"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
                     <Textarea
                       id="summary"
                       value={editForm.summary}
-                      onChange={(e) => setEditForm({ ...editForm, summary: e.target.value })}
+                      onChange={(e) => handleFieldChange('summary', e.target.value)}
                       placeholder="Article summary..."
                       rows={3}
-                      className="resize-none"
+                      className={`resize-none ${unsavedChanges.summary ? 'border-amber-300 bg-amber-50/30' : ''}`}
                     />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        {unsavedChanges.summary && (
+                          <>
+                            <Clock className="h-3 w-3 text-amber-600" />
+                            <span className="text-amber-600">Unsaved changes</span>
+                          </>
+                        )}
+                      </div>
+                      <span>{editForm.summary.length} characters</span>
+                    </div>
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="content">Full Content</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="content">Full Content</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyField('Content', editForm.content)}
+                        className="h-6 px-2 text-xs"
+                        title="Copy content"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
                     <Textarea
                       id="content"
                       value={editForm.content}
-                      onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                      onChange={(e) => handleFieldChange('content', e.target.value)}
                       placeholder="Full article content..."
                       rows={10}
-                      className="resize-none"
+                      className={`resize-none ${unsavedChanges.content ? 'border-amber-300 bg-amber-50/30' : ''}`}
                     />
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        {unsavedChanges.content && (
+                          <>
+                            <Clock className="h-3 w-3 text-amber-600" />
+                            <span className="text-amber-600">Unsaved changes</span>
+                          </>
+                        )}
+                      </div>
+                      <span>{editForm.content.length} characters</span>
+                    </div>
                   </div>
+                </div>
+              ) : previewMode ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">Preview Mode</h4>
+                    <Badge variant="outline">Live Preview</Badge>
+                  </div>
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="content">Content</TabsTrigger>
+                      <TabsTrigger value="metadata">Metadata</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="content" className="mt-4 space-y-4">
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Title</Label>
+                          <h2 className="text-xl font-semibold">{editForm.title || 'Untitled'}</h2>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Summary</Label>
+                          <div className="mt-1 rounded-md border p-3 min-h-[60px]">
+                            <p className="leading-relaxed text-sm">
+                              {editForm.summary || 'No summary available'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label className="text-sm font-medium text-muted-foreground">Content</Label>
+                          <div className="mt-1 max-h-60 overflow-y-auto rounded-md border p-3">
+                            <p className="leading-relaxed whitespace-pre-wrap text-sm">
+                              {editForm.content || 'No content available'}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </TabsContent>
+                    
+                    <TabsContent value="metadata" className="mt-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Category</span>
+                          <Badge variant="outline">{editForm.category}</Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Language</span>
+                          <Badge variant="outline">
+                            {editForm.language === 'en' ? 'English' : 
+                             editForm.language === 'zh-TW' ? '繁體中文' : 
+                             editForm.language === 'zh-CN' ? '简体中文' : editForm.language}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Content Length</span>
+                          <span className="text-sm text-muted-foreground">{editForm.content.length} chars</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Summary Length</span>
+                          <span className="text-sm text-muted-foreground">{editForm.summary.length} chars</span>
+                        </div>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               ) : (
                 <Tabs defaultValue="summary" className="w-full">
@@ -502,7 +977,20 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                     <TabsTrigger value="content">Full Content</TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="summary" className="mt-4">
+                  <TabsContent value="summary" className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Summary</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyField('Summary', article.summary || '')}
+                        className="h-6 px-2 text-xs"
+                        title="Copy summary"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
                     <div className="max-h-60 overflow-y-auto rounded-md border p-4">
                       <p className="leading-relaxed">
                         {article.summary || "No summary available"}
@@ -510,7 +998,20 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                     </div>
                   </TabsContent>
                   
-                  <TabsContent value="content" className="mt-4">
+                  <TabsContent value="content" className="mt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">Full Content</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCopyField('Content', article.content || '')}
+                        className="h-6 px-2 text-xs"
+                        title="Copy content"
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Copy
+                      </Button>
+                    </div>
                     <div className="max-h-60 overflow-y-auto rounded-md border p-4">
                       <p className="leading-relaxed whitespace-pre-wrap">
                         {article.content || "No content available"}
@@ -564,14 +1065,10 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
                 <Button 
                   variant="destructive"
                   onClick={() => setShowDeleteDialog(true)}
-                  disabled={isDeleting}
+                  disabled={saveState.status === 'saving'}
                 >
-                  {isDeleting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4 mr-2" />
-                  )}
-                  Delete
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Article
                 </Button>
               </div>
               
@@ -647,13 +1144,13 @@ export default function ArticleDetailSheet({ article, open, onOpenChange }: Arti
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={saveState.status === 'saving'}>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={isDeleting}
+              disabled={saveState.status === 'saving'}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? (
+              {saveState.status === 'saving' ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Deleting...

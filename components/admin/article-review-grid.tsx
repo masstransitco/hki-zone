@@ -10,6 +10,14 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { formatDistanceToNow } from "date-fns"
 import type { Article } from "@/lib/types"
 
+interface OptimisticUpdates {
+  [articleId: string]: {
+    type: 'updating' | 'enhancing' | 'deleting' | 'selecting'
+    timestamp: number
+    originalData?: Partial<Article>
+  }
+}
+
 interface ArticleReviewGridProps {
   articles: Article[]
   loading: boolean
@@ -18,6 +26,8 @@ interface ArticleReviewGridProps {
   hasMore: boolean
   selectedArticleIds: Set<string>
   onArticleSelect: (articleId: string, selected: boolean) => void
+  isLoadingMore?: boolean
+  optimisticUpdates?: OptimisticUpdates
 }
 
 export default function ArticleReviewGrid({
@@ -28,6 +38,8 @@ export default function ArticleReviewGrid({
   hasMore,
   selectedArticleIds,
   onArticleSelect,
+  isLoadingMore = false,
+  optimisticUpdates = {},
 }: ArticleReviewGridProps) {
   if (loading && articles.length === 0) {
     return (
@@ -60,6 +72,7 @@ export default function ArticleReviewGrid({
           onExpand={() => onArticleExpand(article)}
           isSelected={selectedArticleIds.has(article.id)}
           onSelect={(selected) => onArticleSelect(article.id, selected)}
+          optimisticUpdate={optimisticUpdates[article.id]}
         />
       ))}
       
@@ -68,13 +81,13 @@ export default function ArticleReviewGrid({
           <Button
             onClick={onLoadMore}
             variant="outline"
-            disabled={loading}
+            disabled={loading || isLoadingMore}
             className="h-10 px-6"
           >
-            {loading ? (
+            {isLoadingMore ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Loading...
+                Loading more...
               </>
             ) : (
               "Load More Articles"
@@ -103,22 +116,37 @@ interface ArticleReviewCardProps {
   onExpand: () => void
   isSelected: boolean
   onSelect: (selected: boolean) => void
+  optimisticUpdate?: OptimisticUpdates[string]
 }
 
-function ArticleReviewCard({ article, onExpand, isSelected, onSelect }: ArticleReviewCardProps) {
+function ArticleReviewCard({ article, onExpand, isSelected, onSelect, optimisticUpdate }: ArticleReviewCardProps) {
   const publishedDate = article.publishedAt ? new Date(article.publishedAt) : new Date()
   const hasImage = article.imageUrl && !article.imageUrl.includes("placeholder")
   const isDeleted = article.deletedAt != null
   const isSelectedForEnhancement = article.selectedForEnhancement || false
   
+  // Apply optimistic update styling
+  const isUpdating = optimisticUpdate?.type === 'updating'
+  const isEnhancing = optimisticUpdate?.type === 'enhancing'
+  const isDeleting = optimisticUpdate?.type === 'deleting'
+  const isSelecting = optimisticUpdate?.type === 'selecting'
+  
   return (
     <div
-      className={`group relative rounded-xl border transition-all duration-200 ${
-        isSelected 
+      className={`group relative rounded-xl border transition-all duration-300 ${
+        isDeleting
+          ? "border-red-300 bg-red-50/50 opacity-60 dark:border-red-700 dark:bg-red-950/30"
+          : isEnhancing
+          ? "border-purple-300 bg-purple-50/30 dark:border-purple-700 dark:bg-purple-950/20"
+          : isSelecting
+          ? "border-amber-300 bg-amber-50/30 dark:border-amber-700 dark:bg-amber-950/20"
+          : isSelected 
           ? "border-blue-200 bg-blue-50/30 dark:border-blue-800 dark:bg-blue-950/20" 
           : isDeleted 
           ? "border-red-200 bg-red-50/30 dark:border-red-800 dark:bg-red-950/20" 
           : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm dark:border-gray-800 dark:bg-gray-950 dark:hover:border-gray-700"
+      } ${
+        (isUpdating || isEnhancing || isDeleting || isSelecting) ? "animate-pulse" : ""
       }`}
     >
       {/* Selection Checkbox */}
@@ -126,17 +154,27 @@ function ArticleReviewCard({ article, onExpand, isSelected, onSelect }: ArticleR
         <Checkbox
           checked={isSelected}
           onCheckedChange={onSelect}
-          className="h-4 w-4 bg-white shadow-sm"
+          disabled={isDeleting || isEnhancing}
+          className="h-4 w-4 bg-white shadow-sm disabled:opacity-50"
         />
       </div>
 
-      {/* Edit Button */}
-      <div className="absolute top-4 right-4 z-10">
+      {/* Edit Button with Operation Status */}
+      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+        {(isUpdating || isEnhancing || isDeleting || isSelecting) && (
+          <div className="flex items-center gap-1 px-2 py-1 bg-white/90 rounded-md shadow-sm text-xs">
+            <div className="h-2 w-2 animate-spin rounded-full border border-current border-t-transparent" />
+            <span className="text-muted-foreground">
+              {isDeleting ? 'Deleting...' : isEnhancing ? 'Enhancing...' : isSelecting ? 'Selecting...' : 'Updating...'}
+            </span>
+          </div>
+        )}
         <Button
           variant="ghost"
           size="sm"
           onClick={onExpand}
-          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 shadow-sm hover:bg-white"
+          disabled={isDeleting}
+          className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 shadow-sm hover:bg-white disabled:opacity-50"
           title="Edit article"
         >
           <Edit className="h-4 w-4" />

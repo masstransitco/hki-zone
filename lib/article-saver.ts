@@ -63,10 +63,16 @@ export async function saveEnhancedArticles(
           // CRITICAL FIX: Map source_article_id to database original_article_id field
           original_article_id: article.source_article_id || null,
           
+          // CRITICAL: Add trilingual tracking as top-level columns for proper sync
+          trilingual_batch_id: article.trilingual_batch_id || null,
+          language_variant: article.language_variant || null,
+          language_order: article.language_order || null,
+          quality_score: article.quality_score || null,
+          
           // Enhancement metadata (store additional fields here as JSON)
           enhancement_metadata: {
             ...article.enhancement_metadata,
-            // Store trilingual tracking in metadata
+            // Also keep in metadata for backward compatibility
             trilingual_batch_id: article.trilingual_batch_id,
             source_article_id: article.source_article_id,
             language_variant: article.language_variant,

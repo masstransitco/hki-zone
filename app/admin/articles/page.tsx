@@ -1,97 +1,216 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, RefreshCw, Languages, Sparkles, Loader2, Trash2, CheckSquare, Copy } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { 
+  Search, Filter, RefreshCw, Languages, Sparkles, Loader2, Trash2, CheckSquare, Copy,
+  BarChart3, Target, Zap, Clock, TrendingUp, AlertCircle, Wand2, Brain, Bot, Wifi, WifiOff
+} from "lucide-react"
 import ArticleReviewGrid from "@/components/admin/article-review-grid"
 import ArticleDetailSheet from "@/components/admin/article-detail-sheet"
 import TrilingualAutoSelectModal from "@/components/admin/trilingual-auto-select-modal"
 import { useLanguage } from "@/components/language-provider"
+import { useRealtimeArticles } from "@/hooks/use-realtime-articles"
+import { toast } from "sonner"
 import type { Article } from "@/lib/types"
+
+interface QuickStats {
+  total: number
+  enhanced: number
+  selected: number
+  recentlyAdded: number
+  topSources: Array<{ name: string; count: number }>
+}
+
+// Optimistic update states
+interface OptimisticUpdates {
+  [articleId: string]: {
+    type: 'updating' | 'enhancing' | 'deleting' | 'selecting'
+    timestamp: number
+    originalData?: Partial<Article>
+  }
+}
+
+async function fetchAdminArticles({ 
+  pageParam = 0, 
+  sourceFilter = "all",
+  languageFilter = "all", 
+  aiEnhancedFilter = "all",
+  searchQuery = ""
+}): Promise<{ articles: Article[]; nextPage: number | null; hasMore: boolean }> {
+  const params = new URLSearchParams({
+    page: pageParam.toString(),
+    limit: "20",
+  })
+  
+  if (sourceFilter !== "all") params.set("source", sourceFilter)
+  if (languageFilter !== "all") params.set("language", languageFilter)
+  if (aiEnhancedFilter !== "all") params.set("aiEnhanced", aiEnhancedFilter)
+  if (searchQuery) params.set("search", searchQuery)
+
+  const response = await fetch(`/api/admin/articles?${params}`)
+  if (!response.ok) throw new Error("Failed to fetch articles")
+  
+  const data = await response.json()
+  return {
+    articles: data.articles,
+    nextPage: data.hasMore ? pageParam + 1 : null,
+    hasMore: data.hasMore
+  }
+}
 
 export default function ArticlesPage() {
   const { t } = useLanguage()
-  const [articles, setArticles] = useState<Article[]>([])
+  const queryClient = useQueryClient()
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
   const [isSheetOpen, setIsSheetOpen] = useState(false)
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [sourceFilter, setSourceFilter] = useState("all")
   const [languageFilter, setLanguageFilter] = useState("all")
   const [aiEnhancedFilter, setAiEnhancedFilter] = useState("all")
-  const [page, setPage] = useState(0)
-  const [hasMore, setHasMore] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showProgressModal, setShowProgressModal] = useState(false)
   const [processProgress, setProcessProgress] = useState<any>(null)
   const [selectedArticleIds, setSelectedArticleIds] = useState<Set<string>>(new Set())
   const [isDeleting, setIsDeleting] = useState(false)
   const [isBulkCloning, setIsBulkCloning] = useState(false)
+  const [activeTab, setActiveTab] = useState("articles")
+  const [quickStats, setQuickStats] = useState<QuickStats | null>(null)
+  const [optimisticUpdates, setOptimisticUpdates] = useState<OptimisticUpdates>({})
+  
+  // Generate query key for React Query and real-time subscriptions
+  const queryKey = useMemo(() => [
+    'admin-articles', 
+    sourceFilter, 
+    languageFilter, 
+    aiEnhancedFilter, 
+    searchQuery
+  ], [sourceFilter, languageFilter, aiEnhancedFilter, searchQuery])
+
+  // Use React Query for infinite scrolling with real-time updates
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    refetch
+  } = useInfiniteQuery({
+    queryKey,
+    queryFn: ({ pageParam = 0 }) => fetchAdminArticles({
+      pageParam,
+      sourceFilter,
+      languageFilter,
+      aiEnhancedFilter,
+      searchQuery
+    }),
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    staleTime: 30000, // 30 seconds
+    refetchOnWindowFocus: false
+  })
+
+  // Setup real-time subscriptions with intelligent filtering
+  const aiEnhancedBool = aiEnhancedFilter === "true" ? true : aiEnhancedFilter === "false" ? false : undefined
+  const { connectionStatus, isConnected } = useRealtimeArticles({
+    queryKey,
+    isAiEnhanced: aiEnhancedBool,
+    language: languageFilter === "all" ? undefined : languageFilter,
+    enabled: true
+  })
+
+  // Flatten articles from all pages
+  const articles = useMemo(() => {
+    return data?.pages.flatMap(page => page.articles) || []
+  }, [data])
+
+  // Apply optimistic updates to articles
+  const articlesWithOptimisticUpdates = useMemo(() => {
+    return articles.map(article => {
+      const update = optimisticUpdates[article.id]
+      if (!update) return article
+      
+      // Apply optimistic changes based on update type
+      switch (update.type) {
+        case 'selecting':
+          return { ...article, selectedForEnhancement: true }
+        case 'enhancing':
+          return { ...article, isAiEnhanced: true }
+        case 'deleting':
+          return { ...article, deletedAt: new Date().toISOString() }
+        default:
+          return article
+      }
+    }).filter(article => {
+      // Filter out articles being deleted
+      const update = optimisticUpdates[article.id]
+      return !(update?.type === 'deleting')
+    })
+  }, [articles, optimisticUpdates])
+
+  const loadQuickStats = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/articles/stats')
+      if (response.ok) {
+        const stats = await response.json()
+        setQuickStats(stats)
+      }
+    } catch (error) {
+      console.error('Error loading stats:', error)
+    }
+  }, [])
 
   useEffect(() => {
-    loadArticles()
-  }, [page, sourceFilter, languageFilter, aiEnhancedFilter])
+    loadQuickStats()
+  }, [])
 
-  const loadArticles = async () => {
-    try {
-      setLoading(true)
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: "20",
+  // Optimistic update helper function
+  const addOptimisticUpdate = useCallback((articleId: string, type: OptimisticUpdates[string]['type'], originalData?: Partial<Article>) => {
+    setOptimisticUpdates(prev => ({
+      ...prev,
+      [articleId]: {
+        type,
+        timestamp: Date.now(),
+        originalData
+      }
+    }))
+    
+    // Auto-remove optimistic update after 10 seconds
+    setTimeout(() => {
+      setOptimisticUpdates(prev => {
+        const { [articleId]: removed, ...rest } = prev
+        return rest
       })
-      
-      if (sourceFilter !== "all") {
-        params.set("source", sourceFilter)
-      }
-      
-      if (languageFilter !== "all") {
-        params.set("language", languageFilter)
-      }
-      
-      if (aiEnhancedFilter !== "all") {
-        params.set("aiEnhanced", aiEnhancedFilter)
-      }
-      
-      if (searchQuery) {
-        params.set("search", searchQuery)
-      }
+    }, 10000)
+  }, [])
 
-      const response = await fetch(`/api/admin/articles?${params}`)
-      if (!response.ok) throw new Error("Failed to fetch articles")
-      
-      const data = await response.json()
-      
-      if (page === 0) {
-        setArticles(data.articles)
-      } else {
-        setArticles(prev => [...prev, ...data.articles])
-      }
-      
-      setHasMore(data.hasMore)
-    } catch (error) {
-      console.error("Error loading articles:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  const removeOptimisticUpdate = useCallback((articleId: string) => {
+    setOptimisticUpdates(prev => {
+      const { [articleId]: removed, ...rest } = prev
+      return rest
+    })
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    setPage(0)
-    loadArticles()
+    refetch()
   }
 
-  const handleRefresh = () => {
-    setPage(0)
+  const handleRefresh = useCallback(() => {
     setSelectedArticle(null)
     setIsSheetOpen(false)
     setSelectedArticleIds(new Set())
-    loadArticles()
-  }
+    setOptimisticUpdates({})
+    refetch()
+    loadQuickStats()
+  }, [refetch, loadQuickStats])
 
   const handleArticleExpand = (article: Article) => {
     setSelectedArticle(article)
@@ -99,7 +218,9 @@ export default function ArticlesPage() {
   }
 
   const handleLoadMore = () => {
-    setPage(prev => prev + 1)
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage()
+    }
   }
 
   const handleArticleSelect = (articleId: string, selected: boolean) => {
@@ -125,7 +246,7 @@ export default function ArticlesPage() {
 
   const handleBatchDelete = async () => {
     if (selectedArticleIds.size === 0) {
-      alert('Please select articles to delete')
+      toast.error('Please select articles to delete')
       return
     }
 
@@ -134,6 +255,12 @@ export default function ArticlesPage() {
     }
 
     setIsDeleting(true)
+    
+    // Add optimistic updates
+    selectedArticleIds.forEach(articleId => {
+      addOptimisticUpdate(articleId, 'deleting')
+    })
+    
     try {
       const response = await fetch('/api/admin/articles/batch-delete', {
         method: 'POST',
@@ -148,15 +275,19 @@ export default function ArticlesPage() {
       const data = await response.json()
 
       if (!response.ok) {
+        // Revert optimistic updates on error
+        selectedArticleIds.forEach(articleId => {
+          removeOptimisticUpdate(articleId)
+        })
         throw new Error(data.error || 'Failed to delete articles')
       }
 
-      alert(`Successfully deleted ${data.deletedCount} articles`)
+      toast.success(`Successfully deleted ${data.deletedCount} articles`)
       setSelectedArticleIds(new Set())
-      handleRefresh()
+      loadQuickStats() // Refresh stats
     } catch (error) {
       console.error('Batch delete error:', error)
-      alert('Failed to delete articles: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      toast.error('Failed to delete articles: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setIsDeleting(false)
     }
@@ -262,15 +393,15 @@ export default function ArticlesPage() {
         message += `\n\n⚠️ Errors encountered:\n${errors.slice(0, 5).join('\n')}${errors.length > 5 ? `\n... and ${errors.length - 5} more errors` : ''}`
       }
       
-      message += '\n\nThe enhanced articles will appear in the list shortly.'
+      message += '\n\nThe enhanced articles will appear automatically via real-time updates.'
       
-      alert(message)
+      toast.success(message)
       
       setSelectedArticleIds(new Set())
-      handleRefresh()
+      loadQuickStats() // Refresh stats only
     } catch (error) {
       console.error('Bulk enhancement error:', error)
-      alert('Failed to enhance articles: ' + (error instanceof Error ? error.message : 'Unknown error'))
+      toast.error('Failed to enhance articles: ' + (error instanceof Error ? error.message : 'Unknown error'))
     } finally {
       setIsBulkCloning(false)
     }
@@ -336,8 +467,8 @@ export default function ArticlesPage() {
       const result = await enhanceResponse.json()
       
       // Update progress to complete
-      setProcessProgress({
-        ...processProgress,
+      setProcessProgress((prev: any) => ({
+        ...prev,
         step: 'complete',
         completedByLanguage: {
           english: result.articlesByLanguage?.english || 1,
@@ -345,68 +476,182 @@ export default function ArticlesPage() {
           simplifiedChinese: result.articlesByLanguage?.simplifiedChinese || 1
         },
         totalCost: parseFloat(result.estimatedCost || '0.075')
-      })
+      }))
 
-      // Refresh the article list after successful processing
+      // Close modal after successful processing - articles will update via real-time
       setTimeout(() => {
-        handleRefresh()
         setShowProgressModal(false)
         setProcessProgress(null)
+        loadQuickStats() // Refresh stats
       }, 3000)
 
     } catch (error) {
       console.error('Single auto-select error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to run single article auto-selection')
+      toast.error(error instanceof Error ? error.message : 'Failed to run single article auto-selection')
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const totalArticles = articles.length
-  const sourceStats = articles.reduce((acc, article) => {
+  const totalArticles = articlesWithOptimisticUpdates.length
+  const sourceStats = articlesWithOptimisticUpdates.reduce((acc, article) => {
     acc[article.source] = (acc[article.source] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      {/* Enhanced Header Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Article Management</h1>
+          <p className="text-muted-foreground">
+            Review, edit, and enhance articles from all sources with AI-powered tools
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            onClick={handleSingleTrilingualAutoSelect}
+            disabled={isProcessing}
+            size="sm"
+            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+          >
+            {isProcessing ? (
+              <>
+                <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Bot className="mr-2 h-3 w-3" />
+                AI Auto-Select
+              </>
+            )}
+          </Button>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Real-time Connection Status */}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {isConnected ? (
+            <>
+              <Wifi className="h-4 w-4 text-green-500" />
+              <span>Real-time updates active</span>
+            </>
+          ) : (
+            <>
+              <WifiOff className="h-4 w-4 text-amber-500" />
+              <span>Connecting to real-time updates...</span>
+            </>
+          )}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          {optimisticUpdates && Object.keys(optimisticUpdates).length > 0 && (
+            <span>{Object.keys(optimisticUpdates).length} operations in progress</span>
+          )}
+        </div>
+      </div>
+
+      {/* Enhanced Stats Dashboard */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Articles</CardTitle>
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalArticles}</div>
+            <div className="text-2xl font-bold">{quickStats?.total || totalArticles}</div>
             <p className="text-xs text-muted-foreground">
-              Currently loaded
+              Currently loaded: {totalArticles}
             </p>
           </CardContent>
         </Card>
         
-        {Object.entries(sourceStats).map(([source, count]) => (
-          <Card key={source}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{source}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{count}</div>
-              <p className="text-xs text-muted-foreground">
-                {((count / totalArticles) * 100).toFixed(1)}% of total
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">AI Enhanced</CardTitle>
+            <Sparkles className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{quickStats?.enhanced || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              {quickStats?.total ? ((quickStats.enhanced / quickStats.total) * 100).toFixed(1) : 0}% enhanced
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Selected</CardTitle>
+            <Target className="h-4 w-4 text-amber-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">{quickStats?.selected || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Ready for enhancement
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Recent</CardTitle>
+            <Clock className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{quickStats?.recentlyAdded || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Added today
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Top Source</CardTitle>
+            <TrendingUp className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {quickStats?.topSources?.[0]?.count || 0}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {quickStats?.topSources?.[0]?.name || 'N/A'}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Filters and Search */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Article Review</CardTitle>
-          <CardDescription>
-            Browse and review scraped articles from all sources
-          </CardDescription>
-        </CardHeader>
+      {/* Enhanced Tabbed Interface */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="articles" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Article Browser
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+          <TabsTrigger value="automation" className="flex items-center gap-2">
+            <Wand2 className="h-4 w-4" />
+            AI Tools
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="articles" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Article Management</CardTitle>
+              <CardDescription>
+                Browse, review, and manage scraped articles with advanced filtering and bulk operations
+              </CardDescription>
+            </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
             {/* Search Bar */}
@@ -557,25 +802,207 @@ export default function ArticlesPage() {
               </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
 
-      {/* Article Grid */}
-      <ArticleReviewGrid
-        articles={articles}
-        loading={loading}
-        onArticleExpand={handleArticleExpand}
-        onLoadMore={handleLoadMore}
-        hasMore={hasMore}
-        selectedArticleIds={selectedArticleIds}
-        onArticleSelect={handleArticleSelect}
-      />
+          {/* Article Grid */}
+          <ArticleReviewGrid
+            articles={articlesWithOptimisticUpdates}
+            loading={isLoading}
+            onArticleExpand={handleArticleExpand}
+            onLoadMore={handleLoadMore}
+            hasMore={hasNextPage || false}
+            selectedArticleIds={selectedArticleIds}
+            onArticleSelect={handleArticleSelect}
+            isLoadingMore={isFetchingNextPage}
+            optimisticUpdates={optimisticUpdates}
+          />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Source Performance</CardTitle>
+                <CardDescription>Article distribution by news source (current view)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {Object.entries(sourceStats).slice(0, 10).map(([source, count]) => (
+                    <div key={source} className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{source}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                            style={{ width: `${totalArticles > 0 ? (count / totalArticles) * 100 : 0}%` }}
+                          />
+                        </div>
+                        <span className="text-sm text-muted-foreground">{count}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {Object.keys(sourceStats).length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground">
+                      No articles loaded yet
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Enhancement Pipeline</CardTitle>
+                <CardDescription>AI processing statistics (real-time)</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Enhanced Articles</span>
+                    <Badge variant="secondary" className="transition-all duration-300">
+                      {quickStats?.enhanced || 0}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Selected for Enhancement</span>
+                    <Badge variant="outline" className="transition-all duration-300">
+                      {quickStats?.selected || 0}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Operations in Progress</span>
+                    <Badge 
+                      variant={Object.keys(optimisticUpdates).length > 0 ? "default" : "outline"}
+                      className="transition-all duration-300"
+                    >
+                      {Object.keys(optimisticUpdates).length}
+                    </Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Real-time Status</span>
+                    <Badge 
+                      variant={isConnected ? "default" : "secondary"}
+                      className="transition-all duration-300"
+                    >
+                      {connectionStatus}
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="automation" className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>AI Selection Tools</CardTitle>
+                <CardDescription>Automated article selection and enhancement</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button
+                  onClick={handleSingleTrilingualAutoSelect}
+                  disabled={isProcessing}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                >
+                  {isProcessing ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Processing AI Selection...
+                    </>
+                  ) : (
+                    <>
+                      <Brain className="mr-2 h-4 w-4" />
+                      AI Auto-Select & Enhance (1→3)
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Uses Perplexity AI to intelligently select the most newsworthy article and create trilingual enhanced versions. New articles will appear automatically via real-time updates.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Bulk Operations</CardTitle>
+                <CardDescription>Process multiple articles simultaneously</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  {selectedArticleIds.size > 0 ? (
+                    <div className="space-y-2">
+                      <p className="font-medium">{selectedArticleIds.size} articles selected</p>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBulkClone}
+                          disabled={isBulkCloning || isDeleting}
+                          className="flex-1"
+                        >
+                          {isBulkCloning ? (
+                            <>
+                              <div className="mr-1 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Enhancing...
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3 mr-1" />
+                              Enhance Selected
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleBatchDelete}
+                          disabled={isDeleting || isBulkCloning}
+                        >
+                          {isDeleting ? (
+                            <>
+                              <div className="mr-1 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                              Deleting...
+                            </>
+                          ) : (
+                            <>
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground">
+                      <p>Select articles from the Article Browser tab to enable bulk operations.</p>
+                      <p className="text-xs mt-1">Changes will be reflected immediately via real-time updates.</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Full-Screen Article Detail Sheet */}
       <ArticleDetailSheet
         article={selectedArticle}
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}
+        onArticleUpdate={(updatedArticle) => {
+          // Update will be handled by real-time subscriptions
+          loadQuickStats() // Refresh stats
+        }}
+        onArticleDelete={(articleId) => {
+          // Deletion will be handled by real-time subscriptions
+          setSelectedArticle(null)
+          setIsSheetOpen(false)
+          loadQuickStats() // Refresh stats
+        }}
       />
 
       {/* Trilingual Auto-Select Progress Modal */}
