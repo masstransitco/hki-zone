@@ -1,0 +1,25 @@
+{
+  "slug": "crhk",
+  "url": "https://www.881903.com/",
+  "picked": {
+    "href": "https://www.881903.com/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 42166,
+    "file": "crhk.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.881903.com/favicon.ico",
+      "ok": true,
+      "status": 200,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 42166,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

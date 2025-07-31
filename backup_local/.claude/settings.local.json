@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "WebFetch(domain:alert.mtr.com.hk)",
+      "Bash(npm install:*)"
+    ],
+    "deny": []
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "slug": "censtatd",
+  "url": "https://www.censtatd.gov.hk/en/",
+  "picked": {
+    "href": "https://www.censtatd.gov.hk/apachehaus.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 3638,
+    "file": "censtatd.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.censtatd.gov.hk/apachehaus.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 3638,
+      "file": "raw/icon-0.ico",
+      "error": null
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.censtatd.gov.hk/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    }
+  ]
+}

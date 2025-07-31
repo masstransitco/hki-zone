@@ -1,0 +1,79 @@
+{
+  "slug": "legco",
+  "url": "https://www.legco.gov.hk/en/index.html",
+  "picked": {
+    "href": "https://www.legco.gov.hk/cs/images/icons/icon-256x256.png",
+    "ext": "png",
+    "mime": "image/png",
+    "bytes": 13002,
+    "file": "legco.png"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.legco.gov.hk/cs/images/icons/icon-152x152.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 6891,
+      "file": "raw/icon-0.png",
+      "error": null
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.legco.gov.hk/cs/images/icons/icon-128x128.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 5582,
+      "file": "raw/icon-1.png",
+      "error": null
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.legco.gov.hk/cs/images/icons/icon-144x144.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 6410,
+      "file": "raw/icon-2.png",
+      "error": null
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.legco.gov.hk/cs/images/icons/icon-192x192.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 9105,
+      "file": "raw/icon-3.png",
+      "error": null
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.legco.gov.hk/cs/images/icons/icon-256x256.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 13002,
+      "file": "raw/icon-4.png",
+      "error": null
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.legco.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1150,
+      "file": "raw/icon-5.ico",
+      "error": null
+    }
+  ]
+}

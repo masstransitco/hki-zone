@@ -1,0 +1,28 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/scrape-news",
+      "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/select-article",
+      "schedule": "0,15,30,45 * * * *"
+    },
+    {
+      "path": "/api/cron/enhance-selected",
+      "schedule": "5,20,35,50 * * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-stuck-selections",
+      "schedule": "10,40 * * * *"
+    },
+    {
+      "path": "/api/cron/scrape-cars",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/fetch-gov-feeds",
+      "schedule": "*/2 * * * *"
+    }
+  ]
+}

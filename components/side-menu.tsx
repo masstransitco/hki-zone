@@ -292,6 +292,20 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
             </div>
           )}
         </div>
+
+        {/* Footer */}
+        <div className="border-t border-border pt-2 mt-3">
+          <p className="text-[10px] text-muted-foreground text-center">
+            © 2025 <a 
+              href="https://air.city" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors underline"
+            >
+              Aircity Operating Systems (HK) Ltd
+            </a>. All rights reserved.
+          </p>
+        </div>
       </div>
     </>
   )

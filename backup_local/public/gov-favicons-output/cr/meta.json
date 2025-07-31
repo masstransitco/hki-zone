@@ -1,0 +1,233 @@
+{
+  "slug": "cr",
+  "url": "https://www.cr.gov.hk/en/home/",
+  "picked": {
+    "href": "https://www.cr.gov.hk/html/images/favicon/android-icon-192x192.png",
+    "ext": "png",
+    "mime": "image/png",
+    "bytes": 27220,
+    "file": "cr.png"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-57x57.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 4954,
+      "file": "raw/icon-0.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-60x60.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 5325,
+      "file": "raw/icon-1.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-72x72.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 6960,
+      "file": "raw/icon-2.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-76x76.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 7532,
+      "file": "raw/icon-3.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-114x114.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 13527,
+      "file": "raw/icon-4.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-120x120.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 14572,
+      "file": "raw/icon-5.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-144x144.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 19012,
+      "file": "raw/icon-6.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-152x152.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 20468,
+      "file": "raw/icon-7.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/apple-icon-180x180.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 25758,
+      "file": "raw/icon-8.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/android-icon-192x192.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 27220,
+      "file": "raw/icon-9.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/favicon-32x32.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 2335,
+      "file": "raw/icon-10.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/favicon-96x96.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 10601,
+      "file": "raw/icon-11.png",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.cr.gov.hk/html/images/favicon/favicon-16x16.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 1410,
+      "file": "raw/icon-12.png",
+      "error": null
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.cr.gov.hk/android-icon-36x36.png",
+      "ok": false,
+      "ext": "png",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.cr.gov.hk/android-icon-48x48.png",
+      "ok": false,
+      "ext": "png",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.cr.gov.hk/android-icon-72x72.png",
+      "ok": false,
+      "ext": "png",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.cr.gov.hk/android-icon-96x96.png",
+      "ok": false,
+      "ext": "png",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.cr.gov.hk/android-icon-144x144.png",
+      "ok": false,
+      "ext": "png",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "manifest",
+      "rel": "manifest-icon",
+      "href": "https://www.cr.gov.hk/android-icon-192x192.png",
+      "ok": false,
+      "ext": "png",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.cr.gov.hk/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    }
+  ]
+}

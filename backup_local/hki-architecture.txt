@@ -1,0 +1,135 @@
+HKI Architcture
+
+⸻
+
+🔧 1. System Overview
+
+ ┌────────────┐      ┌─────────────┐      ┌──────────────┐
+ │  Scrapers  │ ──→  │  Ingestor   │ ──→  │   Vector DB   │
+ └────────────┘      └────┬────────┘      └─────┬────────┘
+                          ↓                       ↓
+                  ┌──────────────┐       ┌────────────────┐
+                  │ NLP Pipeline │ ──→   │ Categorizer AI  │
+                  └──────────────┘       └────┬────────────┘
+                                             ↓
+                                    ┌────────────────┐
+                                    │ Curator/Ranker │
+                                    └────┬────────────┘
+                                         ↓
+                            ┌─────────────────────────┐
+                            │ Hong Kong User Profiles │
+                            └────────────┬────────────┘
+                                         ↓
+                             ┌────────────────────┐
+                             │ Final News Feed API│
+                             └────────────────────┘
+
+
+⸻
+
+2. Core Modules
+
+✅ Scraper Layer (Input)
+	•	Sources: HK01, Sing Tao, AM730, HKFP, InMedia, Facebook, IG (via tools like Instaloader or Graph API).
+	•	Format: Title, Body, Image, Timestamp, Author, Tags, Source.
+
+✅ Ingestor Layer
+	•	Deduplicates articles (based on source + title hash).
+	•	Stores raw content into Supabase or S3 + Postgres.
+
+✅ NLP Pipeline
+
+Use a pre-tuned LLM pipeline or custom modules:
+
+Task	Tool/Model
+Text cleaning	langchain.text_splitter
+Language detection	fasttext or custom regex
+Translation (to EN for embedding)	Gemini Pro API / Google Translate API
+Embedding	OpenAI Ada-002, Cohere, or MiniLM
+Summarization	GPT-4, Gemini, or LLaMA2
+Keyword extraction	KeyBERT, RAKE, or LLM chain
+Entity & event detection	spaCy NER or LLM
+Sentiment & bias analysis	Finetuned BERT or LLM-based classification
+
+All data is indexed into a vector store like:
+	•	Weaviate, Qdrant, or Pinecone, storing embedding + metadata.
+
+⸻
+
+3. Categorizer & Taxonomy Layer
+
+Define a custom taxonomy relevant to Hong Kong readers:
+	•	📰 Topics: Politics, Housing, MTR/Traffic, Health, Education, Judiciary, Labour, Tech, Mainland, International
+	•	🔎 Meta tags: Urgency, Sensationalism, Public Interest, Press Freedom, Government Trust
+
+Use zero-shot classification via:
+
+const response = await openai.chat.completions.create({
+  messages: [{ role: "user", content: "Classify this HK news article into one or more of the following categories: ..." }],
+  ...
+})
+
+Optionally fine-tune a local BERT model using labeled data from HK01, Ming Pao, or annotated sets.
+
+⸻
+
+4. Curator/Ranker Module
+
+📊 Criteria for Ranking:
+	•	Relevance to HK (via location/entity detection)
+	•	Virality potential (based on keywords, tone)
+	•	Freshness
+	•	Diversity of source/opinion
+	•	User preference alignment (collaborative filtering, if user data exists)
+
+Ranking Techniques:
+	•	Hybrid ranker: combine rule-based + vector similarity + learned model
+	•	Reranker models: OpenAI reranker, Cohere Rerank, or fine-tuned BERT classifier
+
+⸻
+
+5. User Modeling & Feedback
+
+Implicit signals:
+	•	Reading time, click-through, scroll depth
+	•	Shared articles
+	•	Dismissed categories
+
+Explicit signals:
+	•	“I want more like this” feedback
+	•	Category following / unfollowing
+	•	Language preference (Cantonese, Traditional Chinese, English)
+
+This data updates the vector query context or fine-tunes the ranker per user.
+
+⸻
+
+6. Final Feed API
+	•	Endpoint to return top 20 news in ranked order
+	•	Supports filtering (time, category, source)
+	•	SSR-friendly (Next.js / React Native for native apps)
+	•	Delivers both summarized and full article variants
+
+⸻
+
+7. Deployment Plan
+
+Layer	Tool
+Scheduler	Vercel Cron / Supabase Edge Functions / Airflow
+Database	Supabase (Postgres + Storage)
+Vector DB	Qdrant (open-source, typescript SDK)
+API	FastAPI / Next.js API Routes
+Summarization	OpenAI, Claude, Gemini Pro APIs
+App Hosting	Vercel / Railway / Render
+
+
+⸻
+
+🧠 Forward Thinking: Adaptation to Hong Kong Context
+	•	Tailor to local sensitivity: 23條, court cases, protests
+	•	Entity-aware: recognize names like John Lee, Lam Cheng, Apple Daily
+	•	Code-switching: handle Chinese+English hybrid input/output
+	•	Geo-awareness: prioritize local district news for hyper-local feel
+
+⸻
+

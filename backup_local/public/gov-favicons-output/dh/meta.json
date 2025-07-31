@@ -1,0 +1,24 @@
+{
+  "slug": "dh",
+  "url": "https://www.dh.gov.hk/",
+  "picked": {
+    "href": "https://www.dh.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 1406,
+    "file": "dh.ico"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.dh.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1406,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

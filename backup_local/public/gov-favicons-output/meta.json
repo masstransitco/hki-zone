@@ -1,0 +1,19 @@
+{
+  "slug": "",
+  "url": "mailto:enquiry@1835500.gov.hk",
+  "picked": null,
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "null/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "TypeError: Invalid URL"
+    }
+  ],
+  "notes": "No icon found"
+}

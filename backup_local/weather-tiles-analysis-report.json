@@ -1,0 +1,1443 @@
+{
+  "analysis": {
+    "timestamp": "2025-07-16T16:38:40.821Z",
+    "totalTiles": 20,
+    "tilesWithContent": 18,
+    "tilesWithoutContent": 2,
+    "highlyTransparent": 2
+  },
+  "results": [
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 242,
+          "max": 242,
+          "avg": 242
+        },
+        "green": {
+          "min": 241,
+          "max": 241,
+          "avg": 241
+        },
+        "blue": {
+          "min": 255,
+          "max": 255,
+          "avg": 255
+        },
+        "alpha": {
+          "min": 127,
+          "max": 127,
+          "avg": 127
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-clouds-10-840-490.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 242,
+          "max": 242,
+          "avg": 242
+        },
+        "green": {
+          "min": 241,
+          "max": 241,
+          "avg": 241
+        },
+        "blue": {
+          "min": 255,
+          "max": 255,
+          "avg": 255
+        },
+        "alpha": {
+          "min": 127,
+          "max": 127,
+          "avg": 127
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-clouds-12-3361-1961.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 242,
+          "max": 248,
+          "avg": 242
+        },
+        "green": {
+          "min": 241,
+          "max": 247,
+          "avg": 241
+        },
+        "blue": {
+          "min": 255,
+          "max": 255,
+          "avg": 255
+        },
+        "alpha": {
+          "min": 51,
+          "max": 127,
+          "avg": 126
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-clouds-6-52-30.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 242,
+          "max": 242,
+          "avg": 242
+        },
+        "green": {
+          "min": 241,
+          "max": 241,
+          "avg": 241
+        },
+        "blue": {
+          "min": 255,
+          "max": 255,
+          "avg": 255
+        },
+        "alpha": {
+          "min": 127,
+          "max": 127,
+          "avg": 127
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-clouds-8-210-122.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 65536,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 0,
+      "colorChannels": {
+        "red": {
+          "min": 0,
+          "max": 113,
+          "avg": 5
+        },
+        "green": {
+          "min": 0,
+          "max": 84,
+          "avg": 3
+        },
+        "blue": {
+          "min": 0,
+          "max": 84,
+          "avg": 3
+        },
+        "alpha": {
+          "min": 0,
+          "max": 0,
+          "avg": 0
+        }
+      },
+      "hasVisibleContent": false,
+      "transparentPercent": 100,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 0,
+      "filename": "sample-precipitation-10-840-490.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 65536,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 0,
+      "colorChannels": {
+        "red": {
+          "min": 0,
+          "max": 5,
+          "avg": 2
+        },
+        "green": {
+          "min": 0,
+          "max": 4,
+          "avg": 1
+        },
+        "blue": {
+          "min": 0,
+          "max": 4,
+          "avg": 1
+        },
+        "alpha": {
+          "min": 0,
+          "max": 0,
+          "avg": 0
+        }
+      },
+      "hasVisibleContent": false,
+      "transparentPercent": 100,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 0,
+      "filename": "sample-precipitation-12-3361-1961.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 41174,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 24362,
+      "colorChannels": {
+        "red": {
+          "min": 0,
+          "max": 199,
+          "avg": 49
+        },
+        "green": {
+          "min": 0,
+          "max": 150,
+          "avg": 47
+        },
+        "blue": {
+          "min": 0,
+          "max": 228,
+          "avg": 85
+        },
+        "alpha": {
+          "min": 0,
+          "max": 110,
+          "avg": 17
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 63,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 37,
+      "filename": "sample-precipitation-6-52-30.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 39112,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 26424,
+      "colorChannels": {
+        "red": {
+          "min": 0,
+          "max": 199,
+          "avg": 67
+        },
+        "green": {
+          "min": 0,
+          "max": 150,
+          "avg": 63
+        },
+        "blue": {
+          "min": 0,
+          "max": 206,
+          "avg": 96
+        },
+        "alpha": {
+          "min": 0,
+          "max": 34,
+          "avg": 9
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 60,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 40,
+      "filename": "sample-precipitation-8-210-122.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 170,
+          "max": 171,
+          "avg": 170
+        },
+        "green": {
+          "min": 244,
+          "max": 244,
+          "avg": 244
+        },
+        "blue": {
+          "min": 55,
+          "max": 57,
+          "avg": 56
+        },
+        "alpha": {
+          "min": 102,
+          "max": 102,
+          "avg": 102
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-pressure-10-840-490.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 170,
+          "max": 170,
+          "avg": 170
+        },
+        "green": {
+          "min": 244,
+          "max": 244,
+          "avg": 244
+        },
+        "blue": {
+          "min": 56,
+          "max": 57,
+          "avg": 56
+        },
+        "alpha": {
+          "min": 102,
+          "max": 102,
+          "avg": 102
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-pressure-12-3361-1961.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 164,
+          "max": 174,
+          "avg": 169
+        },
+        "green": {
+          "min": 241,
+          "max": 246,
+          "avg": 244
+        },
+        "blue": {
+          "min": 39,
+          "max": 86,
+          "avg": 61
+        },
+        "alpha": {
+          "min": 102,
+          "max": 102,
+          "avg": 102
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-pressure-6-52-30.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 170,
+          "max": 172,
+          "avg": 171
+        },
+        "green": {
+          "min": 244,
+          "max": 245,
+          "avg": 244
+        },
+        "blue": {
+          "min": 47,
+          "max": 58,
+          "avg": 53
+        },
+        "alpha": {
+          "min": 102,
+          "max": 102,
+          "avg": 102
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-pressure-8-210-122.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 252,
+          "max": 252,
+          "avg": 252
+        },
+        "green": {
+          "min": 138,
+          "max": 143,
+          "avg": 140
+        },
+        "blue": {
+          "min": 23,
+          "max": 24,
+          "avg": 23
+        },
+        "alpha": {
+          "min": 76,
+          "max": 76,
+          "avg": 76
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-temperature-10-840-490.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 252,
+          "max": 252,
+          "avg": 252
+        },
+        "green": {
+          "min": 140,
+          "max": 141,
+          "avg": 141
+        },
+        "blue": {
+          "min": 23,
+          "max": 24,
+          "avg": 23
+        },
+        "alpha": {
+          "min": 76,
+          "max": 76,
+          "avg": 76
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-temperature-12-3361-1961.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 241,
+          "max": 255,
+          "avg": 253
+        },
+        "green": {
+          "min": 132,
+          "max": 243,
+          "avg": 155
+        },
+        "blue": {
+          "min": 21,
+          "max": 40,
+          "avg": 28
+        },
+        "alpha": {
+          "min": 76,
+          "max": 76,
+          "avg": 76
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-temperature-6-52-30.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 252,
+          "max": 253,
+          "avg": 252
+        },
+        "green": {
+          "min": 138,
+          "max": 167,
+          "avg": 149
+        },
+        "blue": {
+          "min": 23,
+          "max": 31,
+          "avg": 26
+        },
+        "alpha": {
+          "min": 76,
+          "max": 76,
+          "avg": 76
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-temperature-8-210-122.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 231,
+          "max": 234,
+          "avg": 232
+        },
+        "green": {
+          "min": 194,
+          "max": 200,
+          "avg": 196
+        },
+        "blue": {
+          "min": 203,
+          "max": 204,
+          "avg": 204
+        },
+        "alpha": {
+          "min": 63,
+          "max": 66,
+          "avg": 65
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-wind-10-840-490.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 231,
+          "max": 233,
+          "avg": 232
+        },
+        "green": {
+          "min": 195,
+          "max": 197,
+          "avg": 196
+        },
+        "blue": {
+          "min": 204,
+          "max": 204,
+          "avg": 204
+        },
+        "alpha": {
+          "min": 64,
+          "max": 65,
+          "avg": 65
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-wind-12-3361-1961.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 2313,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 63223,
+      "colorChannels": {
+        "red": {
+          "min": 189,
+          "max": 255,
+          "avg": 226
+        },
+        "green": {
+          "min": 119,
+          "max": 255,
+          "avg": 186
+        },
+        "blue": {
+          "min": 191,
+          "max": 255,
+          "avg": 206
+        },
+        "alpha": {
+          "min": 0,
+          "max": 98,
+          "avg": 65
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 4,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 96,
+      "filename": "sample-wind-6-52-30.png"
+    },
+    {
+      "width": 256,
+      "height": 256,
+      "totalPixels": 65536,
+      "transparentPixels": 0,
+      "opaquePixels": 0,
+      "semiTransparentPixels": 65536,
+      "colorChannels": {
+        "red": {
+          "min": 215,
+          "max": 241,
+          "avg": 230
+        },
+        "green": {
+          "min": 166,
+          "max": 215,
+          "avg": 193
+        },
+        "blue": {
+          "min": 199,
+          "max": 215,
+          "avg": 203
+        },
+        "alpha": {
+          "min": 49,
+          "max": 78,
+          "avg": 66
+        }
+      },
+      "hasVisibleContent": true,
+      "transparentPercent": 0,
+      "opaquePercent": 0,
+      "semiTransparentPercent": 100,
+      "filename": "sample-wind-8-210-122.png"
+    }
+  ],
+  "layerStats": {
+    "clouds": {
+      "tiles": [
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 242,
+              "max": 242,
+              "avg": 242
+            },
+            "green": {
+              "min": 241,
+              "max": 241,
+              "avg": 241
+            },
+            "blue": {
+              "min": 255,
+              "max": 255,
+              "avg": 255
+            },
+            "alpha": {
+              "min": 127,
+              "max": 127,
+              "avg": 127
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-clouds-10-840-490.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 242,
+              "max": 242,
+              "avg": 242
+            },
+            "green": {
+              "min": 241,
+              "max": 241,
+              "avg": 241
+            },
+            "blue": {
+              "min": 255,
+              "max": 255,
+              "avg": 255
+            },
+            "alpha": {
+              "min": 127,
+              "max": 127,
+              "avg": 127
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-clouds-12-3361-1961.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 242,
+              "max": 248,
+              "avg": 242
+            },
+            "green": {
+              "min": 241,
+              "max": 247,
+              "avg": 241
+            },
+            "blue": {
+              "min": 255,
+              "max": 255,
+              "avg": 255
+            },
+            "alpha": {
+              "min": 51,
+              "max": 127,
+              "avg": 126
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-clouds-6-52-30.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 242,
+              "max": 242,
+              "avg": 242
+            },
+            "green": {
+              "min": 241,
+              "max": 241,
+              "avg": 241
+            },
+            "blue": {
+              "min": 255,
+              "max": 255,
+              "avg": 255
+            },
+            "alpha": {
+              "min": 127,
+              "max": 127,
+              "avg": 127
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-clouds-8-210-122.png"
+        }
+      ],
+      "avgTransparency": 0,
+      "hasAnyContent": true
+    },
+    "precipitation": {
+      "tiles": [
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 65536,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 0,
+          "colorChannels": {
+            "red": {
+              "min": 0,
+              "max": 113,
+              "avg": 5
+            },
+            "green": {
+              "min": 0,
+              "max": 84,
+              "avg": 3
+            },
+            "blue": {
+              "min": 0,
+              "max": 84,
+              "avg": 3
+            },
+            "alpha": {
+              "min": 0,
+              "max": 0,
+              "avg": 0
+            }
+          },
+          "hasVisibleContent": false,
+          "transparentPercent": 100,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 0,
+          "filename": "sample-precipitation-10-840-490.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 65536,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 0,
+          "colorChannels": {
+            "red": {
+              "min": 0,
+              "max": 5,
+              "avg": 2
+            },
+            "green": {
+              "min": 0,
+              "max": 4,
+              "avg": 1
+            },
+            "blue": {
+              "min": 0,
+              "max": 4,
+              "avg": 1
+            },
+            "alpha": {
+              "min": 0,
+              "max": 0,
+              "avg": 0
+            }
+          },
+          "hasVisibleContent": false,
+          "transparentPercent": 100,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 0,
+          "filename": "sample-precipitation-12-3361-1961.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 41174,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 24362,
+          "colorChannels": {
+            "red": {
+              "min": 0,
+              "max": 199,
+              "avg": 49
+            },
+            "green": {
+              "min": 0,
+              "max": 150,
+              "avg": 47
+            },
+            "blue": {
+              "min": 0,
+              "max": 228,
+              "avg": 85
+            },
+            "alpha": {
+              "min": 0,
+              "max": 110,
+              "avg": 17
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 63,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 37,
+          "filename": "sample-precipitation-6-52-30.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 39112,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 26424,
+          "colorChannels": {
+            "red": {
+              "min": 0,
+              "max": 199,
+              "avg": 67
+            },
+            "green": {
+              "min": 0,
+              "max": 150,
+              "avg": 63
+            },
+            "blue": {
+              "min": 0,
+              "max": 206,
+              "avg": 96
+            },
+            "alpha": {
+              "min": 0,
+              "max": 34,
+              "avg": 9
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 60,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 40,
+          "filename": "sample-precipitation-8-210-122.png"
+        }
+      ],
+      "avgTransparency": 0,
+      "hasAnyContent": true
+    },
+    "pressure": {
+      "tiles": [
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 170,
+              "max": 171,
+              "avg": 170
+            },
+            "green": {
+              "min": 244,
+              "max": 244,
+              "avg": 244
+            },
+            "blue": {
+              "min": 55,
+              "max": 57,
+              "avg": 56
+            },
+            "alpha": {
+              "min": 102,
+              "max": 102,
+              "avg": 102
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-pressure-10-840-490.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 170,
+              "max": 170,
+              "avg": 170
+            },
+            "green": {
+              "min": 244,
+              "max": 244,
+              "avg": 244
+            },
+            "blue": {
+              "min": 56,
+              "max": 57,
+              "avg": 56
+            },
+            "alpha": {
+              "min": 102,
+              "max": 102,
+              "avg": 102
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-pressure-12-3361-1961.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 164,
+              "max": 174,
+              "avg": 169
+            },
+            "green": {
+              "min": 241,
+              "max": 246,
+              "avg": 244
+            },
+            "blue": {
+              "min": 39,
+              "max": 86,
+              "avg": 61
+            },
+            "alpha": {
+              "min": 102,
+              "max": 102,
+              "avg": 102
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-pressure-6-52-30.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 170,
+              "max": 172,
+              "avg": 171
+            },
+            "green": {
+              "min": 244,
+              "max": 245,
+              "avg": 244
+            },
+            "blue": {
+              "min": 47,
+              "max": 58,
+              "avg": 53
+            },
+            "alpha": {
+              "min": 102,
+              "max": 102,
+              "avg": 102
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-pressure-8-210-122.png"
+        }
+      ],
+      "avgTransparency": 0,
+      "hasAnyContent": true
+    },
+    "temperature": {
+      "tiles": [
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 252,
+              "max": 252,
+              "avg": 252
+            },
+            "green": {
+              "min": 138,
+              "max": 143,
+              "avg": 140
+            },
+            "blue": {
+              "min": 23,
+              "max": 24,
+              "avg": 23
+            },
+            "alpha": {
+              "min": 76,
+              "max": 76,
+              "avg": 76
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-temperature-10-840-490.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 252,
+              "max": 252,
+              "avg": 252
+            },
+            "green": {
+              "min": 140,
+              "max": 141,
+              "avg": 141
+            },
+            "blue": {
+              "min": 23,
+              "max": 24,
+              "avg": 23
+            },
+            "alpha": {
+              "min": 76,
+              "max": 76,
+              "avg": 76
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-temperature-12-3361-1961.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 241,
+              "max": 255,
+              "avg": 253
+            },
+            "green": {
+              "min": 132,
+              "max": 243,
+              "avg": 155
+            },
+            "blue": {
+              "min": 21,
+              "max": 40,
+              "avg": 28
+            },
+            "alpha": {
+              "min": 76,
+              "max": 76,
+              "avg": 76
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-temperature-6-52-30.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 252,
+              "max": 253,
+              "avg": 252
+            },
+            "green": {
+              "min": 138,
+              "max": 167,
+              "avg": 149
+            },
+            "blue": {
+              "min": 23,
+              "max": 31,
+              "avg": 26
+            },
+            "alpha": {
+              "min": 76,
+              "max": 76,
+              "avg": 76
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-temperature-8-210-122.png"
+        }
+      ],
+      "avgTransparency": 0,
+      "hasAnyContent": true
+    },
+    "wind": {
+      "tiles": [
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 231,
+              "max": 234,
+              "avg": 232
+            },
+            "green": {
+              "min": 194,
+              "max": 200,
+              "avg": 196
+            },
+            "blue": {
+              "min": 203,
+              "max": 204,
+              "avg": 204
+            },
+            "alpha": {
+              "min": 63,
+              "max": 66,
+              "avg": 65
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-wind-10-840-490.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 231,
+              "max": 233,
+              "avg": 232
+            },
+            "green": {
+              "min": 195,
+              "max": 197,
+              "avg": 196
+            },
+            "blue": {
+              "min": 204,
+              "max": 204,
+              "avg": 204
+            },
+            "alpha": {
+              "min": 64,
+              "max": 65,
+              "avg": 65
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-wind-12-3361-1961.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 2313,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 63223,
+          "colorChannels": {
+            "red": {
+              "min": 189,
+              "max": 255,
+              "avg": 226
+            },
+            "green": {
+              "min": 119,
+              "max": 255,
+              "avg": 186
+            },
+            "blue": {
+              "min": 191,
+              "max": 255,
+              "avg": 206
+            },
+            "alpha": {
+              "min": 0,
+              "max": 98,
+              "avg": 65
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 4,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 96,
+          "filename": "sample-wind-6-52-30.png"
+        },
+        {
+          "width": 256,
+          "height": 256,
+          "totalPixels": 65536,
+          "transparentPixels": 0,
+          "opaquePixels": 0,
+          "semiTransparentPixels": 65536,
+          "colorChannels": {
+            "red": {
+              "min": 215,
+              "max": 241,
+              "avg": 230
+            },
+            "green": {
+              "min": 166,
+              "max": 215,
+              "avg": 193
+            },
+            "blue": {
+              "min": 199,
+              "max": 215,
+              "avg": 203
+            },
+            "alpha": {
+              "min": 49,
+              "max": 78,
+              "avg": 66
+            }
+          },
+          "hasVisibleContent": true,
+          "transparentPercent": 0,
+          "opaquePercent": 0,
+          "semiTransparentPercent": 100,
+          "filename": "sample-wind-8-210-122.png"
+        }
+      ],
+      "avgTransparency": 0,
+      "hasAnyContent": true
+    }
+  }
+}

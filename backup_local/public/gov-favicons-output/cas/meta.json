@@ -1,0 +1,35 @@
+{
+  "slug": "cas",
+  "url": "https://www.cas.gov.hk/eng/",
+  "picked": {
+    "href": "https://www.cas.gov.hk/images/logo.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 126343,
+    "file": "cas.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.cas.gov.hk/images/logo.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 126343,
+      "file": "raw/icon-0.ico",
+      "error": null
+    },
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.cas.gov.hk/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    }
+  ]
+}

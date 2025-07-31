@@ -1,0 +1,837 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Disable browser pull-to-refresh on touch devices */
+html {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+body {
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  /* Allow natural scrolling on all pages */
+}
+
+/* Ensure smooth scrolling on iOS */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix scrolling containers on mobile */
+.overflow-y-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+@layer base {
+  :root {
+    /* Enhanced Semantic Color System - Light Mode (Fine-tuned for balance) */
+    /* Surface hierarchy for depth and elevation - warmer, less stark */
+    --color-surface-100: 245 245 244; /* Stone-100: Softer base (was Stone-50) */
+    --color-surface-200: 241 241 240; /* Stone-150: Subtle surface */
+    --color-surface-300: 231 229 228; /* Stone-200: Medium surface */
+    --color-surface-400: 214 211 209; /* Stone-300: Elevated surface */
+    
+    /* Text hierarchy for optimal readability - enhanced contrast */
+    --color-text-100: 28 25 23;       /* Stone-800: Deeper primary text (was Stone-700) */
+    --color-text-200: 68 64 60;       /* Stone-600: Rich secondary text */
+    --color-text-300: 87 83 78;       /* Stone-600: Muted text (was Stone-500) */
+    --color-text-400: 120 113 108;    /* Stone-500: Subtle text (was Stone-400) */
+    
+    /* Accent colors for interactive elements - warmer and more defined */
+    --color-accent-primary: 68 64 60;    /* Stone-600: Rich warm primary */
+    --color-accent-secondary: 120 113 108; /* Stone-500: Warmer secondary */
+    --color-accent-hover: 57 53 52;      /* Stone-700: Deeper hover state */
+    --color-accent-pressed: 41 37 36;    /* Stone-700: Strong pressed state */
+    
+    /* Component-specific semantic colors - enhanced contrast for cards */
+    --color-nav-active: var(--color-accent-primary);
+    --color-nav-inactive: var(--color-text-300);
+    --color-card-border: var(--color-surface-300);
+    --color-card-hover: var(--color-surface-200);
+    --color-card-background: 255 255 255; /* Pure white for article cards - higher contrast */
+    
+    /* Legacy compatibility - keep existing variables */
+    --background: var(--color-surface-100);
+    --surface: var(--color-surface-200);
+    --surface-secondary: 241 245 249; /* Warmer stone-100 variant */
+    --foreground: var(--color-text-100);
+    --foreground-secondary: var(--color-text-200);
+    --foreground-muted: var(--color-text-300);
+    
+    /* Semantic UI colors - warm white spectrum */
+    --card: var(--color-surface-100);
+    --card-foreground: var(--color-text-100);
+    --popover: var(--color-surface-100);
+    --popover-foreground: var(--color-text-100);
+    --primary: var(--color-accent-primary);
+    --primary-foreground: var(--color-surface-100);
+    --secondary: var(--color-surface-200);
+    --secondary-foreground: 68 64 60; /* Stone-600 for contrast */
+    --muted: var(--color-surface-100);
+    --muted-foreground: var(--color-text-300);
+    --accent: var(--color-accent-secondary);
+    --accent-foreground: var(--color-surface-100);
+    --destructive: 220 38 38; /* Red-600: Refined error color */
+    --destructive-foreground: var(--color-surface-100);
+    --border: var(--color-card-border);
+    --input: var(--color-surface-100);
+    --ring: var(--color-accent-primary);
+    --radius: 0.5rem; /* 8px for modern minimal look */
+
+    /* Enhanced news-specific semantic colors */
+    --text-primary: var(--color-text-100);
+    --text-secondary: var(--color-text-200);
+    --text-muted: var(--color-text-300);
+    --text-inverse: var(--color-surface-100);
+    --surface-elevated: var(--color-surface-100);
+    --surface-hover: var(--color-card-hover);
+    --surface-pressed: var(--color-surface-300);
+    --interactive-primary: var(--color-accent-primary);
+    --interactive-hover: var(--color-accent-hover);
+    --interactive-pressed: var(--color-accent-pressed);
+    
+    /* Apple-inspired TTS semantic colors - Light Theme */
+    --tts-surface: 250 250 249; /* Stone-50: Warm translucent surface */
+    --tts-surface-elevated: 255 255 255; /* Pure white for highest elevation */
+    --tts-surface-glass: 250 250 249 / 0.8; /* Glassmorphism surface */
+    --tts-accent: 52 199 89; /* Apple green for audio visualization */
+    --tts-accent-muted: 52 199 89 / 0.3; /* Subtle accent for inactive states */
+    --tts-accent-glow: 52 199 89 / 0.1; /* Subtle glow effect */
+    --tts-control-bg: 242 242 247; /* Apple system gray 6 */
+    --tts-control-bg-hover: 229 229 234; /* Apple system gray 5 */
+    --tts-control-bg-active: 209 209 214; /* Apple system gray 4 */
+    --tts-control-fg: 60 60 67; /* Apple label color */
+    --tts-control-fg-secondary: 142 142 147; /* Apple secondary label */
+    --tts-border: 209 209 214; /* Apple separator light */
+    --tts-shadow: 0 0 0 / 0.1; /* Subtle shadow base */
+  }
+
+  .dark {
+    /* Enhanced Semantic Color System - Dark Mode (Fine-tuned for comfort) */
+    /* Surface hierarchy for depth and elevation - warmer, less harsh */
+    --color-surface-100: 41 37 36;    /* Stone-800: Warmer base (was Stone-900) */
+    --color-surface-200: 50 46 43;    /* Custom: Softer elevated surface */
+    --color-surface-300: 57 53 52;    /* Stone-700: Medium surface */  
+    --color-surface-400: 68 64 60;    /* Stone-600: Elevated surface */
+    
+    /* Text hierarchy for optimal readability - balanced contrast */
+    --color-text-100: 245 245 244;    /* Stone-100: Softer primary text (was Stone-50) */
+    --color-text-200: 231 229 228;    /* Stone-200: Rich secondary text */
+    --color-text-300: 214 211 209;    /* Stone-300: Clear muted text */
+    --color-text-400: 168 162 158;    /* Stone-400: Subtle text */
+    
+    /* Accent colors for interactive elements - more vibrant */
+    --color-accent-primary: 214 211 209;  /* Stone-300: Clear warm primary */
+    --color-accent-secondary: 168 162 158; /* Stone-400: Balanced secondary */
+    --color-accent-hover: 231 229 228;    /* Stone-200: Brighter hover state */
+    --color-accent-pressed: 245 245 244;  /* Stone-100: Strong pressed state */
+    
+    /* Component-specific semantic colors - enhanced contrast for cards */
+    --color-nav-active: var(--color-accent-primary);
+    --color-nav-inactive: var(--color-text-300);
+    --color-card-border: var(--color-surface-300);
+    --color-card-hover: var(--color-surface-200);
+    --color-card-background: 32 29 27; /* Custom: Slightly lighter than base for article cards */
+    
+    /* Legacy compatibility - keep existing variables */
+    --background: var(--color-surface-100);
+    --surface: var(--color-surface-200);
+    --surface-secondary: var(--color-surface-200);
+    --foreground: var(--color-text-100);
+    --foreground-secondary: var(--color-text-200);
+    --foreground-muted: var(--color-text-300);
+    
+    /* Semantic UI colors - sophisticated dark */
+    --card: var(--color-surface-100);
+    --card-foreground: var(--color-text-100);
+    --popover: var(--color-surface-200);
+    --popover-foreground: var(--color-text-100);
+    --primary: var(--color-accent-primary);
+    --primary-foreground: var(--color-surface-100);
+    --secondary: var(--color-surface-300);
+    --secondary-foreground: 231 229 228; /* Stone-200: Light contrast */
+    --muted: var(--color-surface-200);
+    --muted-foreground: var(--color-text-300);
+    --accent: var(--color-accent-secondary);
+    --accent-foreground: var(--color-surface-100);
+    
+    /* Apple-inspired TTS semantic colors - Dark Theme */
+    --tts-surface: 28 28 30; /* Apple system gray 6 dark */
+    --tts-surface-elevated: 44 44 46; /* Apple system gray 5 dark */
+    --tts-surface-glass: 28 28 30 / 0.8; /* Glassmorphism surface dark */
+    --tts-accent: 48 209 88; /* Apple green dark mode */
+    --tts-accent-muted: 48 209 88 / 0.3; /* Subtle accent for inactive states */
+    --tts-accent-glow: 48 209 88 / 0.15; /* Subtle glow effect */
+    --tts-control-bg: 58 58 60; /* Apple system gray 4 dark */
+    --tts-control-bg-hover: 72 72 74; /* Apple system gray 3 dark */
+    --tts-control-bg-active: 99 99 102; /* Apple system gray 2 dark */
+    --tts-control-fg: 255 255 255; /* Apple label dark */
+    --tts-control-fg-secondary: 174 174 178; /* Apple secondary label dark */
+    --tts-border: 58 58 60; /* Apple separator dark */
+    --tts-shadow: 0 0 0 / 0.3; /* Deeper shadow for dark mode */
+    --destructive: 239 68 68; /* Red-500: Balanced error color */
+    --destructive-foreground: var(--color-text-100);
+    --border: var(--color-card-border);
+    --input: var(--color-surface-100);
+    --ring: var(--color-accent-primary);
+
+    /* Enhanced news-specific semantic colors */
+    --text-primary: var(--color-text-100);
+    --text-secondary: var(--color-text-200);
+    --text-muted: var(--color-text-300);
+    --text-inverse: var(--color-surface-100);
+    --surface-elevated: var(--color-surface-200);
+    --surface-hover: var(--color-card-hover);
+    --surface-pressed: var(--color-surface-400);
+    --interactive-primary: var(--color-accent-primary);
+    --interactive-hover: var(--color-accent-hover);
+    --interactive-pressed: var(--color-accent-pressed);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    /* Prevent pull-to-refresh and overscroll bounce */
+    overscroll-behavior-y: contain;
+    touch-action: pan-x pan-y;
+  }
+
+  /* Sticky header with scroll-based visibility */
+  @supports (animation-timeline: scroll()) {
+    .sticky-header {
+      animation: header-scroll linear both;
+      animation-timeline: scroll();
+      animation-range: 0 150px;
+    }
+
+    @keyframes header-scroll {
+      to {
+        transform: translateY(calc(-100% + 60px));
+      }
+    }
+  }
+
+  /* Fallback for browsers without scroll-timeline support */
+  @supports not (animation-timeline: scroll()) {
+    .sticky-header {
+      transition: transform 0.3s ease-out;
+    }
+  }
+
+  /* Reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Focus visible styles for better keyboard navigation */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  /* Remove focus outline for mouse users */
+  :focus:not(:focus-visible) {
+    @apply outline-none;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    
+    /* Additional overscroll prevention */
+    overscroll-behavior: contain;
+    overscroll-behavior-y: contain;
+    
+    /* Prevent iOS Safari bounce scrolling */
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+}
+
+/* Custom scrollbar - minimal styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--foreground-muted) / 0.3);
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--foreground-muted) / 0.5);
+  background-clip: content-box;
+}
+
+/* Animation Variables */
+@layer base {
+  :root {
+    --animation-fast: 150ms;
+    --animation-base: 200ms;
+    --animation-slow: 300ms;
+    --easing-default: cubic-bezier(0.4, 0, 0.2, 1);
+    --easing-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --easing-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+}
+
+/* Remove global transitions for better performance */
+/* Apply transitions only where needed */
+
+/* Logo and wordmark styling */
+.logo-wordmark {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.logo-wordmark-chinese {
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* Hide scrollbar for topic chips */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Minimal focus styles */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background;
+}
+
+/* Modern minimal shadows */
+.shadow-minimal {
+  box-shadow: 0 1px 3px rgb(var(--foreground) / 0.05);
+}
+
+.shadow-elevated {
+  box-shadow: 0 4px 12px rgb(var(--foreground) / 0.08);
+}
+
+.shadow-high {
+  box-shadow: 0 8px 24px rgb(var(--foreground) / 0.1);
+}
+
+/* Minimal backdrop blur */
+.backdrop-minimal {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* Typography hierarchy - Enhanced for readability */
+.text-title-1 {
+  @apply text-4xl md:text-5xl font-bold tracking-tight;
+}
+
+.text-title-2 {
+  @apply text-3xl md:text-4xl font-semibold tracking-tight;
+}
+
+.text-title-3 {
+  @apply text-2xl md:text-3xl font-semibold;
+}
+
+.text-headline {
+  @apply text-xl md:text-2xl font-semibold;
+}
+
+.text-body {
+  @apply text-lg md:text-xl leading-loose;
+}
+
+.text-body-large {
+  @apply text-xl md:text-2xl leading-loose;
+}
+
+.text-body-reading {
+  @apply text-lg md:text-xl leading-loose font-normal;
+}
+
+.text-callout {
+  @apply text-base font-medium;
+}
+
+.text-subhead {
+  @apply text-sm font-medium;
+}
+
+.text-footnote {
+  @apply text-sm;
+}
+
+.text-caption-1 {
+  @apply text-xs;
+}
+
+.text-caption-2 {
+  @apply text-xs font-medium;
+}
+
+/* Chinese Typography Utilities */
+.font-chinese-tc {
+  font-family: var(--font-noto-sans-tc), "PingFang TC", "Hiragino Sans GB", "Microsoft JhengHei", system-ui, sans-serif;
+}
+
+.font-chinese-sc {
+  font-family: var(--font-noto-sans-sc), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+.font-chinese-serif-tc {
+  font-family: var(--font-noto-serif-tc), "Songti TC", "STSong", serif;
+}
+
+.font-chinese-serif-sc {
+  font-family: var(--font-noto-serif-sc), "Songti SC", "STSong", serif;
+}
+
+.font-chinese {
+  font-family: var(--font-noto-sans-tc), var(--font-noto-sans-sc), "PingFang TC", "PingFang SC", "Hiragino Sans GB", "Microsoft JhengHei", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+/* Chinese Text Optimization */
+.chinese-text {
+  @apply font-chinese;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.chinese-text-tc {
+  @apply font-chinese-tc;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.chinese-text-sc {
+  @apply font-chinese-sc;
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Enhanced Waterfall Masonry Layout - Improved spacing */
+.news-feed {
+  /* CSS Columns for true masonry effect with flexible heights */
+  display: block; /* Ensure block context for columns */
+  column-count: 2;
+  column-gap: 12px; /* Improved gap for mobile (was 4px) */
+  column-fill: balance; /* Balance content across columns */
+  padding: 0 16px; /* Better edge spacing (was 1px) */
+  max-width: 100vw; /* Prevent horizontal overflow */
+  overflow-x: hidden; /* Hide any overflow */
+  box-sizing: border-box;
+  width: 100%;
+  /* Remove height constraints that might interfere */
+  height: auto;
+  min-height: 0;
+}
+
+/* Modern browsers with CSS Grid Masonry support (Firefox only currently) */
+@supports (grid-template-rows: masonry) {
+  .news-feed {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: masonry;
+    gap: 12px;
+    column-count: unset;
+    column-gap: unset;
+    column-fill: unset;
+  }
+}
+
+/* Responsive breakpoints - improved spacing system */
+@media (min-width: 640px) {
+  .news-feed {
+    column-count: 2;
+    column-gap: 16px; /* Consistent with topics feed md:gap-4 */
+    padding: 0 24px; /* Match md:px-6 */
+  }
+  
+  @supports (grid-template-rows: masonry) {
+    .news-feed {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      column-count: unset;
+      column-gap: unset;
+    }
+  }
+}
+
+@media (min-width: 768px) {
+  .news-feed {
+    column-count: 3;
+    column-gap: 16px; /* Consistent spacing */
+    padding: 0 24px;
+  }
+  
+  @supports (grid-template-rows: masonry) {
+    .news-feed {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      column-count: unset;
+      column-gap: unset;
+    }
+  }
+}
+
+@media (min-width: 1024px) {
+  .news-feed {
+    column-count: 4;
+    column-gap: 20px; /* Match lg:gap-5 */
+    padding: 0 32px; /* Match lg:px-8 */
+  }
+  
+  @supports (grid-template-rows: masonry) {
+    .news-feed {
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      column-count: unset;
+      column-gap: unset;
+    }
+  }
+}
+
+@media (min-width: 1280px) {
+  .news-feed {
+    column-count: 5;
+    column-gap: 20px; /* Consistent with desktop */
+    padding: 0 32px;
+  }
+  
+  @supports (grid-template-rows: masonry) {
+    .news-feed {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+      column-count: unset;
+      column-gap: unset;
+    }
+  }
+}
+
+/* Article card styling for CSS columns masonry */
+.news-card {
+  display: inline-block; /* Important for CSS columns */
+  width: 100%;
+  margin-bottom: 12px; /* Improved spacing between cards (was 4px) */
+  box-sizing: border-box;
+  overflow: hidden;
+  
+  /* Prevent cards from breaking across columns */
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  
+  /* Force hardware acceleration for smooth rendering */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  
+}
+
+/* Responsive card spacing to match improved column gaps */
+@media (min-width: 640px) {
+  .news-card {
+    margin-bottom: 16px; /* Match 16px column gap */
+  }
+}
+
+@media (min-width: 768px) {
+  .news-card {
+    margin-bottom: 16px; /* Match 16px column gap */
+  }
+}
+
+@media (min-width: 1024px) {
+  .news-card {
+    margin-bottom: 20px; /* Match 20px column gap */
+  }
+}
+
+/* Remove margin from last card in each column */
+.news-card:last-child {
+  margin-bottom: 0;
+}
+
+
+/* Compact card content spacing to match external gaps */
+.news-card .card-content {
+  padding: 8px !important; /* Reduced internal padding for tighter layout */
+}
+
+/* Responsive padding for larger screens */
+@media (min-width: 640px) {
+  .news-card .card-content {
+    padding: 12px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .news-card .card-content {
+    padding: 16px !important;
+  }
+}
+
+.news-card img {
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block; /* Ensure proper layout */
+}
+
+/* Aspect ratio variations for masonry diversity - Mobile Compatible */
+/* Using padding-based technique for better mobile browser support */
+.aspect-ratio-16-9 {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  /* Fallback: padding-based aspect ratio for mobile browsers */
+  padding-bottom: 56.25%; /* 9/16 = 0.5625 */
+}
+
+.aspect-ratio-1-1 {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  /* Fallback: padding-based aspect ratio for mobile browsers */
+  padding-bottom: 100%; /* 1/1 = 1 */
+}
+
+.aspect-ratio-4-5 {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  /* Fallback: padding-based aspect ratio for mobile browsers */
+  padding-bottom: 125%; /* 5/4 = 1.25 */
+}
+
+/* Modern browsers: Use CSS aspect-ratio when supported */
+@supports (aspect-ratio: 1) {
+  .aspect-ratio-16-9 {
+    aspect-ratio: 16/9;
+    padding-bottom: 0;
+  }
+  
+  .aspect-ratio-1-1 {
+    aspect-ratio: 1/1;
+    padding-bottom: 0;
+  }
+  
+  .aspect-ratio-4-5 {
+    aspect-ratio: 4/5;
+    padding-bottom: 0;
+  }
+}
+
+/* Apply aspect ratios to images within cards */
+.news-card .aspect-ratio-16-9 img,
+.news-card .aspect-ratio-1-1 img,
+.news-card .aspect-ratio-4-5 img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Modern browsers: Use static positioning when aspect-ratio is supported */
+@supports (aspect-ratio: 1) {
+  .news-card .aspect-ratio-16-9 img,
+  .news-card .aspect-ratio-1-1 img,
+  .news-card .aspect-ratio-4-5 img {
+    position: static;
+  }
+}
+
+/* Ensure all cards and their content respect container width */
+.news-card * {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* iOS Chrome specific workarounds */
+@supports (-webkit-overflow-scrolling: touch) {
+  /* Force GPU acceleration for iOS Chrome */
+  .news-card {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    will-change: transform;
+  }
+  
+  /* Ensure images render properly in iOS Chrome */
+  .news-card img {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
+  }
+  
+  /* Fix for iOS Chrome column layout rendering */
+  .news-feed {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+}
+
+/* Ensure masonry container fills full width */
+.news-feed {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* CSS Columns masonry with flexible card heights */
+
+/* Visual Comfort & Accessibility Enhancements */
+@layer base {
+  :root {
+    /* WCAG AAA compliant contrast ratios */
+    --contrast-high: 21;    /* For critical text */
+    --contrast-medium: 7;   /* For body text */
+    --contrast-low: 4.5;    /* For secondary text */
+    
+    /* Visual comfort enhancements */
+    --reading-width: 65ch;    /* Optimal reading line length */
+    --line-height-comfortable: 1.6; /* Comfortable line spacing */
+    --color-temperature: 3200; /* Warm temperature bias */
+  }
+}
+
+/* Enhanced utility classes for visual comfort */
+.color-scheme-warm {
+  filter: sepia(0.05) saturate(1.1) hue-rotate(10deg);
+}
+
+.surface-glass {
+  background: rgb(var(--color-surface-100) / 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.text-comfortable {
+  color: rgb(var(--color-text-100));
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.border-subtle {
+  border-color: rgb(var(--color-card-border) / 0.6);
+}
+
+.hover-lift {
+  transition: all 0.2s ease;
+}
+
+.hover-lift:hover {
+  background: rgb(var(--color-card-hover));
+  box-shadow: 0 4px 12px rgb(var(--color-text-100) / 0.08);
+  transform: translateY(-1px);
+}
+
+/* Enhanced article card contrast */
+.article-card {
+  background: rgb(var(--color-card-background));
+  border: 1px solid rgb(var(--color-card-border) / 0.8);
+  box-shadow: 0 1px 3px rgb(var(--color-text-100) / 0.06);
+  transition: all 0.2s ease;
+}
+
+.article-card:hover {
+  border-color: rgb(var(--color-card-border));
+  box-shadow: 0 4px 12px rgb(var(--color-text-100) / 0.12);
+  transform: translateY(-1px);
+  background: rgb(var(--color-card-hover));
+}
+
+/* Higher contrast for article card text */
+.article-card-title {
+  color: rgb(var(--color-text-100));
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.article-card-meta {
+  color: rgb(var(--color-text-300));
+  font-weight: 500;
+}
+
+/* Enhanced visual hierarchy */
+:root {
+  /* Fine-tuned contrast ratios for improved readability */
+  --contrast-ratio-high: 8.5;    /* Article titles */
+  --contrast-ratio-medium: 5.2;  /* Body text */
+  --contrast-ratio-low: 3.8;     /* Metadata */
+}
+
+/* Warm color temperature adjustment */
+.color-scheme-warm {
+  filter: sepia(0.08) saturate(1.15) hue-rotate(12deg) brightness(1.02);
+}
+
+/* Enhanced Spacing System Utilities */
+:root {
+  /* Consistent spacing scale */
+  --spacing-container-sm: 16px;  /* Mobile container padding (px-4) */
+  --spacing-container-md: 24px;  /* Tablet container padding (px-6) */
+  --spacing-container-lg: 32px;  /* Desktop container padding (px-8) */
+  
+  --spacing-card-gap-sm: 12px;   /* Mobile card gaps (gap-3) */
+  --spacing-card-gap-md: 16px;   /* Tablet card gaps (gap-4) */
+  --spacing-card-gap-lg: 20px;   /* Desktop card gaps (gap-5) */
+}
+
+/* Content container utility */
+.content-container {
+  padding-left: var(--spacing-container-sm);
+  padding-right: var(--spacing-container-sm);
+}
+
+@media (min-width: 768px) {
+  .content-container {
+    padding-left: var(--spacing-container-md);
+    padding-right: var(--spacing-container-md);
+  }
+}
+
+@media (min-width: 1024px) {
+  .content-container {
+    padding-left: var(--spacing-container-lg);
+    padding-right: var(--spacing-container-lg);
+  }
+}

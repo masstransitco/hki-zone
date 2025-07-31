@@ -1,0 +1,35 @@
+{
+  "slug": "wfsfaa",
+  "url": "https://www.wfsfaa.gov.hk/",
+  "picked": {
+    "href": "https://www.google.com/s2/favicons?domain=www.wfsfaa.gov.hk&sz=128",
+    "ext": "png",
+    "mime": "image/png",
+    "bytes": 832,
+    "file": "wfsfaa.png"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.wfsfaa.gov.hk/favicon.ico",
+      "ok": false,
+      "ext": "ico",
+      "mime": "",
+      "bytes": 0,
+      "file": null,
+      "error": "AxiosError: Request failed with status code 404"
+    },
+    {
+      "source": "google-s2",
+      "rel": "icon",
+      "href": "https://www.google.com/s2/favicons?domain=www.wfsfaa.gov.hk&sz=128",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 832,
+      "file": "raw/icon-1.png",
+      "error": null
+    }
+  ]
+}

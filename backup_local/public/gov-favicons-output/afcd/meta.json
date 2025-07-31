@@ -1,0 +1,24 @@
+{
+  "slug": "afcd",
+  "url": "https://www.afcd.gov.hk/english/index.html",
+  "picked": {
+    "href": "https://www.afcd.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 3774,
+    "file": "afcd.ico"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.afcd.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 3774,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "slug": "emsd",
+  "url": "https://www.emsd.gov.hk/en/home/",
+  "picked": {
+    "href": "https://www.emsd.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 1150,
+    "file": "emsd.ico"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.emsd.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1150,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

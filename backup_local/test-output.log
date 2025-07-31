@@ -1,0 +1,501 @@
+[dotenv@17.0.0] injecting env (18) from .env.local – 🔐 encrypt with dotenvx: https://dotenvx.com
+🧪 Testing trilingual enhancement with 1 article...
+
+📋 Selecting 1 article with Perplexity...
+Starting Perplexity-assisted article selection for 1 articles...
+(node:62972) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Filtered 18 quality articles from 50 candidates
+Found 18 candidate articles
+Perplexity selected 1 articles for enhancement
+Perplexity selected 1 articles for enhancement
+✅ Selected article: "HK court to hear appeals from 13 jailed democrats and gov’t"
+
+🌐 Enhancing article in 3 languages...
+Starting trilingual enhancement for 1 articles
+Processing article 1/1: HK court to hear appeals from 13 jailed democrats and gov’t
+Enhancing "HK court to hear appeals from 13 jailed democrats and gov’t" (ID: 091fbd9a-4095-48fc-bd43-a727f31c861c) in 3 languages...
+Selection reason: This article covers the appeals in Hong Kong's largest national security case involving high-profile pro-democracy figures. The case has significant public interest, ongoing legal and political implications, and international attention. It is highly enhancement-worthy for AI processing due to its complexity, need for context, and potential for multilingual presentation.
+Priority score: 85
+Creating English version...
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "A Hong Kong court began hearing appeals on July 14, 2025, from **12 to 13 jailed pro-democracy campaigners** who were convicted last year in the city’s largest national security case, known as the \"Hong Kong 47\" trial[1][2][3]. These activists, including prominent figures such as **“Long Hair” Leung Kwok-hung, Lam Cheuk-ting, Helena Wong, Raymond Chan, Gwyneth Ho, and Owen Chow**, were sentenced in November 2024 for their roles in an unofficial 2020 primary election, which authorities labeled a subversive plot under the Beijing-imposed national security law[1][2][3].\n\n- **Appeal Proceedings:** The hearings are scheduled to last for 10 working days and are overseen by three Court of Appeal judges: Jeremy Poon, Anthea Pang, and Derek Pang[1].\n- **Sentences:** The appellants received prison terms ranging from six-and-a-half years to seven years and nine months. Owen Chow received the harshest penalty among them—seven years and nine months[1][2][3].\n- **Withdrawals:** Michael Pang withdrew his appeal on the first day, reducing the number of appellants to 12[2].\n- **Government Appeal:** The government is also appealing the acquittal of ex-district councillor Lawrence Lau[1].\n- **International Reaction:** The case has drawn criticism from the United States, Britain, the European Union, and human rights organizations, who argue it demonstrates the erosion of freedoms and suppression of peaceful opposition in Hong Kong[2][3].\n\n**Visuals and Images:**  \nNo images or photos from the July 14, 2025, court proceedings are included in the available search results. The articles focus on reporting the legal developments and listing the key figures involved, but do not provide visual content or descriptions of the courtroom scene[1][2][3][4].\n\nIf you need a description for editorial purposes:  \n*The scene at the Hong Kong courthouse is marked by heightened security, with supporters and media gathered outside. The defendants, many of whom have been in custody for over four years, are brought into the courtroom under escort. The atmosphere is tense, reflecting the high stakes and international attention on the proceedings.*\n\nIf you require actual photographs, you may need to consult major news photo agencies or the official websites of the cited news outlets, as the current search results do not supply direct images."
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.arabnews.com/node/2608010/world',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.japantimes.co.jp/news/2025/07/14/asia-pacific/politics/hong-kong-activists-47-democrats/'
+]
+Content preview: A Hong Kong court began hearing appeals on July 14, 2025, from **12 to 13 jailed pro-democracy campaigners** who were convicted last year in the city’s largest national security case, known as the "Hong Kong 47" trial[1][2][3]. These activists, including prominent figures such as **“Long Hair” Leung...
+=== END DEBUG ===
+Sources found: Metadata=4, Content=7, Unique=4
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "A **Hong Kong court began hearing appeals on July 14, 2025, from 12 democracy campaigners** who were jailed for subversion last year in the city’s largest national security case[2][3][4]. These individuals were among 45 opposition figures convicted in November 2024 over their involvement in a 2020 informal primary election, which authorities labeled a subversive plot under the Beijing-imposed national security law[2][3]. The proceedings are being held in the West Kowloon Law Courts Building, the city's largest courtroom, with significant public and police presence outside the courthouse[1][2].\n\n**Key figures appealing their convictions and sentences include:**\n- Ex-lawmakers \"Long Hair\" Leung Kwok-hung, Lam Cheuk-ting, Helena Wong, and Raymond Chan\n- Owen Chow, a 28-year-old activist who received the harshest penalty among the group—seven years and nine months in jail[2][3]\n\nThe hearings are scheduled to last 10 days. Former district councillor Michael Pang withdrew his appeal on Monday morning, reducing the number of appellants to 12[2][4]. Some of the appellants have already spent more than four years in detention[2][3].\n\n**Public and Security Measures:**\n- Around 40 people queued outside the courthouse early in the morning for public gallery tickets, with police conducting searches and ID checks[1][2].\n- Dozens of police officers and police dogs patrolled the area, and vehicles entering the courthouse were thoroughly inspected[1].\n\n**International and Local Reactions:**\n- Critics, including the United States, Britain, and the European Union, argue that the case demonstrates how the national security law has eroded freedoms and suppressed peaceful opposition in Hong Kong[2][3].\n- Amnesty International described the appeal as a \"pivotal test\" for free expression in the city[2][3].\n\n**Images and Visuals:**\n- While the search results do not provide direct images, they describe scenes of people queuing outside the courthouse, police presence with cordons and dog patrols, and public interest in attending the hearings[1][2].\n- The atmosphere is described as tense but orderly, with both supporters and security forces highly visible.\n\nIf you require specific images, you may need to consult news agencies or photo services covering the event, as the search results only provide detailed descriptions of the scene."
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.nbcrightnow.com/national/hong-kong-court-hears-appeals-by-jailed-democracy-campaigners/article_55e1c084-455f-5bfe-ba76-f4e7e4d9bf05.html',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.arabnews.com/node/2608010/amp',
+  'https://www.amnesty.org/en/latest/news/2025/07/hong-kong-appeal-hearing-in-hk-47-case-a-pivotal-chance-to-correct-mass-injustice/'
+]
+Content preview: A **Hong Kong court began hearing appeals on July 14, 2025, from 12 democracy campaigners** who were jailed for subversion last year in the city’s largest national security case[2][3][4]. These individuals were among 45 opposition figures convicted in November 2024 over their involvement in a 2020 i...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=4, Unique=4
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "A Hong Kong court began hearing appeals on July 14, 2025, from **12 to 13 jailed pro-democracy campaigners** and the government, marking a pivotal moment in the city’s largest national security case to date[1][2][3][4]. The case centers on the so-called \"Hong Kong 47,\" a group of opposition figures convicted for their roles in organizing and participating in an **unofficial 2020 primary election**, which authorities deemed a subversive plot under the Beijing-imposed national security law[1][2][3].\n\n**Key figures appealing their convictions and sentences include:**\n- Ex-lawmakers “Long Hair” Leung Kwok-hung, Lam Cheuk-ting, Helena Wong, and Raymond Chan\n- Activist Owen Chow, who received the harshest sentence among the group (seven years and nine months)\n- Journalist-turned-activist Gwyneth Ho[1][2][3]\n\nThe appeal hearings are scheduled to last for **10 working days** and are presided over by three Court of Appeal judges: Jeremy Poon, Anthea Pang, and Derek Pang[1]. Some appellants have already spent more than four years in detention[2][3].\n\n**Visual context and image descriptions:**\n- **Courtroom scenes:** Images from outside the courthouse show lines of supporters, heavy police presence, and media coverage as the appeals begin.\n- **Defendants:** Photos often depict the defendants being escorted by security, sometimes waving or making gestures of solidarity to supporters.\n- **Protests and supporters:** Visuals include banners, yellow umbrellas (a symbol of Hong Kong's democracy movement), and supporters holding up signs calling for the release of the jailed democrats.\n- **Media coverage:** Press photographers and television crews are present, capturing the heightened public and international interest in the proceedings.\n\nThese images reflect the ongoing tension in Hong Kong between the authorities and the pro-democracy movement, as well as the significant international attention the case has drawn[2][3]. The outcome of these appeals is seen as a major test for the future of civil liberties and judicial independence in Hong Kong."
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.arabnews.com/node/2608010/world',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.ucanews.com/news/hk-court-hears-appeals-by-jailed-democracy-campaigners/109630',
+  'https://www.indopremier.com/ipotnews/newsDetail.php?jdl=Jailed_Hong_Kong_democrats_challenging_their_subversion_convictions&news_id=1691928&group_news=ALLNEWS&taging_subtype=CHINA&name=&search=y_general&q=CHINA%2C+&halaman=1'
+]
+Content preview: A Hong Kong court began hearing appeals on July 14, 2025, from **12 to 13 jailed pro-democracy campaigners** and the government, marking a pivotal moment in the city’s largest national security case to date[1][2][3][4]. The case centers on the so-called "Hong Kong 47," a group of opposition figures ...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=6, Unique=5
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "# ENHANCED TITLE:  \nHong Kong Court Hears Landmark Appeals from Jailed Pro-Democracy Activists in National Security Case\n\n## SUMMARY\nA Hong Kong court has begun hearing appeals from 12 jailed pro-democracy campaigners and the government in the city’s largest national security case, centered on the 2020 unofficial primary election. The proceedings, involving some of Hong Kong’s most prominent opposition figures, are seen as a critical test for the city’s legal system and civil liberties under the Beijing-imposed national security law[1][2][3][4].\n\n## KEY POINTS\n• **Twelve jailed activists**—including ex-lawmakers “Long Hair” Leung Kwok-hung, Lam Cheuk-ting, Helena Wong, and Raymond Chan—are appealing convictions and sentences for subversion linked to their roles in the 2020 primary election[1][2][3].  \n• The appeal hearings, overseen by three Court of Appeal judges, are scheduled to last for 10 working days and include a government appeal against the acquittal of ex-district councillor Lawrence Lau[1].  \n• Sentences for the appellants range from six-and-a-half years to seven years and nine months; Owen Chow received the harshest penalty among them[1][2][3].  \n• Former district councillor Michael Pang withdrew his appeal on the first day, reducing the number of appellants to 12[2].  \n• The case has drawn strong international criticism, with rights groups and Western governments warning it highlights the erosion of freedoms and suppression of peaceful opposition in Hong Kong[2][3][4].\n\n## WHY IT MATTERS\nThe outcome of these appeals will shape the future of political dissent and judicial independence in Hong Kong, with significant implications for civil society and the city’s global reputation. Many residents and international observers see the case as a bellwether for the extent of Beijing’s influence and the resilience of Hong Kong’s legal protections for free expression and assembly[2][3][4]. The proceedings are closely watched as a pivotal moment for the city’s autonomy and rule of law."
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.arabnews.com/node/2608010/world',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.amnesty.org/en/latest/news/2025/07/hong-kong-appeal-hearing-in-hk-47-case-a-pivotal-chance-to-correct-mass-injustice/',
+  'https://eng.mizzima.com/2025/07/14/24365'
+]
+Content preview: # ENHANCED TITLE:  
+Hong Kong Court Hears Landmark Appeals from Jailed Pro-Democracy Activists in National Security Case
+
+## SUMMARY
+A Hong Kong court has begun hearing appeals from 12 jailed pro-democracy campaigners and the government in the city’s largest national security case, centered on the 2...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=6, Unique=5
+Creating Traditional Chinese version...
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "香港高等法院於2025年7月14日開始審理「47人案」中13名被判囚民主派人士及政府的上訴，這是自去年大規模國安法審判後的首次上訴程序[1][2][3][4][5]。\n\n**最新發展重點：**\n\n- **上訴人數與身份**：本次有13名民主派人士提出上訴，包括前立法會議員「長毛」梁國雄、林卓廷、黃碧雲、陳志全，以及記者出身的何桂藍等[1][2]。其中12人是針對定罪和刑期提出上訴，另有1人（劉偉聰）是政府針對其無罪判決提出上訴[1]。\n- **案件背景**：「47人案」涉及2020年民主派初選，當局指控參與者串謀顛覆國家政權。去年有45人被裁定罪成，僅2人獲判無罪[1][2]。\n- **刑期情況**：被告刑期由四年多至近八年不等。部分人已被還押超過四年[2]。\n- **上訴審理安排**：由三名上訴庭法官潘兆初、彭寶琴及彭偉昌主審，預計審訊為期10個工作天[1]。\n- **國際關注**：美國、英國及歐盟等批評該案顯示國安法嚴重侵蝕香港自由。國際特赦組織中國部主任Sarah Brooks形容這次上訴是對香港言論自由的「關鍵考驗」[2]。\n\n**圖片與視覺內容描述：**\n目前公開報導並未提供最新現場照片或法庭內部影像。不過，根據以往同類案件，法庭外通常會有大批記者、支持者及警方戒備。部分被告家屬和支持者會在法院外舉牌表達訴求，現場氣氛緊張而有秩序[1][2]。\n\n如有進一步的現場圖片或視覺內容更新，將會由主流媒體（如香港本地新聞網站、國際通訊社）第一時間發佈。"
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://eng.mizzima.com/2025/07/14/24365',
+  'https://www.nampa.org/text/22684875',
+  'https://www.japantimes.co.jp/news/2025/07/14/asia-pacific/politics/hong-kong-activists-47-democrats/'
+]
+Content preview: 香港高等法院於2025年7月14日開始審理「47人案」中13名被判囚民主派人士及政府的上訴，這是自去年大規模國安法審判後的首次上訴程序[1][2][3][4][5]。
+
+**最新發展重點：**
+
+- **上訴人數與身份**：本次有13名民主派人士提出上訴，包括前立法會議員「長毛」梁國雄、林卓廷、黃碧雲、陳志全，以及記者出身的何桂藍等[1][2]。其中12人是針對定罪和刑期提出上訴，另有1人（劉偉聰）是政府針對其無罪判決提出上訴[1]。
+- **案件背景**：「47人案」涉及2020年民主派初選，當局指控參與者串謀顛覆國家政權。去年有45人被裁定罪成，僅2人獲判無罪[1][2]。
+- **刑期情...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=5, Unique=5
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "香港法院於2025年7月14日開始審理涉及47名民主派人士的國安法案件中，12名（部分報導為13名）已被定罪入獄的民主派人士的上訴申請。這場案件被視為香港歷來最大規模的國安法審判之一，備受國際關注[1][2][3]。\n\n**最新進展與現場情況：**\n- 上訴聆訊在西九龍法院大樓最大法庭舉行，並非通常的高等法院上訴庭。法庭為公眾預留了47個座位，並設有延伸法庭進行現場直播[1]。\n- 7月14日清晨，已有約40人在法院外排隊等候公眾席門票，警方在現場加強戒備，設有警戒線並派出警犬巡邏。排隊民眾需接受搜查，攜帶物品及身份證明文件均被檢查，進入法院的車輛也需接受檢查[1]。\n- 部分曾參與初選的前區議員及知名民主派人士，包括「長毛」梁國雄、林卓廷、黃碧雲及陳志全等，均在上訴名單之列[2][3]。其中28歲的周庭（Owen Chow）因被判刑7年9個月，是本輪上訴中刑期最重者[2][3]。\n- 有上訴人已被羈押超過四年[2][3]。\n- 國際人權組織及多國政府批評本案反映北京實施的國安法嚴重侵蝕香港自由，壓制和平反對聲音[2][3]。\n\n**現場民眾反應：**\n- 有市民自前一日下午4時開始排隊，擔心「有職業排隊者」搶佔名額[1]。\n- 現場有市民表示，雖然不期待有正面結果，但仍希望以行動支持被告[2]。\n\n**圖片描述：**\n- 報導中提及，法院外有大量警員及警犬巡邏，設有警戒線，民眾排隊等候進入法庭[1][2]。\n- 也有民眾攜帶書本等物品接受警方檢查，現場氣氛緊張[1]。\n\n目前，這場上訴審訊預計將持續十天，成為香港司法及言論自由的重要觀察指標[2][3]。"
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.nbcrightnow.com/national/hong-kong-court-hears-appeals-by-jailed-democracy-campaigners/article_55e1c084-455f-5bfe-ba76-f4e7e4d9bf05.html',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.arabnews.com/node/2608010/world',
+  'https://www.amnesty.org/en/latest/news/2025/07/hong-kong-appeal-hearing-in-hk-47-case-a-pivotal-chance-to-correct-mass-injustice/'
+]
+Content preview: 香港法院於2025年7月14日開始審理涉及47名民主派人士的國安法案件中，12名（部分報導為13名）已被定罪入獄的民主派人士的上訴申請。這場案件被視為香港歷來最大規模的國安法審判之一，備受國際關注[1][2][3]。
+
+**最新進展與現場情況：**
+- 上訴聆訊在西九龍法院大樓最大法庭舉行，並非通常的高等法院上訴庭。法庭為公眾預留了47個座位，並設有延伸法庭進行現場直播[1]。
+- 7月14日清晨，已有約40人在法院外排隊等候公眾席門票，警方在現場加強戒備，設有警戒線並派出警犬巡邏。排隊民眾需接受搜查，攜帶物品及身份證明文件均被檢查，進入法院的車輛也需接受檢查[1]。
+- 部分曾參與初選的前區...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=3, Unique=4
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "香港法院於2025年7月14日開始審理「香港47人案」中**12至13名被判囚民主派人士的上訴**，這是自國安法實施以來最大型的國安案件之一[1][2][3][4]。案件涉及2020年民主派初選，當局指控這是顛覆國家政權的陰謀，最終有45人被定罪，僅2人獲判無罪[1][2][3]。\n\n**主要上訴人包括：**\n- 前立法會議員「長毛」梁國雄、林卓廷、黃碧雲、陳志全[1][2][3]\n- 前記者及社運人士何桂藍\n- 28歲的周嘉誠（獲判最重刑期：7年9個月）[2][3]\n- 其他多位前區議員及民主派活躍分子\n\n部分被告已在還押及服刑期間超過四年[2][3]。同時，政府亦就一名被判無罪的前區議員劉偉聰提出上訴[1]。\n\n**審訊現場與視覺內容描述：**\n- 法庭外有大批記者、攝影師及支持者聚集，部分人手持標語或照片，表達對被告的支持。\n- 被告多數身穿囚衣，由警員押解進出法院，部分家屬在法庭旁聽席上神情凝重。\n- 法庭內外均有嚴密保安，警方設置封鎖線，並有警犬巡邏。\n- 現場媒體拍攝的照片多聚焦於被告步入法庭、支持者舉牌、以及法庭外的警力部署。\n\n**國際關注：**\n- 美國、英國及歐盟等多國政府及人權組織批評案件反映國安法嚴重壓制香港言論及集會自由[2][3]。\n- 國際特赦組織表示，這次上訴是香港言論自由的「關鍵考驗」[2][3]。\n\n如需具體照片或影像，建議關注香港主要新聞媒體或國際通訊社的即時報導，通常會有現場圖像與視覺紀錄。"
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.arabnews.com/node/2608010/world',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.france24.com/en/live-news/20250714-hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners',
+  'https://www.indopremier.com/ipotnews/newsDetail.php?jdl=Jailed_Hong_Kong_democrats_challenging_their_subversion_convictions&news_id=1691928&group_news=ALLNEWS&taging_subtype=CHINA&name=&search=y_general&q=CHINA%2C+&halaman=1'
+]
+Content preview: 香港法院於2025年7月14日開始審理「香港47人案」中**12至13名被判囚民主派人士的上訴**，這是自國安法實施以來最大型的國安案件之一[1][2][3][4]。案件涉及2020年民主派初選，當局指控這是顛覆國家政權的陰謀，最終有45人被定罪，僅2人獲判無罪[1][2][3]。
+
+**主要上訴人包括：**
+- 前立法會議員「長毛」梁國雄、林卓廷、黃碧雲、陳志全[1][2][3]
+- 前記者及社運人士何桂藍
+- 28歲的周嘉誠（獲判最重刑期：7年9個月）[2][3]
+- 其他多位前區議員及民主派活躍分子
+
+部分被告已在還押及服刑期間超過四年[2][3]。同時，政府亦就一名被判無罪的前區議員劉...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=4, Unique=5
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "# 增強標題：香港「47人案」13名民主派及政府上訴開審　國安法最大案件再成焦點\n\n## 摘要\n香港法院於2025年7月14日開始審理「47人案」中13名民主派人士及政府的上訴，這是國安法實施以來最大型案件的首次上訴程序。案件涉及2020年民主派初選，備受國際及本地高度關注[1][2][3]。\n\n## 重點\n• **13名被告及政府提出上訴**：包括前立法會議員梁國雄、林卓廷、黃碧雲、陳志全及記者何桂藍等，12人針對定罪及刑期上訴，1人（黃子悅）僅就刑期上訴，律政司則就劉偉聰無罪判決提出上訴[1][2][3]。\n\n• **案件背景及判決情況**：「47人案」源於2020年民主派初選，45人去年被裁定串謀顛覆國家政權罪成，刑期由四年多至十年不等，部分被告已被還押超過四年[1][2][3]。\n\n• **審訊安排與現場氣氛**：上訴聆訊於西九龍法院最大法庭舉行，設有47個公眾席及多個延伸法庭，現場有大量警力、警犬巡邏，民眾需排隊及接受嚴格安檢，氣氛緊張[2][3]。\n\n• **國際關注與人權批評**：美國、英國、歐盟及國際特赦組織等批評案件反映國安法嚴重壓制香港自由，形容本次上訴為香港言論自由的「關鍵考驗」[1][2]。\n\n• **部分被告撤回上訴**：原有14人提出上訴，譚得志及彭卓棋已於開審前撤回申請，現剩13人繼續上訴[2][3]。\n\n## 重要性\n此案是香港國安法實施後最大規模的司法挑戰，結果將深遠影響本地司法獨立、言論及集會自由。審訊過程及判決不僅關乎被告命運，也成為國際社會觀察香港法治及人權狀況的重要指標[1][2][3]。"
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://www.dw.com/zh-hant/47%E4%BA%BA%E6%A1%88%E4%B8%8A%E8%A8%B4%E6%A1%88%E9%96%8B%E5%AF%A9-%E4%BA%BA%E6%AC%8A%E7%B5%84%E7%B9%94%E7%B1%B2%E7%B3%BE%E6%AD%A3%E9%8C%AF%E8%AA%A4/a-73267135',
+  'https://hk.epochtimes.com/news/2025-07-13/57732712',
+  'https://www.hk01.com/%E7%A4%BE%E6%9C%83%E6%96%B0%E8%81%9E/60256431/47%E4%BA%BA%E6%A1%88-%E4%B8%8A%E8%A8%B4-%E5%BD%AD%E5%8D%93%E7%90%AA%E6%94%BE%E6%A3%84%E4%B8%8A%E8%A8%B4-%E9%A4%98%E4%B8%8B13%E5%90%8D%E8%A2%AB%E5%91%8A%E8%81%86%E8%A8%8A%E4%BB%8A%E5%B1%95%E9%96%8B',
+  'https://www.hk01.com/article/60256431',
+  'https://hkcourtnews.com/%E6%B0%91%E4%B8%BB%E6%B4%BE%E5%88%9D%E9%81%B847%E4%BA%BA%E6%A1%88-%E4%B8%8A%E8%A8%B4%EF%BD%9C%E6%9B%BE%E5%8F%97%E5%8A%89%E5%81%89%E8%81%B0%E7%BE%A9%E5%8B%99%E6%B3%95%E5%BE%8B%E6%8F%B4%E5%8A%A9/'
+]
+Content preview: # 增強標題：香港「47人案」13名民主派及政府上訴開審　國安法最大案件再成焦點
+
+## 摘要
+香港法院於2025年7月14日開始審理「47人案」中13名民主派人士及政府的上訴，這是國安法實施以來最大型案件的首次上訴程序。案件涉及2020年民主派初選，備受國際及本地高度關注[1][2][3]。
+
+## 重點
+• **13名被告及政府提出上訴**：包括前立法會議員梁國雄、林卓廷、黃碧雲、陳志全及記者何桂藍等，12人針對定罪及刑期上訴，1人（黃子悅）僅就刑期上訴，律政司則就劉偉聰無罪判決提出上訴[1][2][3]。
+
+• **案件背景及判決情況**：「47人案」源於2020年民主派初選，45人去年...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=3, Unique=4
+Creating Simplified Chinese version...
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "香港高等法院于2025年7月14日开始审理“47人案”中被判入狱的民主派人士及政府的上诉请求，这是香港迄今最大规模的国安法案件[1][2][3][4][5]。\n\n- **案件背景**：2020年，47名民主派人士因参与非官方“初选”被控“串谋颠覆国家政权”，去年有45人被判有罪，仅2人无罪[1][2][3]。\n- **上诉主体**：本轮上诉涉及12名被告，包括前立法会议员“长毛”梁国雄、林卓廷、黄碧云、陈志全，以及前记者何桂蓝等[1][2][3]。其中，周庭悦（Wong Ji-yuet）因认罪获刑4年5个月，也将上诉刑期[1]。原本有13人提出上诉，但彭卓棋（Michael Pang）于开庭当天撤回上诉[2][3]。\n- **政府上诉**：政府方面则对前区议员刘伟聪的无罪判决提出上诉[1]。\n- **刑期情况**：被告刑期从6年半至7年9个月不等，部分人已被羁押超过4年[1][2][3]。\n- **国际关注**：美国、英国、欧盟等批评该案显示国安法侵蚀香港自由，国际特赦组织认为此次上诉是香港言论自由的“关键考验”[2][3]。\n\n**法庭组成与审理安排**：\n- 上诉由上诉庭三位法官潘兆初、彭宝琴、彭伟昌主持，预计审理10个工作日[1][2]。\n\n**图片与视觉内容**：\n- 当前公开报道未见最新庭审现场照片或图片描述。如有媒体现场报道，通常会出现被告家属、支持者在法院外聚集，以及警方维持秩序的画面，但具体2025年7月14日当天的图片尚未在主流媒体发布[1][2][3]。\n\n如需后续图片或视觉内容更新，请关注香港主流媒体或国际通讯社的实时报道。"
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.arabnews.com/node/2608010/world',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.indopremier.com/ipotnews/newsDetail.php?jdl=Jailed_Hong_Kong_democrats_challenging_their_subversion_convictions&news_id=1691928&group_news=ALLNEWS&taging_subtype=CHINA&name=&search=y_general&q=CHINA%2C+&halaman=1',
+  'https://www.japantimes.co.jp/news/2025/07/14/asia-pacific/politics/hong-kong-activists-47-democrats/'
+]
+Content preview: 香港高等法院于2025年7月14日开始审理“47人案”中被判入狱的民主派人士及政府的上诉请求，这是香港迄今最大规模的国安法案件[1][2][3][4][5]。
+
+- **案件背景**：2020年，47名民主派人士因参与非官方“初选”被控“串谋颠覆国家政权”，去年有45人被判有罪，仅2人无罪[1][2][3]。
+- **上诉主体**：本轮上诉涉及12名被告，包括前立法会议员“长毛”梁国雄、林卓廷、黄碧云、陈志全，以及前记者何桂蓝等[1][2][3]。其中，周庭悦（Wong Ji-yuet）因认罪获刑4年5个月，也将上诉刑期[1]。原本有13人提出上诉，但彭卓棋（Michael Pang）于开庭当...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=5, Unique=5
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "香港法院于2025年7月14日开始审理涉及47名民主派人士的香港最大国安案中，部分被判刑人士及政府的上诉。这一案件源自2020年民主派初选，被当局定性为“颠覆国家政权”[1][2][3]。\n\n**最新进展与现场情况：**\n- 上诉听证会在西九龙法院大楼举行，而非通常的高等法院，主法庭为公众预留了47个座位，另有延伸法庭通过直播转播庭审[1]。\n- 7月14日早上7:45，已有约40人在法院外排队，警方在现场部署了大量警力及警犬，并设置警戒线，检查排队者的随身物品和身份证件，进入法院的车辆也需接受检查[1][2]。\n- 参与上诉的包括前立法会议员“长毛”梁国雄、林卓廷、黄碧云、陈志全等人，部分被告已在狱中超过四年[2][3]。\n- 28岁的周嘉诚因获刑7年9个月，是上诉者中刑期最重者之一[2][3]。\n- 前区议员彭卓棋于当天早上撤回上诉，最终共有12人继续上诉[2]。\n\n**社会反响与评论：**\n- 国际社会（包括美国、英国和欧盟）批评该案显示北京实施的国安法侵蚀了香港的自由和反对声音[2][3]。\n- 国际特赦组织中国事务主任Sarah Brooks表示，这次上诉是对香港言论自由的“关键考验”[2][3]。\n- 现场有市民表示，虽然对结果不抱希望，但仍希望以行动支持被告[2]。\n\n**图片与视觉描述：**\n- 现场图片显示，法院外有市民排队等候入场，警方在场维持秩序，部分警员带有警犬，法院周边拉起警戒线，排队者携带随身物品接受检查[1][2]。\n- 也有年长市民自述为抢到首位凌晨4点就到场，表达对案件的持续关注[1]。\n\n如需具体图片内容，请说明用途或所需细节，我可进一步描述现场画面。"
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.nbcrightnow.com/national/hong-kong-court-hears-appeals-by-jailed-democracy-campaigners/article_55e1c084-455f-5bfe-ba76-f4e7e4d9bf05.html',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.arabnews.com/node/2608010/world',
+  'https://www.amnesty.org/en/latest/news/2025/07/hong-kong-appeal-hearing-in-hk-47-case-a-pivotal-chance-to-correct-mass-injustice/'
+]
+Content preview: 香港法院于2025年7月14日开始审理涉及47名民主派人士的香港最大国安案中，部分被判刑人士及政府的上诉。这一案件源自2020年民主派初选，被当局定性为“颠覆国家政权”[1][2][3]。
+
+**最新进展与现场情况：**
+- 上诉听证会在西九龙法院大楼举行，而非通常的高等法院，主法庭为公众预留了47个座位，另有延伸法庭通过直播转播庭审[1]。
+- 7月14日早上7:45，已有约40人在法院外排队，警方在现场部署了大量警力及警犬，并设置警戒线，检查排队者的随身物品和身份证件，进入法院的车辆也需接受检查[1][2]。
+- 参与上诉的包括前立法会议员“长毛”梁国雄、林卓廷、黄碧云、陈志全等人，部分被...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=3, Unique=4
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "香港高等法院于2025年7月14日开始审理“47人案”中13名被判囚民主派人士及政府的上诉。这是香港自《国安法》实施以来最大规模的国家安全案件，涉及2020年民主派初选，被控“串谋颠覆国家政权”罪名的多位知名民主派人士[1][2][3][4][5]。\n\n**案件背景与上诉内容：**\n- 2023年，45名民主派人士因参与2020年非官方初选被裁定罪成，仅有两人获判无罪[1][2]。\n- 现有12名被告，包括前立法会议员“长毛”梁国雄、林卓廷、黄碧云、陈志全，以及前记者何桂蓝等，正就定罪和刑期提出上诉[1][2][3][4][5]。\n- 其中，周庭、黄之锋等部分知名人士已服刑超过四年[2]。\n- 政府方面则就前区议员刘伟聪的无罪判决提出上诉[1]。\n- 上诉聆讯预计持续10个工作日，由三位上诉庭法官主审[1][2]。\n\n**国际与社会关注：**\n- 此案被国际社会广泛关注，包括美国、英国和欧盟等批评《国安法》打压香港言论自由和和平反对声音[2]。\n- 国际特赦组织认为，这次上诉是香港言论自由的“关键考验”[2]。\n\n**图片与视觉内容描述：**\n- 新闻报道中常见的图片包括：被告在囚车内、法院外有大批警察戒备、支持者及家属在法院门外举牌声援、媒体记者聚集拍摄[1][2]。\n- 部分画面显示被告身穿囚衣、戴口罩，由警员押解进入法院。\n- 法院外的横幅、标语，以及部分支持者手持被告照片表达声援。\n\n这些视觉内容反映了案件的高度敏感性和社会关注度，也展现了香港当前政治与司法环境下的紧张氛围。"
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://hongkongfp.com/2025/07/14/hong-kong-court-to-hear-appeals-from-12-jailed-democrats-and-govt-in-landmark-nat-security-case/',
+  'https://www.nbcrightnow.com/national/hong-kong-court-to-hear-appeals-by-jailed-democracy-campaigners/article_546fbfa0-f157-5a83-b327-aab799ea7cd9.html',
+  'https://www.ucanews.com/news/hk-court-hears-appeals-by-jailed-democracy-campaigners/109630',
+  'https://eng.mizzima.com/2025/07/14/24365',
+  'https://www.japantimes.co.jp/news/2025/07/14/asia-pacific/politics/hong-kong-activists-47-democrats/'
+]
+Content preview: 香港高等法院于2025年7月14日开始审理“47人案”中13名被判囚民主派人士及政府的上诉。这是香港自《国安法》实施以来最大规模的国家安全案件，涉及2020年民主派初选，被控“串谋颠覆国家政权”罪名的多位知名民主派人士[1][2][3][4][5]。
+
+**案件背景与上诉内容：**
+- 2023年，45名民主派人士因参与2020年非官方初选被裁定罪成，仅有两人获判无罪[1][2]。
+- 现有12名被告，包括前立法会议员“长毛”梁国雄、林卓廷、黄碧云、陈志全，以及前记者何桂蓝等，正就定罪和刑期提出上诉[1][2][3][4][5]。
+- 其中，周庭、黄之锋等部分知名人士已服刑超过四年[2]。
+-...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=5, Unique=5
+=== PERPLEXITY RESPONSE DEBUG ===
+Response keys: [
+  'id',
+  'model',
+  'created',
+  'usage',
+  'citations',
+  'search_results',
+  'object',
+  'choices'
+]
+Choices structure: {
+  "index": 0,
+  "finish_reason": "stop",
+  "message": {
+    "role": "assistant",
+    "content": "# 增强标题：香港最大国安案“47人案”12名民主派被告及政府上诉开审，国际高度关注\n\n## 摘要\n香港法院于2025年7月14日正式开审“47人案”中12名被判囚民主派人士及政府的上诉，案件涉及2020年民主派初选，被控“串谋颠覆国家政权”。此次上诉成为香港国安法实施以来最受瞩目的司法事件之一，并引发国际社会持续关注[1][2][3]。\n\n## 重点\n• 12名民主派被告，包括前立法会议员梁国雄、林卓廷、黄碧云、陈志全等，就定罪及刑期提出上诉，另有1人（彭卓棋）于开庭当天撤回上诉[1][2][3]。  \n• 政府方面则对前区议员刘伟聪的无罪判决提出上诉，显示案件双方均寻求司法复核[1][2][3]。  \n• 案件源自2020年民主派初选，吸引逾61万市民参与，警方2021年大规模拘捕47人，指控其“串谋颠覆国家政权”[2]。  \n• 上诉聆讯预计持续10个工作日，由三位上诉庭法官主审，庭外有大批市民排队旁听，警方加强安保措施[1][3]。  \n• 国际特赦组织等人权团体称本案是香港言论自由的“关键考验”，欧美多国批评国安法打压异见[1][3]。\n\n## 重要性\n“47人案”上诉不仅关系到多名知名民主派人士的命运，也成为香港司法独立及言论自由的风向标。案件结果可能影响香港社会对法治、公民权利的信心，并对未来政治参与、社会氛围及国际形象产生深远影响[1][2][3]。"
+  },
+  "delta": {
+    "role": "assistant",
+    "content": ""
+  }
+}
+Direct citations: [
+  'https://www.dw.com/zh-hant/47%E4%BA%BA%E6%A1%88%E4%B8%8A%E8%A8%B4%E6%A1%88%E9%96%8B%E5%AF%A9-%E4%BA%BA%E6%AC%8A%E7%B5%84%E7%B9%94%E7%B1%B2%E7%B3%BE%E6%AD%A3%E9%8C%AF%E8%AA%A4/a-73267135',
+  'https://www.upmedia.mg/news_info.php?Type=3&SerialNo=234936',
+  'https://www.dw.com/zh/47%E4%BA%BA%E6%A1%88%E4%B8%8A%E8%AF%89%E6%A1%88%E5%BC%80%E5%AE%A1-%E4%BA%BA%E6%9D%83%E7%BB%84%E7%BB%87%E5%90%81%E7%BA%A0%E6%AD%A3%E9%94%99%E8%AF%AF/a-73267135',
+  'https://www.cna.com.tw/news/acn/202507140184.aspx',
+  'https://www.zaobao.com.sg/realtime/china/story20250714-7138125'
+]
+Content preview: # 增强标题：香港最大国安案“47人案”12名民主派被告及政府上诉开审，国际高度关注
+
+## 摘要
+香港法院于2025年7月14日正式开审“47人案”中12名被判囚民主派人士及政府的上诉，案件涉及2020年民主派初选，被控“串谋颠覆国家政权”。此次上诉成为香港国安法实施以来最受瞩目的司法事件之一，并引发国际社会持续关注[1][2][3]。
+
+## 重点
+• 12名民主派被告，包括前立法会议员梁国雄、林卓廷、黄碧云、陈志全等，就定罪及刑期提出上诉，另有1人（彭卓棋）于开庭当天撤回上诉[1][2][3]。  
+• 政府方面则对前区议员刘伟聪的无罪判决提出上诉，显示案件双方均寻求司法复核[1][2]...
+=== END DEBUG ===
+Sources found: Metadata=5, Content=3, Unique=4
+Completed trilingual enhancement in 117s
+Successfully enhanced article 1 in all 3 languages
+Trilingual enhancement complete. Total articles: 3
+✅ Enhanced into 3 articles (3 languages)
+
+💾 Saving enhanced articles...
+Saving 3 enhanced articles to database...
+Language column not found, saving without language field for: 香港最大国安案“47人案”12名民主派被告及政府上诉开审，国际高度关注
+Language column not found, saving without language field for: Hong Kong Court Hears Landmark Appeals from Jailed Pro-Democracy Activists in National Security Case
+Language column not found, saving without language field for: 香港「47人案」13名民主派及政府上訴開審　國安法最大案件再成焦點
+✓ Saved: Hong Kong Court Hears Landmark Appeals from Jailed Pro-Democracy Activists in National Security Case (undefined)
+✓ Saved: 香港最大国安案“47人案”12名民主派被告及政府上诉开审，国际高度关注 (undefined)
+✓ Saved: 香港「47人案」13名民主派及政府上訴開審　國安法最大案件再成焦點 (undefined)
+Successfully saved 3 out of 3 articles
+Batch Summary: {
+  batch_id: 'test_batch_1752484233132_single',
+  total_saved: 3,
+  language_breakdown: { english: 0, traditional_chinese: 0, simplified_chinese: 0 },
+  errors_count: 0,
+  errors: [],
+  created_at: '2025-07-14T09:12:33.019Z'
+}
+
+📊 Results:
+- Articles enhanced: 3
+- Articles saved: 3
+- Success rate: 100%
+
+✅ Successfully saved articles:
+  - Hong Kong Court Hears Landmark Appeals from Jailed Pro-Democracy Activists in National Security Case (undefined)
+  - 香港最大国安案“47人案”12名民主派被告及政府上诉开审，国际高度关注 (undefined)
+  - 香港「47人案」13名民主派及政府上訴開審　國安法最大案件再成焦點 (undefined)

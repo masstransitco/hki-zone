@@ -1,0 +1,35 @@
+{
+  "slug": "cmab",
+  "url": "https://www.cmab.gov.hk/en/home/",
+  "picked": {
+    "href": "https://www.cmab.gov.hk/apple-touch-icon.png",
+    "ext": "png",
+    "mime": "image/png",
+    "bytes": 6794,
+    "file": "cmab.png"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.cmab.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1150,
+      "file": "raw/icon-0.ico",
+      "error": null
+    },
+    {
+      "source": "html",
+      "rel": "apple-touch-icon",
+      "href": "https://www.cmab.gov.hk/apple-touch-icon.png",
+      "ok": true,
+      "ext": "png",
+      "mime": "image/png",
+      "bytes": 6794,
+      "file": "raw/icon-1.png",
+      "error": null
+    }
+  ]
+}

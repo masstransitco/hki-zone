@@ -1,0 +1,25 @@
+{
+  "slug": "coconutshk",
+  "url": "https://coconuts.co/hongkong/",
+  "picked": {
+    "href": "https://coconuts.co/favicon.ico",
+    "ext": "ico",
+    "mime": "text/html",
+    "bytes": 146998,
+    "file": "coconutshk.ico"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://coconuts.co/favicon.ico",
+      "ok": true,
+      "status": 200,
+      "ext": "ico",
+      "mime": "text/html",
+      "bytes": 146998,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

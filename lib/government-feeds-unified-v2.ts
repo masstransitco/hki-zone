@@ -116,16 +116,49 @@ export class UnifiedGovernmentFeedsV2 {
   }
 
   /**
-   * Merge items from different languages by matching timestamps
+   * Merge items from different languages by matching timestamps and GUIDs
    */
   private mergeItemsByTimestamp(allItems: { [key: string]: UnifiedFeedItem[] }): MultilingualContent[] {
-    const timeMap = new Map<string, MultilingualContent>()
+    const mergedContent: MultilingualContent[] = []
+    const processedGuids = new Set<string>()
     
-    // Process each language's items
+    // First, try to match by GUID patterns (extract ID from URLs)
+    const guidToItems = new Map<string, MultilingualContent>()
+    
     for (const [lang, items] of Object.entries(allItems)) {
       for (const item of items) {
-        // Use timestamp as key (to nearest minute to handle slight differences)
-        const timeKey = new Date(Math.floor(item.pubDate.getTime() / 60000) * 60000).toISOString()
+        // Extract TD notice ID from URL (e.g., index_id_81933 from the link)
+        const idMatch = item.link.match(/index_id_(\d+)/)
+        const noticeId = idMatch ? idMatch[1] : null
+        
+        if (noticeId) {
+          // Use notice ID as primary matching key
+          if (!guidToItems.has(noticeId)) {
+            guidToItems.set(noticeId, {})
+          }
+          const content = guidToItems.get(noticeId)!
+          content[lang as keyof MultilingualContent] = item
+          processedGuids.add(item.guid)
+        }
+      }
+    }
+    
+    // Add all GUID-matched items to merged content
+    const guidMatched = Array.from(guidToItems.values())
+    mergedContent.push(...guidMatched)
+    
+    console.log(`  GUID-based matching: ${guidMatched.length} merged items`)
+    
+    // Fallback: Process remaining items by timestamp (with wider tolerance)
+    const timeMap = new Map<string, MultilingualContent>()
+    
+    for (const [lang, items] of Object.entries(allItems)) {
+      for (const item of items) {
+        // Skip if already processed by GUID matching
+        if (processedGuids.has(item.guid)) continue
+        
+        // Use timestamp with 5-minute tolerance for better matching
+        const timeKey = new Date(Math.floor(item.pubDate.getTime() / (5 * 60000)) * (5 * 60000)).toISOString()
         
         if (!timeMap.has(timeKey)) {
           timeMap.set(timeKey, {})
@@ -136,8 +169,15 @@ export class UnifiedGovernmentFeedsV2 {
       }
     }
     
-    // Convert to array and sort by time
-    return Array.from(timeMap.values()).sort((a, b) => {
+    // Add timestamp-matched items to merged content
+    const timeMatched = Array.from(timeMap.values())
+    mergedContent.push(...timeMatched)
+    
+    console.log(`  Timestamp-based matching: ${timeMatched.length} additional items`)
+    console.log(`  Total merged content: ${mergedContent.length} items`)
+    
+    // Sort by publication time (newest first)
+    return mergedContent.sort((a, b) => {
       const aTime = (a.en?.pubDate || a['zh-TW']?.pubDate || a['zh-CN']?.pubDate)!
       const bTime = (b.en?.pubDate || b['zh-TW']?.pubDate || b['zh-CN']?.pubDate)!
       return bTime.getTime() - aTime.getTime()

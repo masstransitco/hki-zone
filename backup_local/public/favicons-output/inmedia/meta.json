@@ -1,0 +1,25 @@
+{
+  "slug": "inmedia",
+  "url": "https://www.inmediahk.net/",
+  "picked": {
+    "href": "https://www.inmediahk.net/favicon.ico",
+    "ext": "ico",
+    "mime": "image/vnd.microsoft.icon",
+    "bytes": 2238,
+    "file": "inmedia.ico"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.inmediahk.net/favicon.ico",
+      "ok": true,
+      "status": 200,
+      "ext": "ico",
+      "mime": "image/vnd.microsoft.icon",
+      "bytes": 2238,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

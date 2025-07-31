@@ -1,0 +1,327 @@
+[
+  {
+    "address": "San Wan Road, Fanling",
+    "latitude": 22.49518000000006,
+    "longitude": 114.1364000000001
+  },
+  {
+    "address": "Coombe Road, Mid-Levels, Wan Chai, HK",
+    "latitude": 22.26702000000005,
+    "longitude": 114.16923000000008
+  },
+  {
+    "address": "Wu King Road, Tuen Mun",
+    "latitude": 22.375460000000032,
+    "longitude": 113.96642000000008
+  },
+  {
+    "address": "On Muk Street, Sha Tin",
+    "latitude": 22.389390000000038,
+    "longitude": 114.2051100000001
+  },
+  {
+    "address": "Gloucester Road, Wan Chai",
+    "latitude": 22.279770000000045,
+    "longitude": 114.17240000000002
+  },
+  {
+    "address": "Harcourt Road, Admiralty",
+    "latitude": 22.28135000000002,
+    "longitude": 114.16557000000012
+  },
+  {
+    "address": "59 Wing Shun Street, Tsuen Wan",
+    "latitude": 22.367110000000018,
+    "longitude": 114.11282000000004
+  },
+  {
+    "address": "2 Yuen Wo Road, Shatin",
+    "latitude": 22.379490000000025,
+    "longitude": 114.18987000000004
+  },
+  {
+    "address": "22 Austin Road, Tsim Sha Tsui",
+    "latitude": 22.30011000000008,
+    "longitude": 114.17021000000013
+  },
+  {
+    "address": "Tuen Mun Heung Sze Wui Road, Tuen Mun",
+    "latitude": 22.391930000000055,
+    "longitude": 113.9734400000001
+  },
+  {
+    "address": "Dai Fat Street, Tai Po",
+    "latitude": 22.451820000000062,
+    "longitude": 114.17900000000007
+  },
+  {
+    "address": "1 Lai Wan Road, Lai Chi Kok",
+    "latitude": 22.339470000000063,
+    "longitude": 114.13698000000011
+  },
+  {
+    "address": "Lei Chi Road, Ap Lei Chau, Hong Kong",
+    "latitude": 22.244610000000026,
+    "longitude": 114.15295000000003
+  },
+  {
+    "address": "105-107 Po Hong Road, Tseung Kwan O",
+    "latitude": 22.31414000000007,
+    "longitude": 114.2609900000001
+  },
+  {
+    "address": "Ngan Shek Street, Mui Wo, Lantau",
+    "latitude": 22.26741000000004,
+    "longitude": 113.99706000000003
+  },
+  {
+    "address": "1 Hing Fat Street, Causeway Bay",
+    "latitude": 22.282560000000036,
+    "longitude": 114.18823000000008
+  },
+  {
+    "address": "Tsing Luk Street, Tsing Yi",
+    "latitude": 22.356160000000028,
+    "longitude": 114.1058700000001
+  },
+  {
+    "address": "Kai Tak Runway Park, Kai Tak, KLN",
+    "latitude": 22.304930000000066,
+    "longitude": 114.21620000000007
+  },
+  {
+    "address": "Tai Hang Tung Rd, Shek Kip Mei",
+    "latitude": 22.328400000000045,
+    "longitude": 114.16986000000009
+  },
+  {
+    "address": "Kwong Wang Street, Tai Po",
+    "latitude": 22.44700000000005,
+    "longitude": 114.17369000000008
+  },
+  {
+    "address": "Wong Nai Chung Road, Happy Valley, Hong Kong",
+    "latitude": 22.27020000000004,
+    "longitude": 114.18428000000004
+  },
+  {
+    "address": "199 Kwun Tong Road, Kowloon",
+    "latitude": 22.322980000000026,
+    "longitude": 114.21501
+  },
+  {
+    "address": "Oaklands Avenue, Mid-level",
+    "latitude": 22.282930000000086,
+    "longitude": 114.14357000000007
+  },
+  {
+    "address": "Wan Po Road, Tseung Kwan O, Sai Kung",
+    "latitude": 22.305020000000066,
+    "longitude": 114.26885000000004
+  },
+  {
+    "address": "Ping Lan Street, Ap Lei Chau, Hong Kong",
+    "latitude": 22.244820000000068,
+    "longitude": 114.15544000000011
+  },
+  {
+    "address": "Po Lam Road North, Tseung Kwan O, Sai Kung",
+    "latitude": 22.327240000000078,
+    "longitude": 114.25400000000002
+  },
+  {
+    "address": "San Ha Street",
+    "latitude": 22.264330000000022,
+    "longitude": 114.24476000000004
+  },
+  {
+    "address": "J/O Po Kong Village Road / Shung Wah Street",
+    "latitude": 22.34587000000005,
+    "longitude": 114.19959000000004
+  },
+  {
+    "address": "Tin Yip Road, Tin Shui Wai",
+    "latitude": 22.463230000000078,
+    "longitude": 114.00745000000006
+  },
+  {
+    "address": "No.71, New Clear Water Bay Road",
+    "latitude": 22.32984000000004,
+    "longitude": 114.22181
+  },
+  {
+    "address": "Wai Yip Street and Wai Lok Street junction, Kwun Tong, Kowloon (near Laguna Park)",
+    "latitude": 22.30397000000005,
+    "longitude": 114.22603000000004
+  },
+  {
+    "address": "Po Lo Che Road, Sai Kung",
+    "latitude": 22.380600000000065,
+    "longitude": 114.26216000000012
+  },
+  {
+    "address": "Tong Chun Street, Tseung Kwan O, Sai Kung",
+    "latitude": 22.30206000000003,
+    "longitude": 114.26141000000007
+  },
+  {
+    "address": "Ning Tai Road, Ma On Shan",
+    "latitude": 22.408830000000023,
+    "longitude": 114.22040000000004
+  },
+  {
+    "address": "Hoi Yu Street, Quarry Bay",
+    "latitude": 22.290390000000052,
+    "longitude": 114.21436000000006
+  },
+  {
+    "address": "No. 29 Man Tung Road, Tung Chung",
+    "latitude": 22.290810000000086,
+    "longitude": 113.94889
+  },
+  {
+    "address": "10, Tam Kon Shan Road, Tsing Yi",
+    "latitude": 22.362360000000013,
+    "longitude": 114.09880000000008
+  },
+  {
+    "address": "17 Cornwall Street, Kowloon Tong, Kowloon",
+    "latitude": 22.33888000000006,
+    "longitude": 114.17398000000004
+  },
+  {
+    "address": "Hoi Wong Road, Tuen Mun (Next to Tuen Mun Swimming Pool)",
+    "latitude": 22.38555000000002,
+    "longitude": 113.9702400000001
+  },
+  {
+    "address": "71 Fung Shing Street, Ngau Chi Wan, Wong Tai Sin",
+    "latitude": 22.33615000000003,
+    "longitude": 114.2138000000001
+  },
+  {
+    "address": "Middle Road, Tsim Sha Tsui, Kowloon",
+    "latitude": 22.295410000000057,
+    "longitude": 114.17409000000009
+  },
+  {
+    "address": "Wai Man Road, Sai Kung",
+    "latitude": 22.382560000000066,
+    "longitude": 114.27464000000009
+  },
+  {
+    "address": "42, Fung Tak Road, Wong Tai Sin, Kowloon",
+    "latitude": 22.34238000000003,
+    "longitude": 114.19805000000008
+  },
+  {
+    "address": "Ap Lei Chau Main Street, Aberdeen, Hong Kong",
+    "latitude": 22.245120000000032,
+    "longitude": 114.15787000000012
+  },
+  {
+    "address": "20 Sham Mong Road, Kowloon",
+    "latitude": 22.324090000000062,
+    "longitude": 114.15740000000005
+  },
+  {
+    "address": "Chuk Yuen Road, Wong Tai Sin, Kowloon",
+    "latitude": 22.344840000000037,
+    "longitude": 114.18384000000003
+  },
+  {
+    "address": "12 On Chun Street, Ma On Shan",
+    "latitude": 22.427290000000028,
+    "longitude": 114.23118000000011
+  },
+  {
+    "address": "North Point Ferry Pier, Hong Kong",
+    "latitude": 22.29348000000003,
+    "longitude": 114.20148000000006
+  },
+  {
+    "address": "Jockey Club Road, Sheung Shui",
+    "latitude": 22.498920000000055,
+    "longitude": 114.1341000000001
+  },
+  {
+    "address": "Near Hoi Tai Street, Quarry Bay",
+    "latitude": 22.28840000000002,
+    "longitude": 114.21552000000008
+  },
+  {
+    "address": "Chai Wan Park, Tsui Wan Street, Chai Wan",
+    "latitude": 22.266270000000087,
+    "longitude": 114.2384800000001
+  },
+  {
+    "address": "6 Tin Shui Road, Tin Shui Wai, Yuen Long",
+    "latitude": 22.455660000000016,
+    "longitude": 114.00345000000004
+  },
+  {
+    "address": "San Kwai Street, Kwai Chung",
+    "latitude": 22.35720000000003,
+    "longitude": 114.13292000000001
+  },
+  {
+    "address": "Shing Mun Road, Tsuen Wan",
+    "latitude": 22.374750000000063,
+    "longitude": 114.12507000000005
+  },
+  {
+    "address": "Town Park Road North, Yuen Long",
+    "latitude": 22.44250000000004,
+    "longitude": 114.01893000000007
+  },
+  {
+    "address": "Albany Road, Central & Western",
+    "latitude": 22.277690000000064,
+    "longitude": 114.15593000000001
+  },
+  {
+    "address": "West Kowloon Reclamation Area (J/O Austin Road West/ Nga Cheung Road)",
+    "latitude": 22.300700000000056,
+    "longitude": 114.15456000000007
+  },
+  {
+    "address": "Wan Lung Road, Tseung Kwan O",
+    "latitude": 22.318770000000033,
+    "longitude": 114.2576600000001
+  },
+  {
+    "address": "Po Hong Road, Tseung Kwan O",
+    "latitude": 22.325020000000038,
+    "longitude": 114.25299000000005
+  },
+  {
+    "address": "270 Nam Cheong Street, Sham Shui Po",
+    "latitude": 22.338590000000057,
+    "longitude": 114.1709800000001
+  },
+  {
+    "address": "Tung Tsing Road,Kowloon City",
+    "latitude": 22.33165000000002,
+    "longitude": 114.18982000000005
+  },
+  {
+    "address": "Fung Tak Road, Diamond Hill, Wong Tai Sin",
+    "latitude": 22.339130000000054,
+    "longitude": 114.20452000000012
+  },
+  {
+    "address": "19 Cotton Tree Drive, Central",
+    "latitude": 22.27731000000004,
+    "longitude": 114.1613900000001
+  },
+  {
+    "address": "Yuen Po Street, Mongkok",
+    "latitude": 22.325770000000013,
+    "longitude": 114.17380000000003
+  },
+  {
+    "address": "2A Yi Hong Street, Tsuen Wan",
+    "latitude": 22.363370000000025,
+    "longitude": 114.11215000000004
+  }
+]

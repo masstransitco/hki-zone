@@ -1,0 +1,24 @@
+{
+  "slug": "ams",
+  "url": "https://www.ams.gov.hk/en/",
+  "picked": {
+    "href": "https://www.ams.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 160035,
+    "file": "ams.ico"
+  },
+  "candidates": [
+    {
+      "source": "html",
+      "rel": "icon",
+      "href": "https://www.ams.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 160035,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

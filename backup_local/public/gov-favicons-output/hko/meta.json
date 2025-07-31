@@ -1,0 +1,24 @@
+{
+  "slug": "hko",
+  "url": "https://www.hko.gov.hk/en/index.html",
+  "picked": {
+    "href": "https://www.hko.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 157426,
+    "file": "hko.ico"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.hko.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 157426,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}

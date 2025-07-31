@@ -1,0 +1,24 @@
+{
+  "slug": "fehd",
+  "url": "https://www.fehd.gov.hk/english/",
+  "picked": {
+    "href": "https://www.fehd.gov.hk/favicon.ico",
+    "ext": "ico",
+    "mime": "image/x-icon",
+    "bytes": 1150,
+    "file": "fehd.ico"
+  },
+  "candidates": [
+    {
+      "source": "default",
+      "rel": "icon",
+      "href": "https://www.fehd.gov.hk/favicon.ico",
+      "ok": true,
+      "ext": "ico",
+      "mime": "image/x-icon",
+      "bytes": 1150,
+      "file": "raw/icon-0.ico",
+      "error": null
+    }
+  ]
+}
