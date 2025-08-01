@@ -272,12 +272,18 @@ CONTENT REQUIREMENTS:
    - Unique insights about motivations, timing, or strategic positioning
 4. Citations: Use ${minSources}+ sources, emphasizing those with contextual depth
 
+CITATION RULES:
+- Use citations ONLY at the END of sentences, never mid-sentence
+- Format: "Complete sentence [1]." or "Complete sentence [1][2]."
+- NEVER use patterns like "[1].[1]" or "[1][5].[2]"
+- Each citation number should appear only once per sentence
+
 Return ONLY valid JSON:
 {
   "en": {
     "title": "8-12 word active title with strong verbs",
-    "summary": "2 sentences establishing immediate significance with citations [1]",
-    "content": "<p>Contextually enriched paragraph with background insights [1][2]</p>",
+    "summary": "First sentence with key impact [1]. Second sentence with significance [2].",
+    "content": "<p>Contextually enriched paragraph with background insights [1][2].</p>",
     "key_points": [
       "Most impactful point with specific detail [1]",
       "Second priority point with contextual background [2]", 
@@ -285,7 +291,7 @@ Return ONLY valid JSON:
       "Fourth point with historical context or precedent [4]",
       "Fifth point on broader implications [5]"
     ],
-    "why_it_matters": "Use search results to reveal deeper context about key players, institutional backgrounds, historical precedents, or strategic implications that transform this from basic news into knowledge-rich insight [1][2]",
+    "why_it_matters": "First sentence revealing deeper context about key players or institutional backgrounds [1]. Second sentence on strategic implications that transform this into knowledge-rich insight [2].",
     "citations": [
       {"text": "${searchResults[0]?.title || 'Source 1'}", "url": "${searchResults[0]?.url || ''}"},
       {"text": "${searchResults[1]?.title || 'Source 2'}", "url": "${searchResults[1]?.url || ''}"}

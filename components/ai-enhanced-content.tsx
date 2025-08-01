@@ -26,21 +26,30 @@ export default function AIEnhancedContent({ content, isBottomSheet = false, sour
     ? "text-lg font-semibold" 
     : "text-xl font-semibold"
 
-  // Helper function to process citations within text (recursive for nested formatting)
+  // Helper function to clean and process citations within text
   const processCitations = (text: string): React.ReactNode[] => {
     if (!text) return [text]
+
+    // Clean up malformed citation patterns first
+    let cleanedText = text
+      // Remove patterns like [1].[1] -> [1]
+      .replace(/(\[\d+\])\.(\[\d+\])/g, '$1')
+      // Remove patterns like [1][5].[2] -> [1][5]
+      .replace(/(\[\d+(?:\]\[\d+)*\])\.(\[\d+\])/g, '$1')
+      // Clean up trailing citation fragments like ".[1]" at end of sentences
+      .replace(/\.(\[\d+\])$/g, '$1')
 
     const parts: React.ReactNode[] = []
     let lastIndex = 0
     
-    // Regex to match citations
+    // Regex to match citations (including multiple consecutive ones like [1][2])
     const citationRegex = /\[(\d+)\]/g
     let match
     
-    while ((match = citationRegex.exec(text)) !== null) {
+    while ((match = citationRegex.exec(cleanedText)) !== null) {
       // Add text before the match
       if (match.index > lastIndex) {
-        parts.push(text.slice(lastIndex, match.index))
+        parts.push(cleanedText.slice(lastIndex, match.index))
       }
       
       if (sources && sources.length > 0) {
@@ -64,21 +73,17 @@ export default function AIEnhancedContent({ content, isBottomSheet = false, sour
               {citationNumber}
             </button>
           )
-        } else {
-          // If source not found, just show the original citation
-          parts.push(match[0])
         }
-      } else {
-        // Citation without sources, show as plain text
-        parts.push(match[0])
+        // If source not found, skip rendering the citation entirely
       }
+      // If no sources available, skip rendering the citation entirely
       
       lastIndex = citationRegex.lastIndex
     }
     
     // Add remaining text
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex))
+    if (lastIndex < cleanedText.length) {
+      parts.push(cleanedText.slice(lastIndex))
     }
     
     return parts
