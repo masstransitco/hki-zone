@@ -302,7 +302,7 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
               rel="noopener noreferrer"
               className="hover:text-foreground transition-colors underline"
             >
-              Aircity Operating Systems (HK) Ltd
+              Aircity Operating System (HK) Limited
             </a>. All rights reserved.
           </p>
         </div>
