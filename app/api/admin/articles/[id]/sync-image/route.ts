@@ -18,10 +18,10 @@ export async function POST(
       return NextResponse.json({ error: 'Article ID is required' }, { status: 400 })
     }
 
-    // First, get the current article to check if it's AI enhanced and get trilingual batch info
+    // First, get the current article to check if it's AI enhanced and get source info
     const { data: currentArticle, error: fetchError } = await supabase
       .from('articles')
-      .select('id, is_ai_enhanced, trilingual_batch_id, language_variant, image_url')
+      .select('id, is_ai_enhanced, trilingual_batch_id, original_article_id, url, language_variant, image_url')
       .eq('id', articleId)
       .single()
 
@@ -30,8 +30,8 @@ export async function POST(
       return NextResponse.json({ error: 'Article not found' }, { status: 404 })
     }
 
-    // If the article is not AI enhanced or doesn't have a trilingual batch, just update this article
-    if (!currentArticle.is_ai_enhanced || !currentArticle.trilingual_batch_id) {
+    // If the article is not AI enhanced, just update this article
+    if (!currentArticle.is_ai_enhanced) {
       const { error: updateError } = await supabase
         .from('articles')
         .update({ 
@@ -52,11 +52,33 @@ export async function POST(
       })
     }
 
-    // If it's AI enhanced with a trilingual batch, update all articles in the same batch
+    // If it's AI enhanced, update all articles with the same original_article_id (trilingual versions)
+    if (!currentArticle.original_article_id) {
+      // If no original article ID, just update this article
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({ 
+          image_url: imageUrl,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', articleId)
+
+      if (updateError) {
+        console.error('Error updating article:', updateError)
+        return NextResponse.json({ error: 'Failed to update article' }, { status: 500 })
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Image updated successfully (no trilingual versions)',
+        updatedArticles: 1 
+      })
+    }
+
     const { data: trilingualArticles, error: batchError } = await supabase
       .from('articles')
-      .select('id, language_variant, image_url')
-      .eq('trilingual_batch_id', currentArticle.trilingual_batch_id)
+      .select('id, language_variant, image_url, original_article_id')
+      .eq('original_article_id', currentArticle.original_article_id)
       .eq('is_ai_enhanced', true)
 
     if (batchError) {
@@ -114,7 +136,7 @@ export async function POST(
       message: `Image synchronized across ${successfulUpdates} trilingual articles`,
       updatedArticles: successfulUpdates,
       languages: languages,
-      trilingualBatchId: currentArticle.trilingual_batch_id,
+      originalArticleId: currentArticle.original_article_id,
       details: {
         totalArticles: trilingualArticles.length,
         successfulUpdates,

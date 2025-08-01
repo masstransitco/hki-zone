@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { supabaseAuth } from "@/lib/supabase-auth"
 import {
   Sheet,
   SheetContent,
@@ -172,6 +173,69 @@ export default function ArticleDetailSheet({
       setSaveState({ status: 'idle' })
     }
   }, [saveState.status])
+
+  // Realtime subscription for article updates
+  useEffect(() => {
+    if (!article?.id || !open) return
+
+    const channel = supabaseAuth
+      .channel(`article-${article.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'articles',
+          filter: `id=eq.${article.id}`,
+        },
+        (payload) => {
+          console.log('📡 Realtime article update received:', payload)
+          
+          // Check if this is an external change (not from current session)
+          if (payload.new && payload.old) {
+            const updatedArticle = payload.new as any
+            
+            // Update the article data via callback
+            if (onArticleUpdate) {
+              onArticleUpdate(updatedArticle)
+            }
+            
+            // If not currently editing, update form state as well
+            if (!isEditing) {
+              const newFormData = {
+                title: updatedArticle.title || '',
+                summary: updatedArticle.summary || '',
+                content: updatedArticle.content || '',
+                imageUrl: updatedArticle.image_url || '',
+                category: updatedArticle.category || '',
+                language: updatedArticle.enhancement_metadata?.language || updatedArticle.language_variant || '',
+              }
+              
+              setEditForm(newFormData)
+              setSavedBaseline(newFormData)
+              setUnsavedChanges({})
+              
+              // Show toast notification for external changes
+              if (updatedArticle.image_url !== article.imageUrl) {
+                toast.info('Article image updated from another session', {
+                  description: 'The article image has been synchronized'
+                })
+              } else {
+                toast.info('Article updated from another session', {
+                  description: 'The article has been modified externally'
+                })
+              }
+            }
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      console.log('🔌 Unsubscribing from article realtime updates')
+      supabaseAuth.removeChannel(channel)
+    }
+  }, [article?.id, open, isEditing, onArticleUpdate])
 
   // Handle image URL changes with automatic trilingual sync
   const handleImageUrlChange = useCallback(async (newImageUrl: string) => {
@@ -424,6 +488,10 @@ export default function ArticleDetailSheet({
     }
 
     setIsGeneratingImage(true)
+    const toastId = 'getimg-generation'
+    
+    toast.loading('🚀 Starting generic scene generation...', { id: toastId })
+    
     try {
       const response = await fetch('/api/admin/generate-image', {
         method: 'POST',
@@ -444,13 +512,15 @@ export default function ArticleDetailSheet({
 
       // Update the form with the new image URL and sync across trilingual articles
       if (data.imageUrl) {
+        toast.loading('🔄 Syncing across languages...', { id: toastId })
         await handleImageUrlChange(data.imageUrl)
       }
       
-      toast.success(data.message || 'Generic scene generated and article updated successfully!')
+      toast.success('✅ Generic scene generated successfully!', { id: toastId })
     } catch (error) {
       console.error('AI image generation error:', error)
       toast.error('Failed to generate generic scene', {
+        id: toastId,
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     } finally {
@@ -465,7 +535,15 @@ export default function ArticleDetailSheet({
     }
 
     setIsGeneratingOpenAIImage(true)
+    
+    // Use a single toast with ID to update its content
+    const toastId = 'openai-generation'
+    
+    toast.loading('🚀 Starting AI image generation...', { id: toastId })
+    
     try {
+      toast.loading('📝 Analyzing article content with GPT-4...', { id: toastId })
+      
       const response = await fetch('/api/admin/generate-openai-image', {
         method: 'POST',
         headers: {
@@ -483,15 +561,19 @@ export default function ArticleDetailSheet({
         throw new Error(data.error || 'Failed to enhance image')
       }
 
+      toast.loading('🎨 Generating image with DALL-E 3...', { id: toastId })
+      
       // Update the form with the new image URL and sync across trilingual articles
       if (data.imageUrl) {
+        toast.loading('🔄 Syncing across languages...', { id: toastId })
         await handleImageUrlChange(data.imageUrl)
       }
       
-      toast.success(data.message || 'Image enhanced successfully!')
+      toast.success('✅ Editorial image generated successfully!', { id: toastId })
     } catch (error) {
       console.error('OpenAI image enhancement error:', error)
-      toast.error('Failed to enhance image', {
+      toast.error('Failed to generate editorial image', {
+        id: toastId,
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     } finally {
@@ -1115,7 +1197,7 @@ export default function ArticleDetailSheet({
                   ) : (
                     <Wand2 className="h-4 w-4 mr-2" />
                   )}
-                  {isGeneratingOpenAIImage ? 'Enhancing...' : 'Enhance with OpenAI'}
+                  {isGeneratingOpenAIImage ? 'Generating...' : 'Generate Editorial Image'}
                 </Button>
               </div>
               
