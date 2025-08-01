@@ -236,7 +236,7 @@ export class PerplexityEnhancerV4 {
       `[${index + 1}] ${result.title} (${result.url})${result.snippet ? `: ${result.snippet.substring(0, 100)}...` : ''}`
     ).join('\n');
     
-    return `You are an HKI Senior News Editor. Below is an article and ${searchResults.length} search results about this topic.
+    return `You are an experienced Hong Kong news editor with deep knowledge of local context. Below is an article and ${searchResults.length} search results.
 
 --- ARTICLE ---
 Title: ${title}
@@ -246,32 +246,53 @@ Content: ${content}
 --- SEARCH RESULTS ---
 ${searchResultsText}
 
+--- EDITORIAL MISSION ---
+Use the search results to uncover deeper context about the people, places, organizations, and events mentioned in the story. Transform surface-level reporting into knowledge-rich journalism by connecting dots that others miss.
+
+--- EDITORIAL STANDARDS ---
+CONCISENESS: Maximum 5 key points, each under 25 words
+CONTEXTUAL INTELLIGENCE: Mine search results for background on key figures, institutional histories, geographic significance, and historical precedents
+KNOWLEDGE VALUE: Reveal insights about relationships, motivations, and broader implications that aren't obvious from the basic story
+VOICE: Authoritative but accessible, avoiding generic statements
+
 --- TASK ---
-Generate enhanced versions of this article in THREE languages (English, Traditional Chinese, Simplified Chinese).
+Create enhanced trilingual versions that deliver unique contextual knowledge for Hong Kong readers.
 
-REQUIREMENTS:
-1. Incorporate information from the search results to add context and recent updates
-2. Cite AT LEAST ${minSources} distinct sources from the above list using [1], [2], etc.
-3. Each language version must reference the same sources
-4. Focus on Hong Kong relevance and impact
-5. Ensure all ${searchResults.length} sources are considered for citation
+CONTENT REQUIREMENTS:
+1. Summary: 2 impactful sentences explaining immediate significance with citations [1]
+2. Key Points: Maximum 5 points, prioritize by reader impact:
+   - Lead with most consequential development
+   - Include specific background on people/organizations from search results
+   - Add historical context or precedents where relevant
+   - Reveal connections or relationships not apparent in original story
+3. Why It Matters: CRITICAL - Use search context to reveal deeper significance:
+   - Background on key players and their track records
+   - Historical context of similar events/decisions
+   - Broader implications for stakeholder relationships
+   - Unique insights about motivations, timing, or strategic positioning
+4. Citations: Use ${minSources}+ sources, emphasizing those with contextual depth
 
-Return ONLY a valid JSON object with this EXACT structure:
+Return ONLY valid JSON:
 {
   "en": {
-    "title": "8-12 word title with active verb",
-    "summary": "Exactly 2 sentences with citations like [1]",
-    "content": "<p>Enhanced content with multiple citations [1][2]</p>",
-    "key_points": ["Point with citation [1]", "Point with citation [2]", ...],
-    "why_it_matters": "2 sentences about significance with citations [3]",
+    "title": "8-12 word active title with strong verbs",
+    "summary": "2 sentences establishing immediate significance with citations [1]",
+    "content": "<p>Contextually enriched paragraph with background insights [1][2]</p>",
+    "key_points": [
+      "Most impactful point with specific detail [1]",
+      "Second priority point with contextual background [2]", 
+      "Third point revealing connections or relationships [3]",
+      "Fourth point with historical context or precedent [4]",
+      "Fifth point on broader implications [5]"
+    ],
+    "why_it_matters": "Use search results to reveal deeper context about key players, institutional backgrounds, historical precedents, or strategic implications that transform this from basic news into knowledge-rich insight [1][2]",
     "citations": [
       {"text": "${searchResults[0]?.title || 'Source 1'}", "url": "${searchResults[0]?.url || ''}"},
-      {"text": "${searchResults[1]?.title || 'Source 2'}", "url": "${searchResults[1]?.url || ''}"},
-      ...
+      {"text": "${searchResults[1]?.title || 'Source 2'}", "url": "${searchResults[1]?.url || ''}"}
     ]
   },
-  "zh_HK": { ... same structure ... },
-  "zh_CN": { ... same structure ... }
+  "zh_HK": { ... same structure in Traditional Chinese ... },
+  "zh_CN": { ... same structure in Simplified Chinese ... }
 }`;
   }
   

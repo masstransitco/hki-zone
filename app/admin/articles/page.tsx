@@ -994,8 +994,26 @@ export default function ArticlesPage() {
         open={isSheetOpen}
         onOpenChange={setIsSheetOpen}
         onArticleUpdate={(updatedArticle) => {
-          // Update will be handled by real-time subscriptions
-          loadQuickStats() // Refresh stats
+          // Update the article in the React Query cache
+          queryClient.setQueryData(queryKey, (oldData: any) => {
+            if (!oldData) return oldData
+            
+            return {
+              ...oldData,
+              pages: oldData.pages.map((page: any) => ({
+                ...page,
+                articles: page.articles.map((article: Article) =>
+                  article.id === updatedArticle.id ? updatedArticle : article
+                )
+              }))
+            }
+          })
+          
+          // Update the selected article state
+          setSelectedArticle(updatedArticle)
+          
+          // Refresh stats
+          loadQuickStats()
         }}
         onArticleDelete={(articleId) => {
           // Deletion will be handled by real-time subscriptions

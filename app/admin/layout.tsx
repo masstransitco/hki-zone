@@ -4,6 +4,7 @@ import AdminSidebar, { AdminSidebarProvider, useSidebar } from "@/components/adm
 import AdminHeader from "@/components/admin/admin-header"
 import { LanguageProvider } from "@/components/language-provider"
 import { QueryProvider } from "@/components/query-provider"
+import { ImageGenerationProvider } from "@/contexts/image-generation-context"
 import { Toaster } from "sonner"
 
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
@@ -35,12 +36,14 @@ export default function AdminLayout({
   return (
     <LanguageProvider>
       <QueryProvider>
-        <AdminSidebarProvider>
-          <AdminLayoutContent>
-            {children}
-          </AdminLayoutContent>
-        </AdminSidebarProvider>
-        <Toaster richColors position="top-right" />
+        <ImageGenerationProvider>
+          <AdminSidebarProvider>
+            <AdminLayoutContent>
+              {children}
+            </AdminLayoutContent>
+          </AdminSidebarProvider>
+          <Toaster richColors position="top-right" />
+        </ImageGenerationProvider>
       </QueryProvider>
     </LanguageProvider>
   )

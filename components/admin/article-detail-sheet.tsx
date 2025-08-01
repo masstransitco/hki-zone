@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { supabaseAuth } from "@/lib/supabase-auth"
+import { useImageGeneration } from "@/contexts/image-generation-context"
 import {
   Sheet,
   SheetContent,
@@ -98,10 +99,14 @@ export default function ArticleDetailSheet({
   }
 
   const queryClient = useQueryClient()
+  const { isGenerating, setGenerating } = useImageGeneration()
+  
+  // Check if this specific article is generating images
+  const isGeneratingImage = isGenerating(article.id, 'getimg')
+  const isGeneratingOpenAIImage = isGenerating(article.id, 'openai')
+  
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
-  const [isGeneratingOpenAIImage, setIsGeneratingOpenAIImage] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>({ status: 'idle' })
   const [unsavedChanges, setUnsavedChanges] = useState<UnsavedChanges>({})
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
@@ -242,6 +247,15 @@ export default function ArticleDetailSheet({
     // Update form state immediately
     handleFieldChange('imageUrl', newImageUrl)
     
+    // Update the article object to reflect the new image
+    if (onArticleUpdate) {
+      onArticleUpdate({
+        ...article,
+        imageUrl: newImageUrl,
+        image_url: newImageUrl
+      })
+    }
+    
     // If this is an AI enhanced article, sync the image across trilingual versions
     if (article.isAiEnhanced && newImageUrl) {
       try {
@@ -268,7 +282,7 @@ export default function ArticleDetailSheet({
         // Silent fail - main update still worked
       }
     }
-  }, [article, handleFieldChange])
+  }, [article, handleFieldChange, onArticleUpdate])
 
   // Check for unsaved changes against saved baseline
   const hasUnsavedChanges = useMemo(() => {
@@ -487,7 +501,7 @@ export default function ArticleDetailSheet({
       return
     }
 
-    setIsGeneratingImage(true)
+    setGenerating(article.id, 'getimg', true)
     const toastId = 'getimg-generation'
     
     toast.loading('🚀 Starting generic scene generation...', { id: toastId })
@@ -524,9 +538,9 @@ export default function ArticleDetailSheet({
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     } finally {
-      setIsGeneratingImage(false)
+      setGenerating(article.id, 'getimg', false)
     }
-  }, [article])
+  }, [article, setGenerating])
 
   const handleGenerateOpenAIImage = useCallback(async () => {
     if (!article.imageUrl) {
@@ -534,7 +548,7 @@ export default function ArticleDetailSheet({
       return
     }
 
-    setIsGeneratingOpenAIImage(true)
+    setGenerating(article.id, 'openai', true)
     
     // Use a single toast with ID to update its content
     const toastId = 'openai-generation'
@@ -577,9 +591,9 @@ export default function ArticleDetailSheet({
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     } finally {
-      setIsGeneratingOpenAIImage(false)
+      setGenerating(article.id, 'openai', false)
     }
-  }, [article])
+  }, [article, setGenerating])
 
 
   return (

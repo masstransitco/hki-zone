@@ -26,33 +26,25 @@ export default function AIEnhancedContent({ content, isBottomSheet = false, sour
     ? "text-lg font-semibold" 
     : "text-xl font-semibold"
 
-  // Helper function to process citations and markdown formatting in text
-  const processTextWithCitations = (text: string) => {
-    if (!text) return text
+  // Helper function to process citations within text (recursive for nested formatting)
+  const processCitations = (text: string): React.ReactNode[] => {
+    if (!text) return [text]
 
-    const parts = []
+    const parts: React.ReactNode[] = []
     let lastIndex = 0
     
-    // Combined regex to match both **bold** text and [citations]
-    const combinedRegex = /\*\*(.*?)\*\*|\[(\d+)\]/g
+    // Regex to match citations
+    const citationRegex = /\[(\d+)\]/g
     let match
     
-    while ((match = combinedRegex.exec(text)) !== null) {
+    while ((match = citationRegex.exec(text)) !== null) {
       // Add text before the match
       if (match.index > lastIndex) {
         parts.push(text.slice(lastIndex, match.index))
       }
       
-      if (match[1] !== undefined) {
-        // This is bold text - render with strong tag
-        parts.push(
-          <strong key={`bold-${match.index}`} className="font-semibold">
-            {match[1]}
-          </strong>
-        )
-      } else if (match[2] !== undefined && sources && sources.length > 0) {
-        // This is a citation
-        const citationNumber = parseInt(match[2])
+      if (sources && sources.length > 0) {
+        const citationNumber = parseInt(match[1])
         const sourceIndex = citationNumber - 1
         
         if (sourceIndex >= 0 && sourceIndex < sources.length) {
@@ -76,17 +68,55 @@ export default function AIEnhancedContent({ content, isBottomSheet = false, sour
           // If source not found, just show the original citation
           parts.push(match[0])
         }
-      } else if (match[2] !== undefined) {
+      } else {
         // Citation without sources, show as plain text
         parts.push(match[0])
       }
       
-      lastIndex = combinedRegex.lastIndex
+      lastIndex = citationRegex.lastIndex
     }
     
     // Add remaining text
     if (lastIndex < text.length) {
       parts.push(text.slice(lastIndex))
+    }
+    
+    return parts
+  }
+
+  // Helper function to process citations and markdown formatting in text
+  const processTextWithCitations = (text: string) => {
+    if (!text) return text
+
+    const parts = []
+    let lastIndex = 0
+    
+    // Regex to match **bold** text
+    const boldRegex = /\*\*(.*?)\*\*/g
+    let match
+    
+    while ((match = boldRegex.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        const beforeText = text.slice(lastIndex, match.index)
+        parts.push(...processCitations(beforeText))
+      }
+      
+      // Process bold text content for nested citations
+      const boldContent = processCitations(match[1])
+      parts.push(
+        <strong key={`bold-${match.index}`} className="font-semibold">
+          {boldContent}
+        </strong>
+      )
+      
+      lastIndex = boldRegex.lastIndex
+    }
+    
+    // Add remaining text
+    if (lastIndex < text.length) {
+      const remainingText = text.slice(lastIndex)
+      parts.push(...processCitations(remainingText))
     }
     
     return parts.length > 0 ? <>{parts}</> : text

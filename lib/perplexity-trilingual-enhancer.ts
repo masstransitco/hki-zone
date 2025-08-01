@@ -166,8 +166,11 @@ async function enhanceArticleInAllLanguages(
   
   // Helper function to format content with structure and citations
   const formatContent = (lang: typeof trilingualResult.en, addCitations: boolean = true) => {
+    // Limit key points to maximum 5 for better readability
+    const limitedKeyPoints = lang.key_points.slice(0, 5);
+    
     // Add citation references to key points
-    const keyPointsWithCitations = lang.key_points.map((point, idx) => {
+    const keyPointsWithCitations = limitedKeyPoints.map((point, idx) => {
       // Check if point already has a citation, if not add one
       const citationMatch = point.match(/\[\d+\]$/);
       if (citationMatch || !addCitations) {
