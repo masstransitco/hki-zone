@@ -100,6 +100,7 @@ export default function ArticleDetailSheet({
   const [isEditing, setIsEditing] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [isGeneratingOpenAIImage, setIsGeneratingOpenAIImage] = useState(false)
   const [saveState, setSaveState] = useState<SaveState>({ status: 'idle' })
   const [unsavedChanges, setUnsavedChanges] = useState<UnsavedChanges>({})
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true)
@@ -454,6 +455,47 @@ export default function ArticleDetailSheet({
       })
     } finally {
       setIsGeneratingImage(false)
+    }
+  }, [article])
+
+  const handleGenerateOpenAIImage = useCallback(async () => {
+    if (!article.imageUrl) {
+      toast.error('No image URL available for enhancement')
+      return
+    }
+
+    setIsGeneratingOpenAIImage(true)
+    try {
+      const response = await fetch('/api/admin/generate-openai-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: article.imageUrl,
+          articleId: article.id
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to enhance image')
+      }
+
+      // Update the form with the new image URL and sync across trilingual articles
+      if (data.imageUrl) {
+        await handleImageUrlChange(data.imageUrl)
+      }
+      
+      toast.success(data.message || 'Image enhanced successfully!')
+    } catch (error) {
+      console.error('OpenAI image enhancement error:', error)
+      toast.error('Failed to enhance image', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      })
+    } finally {
+      setIsGeneratingOpenAIImage(false)
     }
   }, [article])
 
@@ -1058,6 +1100,22 @@ export default function ArticleDetailSheet({
                     <Wand2 className="h-4 w-4 mr-2" />
                   )}
                   {isGeneratingImage ? 'Generating...' : 'Generate Generic Scene'}
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3">
+                <Button 
+                  variant="outline"
+                  onClick={handleGenerateOpenAIImage}
+                  disabled={isGeneratingOpenAIImage || !article.imageUrl}
+                  className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100"
+                >
+                  {isGeneratingOpenAIImage ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4 mr-2" />
+                  )}
+                  {isGeneratingOpenAIImage ? 'Enhancing...' : 'Enhance with OpenAI'}
                 </Button>
               </div>
               

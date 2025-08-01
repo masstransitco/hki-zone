@@ -67,7 +67,11 @@ export async function batchEnhanceTrilingualArticles(
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
       
-      const trilingualResult = await enhanceArticleInAllLanguages(sourceArticle, batchId);
+      // Generate a unique trilingual batch ID for each source article
+      const articleBatchId = `${batchId}_article_${sourceArticle.id}_${Date.now()}`;
+      console.log(`Generated unique trilingual batch ID: ${articleBatchId}`);
+      
+      const trilingualResult = await enhanceArticleInAllLanguages(sourceArticle, articleBatchId);
       
       // Add all three language versions to results
       results.push(trilingualResult.enhancedVersions.english);
