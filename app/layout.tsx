@@ -9,7 +9,6 @@ import { Analytics } from "@vercel/analytics/react"
 import { WebsiteStructuredData } from "@/components/structured-data"
 import { ServiceWorkerCleanup } from "@/components/service-worker-cleanup"
 import { HeaderVisibilityProvider } from "@/contexts/header-visibility"
-// import { TTSProvider } from "@/contexts/tts-context" // Temporarily disabled during Redux migration
 import ReduxProvider from "@/components/redux-provider"
 import { AuthModalProvider } from "@/contexts/auth-modal-context"
 import { BookmarkProvider } from "@/contexts/bookmark-context"
@@ -112,8 +111,6 @@ export default function RootLayout({
                 <AuthModalProvider>
                   <BookmarkProvider>
                     <HeaderVisibilityProvider>
-                      {/* TTSProvider temporarily disabled during Redux migration */}
-                      {/* <TTSProvider> */}
                         <WebsiteStructuredData />
                         <ServiceWorkerCleanup />
                         <AuthInitializer />
@@ -123,7 +120,6 @@ export default function RootLayout({
                         <GlobalTTSHUD />
                         <GlobalAuthModal />
                         <Analytics />
-                      {/* </TTSProvider> */}
                     </HeaderVisibilityProvider>
                   </BookmarkProvider>
                 </AuthModalProvider>

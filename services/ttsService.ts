@@ -103,6 +103,14 @@ const getDeviceInfo = () => {
   }
 }
 
+// SSML safety utility - escape stray characters without touching SSML tags
+const escapeForSSML = (s: string) =>
+  s
+    // ignore sequences already part of known entities
+    .replace(/&(?!amp;|lt;|gt;|quot;|apos;)/g, 'and')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+
 // Enhanced SSML preprocessing for professional news broadcast delivery
 const preprocessTextToSSML = (text: string, voiceName: string, language: string): string => {
   // Clean HTML tags and normalize whitespace
@@ -113,34 +121,54 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
   cleanText = cleanText.replace(/\(Photo[^)]*\)/gi, '') // Remove photo captions
   cleanText = cleanText.replace(/\[Advertisement\]/gi, '') // Remove ad markers
   
-  // Enhanced section header removal for radio broadcast
-  // More comprehensive patterns to catch section headers in various formats
-  const sectionHeaderPatterns = [
-    // English patterns - more comprehensive
-    /^(Summary|Key Points|Why it matters|Breaking|Update|Analysis|In Brief|The Details|Background|What to know|What happened|The bottom line|At a glance)[\s]*:?[\s]*/gmi,
-    // Handle bullet points and numbered sections
-    /^\s*[\•\-\*]\s*(Summary|Key Points|Why it matters|Breaking|Update|Analysis)[\s]*:?[\s]*/gmi,
-    /^\s*\d+\.\s*(Summary|Key Points|Why it matters|Breaking|Update|Analysis)[\s]*:?[\s]*/gmi,
-    
-    // Traditional Chinese patterns
-    /^(摘要|重點|為什麼重要|突發|更新|分析|簡述|詳情|背景|需要知道|發生什麼|底線|一覽)[\s]*:?[\s]*/gmi,
-    /^\s*[\•\-\*]\s*(摘要|重點|為什麼重要|突發|更新|分析)[\s]*:?[\s]*/gmi,
-    /^\s*\d+\.\s*(摘要|重點|為什麼重要|突發|更新|分析)[\s]*:?[\s]*/gmi,
-    
-    // Simplified Chinese patterns  
-    /^(摘要|要点|为什么重要|突发|更新|分析|简述|详情|背景|需要知道|发生什么|底线|一览)[\s]*:?[\s]*/gmi,
-    /^\s*[\•\-\*]\s*(摘要|要点|为什么重要|突发|更新|分析)[\s]*:?[\s]*/gmi,
-    /^\s*\d+\.\s*(摘要|要点|为什么重要|突发|更新|分析)[\s]*:?[\s]*/gmi
-  ]
+  // Simple and direct section header removal for radio broadcast
+  // Remove the three specific section headers that appear in all articles
+  // Handle them with bold markdown formatting (most common case)
+  cleanText = cleanText.replace(/\*\*Summary\*\*/gi, '')
+  cleanText = cleanText.replace(/\*\*Key Points\*\*/gi, '')
+  cleanText = cleanText.replace(/\*\*Why It Matters\*\*/gi, '')
   
-  // Apply all patterns to remove section headers
-  sectionHeaderPatterns.forEach(pattern => {
-    cleanText = cleanText.replace(pattern, '')
-  })
+  // Handle them without markdown formatting (in case markdown was already stripped)
+  cleanText = cleanText.replace(/^Summary$/gmi, '')
+  cleanText = cleanText.replace(/^Key Points$/gmi, '')
+  cleanText = cleanText.replace(/^Why It Matters$/gmi, '')
   
-  // Remove standalone section headers that might be on their own lines
-  cleanText = cleanText.replace(/^(Summary|Key Points|Why it matters|Breaking|Update|Analysis|摘要|重點|為什麼重要|突發|更新|分析|要点|为什么重要|突发)[\s]*$/gmi, '')
+  // Handle them at the beginning of lines with optional whitespace
+  cleanText = cleanText.replace(/^\s*Summary\s*$/gmi, '')
+  cleanText = cleanText.replace(/^\s*Key Points\s*$/gmi, '')
+  cleanText = cleanText.replace(/^\s*Why It Matters\s*$/gmi, '')
   
+  // Handle them after line breaks in the middle of text
+  cleanText = cleanText.replace(/\n\s*\*\*Summary\*\*\s*/gi, '\n')
+  cleanText = cleanText.replace(/\n\s*\*\*Key Points\*\*\s*/gi, '\n')
+  cleanText = cleanText.replace(/\n\s*\*\*Why It Matters\*\*\s*/gi, '\n')
+  
+  // Handle standalone headers on their own lines
+  cleanText = cleanText.replace(/\nSummary\n/gi, '\n')
+  cleanText = cleanText.replace(/\nKey Points\n/gi, '\n')
+  cleanText = cleanText.replace(/\nWhy It Matters\n/gi, '\n')
+  
+  // Finance & HK units normalization - read naturally, not symbolically
+  cleanText = cleanText
+    // HK$ → Hong Kong dollars; keep number as digits (fast to parse for listeners)
+    .replace(/HK\$\s?([\d,\.]+)\s?(bn|b|million|mn|m|k)?/gi, (_, n, u) => {
+      const unit = (u || '').toLowerCase()
+      const spokenUnit =
+        unit.startsWith('bn') || unit === 'b' ? ' billion' :
+        unit.startsWith('m') ? ' million' :
+        unit === 'k' ? ' thousand' : ''
+      return `Hong Kong dollars ${n}${spokenUnit}`
+    })
+    // % and percentage points
+    .replace(/([\d.,]+)\s?%/g, '$1 percent')
+    .replace(/([\d.,]+)\s?bps\b/gi, '$1 basis points')
+    // Year-on-year / month-on-month
+    .replace(/\bYoY\b/gi, 'year on year')
+    .replace(/\bMoM\b/gi, 'month on month')
+    // Dashes and ranges
+    .replace(/[–—]/g, '-')                // unify
+    .replace(/(\d)\s*-\s*(\d)\s*(AM|PM)/gi, '$1 to $2 $3')
+
   // Remove numbered citations and references
   cleanText = cleanText.replace(/\[\d+\]/g, '') // [1], [2], etc.
   cleanText = cleanText.replace(/\(Source:.*?\)/gi, '') // Source attribution
@@ -213,9 +241,9 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
       processed = processed.replace(/\b(President|Prime Minister|CEO|Director|Minister|Secretary)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi,
         '<emphasis level="moderate">$1 $2</emphasis>')
       
-      // Numbers in general - lighter emphasis for better flow
-      processed = processed.replace(/\b(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\b/g,
-        '<emphasis level="reduced">$1</emphasis>')
+      // Remove generic number emphasis to reduce SSML verbosity for more natural sound
+      // processed = processed.replace(/\b(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\b/g,
+      //   '<emphasis level="reduced">$1</emphasis>')
     }
     
     // Language-specific pronunciation improvements
@@ -226,6 +254,13 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
       processed = processed.replace(/\bHK\b/g, '<sub alias="Hong Kong">HK</sub>')
       processed = processed.replace(/\bHKD\b/g, '<sub alias="Hong Kong Dollars">HKD</sub>')
       processed = processed.replace(/\bMTR\b/g, '<sub alias="Mass Transit Railway">MTR</sub>')
+      
+      // Additional HK institutions and acronyms for stronger consistency
+      processed = processed.replace(/\bHKI\b/g, '<say-as interpret-as="characters">H K I</say-as>')
+      processed = processed.replace(/\bExCo\b/g, '<sub alias="Executive Council">ExCo</sub>')
+      processed = processed.replace(/\bDoJ\b/g, '<sub alias="Department of Justice">DoJ</sub>')
+      processed = processed.replace(/\bHA\b/g, '<sub alias="Hospital Authority">HA</sub>')
+      processed = processed.replace(/\bICAC\b/g, '<sub alias="I C A C">ICAC</sub>')
     }
     
     if (language === 'zh-CN') {
@@ -252,18 +287,42 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
       }
     }
     
-    // Add appropriate pauses for sentence structure - radio style
-    // Radio news uses shorter pauses for faster pacing and urgency
-    const pauseDuration = index === 0 ? '150ms' : '250ms' // Tighter pauses for broadcast pacing
-    return `<p><break time="${pauseDuration}"/>${processed}</p>`
+    // Smart pauses by sentence length and punctuation for better flow
+    const endPunct = /[。！？.!?]$/.test(processed)
+    const longSentence = processed.length > 140
+    const pauseMs =
+      index === 0 ? 120 :               // snappier start
+      longSentence ? 380 :
+      endPunct ? 260 : 200
+
+    // Studio voice SSML: keep it ultra-minimal - Studio voices are sensitive to markup
+    if (isStudioVoice) {
+      // Strip ALL advanced SSML for Studio voices to avoid synthesis issues
+      processed = processed
+        .replace(/<\/?emphasis[^>]*>/g, '') // Remove emphasis tags
+        .replace(/<sub[^>]*>([^<]*)<\/sub>/g, '$1') // Keep content, remove sub tags
+        .replace(/<prosody[^>]*>([^<]*)<\/prosody>/g, '$1') // Remove prosody tags but keep content
+        .replace(/<\/?prosody[^>]*>/g, '') // Remove any remaining prosody tags
+        .replace(/<say-as[^>]*>([^<]*)<\/say-as>/g, '$1') // Remove say-as tags but keep content
+    }
+
+    // Apply SSML safety escaping to processed text before wrapping
+    const safeProcessed = escapeForSSML(processed)
+    return `<p><s>${safeProcessed}</s><break time="${pauseMs}ms"/></p>`
   })
   
   // Join with appropriate breaks between paragraphs - radio style
   // Radio news uses minimal paragraph breaks to maintain momentum
   const ssmlContent = processedSentences.join('<break time="300ms"/>')
   
-  // Add prosody wrapper for overall broadcast characteristics
-  return `<speak><prosody rate="1.0" pitch="+0st" volume="+2dB">${ssmlContent}</prosody></speak>`
+  // Structural wrapper - minimal for Studio voices, enhanced for others
+  if (isStudioVoice) {
+    // Studio voices: minimal wrapper, no prosody attributes that cause errors
+    return `<speak>${ssmlContent}</speak>`
+  } else {
+    // Other voices: enhanced prosody wrapper
+    return `<speak><prosody rate="1.0" pitch="+0st" volume="+1dB">${ssmlContent}</prosody></speak>`
+  }
 }
 
 // Chunk text for Studio voices (≤5000 bytes limit)
@@ -308,6 +367,15 @@ export class TTSService {
   updateConfig(newConfig: Partial<TTSConfig>) {
     this.config = { ...this.config, ...newConfig }
   }
+
+  // Content-aware pace nudge for better delivery
+  private nudgeForContent(text: string): number {
+    const digits = (text.match(/\d/g) || []).length
+    const breaking = /\b(breaking|urgent|developing)\b/i.test(text)
+    if (digits > 80) return 0.96 // Slower for number-heavy content
+    if (breaking && text.length < 600) return 1.04 // Faster for short breaking news
+    return 1.0
+  }
   
   // Get optimal speaking rate for news delivery by language and voice type
   private getOptimalSpeakingRate(language: string, isStudioVoice: boolean): number {
@@ -332,13 +400,14 @@ export class TTSService {
     const isFemale = gender.toUpperCase() === 'FEMALE'
     
     // Radio news broadcasts use more neutral pitch for clarity and urgency
+    // Smaller shifts for Chinese languages to preserve tones
     switch (language) {
       case 'en':
         return isFemale ? -0.5 : -0.8 // Less dramatic pitch shift for radio clarity
-      case 'zh-TW': // Cantonese tonal considerations
-        return isFemale ? -0.3 : -0.6 // Minimal adjustment to preserve tones
-      case 'zh-CN': // Mandarin tonal considerations  
-        return isFemale ? -0.4 : -0.7
+      case 'zh-TW': // Cantonese tone preservation - reduced magnitude
+        return isFemale ? -0.2 : -0.4 // Smaller shifts for better tone preservation
+      case 'zh-CN': // Mandarin tone preservation - reduced magnitude
+        return isFemale ? -0.3 : -0.5 // Smaller shifts for better tone preservation
       default:
         return isFemale ? -0.5 : -0.8
     }
@@ -397,12 +466,16 @@ export class TTSService {
             voice: voiceConfig,
             audioConfig: {
               audioEncoding: 'MP3',
-              // Radio broadcast optimized audio settings
-              sampleRateHertz: 48000, // High quality for all devices
-              speakingRate: this.getOptimalSpeakingRate(this.config.language, isStudioVoice),
+              // Device-aware effects profile for better timbre
+              effectsProfileId: getDeviceInfo().isMobile
+                ? ['handset-class-device'] // Better for phones/earbuds
+                : ['large-home-entertainment-class-device'], // Better for desktop/speakers
+              // Content-aware speaking rate with device considerations
+              speakingRate: this.getOptimalSpeakingRate(this.config.language, isStudioVoice) * this.nudgeForContent(text),
               pitch: this.getOptimalPitch(this.config.language, voiceConfig.ssmlGender),
-              volumeGainDb: 3.0, // Boost volume for radio presence
-              effectsProfileId: ['large-home-entertainment-class-device'] // Studio quality
+              volumeGainDb: 0.0, // Prevent clipping; apply gain client-side if needed
+              // Let Google pick native sample rate unless required
+              // sampleRateHertz: getDeviceInfo().isMobile ? 44100 : 48000
             }
           })
         })

@@ -103,25 +103,33 @@ export default function GlobalTTSHUD() {
     return null
   }
 
-  // Define theme-aware colors inline
+  // Theme-aware colors using CSS variables
   const ttsColors = {
-    barColorStrong: 'rgba(255, 255, 255, 0.95)',
-    barColorMedium: 'rgba(255, 255, 255, 0.75)',
-    barColorWeak: 'rgba(255, 255, 255, 0.4)',
-    barGlow: 'rgba(255, 255, 255, 0.6)',
-    barGlowWeak: 'rgba(255, 255, 255, 0.3)',
-    barHighlight: 'rgba(255, 255, 255, 0.4)',
-    progressBg: 'rgba(255, 255, 255, 0.15)',
-    progressGlow: 'rgba(255, 255, 255, 0.6)',
-    // UI colors
-    surfaceGlass: 'rgba(17, 24, 39, 0.8)', // gray-900 with opacity
-    border: 'rgba(75, 85, 99, 0.3)', // gray-600 with opacity
-    shadow: 'rgba(0, 0, 0, 1)',
-    controlBg: 'rgba(55, 65, 81, 1)', // gray-700
-    controlBgHover: 'rgba(75, 85, 99, 1)', // gray-600
-    controlBgActive: 'rgba(31, 41, 55, 1)', // gray-800
-    controlFg: 'rgba(255, 255, 255, 1)',
-    controlFgSecondary: 'rgba(156, 163, 175, 1)', // gray-400
+    // Apple-inspired accent colors for visualization
+    barColorStrong: 'rgb(var(--tts-accent))',
+    barColorMedium: 'rgb(var(--tts-accent) / 0.8)',
+    barColorWeak: 'rgb(var(--tts-accent) / 0.5)',
+    barGlow: 'rgb(var(--tts-accent-glow))',
+    barGlowStrong: 'rgb(var(--tts-accent) / 0.4)',
+    barHighlight: 'rgb(var(--tts-accent) / 0.3)',
+    
+    // Neutral colors for UI elements
+    progressGlow: 'rgb(var(--tts-control-fg) / 0.3)',
+    borderActive: 'rgb(var(--tts-control-fg) / 0.4)',
+    borderGlow: 'rgb(var(--tts-control-fg) / 0.15)',
+    
+    // UI surface colors
+    surfaceGlass: 'rgb(var(--tts-surface-glass))',
+    surfaceElevated: 'rgb(var(--tts-surface-elevated))',
+    border: 'rgb(var(--tts-border) / 0.3)',
+    shadow: 'rgb(var(--tts-shadow))',
+    
+    // Control colors
+    controlBg: 'rgb(var(--tts-control-bg))',
+    controlBgHover: 'rgb(var(--tts-control-bg-hover))',
+    controlBgActive: 'rgb(var(--tts-control-bg-active))',
+    controlFg: 'rgb(var(--tts-control-fg))',
+    controlFgSecondary: 'rgb(var(--tts-control-fg-secondary))',
   }
 
   const hudContent = (
@@ -147,13 +155,13 @@ export default function GlobalTTSHUD() {
             className="flex items-center backdrop-blur-xl rounded-2xl px-4 py-3 gap-3 sm:gap-4 min-w-0"
             style={{
               backgroundColor: ttsColors.surfaceGlass,
-              border: `1px solid ${ttsColors.border}`,
+              border: `1px solid ${isPlaying ? ttsColors.borderActive : ttsColors.border}`,
               boxShadow: `
-                0 12px 40px rgba(0, 0, 0, 0.15),
-                0 6px 20px rgba(0, 0, 0, 0.1),
-                0 3px 10px rgba(0, 0, 0, 0.05),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                inset 0 -1px 0 rgba(0, 0, 0, 0.1)
+                0 10px 30px ${ttsColors.shadow},
+                0 4px 12px ${ttsColors.shadow},
+                0 2px 4px ${ttsColors.shadow},
+                ${isPlaying ? `0 0 20px ${ttsColors.borderGlow},` : ''}
+                inset 0 1px 0 rgba(255, 255, 255, 0.08)
               `,
               pointerEvents: 'auto',
               isolation: 'isolate',
@@ -185,42 +193,64 @@ export default function GlobalTTSHUD() {
               }}
             >
               {Array.from({ length: 16 }, (_, i) => {
-                // Create 16 bars for better waveform representation
-                const intensity = audioData[Math.floor(i * audioData.length / 16)] || 0
+                // Enhanced frequency band mapping for better visual distribution
+                const frequencyBands = [
+                  0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 5, 4, 3
+                ] // Map bars to 6 audio data points with emphasis on mid frequencies
                 
-                // Speech-specific frequency modeling
+                const dataIndex = frequencyBands[i]
+                const intensity = audioData[dataIndex] || 0
+                
+                // Enhanced speech frequency modeling with better distribution
                 const normalizedIndex = i / 15
-                const speechWeight = Math.exp(-Math.pow((normalizedIndex - 0.4) * 3, 2)) // Peak around human speech freq
-                const baseHeight = 0.15 + (speechWeight * 0.3)
+                // Create multiple peaks for better visual balance
+                const speechWeight1 = Math.exp(-Math.pow((normalizedIndex - 0.25) * 4, 2)) // Low-mid peak
+                const speechWeight2 = Math.exp(-Math.pow((normalizedIndex - 0.5) * 3, 2))  // Mid peak
+                const speechWeight3 = Math.exp(-Math.pow((normalizedIndex - 0.75) * 4, 2)) // High-mid peak
+                const combinedWeight = (speechWeight1 * 0.7 + speechWeight2 + speechWeight3 * 0.8) / 2.5
                 
-                // Height calculation with speech characteristics
+                // Minimum heights for better visibility
+                const minHeight = 0.2
+                const baseHeight = minHeight + (combinedWeight * 0.4)
+                
+                // Height calculation with enhanced motion
                 let barHeight = baseHeight
                 if (isPlaying) {
-                  // Simulate speech patterns with consonant/vowel variations
-                  const speechPattern = Math.sin(Date.now() * 0.001 + i * 0.5) * 0.1 + intensity
-                  barHeight = Math.max(0.1, Math.min(1, baseHeight + speechPattern * speechWeight))
+                  // Complex wave patterns for more interesting motion
+                  const time = Date.now() * 0.001
+                  const wave1 = Math.sin(time * 1.5 + i * 0.3) * 0.15
+                  const wave2 = Math.sin(time * 2.3 + i * 0.7) * 0.1
+                  const wave3 = Math.cos(time * 0.8 + i * 0.5) * 0.08
+                  
+                  // Combine waves with intensity for organic motion
+                  const combinedWave = (wave1 + wave2 + wave3) * (0.5 + intensity * 0.5)
+                  const speechModulation = intensity * combinedWeight * 0.8
+                  
+                  barHeight = Math.max(minHeight, Math.min(1, baseHeight + speechModulation + combinedWave))
                 } else if (isLoading) {
-                  // Synthesis shimmer effect
-                  const shimmerPhase = (Date.now() * 0.003 + i * 0.2) % (Math.PI * 2)
-                  barHeight = baseHeight + Math.sin(shimmerPhase) * 0.15
+                  // Enhanced shimmer with traveling wave
+                  const shimmerPhase = (Date.now() * 0.004 + i * 0.3) % (Math.PI * 2)
+                  const shimmerWave = Math.sin(shimmerPhase) * 0.2 + Math.sin(shimmerPhase * 2) * 0.1
+                  barHeight = baseHeight + shimmerWave
                 } else if (isPaused) {
-                  // Breathing animation
-                  const breathPhase = Date.now() * 0.0008
-                  barHeight = baseHeight + Math.sin(breathPhase) * 0.05
+                  // Gentle breathing with phase offset
+                  const breathPhase = Date.now() * 0.001 + i * 0.15
+                  barHeight = baseHeight + Math.sin(breathPhase) * 0.08
                 }
                 
-                const maxHeight = 28 // Taller for better visual impact
+                const maxHeight = 32 // Slightly taller for better visual impact
                 const barPixelHeight = barHeight * maxHeight
                 
-                // Visual properties
-                const isVoiceRange = i >= 4 && i <= 11 // Primary speech frequencies
-                const barWidth = isVoiceRange ? 2.5 : 2
-                const opacity = isPlaying ? 0.9 : isLoading ? 0.4 : isPaused ? 0.3 : 0.2
+                // Visual properties with enhanced variation
+                const isVoiceRange = i >= 3 && i <= 12 // Wider voice range
+                const barWidth = isVoiceRange ? 2.8 : 2.2
+                const baseOpacity = isPlaying ? 0.85 : isLoading ? 0.5 : isPaused ? 0.35 : 0.25
+                const opacity = baseOpacity + (intensity * 0.15)
                 
                 // Progress sweep effect
                 let progressBoost = 0
                 if (isPlaying && (i / 16) <= progress) {
-                  progressBoost = 0.3
+                  progressBoost = 0.25
                 }
                 
                 return (
@@ -236,8 +266,8 @@ export default function GlobalTTSHUD() {
                         ${ttsColors.barColorWeak}
                       )`,
                       boxShadow: `
-                        0 0 ${(intensity + progressBoost) * 15}px ${ttsColors.barGlow},
-                        0 1px 3px rgba(0, 0, 0, 0.2),
+                        0 0 ${(intensity + progressBoost) * 20}px ${isPlaying ? ttsColors.barGlowStrong : ttsColors.barGlow},
+                        0 1px 3px rgba(0, 0, 0, 0.1),
                         inset 0 -1px 1px ${ttsColors.barHighlight}
                       `,
                       opacity: opacity + progressBoost * 0.3,
@@ -273,11 +303,11 @@ export default function GlobalTTSHUD() {
                   className="absolute inset-0 pointer-events-none"
                   style={{
                     background: `radial-gradient(ellipse 120% 100% at center bottom, 
-                      ${ttsColors.barGlow}, 
+                      ${isPlaying ? ttsColors.barGlowStrong : ttsColors.barGlow}, 
                       transparent 60%
                     )`,
-                    filter: 'blur(12px)',
-                    opacity: isPlaying ? 0.4 : 0.2,
+                    filter: 'blur(16px)',
+                    opacity: isPlaying ? 0.6 : 0.3,
                   }}
                   animate={{
                     opacity: isPlaying ? [0.3, 0.6, 0.3] : [0.1, 0.3, 0.1],
@@ -294,15 +324,15 @@ export default function GlobalTTSHUD() {
               {/* Progress overlay */}
               {isPlaying && progress > 0 && (
                 <motion.div
-                  className="absolute bottom-0 left-3 h-full pointer-events-none"
+                  className="absolute bottom-0 left-0 h-full pointer-events-none"
                   style={{
-                    width: `${Math.max(0, (progress * 80) - 6)}px`,
-                    background: `linear-gradient(90deg, transparent, ${ttsColors.progressGlow} 80%, transparent)`,
+                    width: `${progress * 100}%`,
+                    background: `linear-gradient(90deg, transparent, ${ttsColors.progressGlow} 50%, transparent)`,
                     borderRadius: '2px',
-                    opacity: 0.6,
+                    opacity: 0.5,
                   }}
                   animate={{
-                    width: `${Math.max(0, (progress * 80) - 6)}px`,
+                    width: `${progress * 100}%`,
                   }}
                   transition={{
                     duration: 0.3,
@@ -312,65 +342,6 @@ export default function GlobalTTSHUD() {
               )}
             </div>
 
-            {/* Circular Progress Indicator */}
-            {duration > 0 && (
-              <div 
-                className="relative flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8"
-                style={{
-                  transform: 'rotate(-90deg)', // Start from top
-                }}
-              >
-                {/* Background circle */}
-                <svg className="w-full h-full" viewBox="0 0 36 36">
-                  <circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    stroke={ttsColors.progressBg}
-                    strokeWidth="2"
-                    opacity="0.3"
-                  />
-                  {/* Progress circle */}
-                  <motion.circle
-                    cx="18"
-                    cy="18"
-                    r="16"
-                    fill="none"
-                    stroke={ttsColors.barColorStrong}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 16}`}
-                    style={{
-                      filter: `drop-shadow(0 0 4px ${ttsColors.barGlow})`,
-                    }}
-                    animate={{
-                      strokeDashoffset: `${2 * Math.PI * 16 * (1 - progress)}`,
-                    }}
-                    transition={{
-                      duration: 0.3,
-                      ease: "easeOut",
-                    }}
-                  />
-                </svg>
-                
-                {/* Center indicator */}
-                <motion.div
-                  className="absolute inset-0 flex items-center justify-center"
-                  style={{
-                    transform: 'rotate(90deg)', // Counteract parent rotation
-                  }}
-                >
-                  <div
-                    className="w-1.5 h-1.5 rounded-full"
-                    style={{
-                      backgroundColor: ttsColors.barColorStrong,
-                      boxShadow: `0 0 4px ${ttsColors.barGlow}`,
-                    }}
-                  />
-                </motion.div>
-              </div>
-            )}
 
             {/* Time Display - Hidden on very small screens */}
             {duration > 0 && (
@@ -392,8 +363,8 @@ export default function GlobalTTSHUD() {
                 color: ttsColors.controlFg,
                 border: `1px solid ${ttsColors.border}`,
                 boxShadow: `
-                  0 2px 8px rgba(0, 0, 0, 0.1),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.1)
+                  0 2px 6px ${ttsColors.shadow},
+                  inset 0 1px 0 rgba(255, 255, 255, 0.05)
                 `,
                 // Better touch target size for mobile
                 minHeight: '44px', // iOS recommended touch target
@@ -451,8 +422,8 @@ export default function GlobalTTSHUD() {
                 color: ttsColors.controlFgSecondary,
                 border: `1px solid ${ttsColors.border}`,
                 boxShadow: `
-                  0 2px 8px rgba(0, 0, 0, 0.1),
-                  inset 0 1px 0 rgba(255, 255, 255, 0.1)
+                  0 2px 6px ${ttsColors.shadow},
+                  inset 0 1px 0 rgba(255, 255, 255, 0.05)
                 `,
                 // Better touch target size for mobile
                 minHeight: '44px', // iOS recommended touch target
