@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js"
+import { autoProcessArticleImage } from "./image-processor"
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 // Use service role key for server-side operations, anon key for client-side
@@ -87,6 +88,16 @@ export async function saveArticle(article: Article) {
     }
 
     console.log(`✅ Saved new article: ${article.title}`)
+    
+    // Auto-process image if article has one
+    const imageUrl = (article as any).imageUrl || article.image_url
+    if (imageUrl && data.id) {
+      // Process image in background (don't await to avoid blocking)
+      autoProcessArticleImage(data.id, imageUrl, 'articles').catch(error => {
+        console.error(`Background image processing failed for article ${data.id}:`, error)
+      })
+    }
+    
     return { ...data, skipped: false }
   } catch (error) {
     console.error("Error in saveArticle:", error)

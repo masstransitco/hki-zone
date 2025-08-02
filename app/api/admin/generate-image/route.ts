@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { autoProcessArticleImage } from '@/lib/image-processor'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -344,6 +345,11 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('Article updated successfully with new AI-generated image')
+    
+    // Auto-process the AI-generated image for social media previews
+    autoProcessArticleImage(articleId, publicUrl, 'articles').catch(error => {
+      console.error(`Failed to process AI-generated image for article ${articleId}:`, error)
+    })
     
     return NextResponse.json({ 
       success: true,

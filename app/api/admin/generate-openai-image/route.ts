@@ -6,6 +6,7 @@ import OpenAI from 'openai';
 import { toFile } from 'openai/uploads';
 import sharp from 'sharp';
 import { randomUUID } from 'crypto';
+import { autoProcessArticleImage } from '@/lib/image-processor';
 
 // ---------- CONFIG ----------
 const OPENAI_TIMEOUT_MS = 300_000; // allow long image jobs
@@ -218,6 +219,12 @@ export async function POST(req: NextRequest) {
     }
 
     console.log('Article updated successfully with DALL-E 3 generated image');
+
+    // Auto-process the OpenAI-generated image for social media previews
+    // Use forceReprocess=true to ensure we process the new OpenAI image even if metadata exists
+    autoProcessArticleImage(articleId, publicUrl, 'articles', true).catch(error => {
+      console.error(`Failed to process OpenAI-generated image for article ${articleId}:`, error)
+    })
 
     return NextResponse.json({
       success: true,
