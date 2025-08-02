@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { initializeTTS, selectTTSIsInitialized, selectTTS } from '@/store/ttsSlice'
+import { initializeTTS, selectTTSIsInitialized, selectTTS, updateLanguage } from '@/store/ttsSlice'
 import { initializeAudioContext } from '@/store/audioSlice'
 import type { AppDispatch, RootState } from '@/store'
 import { useLanguage } from './language-provider'
@@ -86,19 +86,22 @@ export default function TTSInitializer() {
     return () => clearTimeout(timer)
   }, [dispatch, isInitialized, initAttempted, language])
 
-  // Handle language changes - reinitialize TTS with new language
+  // Handle language changes - update TTS language configuration
   const [lastLanguage, setLastLanguage] = React.useState(language)
   
   React.useEffect(() => {
     if (isInitialized && language !== lastLanguage) {
-      console.log('🎵 TTS Initializer - Language changed, reinitializing TTS', {
+      console.log('🎵 TTS Initializer - Language changed, updating TTS config', {
         from: lastLanguage,
         to: language
       })
       
       setLastLanguage(language)
       
-      // Reinitialize TTS with new language
+      // Update language in TTS service
+      dispatch(updateLanguage(language))
+      
+      // Reinitialize with new language if needed
       dispatch(initializeTTS({
         language: language,
         apiKey: process.env.NEXT_PUBLIC_GOOGLE_TEXT_TO_SPEECH_API_KEY

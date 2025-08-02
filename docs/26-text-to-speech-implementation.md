@@ -2,14 +2,15 @@
 
 ## Overview
 
-The TTS system provides professional-grade audio narration for news articles with multi-language support, real-time visualization, and a premium user experience. Built using Redux architecture with Google Text-to-Speech API integration and browser fallback capabilities.
+The TTS system provides ultra-realistic audio narration for news articles with multi-language support, real-time audio visualization, and a premium user experience. Built using Redux architecture with exclusive Google Text-to-Speech Studio voice integration and advanced Web Audio API processing.
 
 ## Architecture
 
 ### Redux-Based State Management
 - **Primary Pattern**: Redux store with middleware for side effects
-- **Fallback Support**: Browser Speech Synthesis API
-- **Real-time Features**: Audio visualization and progress tracking
+- **Studio Voice Focus**: Exclusive Studio voice integration for highest quality
+- **Real-time Features**: Web Audio API visualization with DSP processing
+- **Language Change Optimization**: AudioContext preservation during language switching
 
 ## Core Files and Responsibilities
 
@@ -18,30 +19,34 @@ The TTS system provides professional-grade audio narration for news articles wit
 #### `store/ttsSlice.ts`
 **Role**: Central state management for all TTS functionality
 - Manages playback states (playing, paused, loading)
-- Handles progress tracking and audio data
-- Coordinates service instances (TTS, Speech, Audio)
-- Provides selectors for component consumption
+- Handles progress tracking and real-time audio visualization data
+- Coordinates service instances with AudioContext preservation during language changes
+- Provides optimized selectors for component consumption
+- **Key Features**: Streamlined language switching without audio disruption
 
 #### `store/middleware/ttsMiddleware.ts`
 **Role**: Side effects coordination between TTS actions and services
-- Manages audio playback lifecycle
-- Coordinates visualization updates
-- Handles service initialization and cleanup
+- Manages audio playbook lifecycle with user gesture AudioContext initialization
+- Coordinates real-time visualization updates with Web Audio API
+- Handles service initialization and cleanup with graceful degradation
+- **Key Features**: Emergency audio fallback and enhanced error handling
 
 ### 🛠️ Services Layer
 
 #### `services/ttsService.ts`
-**Role**: Google Text-to-Speech API integration
-- **Voice Selection**: Professional broadcast voices
-  - English: `en-US-Studio-O` (Studio tier)
-  - Cantonese: `yue-HK-Standard-B`
-  - Mandarin: `cmn-CN-Neural2-A`
-- **SSML Processing**: Enhanced preprocessing for news content
+**Role**: Google Text-to-Speech API integration with Studio voice focus
+- **Voice Selection**: Studio voices for ultra-realistic quality
+  - English: `en-US-Studio-Q` (Male authoritative radio news anchor)
+  - Cantonese: `yue-HK-Standard-B` (Best available for Hong Kong)
+  - Mandarin: `cmn-CN-Wavenet-C` (Optimized for news delivery)
+- **Ultra-Realistic SSML Processing**: Advanced preprocessing for broadcast-quality delivery
   - Removes section headers (`**Summary**`, `**Key Points**`, `**Why It Matters**`)
   - Strips citation numbers (`[1]`, `[2]`, etc.)
-  - Optimizes pronunciation for Hong Kong terms (LegCo, CE, HK, HKD)
-- **Fallback System**: 3-tier voice fallback (Studio → News → Standard)
-- **Mobile Optimization**: Adjusted sample rates and pitch for mobile speakers
+  - Hong Kong pronunciation lexicon with IPA notation
+  - Natural speech rhythm with subtle jitter for human-like delivery
+  - Content-aware pace adjustments (faster for breaking news, slower for data-heavy content)
+- **Studio-Optimized Features**: Simplified processing chain for Studio voice compatibility
+- **Professional Audio Settings**: Broadcast-quality sample rates and pitch optimization
 
 #### `services/speechService.ts`
 **Role**: Browser Speech Synthesis API fallback
@@ -50,33 +55,37 @@ The TTS system provides professional-grade audio narration for news articles wit
 - Graceful degradation for offline scenarios
 
 #### `services/audioService.ts`
-**Role**: Audio analysis and real-time visualization
-- Web Audio API integration
-- Speech-optimized frequency band analysis
-- Real-time waveform data generation
-- Mobile compatibility handling
+**Role**: Advanced Web Audio API processing and visualization
+- **AudioContext Management**: User gesture initialization with mobile browser compatibility
+- **DSP Processing Chain**: 
+  - De-esser filter (6-8 kHz, -2dB) for smooth sibilants
+  - Soft limiter/compressor (-6dB threshold, 4:1 ratio)
+  - Fade in/out gain control for seamless chunk transitions
+- **Speech-Optimized Analysis**: 6-band frequency analysis targeting human speech ranges
+- **Real-time Visualization**: High-performance frequency data generation
+- **Mobile Optimization**: Enhanced iOS Chrome support with retry logic
 
 ### 🎨 UI Components
 
 #### `components/global-tts-hud.tsx`
-**Role**: Main TTS interface (Primary HUD)
-- **Design**: Apple-inspired glassmorphic interface
-- **Visualization**: 16-bar waveform with speech-optimized frequency mapping
-- **Theme Support**: Automatic light/dark theme adaptation
+**Role**: Main TTS interface with real-time audio visualization
+- **Design**: Clean, professional interface with neutral color scheme
+- **Visualization**: 6-bar frequency spectrum with real Web Audio API data
+- **Theme Support**: Automatic light/dark theme adaptation using CSS custom properties
 - **Features**:
-  - Real-time audio visualization with enhanced motion
-  - Progress tracking via sweep effect
-  - Play/pause/stop controls
-  - Article title display
-  - Time progress indicator
-  - Mobile-optimized touch targets (44px minimum)
+  - Real-time frequency analysis visualization (0-8kHz speech range)
+  - Progress tracking with smooth animations
+  - Play/pause/stop controls with immediate response
+  - Article title display with truncation
+  - Responsive design for mobile/tablet/desktop
+  - **Color System**: Green waveform bars with neutral UI elements
 
 #### `components/tts-initializer.tsx`
 **Role**: System initialization and language management
-- Initializes TTS on app startup
-- Handles language changes and reinitializer
-- Manages API key configuration
-- Redux store rehydration handling
+- Deferred TTS initialization on app startup (AudioContext initialized during playback)
+- Handles seamless language changes with service preservation
+- Manages API key configuration from environment variables
+- Redux store rehydration with initialization state tracking
 
 ### 🔗 Integration Points
 
@@ -104,31 +113,34 @@ The TTS system provides professional-grade audio narration for news articles wit
 
 ## Technical Features
 
-### 🎵 Audio Processing
-- **Frequency Analysis**: Speech-optimized 6-band analysis
-- **Real-time Visualization**: 16-bar waveform with complex wave patterns
-- **Mobile Support**: Graceful degradation for iOS/Android limitations
-- **AudioContext Management**: Proper user gesture handling
+### 🎵 Ultra-Realistic Audio Processing
+- **DSP Chain**: Professional audio processing (de-esser → compressor → limiter)
+- **Frequency Analysis**: Speech-optimized 6-band analysis (85Hz-8kHz)
+- **Real-time Visualization**: True Web Audio API frequency data
+- **AudioContext Lifecycle**: User gesture initialization with language change preservation
+- **Mobile Compatibility**: Enhanced iOS Chrome support with retry mechanisms
 
 ### 🌍 Multi-language Support
-- **English**: Professional news voice with broadcast optimization
-- **Traditional Chinese (Cantonese)**: Hong Kong-optimized pronunciation
-- **Simplified Chinese (Mandarin)**: Neural2 voice for natural prosody
-- **Dynamic Language Switching**: Automatic voice reselection
+- **English**: Studio Q voice - authoritative male radio news anchor
+- **Traditional Chinese (Cantonese)**: Hong Kong-optimized with pronunciation lexicon
+- **Simplified Chinese (Mandarin)**: Wavenet voice for natural news delivery
+- **Dynamic Language Switching**: Seamless transitions with AudioContext preservation
+- **Content-Aware Pacing**: Adaptive speaking rates based on content type
 
 ### 🎨 Visual Design
-- **Theme Integration**: Uses CSS custom properties for light/dark themes
-- **Apple Design Language**: Professional glassmorphic interface
+- **Theme Integration**: CSS custom properties for seamless light/dark theme support
+- **Clean Professional Interface**: Neutral color scheme with green accent waveform
 - **Color System**:
-  - **Waveform**: Green accent (`--tts-accent`) for audio visualization
-  - **UI Elements**: Neutral theme colors for borders and controls
-  - **Glassmorphism**: Backdrop blur with subtle transparency
+  - **Waveform**: Green bars for frequency visualization
+  - **UI Elements**: Neutral theme-aware colors for controls and borders
+  - **Typography**: System font stack for optimal readability
 
 ### 📱 Mobile Optimization
-- **Touch Targets**: 44px minimum (iOS recommendation)
-- **Audio Handling**: Enhanced mobile browser compatibility
-- **Responsive Design**: Progressive enhancement (mobile → tablet → desktop)
-- **Performance**: Hardware acceleration and efficient animations
+- **AudioContext Handling**: Special iOS Chrome support with multiple resume attempts
+- **User Gesture Integration**: AudioContext initialization during user interaction
+- **Responsive Design**: Adaptive layout for mobile/tablet/desktop
+- **Performance**: Efficient animation loops with RAF and hardware acceleration
+- **Graceful Degradation**: Audio playback prioritized over visualization on mobile
 
 ## Configuration
 
@@ -138,43 +150,48 @@ NEXT_PUBLIC_GOOGLE_TEXT_TO_SPEECH_API_KEY=your_api_key_here
 ```
 
 ### Voice Configuration
-The system automatically selects optimal voices based on language:
-- **Production**: Studio/Neural2 voices for premium quality
-- **Fallback**: Standard voices when premium unavailable
-- **Browser**: Native synthesis when Google API fails
+The system uses Studio voices exclusively for optimal quality:
+- **Studio Focus**: Premium Studio voices for ultra-realistic delivery
+- **Language-Optimized**: Best available voice per language
+- **Browser Fallback**: Native synthesis as emergency fallback only
 
 ## Content Processing
 
-### SSML Preprocessing
-The system cleans article content for optimal speech delivery:
+### Ultra-Realistic SSML Preprocessing
+The system applies broadcast-quality content processing:
 
 1. **Section Header Removal**: Strips `**Summary**`, `**Key Points**`, `**Why It Matters**`
 2. **Citation Cleanup**: Removes `[1]`, `[2]`, etc.
-3. **Markdown Processing**: Converts bold/italic to speech emphasis
-4. **Pronunciation Fixes**: Hong Kong-specific terms (LegCo → Legislative Council)
-5. **Whitespace Normalization**: Optimal sentence breaks for speech flow
+3. **Hong Kong Pronunciation Lexicon**: IPA-annotated proper nouns and local terms
+4. **Natural Speech Rhythm**: Subtle jitter for human-like timing
+5. **Content-Aware Pacing**: Dynamic rate adjustment based on content type
+6. **Studio Voice Optimization**: Simplified SSML compatible with Studio voices
+7. **Financial Term Handling**: Smart HK$ and percentage normalization
 
 ### Content Flow
 ```
-Article Title + Content → SSML Processing → Google TTS API → Audio Playback → Visualization
+Article Title + Content → Ultra-Realistic SSML Processing → Studio Voice API → 
+DSP Audio Processing → Real-time Frequency Analysis → Visualization
 ```
 
 ## Performance Considerations
 
 ### Memory Management
-- Automatic cleanup of audio resources
-- Portal-based rendering to avoid layout thrashing
+- Automatic cleanup of audio resources and URL object URLs
+- AudioContext preservation during language changes
 - Efficient animation loops with requestAnimationFrame
+- Service instance reuse optimization
 
 ### Network Optimization
-- Text chunking for Studio voices (5KB limit)
-- Progressive audio loading
-- Graceful fallback to browser TTS
+- Text chunking for Studio voices (4.5KB limit)
+- Single API call per article with chunking as needed
+- Streamlined error handling with minimal fallback overhead
 
 ### Mobile Performance
-- Reduced animation complexity on mobile
-- Optimized sample rates (44.1kHz mobile, 48kHz desktop)
-- Hardware acceleration for smooth rendering
+- AudioContext initialization only during user interaction
+- Enhanced iOS Chrome compatibility with retry logic
+- Real-time frequency analysis with hardware acceleration
+- Graceful degradation: audio playback prioritized over visualization
 
 ## Integration Examples
 
@@ -201,7 +218,7 @@ const MyComponent = () => {
 }
 ```
 
-### Visualization Only
+### Real-time Audio Visualization
 ```typescript
 import { useTTSVisualization } from '@/hooks/use-tts-redux'
 
@@ -213,8 +230,11 @@ const AudioVisualizer = () => {
       {audioData.map((intensity, i) => (
         <div 
           key={i}
-          className="bg-green-500"
-          style={{ height: `${intensity * 100}%` }}
+          className="bg-green-500 transition-all duration-75"
+          style={{ 
+            height: `${Math.max(intensity * 100, 2)}%`,
+            opacity: isPlaying ? 1 : 0.3
+          }}
         />
       ))}
     </div>
@@ -222,15 +242,36 @@ const AudioVisualizer = () => {
 }
 ```
 
+## Key Technical Achievements
+
+### ✅ Ultra-Realistic Audio Quality
+- **Studio Voice Integration**: Exclusive use of Google's highest-quality Studio voices
+- **Broadcast-Quality Processing**: Professional DSP chain with de-esser and soft limiter
+- **Content-Aware Optimization**: Dynamic pacing based on article content type
+
+### ✅ Seamless Language Switching
+- **AudioContext Preservation**: No audio disruption during language changes
+- **Service Instance Reuse**: Optimized state management for smooth transitions
+- **Real-time Configuration**: Instant voice and processing updates
+
+### ✅ Advanced Mobile Support
+- **iOS Chrome Optimization**: Enhanced compatibility with retry mechanisms
+- **User Gesture Integration**: Proper AudioContext initialization timing
+- **Graceful Degradation**: Audio prioritized over visualization on mobile
+
+### ✅ Real-time Audio Visualization
+- **True Web Audio API**: Live frequency analysis from audio stream
+- **Speech-Optimized Bands**: 6-band analysis targeting human speech (85Hz-8kHz)
+- **Performance Optimized**: Hardware-accelerated rendering with minimal overhead
+
 ## Future Enhancements
 
-- **Queue Management**: Multi-article playlist functionality
-- **Speed Control**: Playback rate adjustment
-- **Voice Selection**: User-configurable voice preferences
-- **Offline Mode**: Enhanced browser TTS capabilities
-- **Audio Effects**: EQ and audio enhancement options
+- **Playback Speed Control**: Variable rate adjustment (0.5x - 2x)
+- **Voice Preference Settings**: User-configurable voice selection per language
+- **Audio Enhancement Options**: User-controllable EQ and processing settings
+- **Multi-article Queue**: Playlist functionality for continuous listening
 
 ---
 
-*Last Updated: January 2025*
-*Architecture: Redux-based with Google TTS integration*
+*Last Updated: February 2025*
+*Architecture: Redux-based with Studio Voice TTS and Web Audio API*

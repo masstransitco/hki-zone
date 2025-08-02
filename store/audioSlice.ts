@@ -155,7 +155,7 @@ export const initializeAudioContext = createAsyncThunk(
         device
       }
     } catch (error) {
-      console.error('🎵 Audio Redux - AudioContext initialization failed:', error)
+      console.error('AudioContext initialization failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'AudioContext initialization failed')
     }
   }
@@ -196,7 +196,7 @@ export const connectAudioAnalysis = createAsyncThunk(
         timestamp: Date.now()
       }
     } catch (error) {
-      console.error('🎵 Audio Redux - Audio analysis connection failed:', error)
+      console.error('Audio analysis connection failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'Audio analysis connection failed')
     }
   }
@@ -211,7 +211,7 @@ export const startVisualization = createAsyncThunk(
       const { analyserState, visualization } = state.audio
       
       if (analyserState !== 'connected') {
-        console.warn('🎵 Audio Redux - Analyser not connected, starting mock visualization')
+        // Analyser not connected, will use mock or no visualization
       }
       
       
@@ -221,7 +221,7 @@ export const startVisualization = createAsyncThunk(
         config: visualization.config
       }
     } catch (error) {
-      console.error('🎵 Audio Redux - Visualization start failed:', error)
+      console.error('Visualization start failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'Visualization start failed')
     }
   }
@@ -238,7 +238,7 @@ export const stopVisualization = createAsyncThunk(
         timestamp: Date.now()
       }
     } catch (error) {
-      console.error('🎵 Audio Redux - Visualization stop failed:', error)
+      console.error('Visualization stop failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'Visualization stop failed')
     }
   }

@@ -17,30 +17,27 @@ export class AudioService {
   async initializeAudioContext(): Promise<boolean> {
     try {
       if (this.audioContext) {
-        console.log('🎵 Audio Service - AudioContext already exists, checking state')
         return await this.resumeContextIfNeeded()
       }
       
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
       if (!AudioContextClass) {
-        console.warn('🎵 Audio Service - Web Audio API not supported')
+        console.warn('Web Audio API not supported')
         return false
       }
       
       this.audioContext = new AudioContextClass()
-      console.log('🎵 Audio Service - Created new AudioContext, state:', this.audioContext.state)
       
       // Handle suspended AudioContext (common on mobile browsers)
       const success = await this.resumeContextIfNeeded()
       
       if (success) {
         this.isInitialized = true
-        console.log('🎵 Audio Service - AudioContext initialized successfully')
       }
       
       return success
     } catch (error) {
-      console.error('🎵 Audio Service - Failed to initialize AudioContext:', error)
+      console.error('AudioContext initialization failed:', error)
       return false
     }
   }
@@ -50,24 +47,20 @@ export class AudioService {
     if (!this.audioContext) return false
     
     if (this.audioContext.state === 'suspended') {
-      console.log('🎵 Audio Service - AudioContext suspended, attempting to resume...')
-      
       try {
         // For iOS Chrome, we need to be more aggressive about resumption
         if (this.deviceInfo.isIOSChrome) {
-          console.log('🎵 Audio Service - iOS Chrome detected, using enhanced resumption strategy')
           
           // Try multiple times with delays for iOS Chrome
           for (let attempt = 0; attempt < 3; attempt++) {
             try {
               await this.audioContext.resume()
               if (this.audioContext.state === 'running') {
-                console.log('🎵 Audio Service - AudioContext resumed successfully on attempt', attempt + 1)
                 return true
               }
               await new Promise(resolve => setTimeout(resolve, 100))
             } catch (resumeError) {
-              console.warn(`🎵 Audio Service - Resume attempt ${attempt + 1} failed:`, resumeError)
+              if (attempt === 2) console.warn('AudioContext resume failed:', resumeError)
             }
           }
         } else {
@@ -75,10 +68,9 @@ export class AudioService {
           await this.audioContext.resume()
         }
         
-        console.log('🎵 Audio Service - AudioContext final state:', this.audioContext.state)
         return this.audioContext.state === 'running'
       } catch (error) {
-        console.error('🎵 Audio Service - Failed to resume AudioContext:', error)
+        console.error('AudioContext resume failed:', error)
         return false
       }
     }
@@ -86,11 +78,127 @@ export class AudioService {
     return this.audioContext.state === 'running'
   }
   
+  // Client playback polish with DSP processing
+  private setupAudioProcessing(source: MediaElementAudioSourceNode): AudioNode {
+    if (!this.audioContext) return source
+    
+    try {
+      // Create processing chain: source -> de-esser -> soft limiter -> analyser -> destination
+      
+      // 1. De-esser: High-shelf filter to tame harsh sibilants (6-8 kHz, -2dB)
+      const deEsser = this.audioContext.createBiquadFilter()
+      deEsser.type = 'highshelf'
+      deEsser.frequency.setValueAtTime(6500, this.audioContext.currentTime) // Target sibilant frequencies
+      deEsser.gain.setValueAtTime(-2, this.audioContext.currentTime) // Gentle reduction
+      deEsser.Q.setValueAtTime(0.7, this.audioContext.currentTime) // Smooth rolloff
+      
+      // 2. Soft limiter: Dynamics processor to prevent clipping (-1 dBFS ceiling)
+      const compressor = this.audioContext.createDynamicsCompressor()
+      compressor.threshold.setValueAtTime(-6, this.audioContext.currentTime) // Start compression at -6dB
+      compressor.knee.setValueAtTime(3, this.audioContext.currentTime) // Soft knee for natural sound
+      compressor.ratio.setValueAtTime(4, this.audioContext.currentTime) // 4:1 ratio for gentle limiting
+      compressor.attack.setValueAtTime(0.003, this.audioContext.currentTime) // Fast attack (3ms)
+      compressor.release.setValueAtTime(0.1, this.audioContext.currentTime) // Medium release (100ms)
+      
+      // 3. Fade in/out gain node for smooth chunk transitions
+      const fadeGain = this.audioContext.createGain()
+      fadeGain.gain.setValueAtTime(1, this.audioContext.currentTime) // Start at full volume
+      
+      // Connect processing chain
+      source.connect(deEsser)
+      deEsser.connect(compressor)
+      compressor.connect(fadeGain)
+      
+      return fadeGain
+      
+    } catch (error) {
+      console.warn('DSP setup failed, using direct connection:', error)
+      return source
+    }
+  }
+  
+  // Apply fade in/out to prevent clicks between chunks
+  applyAudioFades(gainNode: GainNode, duration: number = 0.015): void {
+    if (!this.audioContext || !gainNode) return
+    
+    const now = this.audioContext.currentTime
+    const fadeDuration = Math.min(duration, 0.05) // Max 50ms fade
+    
+    // Fade in at start
+    gainNode.gain.setValueAtTime(0, now)
+    gainNode.gain.linearRampToValueAtTime(1, now + fadeDuration)
+    
+    // Schedule fade out at end (if we know the duration)
+    // This would be called when we know the audio is about to end
+  }
+  
+  // Trim trailing silence when concatenating chunks
+  private trimSilence(audioBuffer: AudioBuffer): AudioBuffer {
+    if (!this.audioContext) return audioBuffer
+    
+    const channelData = audioBuffer.getChannelData(0)
+    const sampleRate = audioBuffer.sampleRate
+    const threshold = 0.01 // -40dB threshold for silence detection
+    
+    // Find last non-silent sample
+    let endSample = channelData.length - 1
+    while (endSample > 0 && Math.abs(channelData[endSample]) < threshold) {
+      endSample--
+    }
+    
+    // Add small fade out (5ms) to prevent clicks
+    const fadeOutSamples = Math.floor(sampleRate * 0.005)
+    const trimLength = Math.min(endSample + fadeOutSamples + 1, channelData.length)
+    
+    if (trimLength < channelData.length) {
+      
+      // Create new trimmed buffer
+      const trimmedBuffer = this.audioContext.createBuffer(
+        audioBuffer.numberOfChannels,
+        trimLength,
+        sampleRate
+      )
+      
+      for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+        const sourceData = audioBuffer.getChannelData(channel)
+        const trimmedData = trimmedBuffer.getChannelData(channel)
+        
+        // Copy non-silent samples
+        for (let i = 0; i < trimLength - fadeOutSamples; i++) {
+          trimmedData[i] = sourceData[i]
+        }
+        
+        // Apply fade out to prevent clicks
+        for (let i = trimLength - fadeOutSamples; i < trimLength; i++) {
+          const fadeRatio = (trimLength - i) / fadeOutSamples
+          trimmedData[i] = sourceData[i] * fadeRatio
+        }
+      }
+      
+      return trimmedBuffer
+    }
+    
+    return audioBuffer
+  }
+
   // Initialize audio analysis for an audio element
   async setupAudioAnalysis(audioElement: HTMLAudioElement): Promise<boolean> {
     try {
       if (!this.audioContext || !this.isInitialized) {
-        console.log('🎵 Audio Service - AudioContext not ready, skipping analysis setup')
+        return false
+      }
+      
+      // Validate and resume AudioContext state if needed
+      if (this.audioContext.state === 'suspended') {
+        try {
+          await this.audioContext.resume()
+        } catch (resumeError) {
+          console.error('AudioContext resume failed:', resumeError)
+          return false
+        }
+      }
+      
+      if (this.audioContext.state !== 'running') {
         return false
       }
       
@@ -102,45 +210,57 @@ export class AudioService {
       this.analyser.fftSize = 256
       this.analyser.smoothingTimeConstant = 0.8
       
-      console.log('🎵 Audio Service - Creating MediaElementSource...')
       
-      try {
-        this.mediaSource = this.audioContext.createMediaElementSource(audioElement)
-        console.log('🎵 Audio Service - MediaElementSource created successfully')
-      } catch (sourceError) {
-        console.error('🎵 Audio Service - Failed to create MediaElementSource:', sourceError)
-        
-        // On mobile browsers, especially iOS Chrome, this can fail
-        // Provide graceful degradation
-        if (this.deviceInfo.isMobile) {
-          console.log('🎵 Audio Service - Mobile browser - gracefully degrading without visualization')
+      // Retry logic for MediaElementSource creation
+      let createSourceAttempts = 0
+      const maxAttempts = 3
+      
+      while (createSourceAttempts < maxAttempts) {
+        try {
+          this.mediaSource = this.audioContext.createMediaElementSource(audioElement)
+          break
+        } catch (sourceError) {
+          createSourceAttempts++
+          
+          if (createSourceAttempts >= maxAttempts) {
+            console.error('MediaElementSource creation failed:', sourceError)
+            return false
+          }
+          
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 100 * createSourceAttempts))
         }
-        return false
       }
       
-      console.log('🎵 Audio Service - Connecting audio graph: source -> analyser -> destination')
-      
       try {
-        this.mediaSource.connect(this.analyser)
+        // Setup DSP processing chain
+        const processedSource = this.setupAudioProcessing(this.mediaSource)
+        
+        // Connect processed audio to analyser and destination
+        processedSource.connect(this.analyser)
         this.analyser.connect(this.audioContext.destination)
         
-        console.log('🎵 Audio Service - Audio analysis initialized successfully')
         return true
       } catch (connectionError) {
-        console.error('🎵 Audio Service - Failed to connect audio graph:', connectionError)
+        console.error('Audio connection failed:', connectionError)
         
-        // On some mobile browsers, connection might fail
-        // Still allow audio to play without visualization
+        // Fallback: try basic connection without DSP
         try {
-          this.mediaSource?.connect(this.audioContext.destination) // Direct connection for audio playback
-          console.log('🎵 Audio Service - Using direct audio connection without analysis')
-        } catch (directConnectionError) {
-          console.error('🎵 Audio Service - Even direct connection failed:', directConnectionError)
+          this.mediaSource.connect(this.analyser)
+          this.analyser.connect(this.audioContext.destination)
+          return true
+        } catch (basicConnectionError) {
+          // Final fallback: direct connection for audio playback only
+          try {
+            this.mediaSource?.connect(this.audioContext.destination)
+          } catch (directConnectionError) {
+            console.error('Audio connection completely failed:', directConnectionError)
+          }
+          return false
         }
-        return false
       }
     } catch (error) {
-      console.error('🎵 Audio Service - Failed to initialize audio analysis:', error)
+      console.error('Audio analysis initialization failed:', error)
       return false
     }
   }
@@ -268,14 +388,12 @@ export class AudioService {
         this.analyser = null
       }
     } catch (error) {
-      console.warn('🎵 Audio Service - Error during analysis cleanup:', error)
+      console.warn('Error during analysis cleanup:', error)
     }
   }
   
   // Complete cleanup
   cleanup(): void {
-    console.log('🎵 Audio Service - Cleaning up all resources')
-    
     this.stopVisualizationLoop()
     this.cleanupAnalysis()
     
@@ -284,7 +402,7 @@ export class AudioService {
         this.audioContext.close()
         this.audioContext = null
       } catch (error) {
-        console.warn('🎵 Audio Service - Error closing AudioContext:', error)
+        console.warn('Error closing AudioContext:', error)
       }
     }
     
@@ -301,6 +419,11 @@ export class AudioService {
       isAnimating: !!this.animationFrameId,
       deviceInfo: this.deviceInfo
     }
+  }
+  
+  // Get AudioContext for direct access (needed for emergency fallbacks)
+  getAudioContext(): AudioContext | null {
+    return this.audioContext
   }
   
   // Update device information

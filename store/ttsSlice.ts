@@ -148,17 +148,8 @@ export const initializeTTS = createAsyncThunk(
       const audioService = createAudioService()
       
       
-      // Initialize audio service (don't let it block TTS initialization)
-      let audioInitialized = false
-      try {
-        audioInitialized = await Promise.race([
-          audioService.initializeAudioContext(),
-          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 2000)) // 2 second timeout
-        ])
-      } catch (error) {
-        console.warn('🎵 TTS Redux - Audio service initialization failed, continuing without it:', error)
-        audioInitialized = false
-      }
+      // AudioContext will be initialized during playback with user gesture
+      const audioInitialized = true
       
       return { 
         config: ttsConfig,
@@ -170,7 +161,7 @@ export const initializeTTS = createAsyncThunk(
         audioInitialized
       }
     } catch (error) {
-      console.error('🎵 TTS Redux - Initialization failed:', error)
+      console.error('TTS initialization failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'TTS initialization failed')
     }
   }
@@ -184,15 +175,6 @@ export const playArticle = createAsyncThunk(
       const state = getState() as { tts: TTSState, audio: any }
       const { currentArticle, isPlaying, isPaused, services } = state.tts
       
-      console.log('🎵 TTS Redux - Play article requested:', {
-        articleId: article.id,
-        articleTitle: article.title,
-        currentlyPlaying: currentArticle?.id || 'none',
-        isCurrentlyPlaying: isPlaying,
-        isCurrentlyPaused: isPaused,
-        currentTTSLanguage: state.tts.language,
-        ttsConfig: state.tts.config
-      })
       
       if (!services?.ttsService && !services?.speechService) {
         throw new Error('TTS services not initialized')
@@ -200,7 +182,6 @@ export const playArticle = createAsyncThunk(
       
       // If there's a different article currently playing or paused, stop it first
       if (currentArticle && currentArticle.id !== article.id && (isPlaying || isPaused)) {
-        console.log('🎵 TTS Redux - Stopping previous article:', currentArticle.title)
         dispatch(stopPlayback())
         // Small delay to ensure cleanup completes
         await new Promise(resolve => setTimeout(resolve, 100))
@@ -253,7 +234,7 @@ export const playArticle = createAsyncThunk(
         throw ttsError
       }
     } catch (error) {
-      console.error('🎵 TTS Redux - Play article failed:', error)
+      console.error('TTS play article failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to play article')
     }
   }
@@ -268,7 +249,6 @@ export const pausePlayback = createAsyncThunk(
       const { isPlaying, services, currentAudioElement } = state.tts
       
       if (!isPlaying) {
-        console.warn('🎵 TTS Redux - Cannot pause: not currently playing')
         return rejectWithValue('Not currently playing')
       }
       
@@ -291,7 +271,7 @@ export const pausePlayback = createAsyncThunk(
       
       return { timestamp: Date.now() }
     } catch (error) {
-      console.error('🎵 TTS Redux - Pause failed:', error)
+      console.error('TTS pause failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to pause')
     }
   }
@@ -306,7 +286,6 @@ export const resumePlayback = createAsyncThunk(
       const { isPaused, services, currentAudioElement } = state.tts
       
       if (!isPaused) {
-        console.warn('🎵 TTS Redux - Cannot resume: not currently paused')
         return rejectWithValue('Not currently paused')
       }
       
@@ -319,7 +298,7 @@ export const resumePlayback = createAsyncThunk(
           await currentAudioElement.play()
           resumed = true
         } catch (playError) {
-          console.error('🎵 TTS Redux - Failed to resume audio element:', playError)
+          console.error('Failed to resume audio element:', playError)
         }
       }
       // Fallback to speech service
@@ -333,7 +312,7 @@ export const resumePlayback = createAsyncThunk(
       
       return { timestamp: Date.now() }
     } catch (error) {
-      console.error('🎵 TTS Redux - Resume failed:', error)
+      console.error('TTS resume failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to resume')
     }
   }
@@ -359,7 +338,7 @@ export const stopPlayback = createAsyncThunk(
           currentAudioElement.onended = null
           currentAudioElement.onerror = null
         } catch (audioError) {
-          console.warn('🎵 TTS Redux - Error stopping audio element:', audioError)
+          console.warn('Error stopping audio element:', audioError)
         }
       }
       
@@ -368,7 +347,7 @@ export const stopPlayback = createAsyncThunk(
         try {
           services.speechService.stop()
         } catch (speechError) {
-          console.warn('🎵 TTS Redux - Error stopping speech synthesis:', speechError)
+          console.warn('Error stopping speech synthesis:', speechError)
         }
       }
       
@@ -377,7 +356,7 @@ export const stopPlayback = createAsyncThunk(
         try {
           services.audioService.stopVisualizationLoop()
         } catch (audioServiceError) {
-          console.warn('🎵 TTS Redux - Error stopping audio service:', audioServiceError)
+          console.warn('Error stopping audio service:', audioServiceError)
         }
       }
       
@@ -387,14 +366,14 @@ export const stopPlayback = createAsyncThunk(
           try {
             URL.revokeObjectURL(url)
           } catch (urlError) {
-            console.warn('🎵 TTS Redux - Error revoking URL:', url, urlError)
+            console.warn('Error revoking URL:', urlError)
           }
         })
       }
       
       return { timestamp: Date.now() }
     } catch (error) {
-      console.error('🎵 TTS Redux - Stop failed:', error)
+      console.error('TTS stop failed:', error)
       return rejectWithValue(error instanceof Error ? error.message : 'Failed to stop')
     }
   }
@@ -489,6 +468,36 @@ const ttsSlice = createSlice({
       if (state.services) {
         state.services = { ...state.services, ...action.payload }
       }
+    },
+    
+    // Update language and reinitialize services
+    updateLanguage: (state, action: PayloadAction<string>) => {
+      const newLanguage = action.payload
+      if (state.language !== newLanguage) {
+        state.language = newLanguage
+        state.config.language = newLanguage
+        
+        // Update TTS service config
+        if (state.services?.ttsService) {
+          state.services.ttsService.updateConfig({ ...state.config, language: newLanguage })
+        }
+        
+        // Stop any current playback to avoid conflicts
+        if (state.isPlaying || state.isPaused) {
+          state.isPlaying = false
+          state.isPaused = false
+          state.currentArticle = null
+          state.currentAudioElement = null
+          state.currentAudioUrls = []
+          state.progress = 0
+          state.currentTime = 0
+          state.duration = 0
+          state.audioData = Array(6).fill(0)
+        }
+        
+        // Mark for reinitialization if needed
+        state.isInitialized = false
+      }
     }
   },
   extraReducers: (builder) => {
@@ -503,8 +512,25 @@ const ttsSlice = createSlice({
         state.isInitialized = true
         state.config = action.payload.config
         state.language = action.payload.config.language
-        state.services = action.payload.services
+        
+        // Only update services, don't cleanup existing AudioService during language changes
+        // This preserves the AudioContext connection
+        if (state.services?.audioService && action.payload.services.audioService) {
+          // Keep existing AudioService to preserve AudioContext
+          state.services.ttsService = action.payload.services.ttsService
+          state.services.speechService = action.payload.services.speechService
+          // AudioService stays the same to maintain audio connections
+        } else {
+          // First initialization - use new services
+          state.services = action.payload.services
+        }
+        
         state.retryCount = 0
+        
+        // Update existing TTS service config if it exists
+        if (state.services?.ttsService) {
+          state.services.ttsService.updateConfig(action.payload.config)
+        }
       })
       .addCase(initializeTTS.rejected, (state, action) => {
         state.isLoading = false
@@ -607,7 +633,8 @@ export const {
   resetRetryCount,
   setCurrentAudioElement,
   setCurrentAudioUrls,
-  updateServices
+  updateServices,
+  updateLanguage
 } = ttsSlice.actions
 
 // Selectors

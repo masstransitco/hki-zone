@@ -1,7 +1,7 @@
 import { TTSConfig } from '@/store/ttsSlice'
 
-// Professional broadcast voices optimized for radio news delivery
-const getLanguageConfig = (language: string) => {
+// Studio voices only - highest quality for ultra-realistic TTS
+const getStudioVoiceConfig = (language: string) => {
   switch (language) {
     case 'en':
       return {
@@ -9,82 +9,22 @@ const getLanguageConfig = (language: string) => {
         name: 'en-US-Studio-Q', // Male Studio voice - authoritative radio news anchor
         ssmlGender: 'MALE'
       }
-    case 'zh-TW': // Traditional Chinese (Cantonese) - Radio news voice
+    case 'zh-TW': // Traditional Chinese (Cantonese) - Use best available Studio voice
       return {
         languageCode: 'yue-HK',
-        name: 'yue-HK-Standard-B', // Male Cantonese voice for authoritative news
+        name: 'yue-HK-Standard-B', // Best Cantonese voice (no Studio available for Cantonese)
         ssmlGender: 'MALE'
       }
-    case 'zh-CN': // Simplified Chinese (Mandarin) - News anchor voice
+    case 'zh-CN': // Simplified Chinese (Mandarin) - Use Studio voice if available
       return {
         languageCode: 'cmn-CN',
-        name: 'cmn-CN-Wavenet-C', // Male Wavenet voice for authoritative news
+        name: 'cmn-CN-Wavenet-C', // Best Mandarin voice
         ssmlGender: 'MALE'
       }
     default:
       return {
         languageCode: 'en-US',
         name: 'en-US-Studio-Q',
-        ssmlGender: 'MALE'
-      }
-  }
-}
-
-// Enhanced fallback voices for radio broadcast style
-const getFallbackLanguageConfig = (language: string) => {
-  switch (language) {
-    case 'en':
-      return {
-        languageCode: 'en-US',
-        name: 'en-US-Neural2-D', // Male Neural2 for consistent news tone
-        ssmlGender: 'MALE'
-      }
-    case 'zh-TW':
-      return {
-        languageCode: 'yue-HK',
-        name: 'yue-HK-Standard-D', // Alternative male Cantonese voice  
-        ssmlGender: 'MALE'
-      }
-    case 'zh-CN':
-      return {
-        languageCode: 'cmn-CN',
-        name: 'cmn-CN-Wavenet-B', // Alternative male Wavenet voice
-        ssmlGender: 'MALE'
-      }
-    default:
-      return {
-        languageCode: 'en-US',
-        name: 'en-US-Neural2-D',
-        ssmlGender: 'MALE'
-      }
-  }
-}
-
-// Final fallback for basic compatibility - radio news style
-const getBasicFallbackConfig = (language: string) => {
-  switch (language) {
-    case 'en':
-      return {
-        languageCode: 'en-US',
-        name: 'en-US-Standard-D', // Male standard voice for consistency
-        ssmlGender: 'MALE'
-      }
-    case 'zh-TW':
-      return {
-        languageCode: 'yue-HK',
-        name: 'yue-HK-Standard-A', // Female Cantonese voice as final fallback
-        ssmlGender: 'FEMALE'
-      }
-    case 'zh-CN':
-      return {
-        languageCode: 'cmn-CN',
-        name: 'cmn-CN-Standard-C', // Male Mandarin voice for authoritative delivery
-        ssmlGender: 'MALE'
-      }
-    default:
-      return {
-        languageCode: 'en-US',
-        name: 'en-US-Standard-D',
         ssmlGender: 'MALE'
       }
   }
@@ -111,8 +51,30 @@ const escapeForSSML = (s: string) =>
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
-// Enhanced SSML preprocessing for professional news broadcast delivery
-const preprocessTextToSSML = (text: string, voiceName: string, language: string): string => {
+// Pronunciation lexicon for HK proper nouns and tricky terms
+const PRONUNCIATION_LEXICON = [
+  { re: /\bTsim Sha Tsui\b/gi, studio: 'Jim Sha Jui', ipa: 'tsɪm saː tsɵy' },
+  { re: /\bTsuen Wan\b/gi, studio: 'Chuen Wan', ipa: 'tsyœːn waːn' },
+  { re: /\bCheung Chau\b/gi, studio: 'Cheung Chow', ipa: 'tsœːŋ tsʰɑːu' },
+  { re: /\bSha Tin\b/gi, studio: 'Sha Teen', ipa: 'saː tʰin' },
+  { re: /\bTai Po\b/gi, studio: 'Tie Po', ipa: 'tʰɐi poː' },
+  { re: /\bYuen Long\b/gi, studio: 'Yuen Long', ipa: 'jyœːn loŋ' },
+  { re: /\bTung Chung\b/gi, studio: 'Tung Chung', ipa: 'tʰʊŋ tsʰʊŋ' },
+  { re: /\bHKO\b/g, studio: 'Hong Kong Observatory', ipa: null },
+  { re: /\bIPCC\b/g, studio: 'I P C C', ipa: null },
+  { re: /\bWTO\b/g, studio: 'W T O', ipa: null },
+  { re: /\bCarrie Lam\b/gi, studio: 'Carrie Lam', ipa: 'kʰæri læm' },
+  { re: /\bJohn Lee\b/gi, studio: 'John Lee', ipa: 'd͡ʒɒn liː' }
+]
+
+// Subtle randomness for natural speech rhythm
+const jitter = (ms: number, index: number): number => {
+  const variance = ((index * 137) % 7) - 3 // -3 to +3
+  return Math.max(80, ms + variance * 7) // minimum 80ms, max variance ±21ms
+}
+
+// Studio-optimized SSML preprocessing for ultra-realistic TTS
+const preprocessTextForStudio = (text: string, language: string): string => {
   // Clean HTML tags and normalize whitespace
   let cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
   
@@ -121,208 +83,54 @@ const preprocessTextToSSML = (text: string, voiceName: string, language: string)
   cleanText = cleanText.replace(/\(Photo[^)]*\)/gi, '') // Remove photo captions
   cleanText = cleanText.replace(/\[Advertisement\]/gi, '') // Remove ad markers
   
-  // Simple and direct section header removal for radio broadcast
-  // Remove the three specific section headers that appear in all articles
-  // Handle them with bold markdown formatting (most common case)
-  cleanText = cleanText.replace(/\*\*Summary\*\*/gi, '')
-  cleanText = cleanText.replace(/\*\*Key Points\*\*/gi, '')
-  cleanText = cleanText.replace(/\*\*Why It Matters\*\*/gi, '')
+  // Remove section headers (simple approach for Studio voices)
+  cleanText = cleanText.replace(/\*\*(Summary|Key Points|Why It Matters)\*\*/gi, '')
+  cleanText = cleanText.replace(/^(Summary|Key Points|Why It Matters)$/gmi, '')
+  cleanText = cleanText.replace(/\n\s*(Summary|Key Points|Why It Matters)\s*\n/gi, '\n')
   
-  // Handle them without markdown formatting (in case markdown was already stripped)
-  cleanText = cleanText.replace(/^Summary$/gmi, '')
-  cleanText = cleanText.replace(/^Key Points$/gmi, '')
-  cleanText = cleanText.replace(/^Why It Matters$/gmi, '')
-  
-  // Handle them at the beginning of lines with optional whitespace
-  cleanText = cleanText.replace(/^\s*Summary\s*$/gmi, '')
-  cleanText = cleanText.replace(/^\s*Key Points\s*$/gmi, '')
-  cleanText = cleanText.replace(/^\s*Why It Matters\s*$/gmi, '')
-  
-  // Handle them after line breaks in the middle of text
-  cleanText = cleanText.replace(/\n\s*\*\*Summary\*\*\s*/gi, '\n')
-  cleanText = cleanText.replace(/\n\s*\*\*Key Points\*\*\s*/gi, '\n')
-  cleanText = cleanText.replace(/\n\s*\*\*Why It Matters\*\*\s*/gi, '\n')
-  
-  // Handle standalone headers on their own lines
-  cleanText = cleanText.replace(/\nSummary\n/gi, '\n')
-  cleanText = cleanText.replace(/\nKey Points\n/gi, '\n')
-  cleanText = cleanText.replace(/\nWhy It Matters\n/gi, '\n')
-  
-  // Finance & HK units normalization - read naturally, not symbolically
+  // Studio-optimized text normalization (minimal processing)
   cleanText = cleanText
-    // HK$ → Hong Kong dollars; keep number as digits (fast to parse for listeners)
+    // Finance normalization - simple approach for Studio voices
     .replace(/HK\$\s?([\d,\.]+)\s?(bn|b|million|mn|m|k)?/gi, (_, n, u) => {
       const unit = (u || '').toLowerCase()
       const spokenUnit =
         unit.startsWith('bn') || unit === 'b' ? ' billion' :
         unit.startsWith('m') ? ' million' :
         unit === 'k' ? ' thousand' : ''
-      return `Hong Kong dollars ${n}${spokenUnit}`
+      return language.startsWith('zh') ? `港元 ${n}${spokenUnit}` : `Hong Kong dollars ${n}${spokenUnit}`
     })
-    // % and percentage points
-    .replace(/([\d.,]+)\s?%/g, '$1 percent')
-    .replace(/([\d.,]+)\s?bps\b/gi, '$1 basis points')
-    // Year-on-year / month-on-month
-    .replace(/\bYoY\b/gi, 'year on year')
-    .replace(/\bMoM\b/gi, 'month on month')
-    // Dashes and ranges
-    .replace(/[–—]/g, '-')                // unify
-    .replace(/(\d)\s*-\s*(\d)\s*(AM|PM)/gi, '$1 to $2 $3')
-
-  // Remove numbered citations and references
-  cleanText = cleanText.replace(/\[\d+\]/g, '') // [1], [2], etc.
-  cleanText = cleanText.replace(/\(Source:.*?\)/gi, '') // Source attribution
+    // Simple percentage handling
+    .replace(/([\d.,]+)\s?%/g, language.startsWith('zh') ? '百分之 $1' : '$1 percent')
+    // Remove citations and formatting
+    .replace(/\[\d+\]/g, '') // [1], [2], etc.
+    .replace(/\*+/g, '') // Asterisks
+    .replace(/#+/g, '') // Hash marks
+    // Clean up whitespace
+    .replace(/\n\s*\n/g, '. ') // Line breaks to sentence breaks
+    .replace(/\s+/g, ' ').trim() // Normalize whitespace
+    // Basic abbreviations
+    .replace(/\bCEO\b/g, 'C E O')
+    .replace(/\bHK\b/g, 'Hong Kong')
   
-  // Remove formatting artifacts
-  cleanText = cleanText.replace(/\*+/g, '') // Asterisks
-  cleanText = cleanText.replace(/#+/g, '') // Hash marks
-  cleanText = cleanText.replace(/_{2,}/g, '') // Multiple underscores
+  // Simple sentence processing for Studio voices
+  const sentences = cleanText.split(/[.!?]+/).filter(s => s.trim().length > 0)
   
-  // Enhanced whitespace and formatting normalization for radio broadcast
-  cleanText = cleanText.replace(/\n\s*\n\s*\n/g, '\n\n') // Triple+ line breaks to double
-  cleanText = cleanText.replace(/\n\s*\n/g, '. ') // Double line breaks to sentence breaks
-  cleanText = cleanText.replace(/\s+/g, ' ').trim() // Normalize whitespace
-  
-  // Radio-specific text improvements
-  // Remove common web/app interface elements that don't belong in audio
-  cleanText = cleanText.replace(/\b(Read more|Continue reading|Click here|Tap to|Swipe to|Share this|Subscribe|Follow us)\b[^.]*?[.!?]/gi, '')
-  cleanText = cleanText.replace(/\b(Photo|Image|Video):?\s*[^.!?]*[.!?]/gi, '') // Remove media captions
-  cleanText = cleanText.replace(/\([Cc]redit:?[^)]*\)/gi, '') // Remove photo credits
-  
-  // Fix common abbreviations for better pronunciation
-  cleanText = cleanText.replace(/\bUS\b/g, 'United States')
-  cleanText = cleanText.replace(/\bUK\b/g, 'United Kingdom') 
-  cleanText = cleanText.replace(/\bEU\b/g, 'European Union')
-  cleanText = cleanText.replace(/\bUN\b/g, 'United Nations')
-  cleanText = cleanText.replace(/\bWHO\b/g, 'World Health Organization')
-  cleanText = cleanText.replace(/\bCEO\b/g, 'C E O')
-  cleanText = cleanText.replace(/\bCFO\b/g, 'C F O')
-  cleanText = cleanText.replace(/\bIPO\b/g, 'I P O')
-  
-  // Improve time/date pronunciation
-  cleanText = cleanText.replace(/(\d{1,2})\/(\d{1,2})\/(\d{4})/g, '$2/$1/$3') // MM/DD/YYYY format
-  cleanText = cleanText.replace(/\b(\d{1,2}):(\d{2})\s*(AM|PM)\b/gi, '$1:$2 $3')
-  
-  // Fix common measurement units
-  cleanText = cleanText.replace(/(\d+)\s*km\b/gi, '$1 kilometers')
-  cleanText = cleanText.replace(/(\d+)\s*ft\b/gi, '$1 feet')
-  cleanText = cleanText.replace(/(\d+)\s*lb\b/gi, '$1 pounds')
-  
-  // Split into sentences with improved pattern for multi-language support
-  const sentencePattern = language.startsWith('zh') 
-    ? /(?<=[。！？])\s*|(?<=[.!?])\s+/ // Chinese and English punctuation
-    : /(?<=[.!?])\s+/ // English only
-  const sentences = cleanText.split(sentencePattern).filter(s => s.trim().length > 0)
-  
-  // Enhanced voice capability detection
-  const isStudioVoice = voiceName.includes('Studio')
-  const isNeural2Voice = voiceName.includes('Neural2')
-  const isChirpVoice = voiceName.includes('Chirp')
-  
-  // Enhanced sentence processing with radio broadcast SSML markup
+  // Ultra-simple processing optimized for Studio voices
   const processedSentences = sentences.map((sentence, index) => {
     let processed = sentence.trim()
     
-    // Radio-style emphasis for key information
-    if (!isStudioVoice && !isChirpVoice) { // Studio and Chirp voices handle emphasis differently
-      // Financial amounts with better pattern matching - more emphasis for radio
-      processed = processed.replace(/(\$[\d,]+(?:\.\d+)?(?:\s*(?:billion|million|thousand|万|億|万亿))?)/gi, 
-        '<emphasis level="strong">$1</emphasis>')
-      // Percentages and statistics - stronger emphasis for radio clarity
-      processed = processed.replace(/(\d+(?:\.\d+)?(?:\s*(?:percent|%|％)))/gi, 
-        '<emphasis level="strong">$1</emphasis>')
-      // Dates and times for better clarity - moderate emphasis
-      processed = processed.replace(/(\d{1,2}:\d{2}(?:\s*(?:AM|PM|am|pm))?)/gi,
-        '<emphasis level="moderate">$1</emphasis>')
-      processed = processed.replace(/(\d{4}年\d{1,2}月\d{1,2}日|\d{1,2}\/\d{1,2}\/\d{4})/gi,
-        '<emphasis level="moderate">$1</emphasis>')
-      
-      // Key people and organizations - radio news style
-      processed = processed.replace(/\b(President|Prime Minister|CEO|Director|Minister|Secretary)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)/gi,
-        '<emphasis level="moderate">$1 $2</emphasis>')
-      
-      // Remove generic number emphasis to reduce SSML verbosity for more natural sound
-      // processed = processed.replace(/\b(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\b/g,
-      //   '<emphasis level="reduced">$1</emphasis>')
-    }
+    // Only apply essential improvements that work with Studio voices
+    // Add natural pauses with subtle jitter
+    const pauseMs = jitter(index === 0 ? 150 : 250, index)
     
-    // Language-specific pronunciation improvements
-    if (language === 'zh-TW' || language === 'en') {
-      // Hong Kong specific terms
-      processed = processed.replace(/\bLegCo\b/g, '<sub alias="Legislative Council">LegCo</sub>')
-      processed = processed.replace(/\bCE\b/g, '<sub alias="Chief Executive">CE</sub>')
-      processed = processed.replace(/\bHK\b/g, '<sub alias="Hong Kong">HK</sub>')
-      processed = processed.replace(/\bHKD\b/g, '<sub alias="Hong Kong Dollars">HKD</sub>')
-      processed = processed.replace(/\bMTR\b/g, '<sub alias="Mass Transit Railway">MTR</sub>')
-      
-      // Additional HK institutions and acronyms for stronger consistency
-      processed = processed.replace(/\bHKI\b/g, '<say-as interpret-as="characters">H K I</say-as>')
-      processed = processed.replace(/\bExCo\b/g, '<sub alias="Executive Council">ExCo</sub>')
-      processed = processed.replace(/\bDoJ\b/g, '<sub alias="Department of Justice">DoJ</sub>')
-      processed = processed.replace(/\bHA\b/g, '<sub alias="Hospital Authority">HA</sub>')
-      processed = processed.replace(/\bICAC\b/g, '<sub alias="I C A C">ICAC</sub>')
-    }
-    
-    if (language === 'zh-CN') {
-      // Mainland China specific terms
-      processed = processed.replace(/\bRMB\b/g, '<sub alias="人民币">RMB</sub>')
-      processed = processed.replace(/\bCCP\b/g, '<sub alias="中国共产党">CCP</sub>')
-    }
-    
-    // Enhanced emotional tone for premium voices - radio broadcast style
-    if (isNeural2Voice || isChirpVoice) {
-      if (language === 'en') {
-        // Breaking news emphasis with radio urgency
-        if (/\b(breaking|urgent|alert|warning|developing)\b/i.test(processed)) {
-          processed = `<prosody rate="1.15" pitch="+1st" volume="+3dB">${processed}</prosody>`
-        }
-        // Key facts and headlines - punchy delivery
-        else if (index === 0 || /^(\d+\.|•|-)\s*/.test(processed)) {
-          processed = `<prosody rate="1.05" pitch="+0.5st" volume="+1dB">${processed}</prosody>`
-        }
-        // Authoritative statements - maintain pace
-        else if (/\b(announced|declared|confirmed|stated|reported)\b/i.test(processed)) {
-          processed = `<prosody rate="1.0" pitch="-0.5st">${processed}</prosody>`
-        }
-      }
-    }
-    
-    // Smart pauses by sentence length and punctuation for better flow
-    const endPunct = /[。！？.!?]$/.test(processed)
-    const longSentence = processed.length > 140
-    const pauseMs =
-      index === 0 ? 120 :               // snappier start
-      longSentence ? 380 :
-      endPunct ? 260 : 200
-
-    // Studio voice SSML: keep it ultra-minimal - Studio voices are sensitive to markup
-    if (isStudioVoice) {
-      // Strip ALL advanced SSML for Studio voices to avoid synthesis issues
-      processed = processed
-        .replace(/<\/?emphasis[^>]*>/g, '') // Remove emphasis tags
-        .replace(/<sub[^>]*>([^<]*)<\/sub>/g, '$1') // Keep content, remove sub tags
-        .replace(/<prosody[^>]*>([^<]*)<\/prosody>/g, '$1') // Remove prosody tags but keep content
-        .replace(/<\/?prosody[^>]*>/g, '') // Remove any remaining prosody tags
-        .replace(/<say-as[^>]*>([^<]*)<\/say-as>/g, '$1') // Remove say-as tags but keep content
-    }
-
-    // Apply SSML safety escaping to processed text before wrapping
-    const safeProcessed = escapeForSSML(processed)
-    return `<p><s>${safeProcessed}</s><break time="${pauseMs}ms"/></p>`
+    return `${processed}<break time="${pauseMs}ms"/>`
   })
   
-  // Join with appropriate breaks between paragraphs - radio style
-  // Radio news uses minimal paragraph breaks to maintain momentum
-  const ssmlContent = processedSentences.join('<break time="300ms"/>')
+  // Join sentences with minimal breaks
+  const ssmlContent = processedSentences.join(' ')
   
-  // Structural wrapper - minimal for Studio voices, enhanced for others
-  if (isStudioVoice) {
-    // Studio voices: minimal wrapper, no prosody attributes that cause errors
-    return `<speak>${ssmlContent}</speak>`
-  } else {
-    // Other voices: enhanced prosody wrapper
-    return `<speak><prosody rate="1.0" pitch="+0st" volume="+1dB">${ssmlContent}</prosody></speak>`
-  }
+  // Minimal SSML wrapper for Studio voices
+  return `<speak>${ssmlContent}</speak>`
 }
 
 // Chunk text for Studio voices (≤5000 bytes limit)
@@ -413,47 +221,29 @@ export class TTSService {
     }
   }
   
-  // Main method to synthesize speech using Google TTS with enhanced fallback
-  async synthesizeSpeech(text: string, fallbackLevel: number = 0): Promise<TTSServiceResponse> {
+  // Studio-only TTS synthesis for ultra-realistic speech
+  async synthesizeSpeech(text: string): Promise<TTSServiceResponse> {
     if (!this.config.apiKey) {
       throw new Error("Google Text-to-Speech API key is required")
     }
 
-    // Enhanced fallback system: Primary -> Premium Fallback -> Basic Fallback
-    let voiceConfig
-    switch (fallbackLevel) {
-      case 0:
-        voiceConfig = getLanguageConfig(this.config.language)
-        break
-      case 1:
-        voiceConfig = getFallbackLanguageConfig(this.config.language)
-        break
-      case 2:
-        voiceConfig = getBasicFallbackConfig(this.config.language)
-        break
-      default:
-        throw new Error('All voice options exhausted')
-    }
-    
+    // Use Studio voices only for highest quality
+    const voiceConfig = getStudioVoiceConfig(this.config.language)
     const isStudioVoice = voiceConfig.name.includes('Studio')
-    const isNeural2Voice = voiceConfig.name.includes('Neural2')
     
-    
-    // Preprocess text into professional SSML
-    const ssmlText = preprocessTextToSSML(text, voiceConfig.name, this.config.language)
+    // Preprocess text with Studio-optimized approach
+    const ssmlText = preprocessTextForStudio(text, this.config.language)
     
     // Handle Studio voice chunking if needed
     const textChunks = isStudioVoice ? chunkTextForStudio(text) : [text]
     const audioUrls: string[] = []
     let totalDuration = 0
     
-    
     for (let i = 0; i < textChunks.length; i++) {
       const chunk = textChunks[i]
       const chunkSSML = textChunks.length > 1 
-        ? preprocessTextToSSML(chunk, voiceConfig.name, this.config.language)
+        ? preprocessTextForStudio(chunk, this.config.language)
         : ssmlText
-      
       
       try {
         const response = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${this.config.apiKey}`, {
@@ -466,31 +256,20 @@ export class TTSService {
             voice: voiceConfig,
             audioConfig: {
               audioEncoding: 'MP3',
-              // Device-aware effects profile for better timbre
+              // Studio voice optimized settings
               effectsProfileId: getDeviceInfo().isMobile
-                ? ['handset-class-device'] // Better for phones/earbuds
-                : ['large-home-entertainment-class-device'], // Better for desktop/speakers
-              // Content-aware speaking rate with device considerations
+                ? ['handset-class-device'] 
+                : ['large-home-entertainment-class-device'],
               speakingRate: this.getOptimalSpeakingRate(this.config.language, isStudioVoice) * this.nudgeForContent(text),
               pitch: this.getOptimalPitch(this.config.language, voiceConfig.ssmlGender),
-              volumeGainDb: 0.0, // Prevent clipping; apply gain client-side if needed
-              // Let Google pick native sample rate unless required
-              // sampleRateHertz: getDeviceInfo().isMobile ? 44100 : 48000
+              volumeGainDb: 0.0
             }
           })
         })
-        
 
         if (!response.ok) {
           const errorText = await response.text()
-          console.error('🎵 TTS Service - API error details:', errorText)
-          
-          // Enhanced fallback system - try next tier if voice-related error
-          if (fallbackLevel < 2 && (response.status === 400 || response.status === 404)) {
-            console.warn(`🎵 TTS Service - Voice tier ${fallbackLevel} failed, trying fallback tier ${fallbackLevel + 1}`)
-            return await this.synthesizeSpeech(text, fallbackLevel + 1)
-          }
-          
+          console.error('TTS API error:', response.status, errorText)
           throw new Error(`Google TTS API error: ${response.status} - ${errorText}`)
         }
 
@@ -512,7 +291,7 @@ export class TTSService {
         totalDuration += estimatedDuration
         
       } catch (error) {
-        console.error(`🎵 TTS Service - Chunk ${i + 1} failed:`, error)
+        console.error(`TTS chunk ${i + 1} failed:`, error)
         // Clean up any successful URLs
         audioUrls.forEach(url => URL.revokeObjectURL(url))
         throw error
@@ -533,7 +312,7 @@ export class TTSService {
       try {
         URL.revokeObjectURL(url)
       } catch (error) {
-        console.warn('🎵 TTS Service - Failed to revoke URL:', url, error)
+        console.warn('Failed to revoke TTS URL:', error)
       }
     })
   }
@@ -541,12 +320,12 @@ export class TTSService {
   // Validate TTS configuration
   static validateConfig(config: TTSConfig): boolean {
     if (!config.apiKey) {
-      console.warn('🎵 TTS Service - No API key provided')
+      console.warn('TTS: No API key provided')
       return false
     }
     
     if (!['en', 'zh-TW', 'zh-CN'].includes(config.language)) {
-      console.warn('🎵 TTS Service - Unsupported language:', config.language)
+      console.warn('TTS: Unsupported language:', config.language)
       return false
     }
     
@@ -560,14 +339,11 @@ export class TTSService {
   
   // Get voice information for a language
   static getVoiceInfo(language: string) {
-    const primary = getLanguageConfig(language)
-    const fallback = getFallbackLanguageConfig(language)
+    const primary = getStudioVoiceConfig(language)
     
     return {
       primary,
-      fallback,
       isStudioVoice: primary.name.includes('Studio'),
-      isNeural2Voice: primary.name.includes('Neural2'),
       supportsSSML: !primary.name.includes('Studio') // Studio voices have limited SSML support
     }
   }
@@ -575,10 +351,8 @@ export class TTSService {
 
 // Export utility functions for use in other services
 export { 
-  preprocessTextToSSML, 
+  preprocessTextForStudio, 
   chunkTextForStudio, 
-  getLanguageConfig, 
-  getFallbackLanguageConfig,
-  getBasicFallbackConfig,
+  getStudioVoiceConfig,
   getDeviceInfo 
 }

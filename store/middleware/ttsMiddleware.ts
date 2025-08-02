@@ -14,7 +14,8 @@ import {
   connectAudioAnalysis,
   startVisualization,
   stopVisualization,
-  updateVisualizationData
+  updateVisualizationData,
+  setAnalyserState
 } from '../audioSlice'
 import { TTSService } from '@/services/ttsService'
 import { SpeechService } from '@/services/speechService'
@@ -76,7 +77,7 @@ export const ttsMiddleware: Middleware = (store) => (next) => (action) => {
 
   // Handle audio context initialization
   if (initializeAudioContext.fulfilled.match(action)) {
-    console.log('🎵 Middleware - Audio context initialized, ready for TTS')
+    // Audio context ready for TTS
   }
 
   return result
@@ -124,26 +125,57 @@ async function startGoogleTTSPlayback(
         // Set playing state first
         store.dispatch(setPlaying(true))
         
-        // Try to connect audio analysis
+        // Connect audio analysis for visualization and audio output
         if (audioService) {
           try {
-            await audioService.setupAudioAnalysis(audio)
+            // Ensure AudioContext is initialized and running
+            const audioContext = audioService.getAudioContext()
+            if (!audioContext) {
+              // Initialize AudioContext within user interaction context (audio.play() call)
+              const initialized = await audioService.initializeAudioContext()
+              if (!initialized) {
+                // Continue to play audio even without visualization
+              }
+            }
             
-            // Now start the real-time visualization since audio analysis is connected
-            store.dispatch(startVisualization())
-          } catch (analysisError) {
-            // Still start visualization but it will use mock data
-            store.dispatch(startVisualization())
+            // Ensure AudioContext is in running state (might be suspended on mobile)
+            const currentContext = audioService.getAudioContext()
+            if (currentContext && currentContext.state === 'suspended') {
+              try {
+                await currentContext.resume()
+              } catch (resumeError) {
+                console.error('AudioContext resume failed:', resumeError)
+                // Continue to play audio even without AudioContext
+              }
+            }
+            
+            // Try to setup audio analysis for visualization
+            try {
+              const analysisConnected = await audioService.setupAudioAnalysis(audio)
+              
+              if (analysisConnected) {
+                // Update Redux state to reflect successful audio analysis connection
+                store.dispatch(setAnalyserState('analyzing'))
+                store.dispatch(connectAudioAnalysis(audio))
+                store.dispatch(startVisualization())
+              } else {
+                // Set analyser state to disconnected when setup fails  
+                store.dispatch(setAnalyserState('disconnected'))
+              }
+            } catch (analysisError) {
+              console.error('Audio analysis setup failed:', analysisError)
+              store.dispatch(setAnalyserState('disconnected'))
+            }
+          } catch (audioServiceError) {
+            console.error('Audio service setup failed:', audioServiceError)
           }
-        } else {
-          store.dispatch(startVisualization())
         }
       }
       
       try {
         await audio.play()
       } catch (playError) {
-        console.error('🎵 Middleware - Audio play failed:', playError)
+        console.error('Audio play failed:', playError)
         // Try next chunk
         currentChunkIndex++
         playNextChunk()
@@ -168,7 +200,7 @@ async function startGoogleTTSPlayback(
     }
 
     audio.onerror = (error) => {
-      console.error(`🎵 Middleware - Audio error in chunk ${currentChunkIndex + 1}:`, error)
+      console.error(`Audio error in chunk ${currentChunkIndex + 1}:`, error)
       // Try next chunk
       currentChunkIndex++
       playNextChunk()
@@ -201,7 +233,7 @@ async function startBrowserTTSPlayback(
     store.dispatch(updateAudioData(idleData))
     
   } catch (error) {
-    console.error('🎵 Middleware - Browser TTS playback failed:', error)
+    console.error('Browser TTS playback failed:', error)
     store.dispatch(setPlaying(false))
     const idleData = Array(6).fill(0)
     store.dispatch(updateAudioData(idleData))
