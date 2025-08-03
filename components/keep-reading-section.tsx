@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Image from "next/image"
 import { useLanguage } from "./language-provider"
 import type { Article } from "@/lib/types"
+import { Card, CardContent } from "@/components/ui/card"
 import OutletFavicon from "./outlet-favicon"
+import { InlineSourcesBadge } from "./public-sources"
 
 interface KeepReadingSectionProps {
   currentArticle: Article
@@ -17,30 +18,23 @@ interface KeepReadingCardProps {
 }
 
 function KeepReadingCard({ article, onClick }: KeepReadingCardProps) {
-
   return (
-    <div
+    <Card 
+      className="group article-card cursor-pointer h-full"
       onClick={onClick}
-      className="flex-shrink-0 w-36 cursor-pointer group transition-transform duration-200 hover:scale-[1.02]"
-      style={{
-        aspectRatio: "2/3", // Portrait orientation as specified
-      }}
     >
-      <div className="h-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        {/* Image section - takes ~60-70% of card height */}
-        <div className="relative h-[65%] bg-gray-100 dark:bg-gray-700">
+      <CardContent className="card-content h-full flex flex-col p-3">
+        {/* Fixed aspect ratio image container - portrait oriented */}
+        <div className="relative w-full aspect-[3/4] overflow-hidden rounded-lg bg-[rgb(var(--color-surface-200))] mb-3 flex-shrink-0">
           {article.imageUrl ? (
-            <Image
+            <img
               src={article.imageUrl}
               alt={article.title}
-              fill
-              className="object-cover"
-              onError={(e) => {
-                e.currentTarget.style.display = "none"
-              }}
+              className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+              loading="lazy"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[rgb(var(--color-surface-200))] to-[rgb(var(--color-surface-300))]">
               <OutletFavicon 
                 source={article.source} 
                 size="lg" 
@@ -50,21 +44,29 @@ function KeepReadingCard({ article, onClick }: KeepReadingCardProps) {
           )}
         </div>
 
-        {/* Content section - takes remaining height */}
-        <div className="h-[35%] p-3 flex flex-col justify-center">
-          {/* Headline */}
-          <h3 className="text-xs font-medium text-gray-900 dark:text-white leading-tight" 
-              style={{
-                display: '-webkit-box',
-                WebkitLineClamp: 4,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden'
-              }}>
-            {article.title}
-          </h3>
+        {/* Title - flex-grow to fill available space */}
+        <h3 className="article-card-title line-clamp-3 text-sm leading-tight transition-colors mb-3 flex-grow">
+          {article.title}
+        </h3>
+
+        {/* Sources - fixed at bottom */}
+        <div className="flex items-center justify-between text-xs article-card-meta">
+          <div className="flex items-center gap-2">
+            {article.isAiEnhanced && article.enhancementMetadata?.sources?.length ? (
+              <InlineSourcesBadge sources={article.enhancementMetadata.sources} />
+            ) : (
+              <div className="flex items-center gap-2">
+                <OutletFavicon 
+                  source={article.source} 
+                  size="sm" 
+                  showFallback={true}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -133,16 +135,15 @@ export default function KeepReadingSection({
 
   if (isLoading) {
     return (
-      <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          Keep Reading
+      <div className="mt-8 pt-6 border-t border-[rgb(var(--color-card-border))]">
+        <h2 className="text-headline mb-6 text-[rgb(var(--color-text-100))]">
+          {t("keepReading.title")}
         </h2>
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="flex gap-4 md:gap-5 overflow-x-auto pb-2">
           {[...Array(5)].map((_, i) => (
             <div
               key={i}
-              className="flex-shrink-0 w-36 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
-              style={{ aspectRatio: "2/3" }}
+              className="flex-shrink-0 w-[180px] sm:w-[200px] md:w-[220px] lg:w-[240px] h-[340px] sm:h-[380px] md:h-[420px] lg:h-[460px] bg-[rgb(var(--color-surface-200))] rounded-xl animate-pulse"
             />
           ))}
         </div>
@@ -155,18 +156,22 @@ export default function KeepReadingSection({
   }
 
   return (
-    <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-        Keep Reading
+    <div className="mt-8 pt-6 border-t border-[rgb(var(--color-card-border))]">
+      <h2 className="text-headline mb-6 text-[rgb(var(--color-text-100))]">
+        {t("keepReading.title")}
       </h2>
       
-      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex gap-4 md:gap-5 overflow-x-auto pb-4 scrollbar-hide">
         {relatedArticles.map((article) => (
-          <KeepReadingCard
+          <div
             key={article.id}
-            article={article}
-            onClick={() => onArticleSelect(article.id)}
-          />
+            className="flex-shrink-0 w-[180px] sm:w-[200px] md:w-[220px] lg:w-[240px] h-[340px] sm:h-[380px] md:h-[420px] lg:h-[460px]"
+          >
+            <KeepReadingCard
+              article={article}
+              onClick={() => onArticleSelect(article.id)}
+            />
+          </div>
         ))}
       </div>
     </div>

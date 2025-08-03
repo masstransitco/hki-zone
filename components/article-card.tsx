@@ -41,9 +41,10 @@ interface ArticleCardProps {
   aspectRatio?: string
   showHkiLogo?: boolean
   showTimestamp?: boolean
+  showBookmark?: boolean
 }
 
-export default function ArticleCard({ article, onReadMore, className, aspectRatio, showHkiLogo = false, showTimestamp = true }: ArticleCardProps) {
+export default function ArticleCard({ article, onReadMore, className, aspectRatio, showHkiLogo = false, showTimestamp = true, showBookmark = true }: ArticleCardProps) {
   const { t } = useLanguage()
   const timeAgo = useHydrationSafeDate(article.publishedAt)
   const [perplexityTime, setPerplexityTime] = useState("")
@@ -134,11 +135,13 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
                 </span>
               </div>
             )}
-            <BookmarkButton
-              articleId={article.id}
-              articleTitle={article.title}
-              compact={true}
-            />
+            {showBookmark && (
+              <BookmarkButton
+                articleId={article.id}
+                articleTitle={article.title}
+                compact={true}
+              />
+            )}
           </div>
         </div>
       </CardContent>

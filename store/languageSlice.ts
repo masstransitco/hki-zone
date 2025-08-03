@@ -144,6 +144,9 @@ const translations = {
     "error.articleNotFound": "Article not found",
     "error.failedToFetch": "Failed to fetch",
 
+    // Keep Reading
+    "keepReading.title": "Keep Reading",
+
     // Category Menu
     "categories.selectCategory": "Select Category",
     "categories.roads.label": "Roads",
@@ -648,6 +651,9 @@ const translations = {
     "error.articleNotFound": "文章未找到",
     "error.failedToFetch": "获取失败",
 
+    // Keep Reading
+    "keepReading.title": "继续阅读",
+
     // Category Menu
     "categories.selectCategory": "选择分类",
     "categories.roads.label": "道路",
@@ -1151,6 +1157,9 @@ const translations = {
     "error.failedToLoad": "載入失敗",
     "error.articleNotFound": "文章未找到",
     "error.failedToFetch": "獲取失敗",
+
+    // Keep Reading
+    "keepReading.title": "繼續閱讀",
 
     // Category Menu
     "categories.selectCategory": "選擇分類",
