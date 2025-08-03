@@ -12,6 +12,7 @@ import {
   Activity,
   Car,
   Radio,
+  Mic,
   Menu,
   X,
   ChevronLeft,
@@ -42,6 +43,12 @@ const navigationItems = [
     url: "/admin/articles",
     icon: FileText,
     description: "Review & manage content",
+  },
+  {
+    title: "News Briefs",
+    url: "/admin/news-briefs",
+    icon: Mic,
+    description: "TTS news brief management",
   },
   {
     title: "Cars",
