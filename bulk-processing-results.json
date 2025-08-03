@@ -1,0 +1,711 @@
+{
+  "timestamp": "2025-08-02T16:20:38.091Z",
+  "summary": {
+    "processed": 50,
+    "failed": 0,
+    "skipped": 0,
+    "total": 50
+  },
+  "results": [
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802230020864-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/12ffcb13-2477-4a8f-8f69-f3d1177896fd/processed/1754151611772-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/12ffcb13-2477-4a8f-8f69-f3d1177896fd/processed/1754151611772-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.166Z"
+      },
+      "sizes": {
+        "original": "55.4KB",
+        "optimized": "58.5KB",
+        "whatsapp": "43.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802200528954-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/d1b0b480-15cb-4ad5-9914-630cb0b28220/processed/1754151612226-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/d1b0b480-15cb-4ad5-9914-630cb0b28220/processed/1754151612226-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.772Z"
+      },
+      "sizes": {
+        "original": "117.9KB",
+        "optimized": "125.6KB",
+        "whatsapp": "91.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802200528954-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/ed0e8034-27ab-4ec1-b4df-f14e2b0fa8b0/processed/1754151612208-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/ed0e8034-27ab-4ec1-b4df-f14e2b0fa8b0/processed/1754151612208-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.838Z"
+      },
+      "sizes": {
+        "original": "117.9KB",
+        "optimized": "125.6KB",
+        "whatsapp": "91.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802200528954-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/cf1b2422-f5e3-4932-8fda-c9123f1933fa/processed/1754151612205-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/cf1b2422-f5e3-4932-8fda-c9123f1933fa/processed/1754151612205-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.806Z"
+      },
+      "sizes": {
+        "original": "117.9KB",
+        "optimized": "125.6KB",
+        "whatsapp": "91.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://image.hkhl.hk/f/1024p0/0x0/100/none/d251a705f7102254d5c71c6724b49561/2025-08/ta41.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/4962cee9-a5eb-4fff-874a-e2939976f5c7/processed/1754151611926-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/4962cee9-a5eb-4fff-874a-e2939976f5c7/processed/1754151611926-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.232Z"
+      },
+      "sizes": {
+        "original": "61.5KB",
+        "optimized": "55.6KB",
+        "whatsapp": "34.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802230020864-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/29dbb441-43f3-45be-93c9-7499a6a78657/processed/1754151611770-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/29dbb441-43f3-45be-93c9-7499a6a78657/processed/1754151611770-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.151Z"
+      },
+      "sizes": {
+        "original": "55.4KB",
+        "optimized": "58.5KB",
+        "whatsapp": "43.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://image.hkhl.hk/f/1024p0/0x0/100/none/d251a705f7102254d5c71c6724b49561/2025-08/ta41.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/528ae70c-83b6-44f6-96c4-821ee794dfb3/processed/1754151611898-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/528ae70c-83b6-44f6-96c4-821ee794dfb3/processed/1754151611898-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.295Z"
+      },
+      "sizes": {
+        "original": "61.5KB",
+        "optimized": "55.6KB",
+        "whatsapp": "34.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802230020864-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/7dd606e1-0d00-422b-8ee2-468d8ae35e52/processed/1754151611923-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/7dd606e1-0d00-422b-8ee2-468d8ae35e52/processed/1754151611923-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.233Z"
+      },
+      "sizes": {
+        "original": "55.4KB",
+        "optimized": "58.5KB",
+        "whatsapp": "43.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://image.hkhl.hk/f/1024p0/0x0/100/none/d251a705f7102254d5c71c6724b49561/2025-08/ta41.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/8c67ae07-a1ed-4251-aab8-26992ecaee76/processed/1754151611941-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/8c67ae07-a1ed-4251-aab8-26992ecaee76/processed/1754151611941-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.647Z"
+      },
+      "sizes": {
+        "original": "61.5KB",
+        "optimized": "55.6KB",
+        "whatsapp": "34.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://image.hkhl.hk/f/1024p0/0x0/100/none/ef3b3a3b39c976f325ba2224cd4e1fd8/2025-08/526992502_10237942100871949_1148791481297099547_n.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/33ca0e31-3478-4c63-b837-1e0b0978d6ab/processed/1754151612142-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/33ca0e31-3478-4c63-b837-1e0b0978d6ab/processed/1754151612142-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:13.700Z"
+      },
+      "sizes": {
+        "original": "152.7KB",
+        "optimized": "134.1KB",
+        "whatsapp": "88.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.hk01.com/di/media/images/dw/20250802/1028459411053481984817950.jpeg/Fa7Rp84-KTss6KxskLk7SLIE2_vKNkIROBgozDgYKMw",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/6ea04fa1-04e6-41f7-ab36-52c22f92454c/processed/1754151618154-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/6ea04fa1-04e6-41f7-ab36-52c22f92454c/processed/1754151618154-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:19.808Z"
+      },
+      "sizes": {
+        "original": "613.8KB",
+        "optimized": "188.6KB",
+        "whatsapp": "132.1KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.hk01.com/di/media/images/dw/20250802/1028356385886179328256348.jpeg/9hb3OHFFxqt7j2hYbitHqbSfzew8yx8mBV7_rAVe_6w",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/cbc9b488-2efb-44ca-94d1-cd63a774e94c/processed/1754151617679-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/cbc9b488-2efb-44ca-94d1-cd63a774e94c/processed/1754151617679-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:18.533Z"
+      },
+      "sizes": {
+        "original": "104.7KB",
+        "optimized": "82.2KB",
+        "whatsapp": "58.3KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.am730.com.hk/s3fs-public/styles/article_image/public/2025-08/VS--Instagram-0%E2%80%9917%E2%80%9D%20%282%29.jpg?itok=TJ9RBU_T&amp;timestamp=1754150432",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/94911f04-bc8b-4009-84fd-1add1c128ad5/processed/1754151618845-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/94911f04-bc8b-4009-84fd-1add1c128ad5/processed/1754151618845-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:20.399Z"
+      },
+      "sizes": {
+        "original": "173.6KB",
+        "optimized": "117.3KB",
+        "whatsapp": "81.1KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816397_1_L_20250802223331.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/bd1e89c9-b17b-46b7-9bb4-eba092b34e87/processed/1754151617724-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/bd1e89c9-b17b-46b7-9bb4-eba092b34e87/processed/1754151617724-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:19.389Z"
+      },
+      "sizes": {
+        "original": "140.3KB",
+        "optimized": "108.4KB",
+        "whatsapp": "95.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816397_1_L_20250802223331.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/862be9ed-fe1a-48b9-a18e-d80e328a01fd/processed/1754151617704-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/862be9ed-fe1a-48b9-a18e-d80e328a01fd/processed/1754151617704-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:18.591Z"
+      },
+      "sizes": {
+        "original": "140.3KB",
+        "optimized": "108.4KB",
+        "whatsapp": "95.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816397_1_L_20250802223331.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/66b33a57-25a2-4198-af5e-dc9e002c502d/processed/1754151617710-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/66b33a57-25a2-4198-af5e-dc9e002c502d/processed/1754151617710-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:19.350Z"
+      },
+      "sizes": {
+        "original": "140.3KB",
+        "optimized": "108.4KB",
+        "whatsapp": "95.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816399_1_L_20250802230244.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/ccf43525-f195-4bd9-808f-5c1135c940ab/processed/1754151618123-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/ccf43525-f195-4bd9-808f-5c1135c940ab/processed/1754151618123-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:19.430Z"
+      },
+      "sizes": {
+        "original": "697.8KB",
+        "optimized": "92.5KB",
+        "whatsapp": "68.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816399_1_L_20250802230244.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5508c98c-9b95-47ce-8882-4a7641ba1441/processed/1754151618151-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5508c98c-9b95-47ce-8882-4a7641ba1441/processed/1754151618151-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:19.520Z"
+      },
+      "sizes": {
+        "original": "697.8KB",
+        "optimized": "92.5KB",
+        "whatsapp": "68.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816399_1_L_20250802230244.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/385df8bd-3ce5-458b-a6c0-bdae09e0929e/processed/1754151618173-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/385df8bd-3ce5-458b-a6c0-bdae09e0929e/processed/1754151618173-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:19.503Z"
+      },
+      "sizes": {
+        "original": "697.8KB",
+        "optimized": "92.5KB",
+        "whatsapp": "68.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.i-scmp.com/sites/default/files/d8/images/canvas/2025/08/02/c807cb35-c834-460c-a12e-a638be82bcc6_9dc05ba9.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/0e384d0f-8a63-48c1-a790-4c7ef1d73bbf/processed/1754151618626-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/0e384d0f-8a63-48c1-a790-4c7ef1d73bbf/processed/1754151618626-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:19.586Z"
+      },
+      "sizes": {
+        "original": "1947.0KB",
+        "optimized": "212.8KB",
+        "whatsapp": "162.4KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.i-scmp.com/sites/default/files/d8/images/canvas/2025/08/02/c807cb35-c834-460c-a12e-a638be82bcc6_9dc05ba9.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5f377ba4-71da-42a5-ab4f-252287a12ca4/processed/1754151624548-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5f377ba4-71da-42a5-ab4f-252287a12ca4/processed/1754151624548-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:26.466Z"
+      },
+      "sizes": {
+        "original": "1947.0KB",
+        "optimized": "212.8KB",
+        "whatsapp": "162.4KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.i-scmp.com/sites/default/files/d8/images/canvas/2025/08/02/c807cb35-c834-460c-a12e-a638be82bcc6_9dc05ba9.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/14b992cc-4376-4823-bd7d-00f3af9c23c0/processed/1754151624563-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/14b992cc-4376-4823-bd7d-00f3af9c23c0/processed/1754151624563-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:26.177Z"
+      },
+      "sizes": {
+        "original": "1947.0KB",
+        "optimized": "212.8KB",
+        "whatsapp": "162.4KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.hk01.com/di/media/images/dw/20250722/1024394774943109120763019.png/MGpXIjV1UrGd00o60eoIHqBzpswj9nRTxd8lI8XfJSM",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/209efeab-efcf-46c8-b68d-9cd980e96342/processed/1754151624125-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/209efeab-efcf-46c8-b68d-9cd980e96342/processed/1754151624125-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:25.552Z"
+      },
+      "sizes": {
+        "original": "187.4KB",
+        "optimized": "79.9KB",
+        "whatsapp": "53.2KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.hk01.com/di/media/images/dw/20250802/1028438866345857024576928.jpeg/7eI8oW82wr1imop-bEAsmR-8nLhDp61xmXkuaJl5Lmg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/a86beb5e-3d89-4793-a067-40c83222738f/processed/1754151624135-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/a86beb5e-3d89-4793-a067-40c83222738f/processed/1754151624135-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:25.561Z"
+      },
+      "sizes": {
+        "original": "195.7KB",
+        "optimized": "84.4KB",
+        "whatsapp": "53.4KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.hk01.com/di/media/images/dw/20250730/1027278671922073600325164.jpeg/tRtIZQS5mtKI_pAVXN9CQX54N9jRgxXKaTrOmmk6zpo",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/9b414fb1-e8d9-4d58-ba15-67b23642eff7/processed/1754151623993-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/9b414fb1-e8d9-4d58-ba15-67b23642eff7/processed/1754151623993-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:25.635Z"
+      },
+      "sizes": {
+        "original": "115.0KB",
+        "optimized": "94.8KB",
+        "whatsapp": "65.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.hk01.com/di/media/images/dw/20250801/1028100150180057088196283.jpeg/9ABNG3pYICaXdI_gc-QBqyGgNSXc3yuPTcO1q03Dtas",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/a4bfa07d-5209-4877-a5d3-206d7427acdb/processed/1754151624407-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/a4bfa07d-5209-4877-a5d3-206d7427acdb/processed/1754151624407-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:26.250Z"
+      },
+      "sizes": {
+        "original": "371.7KB",
+        "optimized": "262.1KB",
+        "whatsapp": "192.7KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://image.hkhl.hk/f/1024p0/0x0/100/none/238ff5972ed19304a0cbe6a43ef6357d/2025-08/KF_3.png",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/c2670f9d-d3ee-4970-b188-a9c22a5bf547/processed/1754151623914-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/c2670f9d-d3ee-4970-b188-a9c22a5bf547/processed/1754151623914-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:25.561Z"
+      },
+      "sizes": {
+        "original": "187.7KB",
+        "optimized": "127.8KB",
+        "whatsapp": "81.2KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816395_1_L_20250802222016.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/eaebf52e-fa37-492a-b9f6-5e9174db094c/processed/1754151624261-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/eaebf52e-fa37-492a-b9f6-5e9174db094c/processed/1754151624261-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:25.820Z"
+      },
+      "sizes": {
+        "original": "859.0KB",
+        "optimized": "107.8KB",
+        "whatsapp": "100.9KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://image.hkhl.hk/f/1024p0/0x0/100/none/238ff5972ed19304a0cbe6a43ef6357d/2025-08/KF_3.png",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/07d11612-9f9d-4858-8905-39c0dd6c4a14/processed/1754151623911-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/07d11612-9f9d-4858-8905-39c0dd6c4a14/processed/1754151623911-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:25.306Z"
+      },
+      "sizes": {
+        "original": "187.7KB",
+        "optimized": "127.8KB",
+        "whatsapp": "81.2KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://image.hkhl.hk/f/1024p0/0x0/100/none/238ff5972ed19304a0cbe6a43ef6357d/2025-08/KF_3.png",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/d477beb1-8102-4eca-bb4d-8788ad7082d8/processed/1754151623931-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/d477beb1-8102-4eca-bb4d-8788ad7082d8/processed/1754151623931-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:25.505Z"
+      },
+      "sizes": {
+        "original": "187.7KB",
+        "optimized": "127.8KB",
+        "whatsapp": "81.2KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802225130564-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/800f5e30-2496-4378-984f-adc19dc42ab7/processed/1754151630128-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/800f5e30-2496-4378-984f-adc19dc42ab7/processed/1754151630128-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:30.847Z"
+      },
+      "sizes": {
+        "original": "282.5KB",
+        "optimized": "130.8KB",
+        "whatsapp": "94.7KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802225130564-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/bd3d94fd-3c16-4994-ae9b-5c3017ef808c/processed/1754151630130-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/bd3d94fd-3c16-4994-ae9b-5c3017ef808c/processed/1754151630130-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:31.811Z"
+      },
+      "sizes": {
+        "original": "282.5KB",
+        "optimized": "130.8KB",
+        "whatsapp": "94.7KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816395_1_L_20250802222016.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5049c685-5638-462b-9759-1eaf80fb192d/processed/1754151630344-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5049c685-5638-462b-9759-1eaf80fb192d/processed/1754151630344-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:31.672Z"
+      },
+      "sizes": {
+        "original": "859.0KB",
+        "optimized": "107.8KB",
+        "whatsapp": "100.9KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816395_1_L_20250802222016.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/155ca2e1-c9e5-4045-b3ef-92602eff49c7/processed/1754151630354-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/155ca2e1-c9e5-4045-b3ef-92602eff49c7/processed/1754151630354-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:31.997Z"
+      },
+      "sizes": {
+        "original": "859.0KB",
+        "optimized": "107.8KB",
+        "whatsapp": "100.9KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802225130564-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/60a2ca0a-8e48-4e6d-9214-29bf73689ce1/processed/1754151630102-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/60a2ca0a-8e48-4e6d-9214-29bf73689ce1/processed/1754151630102-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:31.700Z"
+      },
+      "sizes": {
+        "original": "282.5KB",
+        "optimized": "130.8KB",
+        "whatsapp": "94.7KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.hk01.com/di/media/images/dw/20250802/1028444942571147264685427.jpeg/IsAgvP-15mXJX1BCiiV9DCHCWIEblarlKwZEhSsGRIU",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/b7162cbb-0fe4-4327-bede-8522fd2142eb/processed/1754151630066-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/b7162cbb-0fe4-4327-bede-8522fd2142eb/processed/1754151630066-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:31.417Z"
+      },
+      "sizes": {
+        "original": "134.3KB",
+        "optimized": "75.9KB",
+        "whatsapp": "64.9KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://image.hkhl.hk/f/1024p0/0x0/100/none/d251a705f7102254d5c71c6724b49561/2025-08/ta41.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5a4fa2fc-90f3-432d-ba81-6b3951129120/processed/1754151629721-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5a4fa2fc-90f3-432d-ba81-6b3951129120/processed/1754151629721-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:30.342Z"
+      },
+      "sizes": {
+        "original": "61.5KB",
+        "optimized": "55.6KB",
+        "whatsapp": "34.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.hk01.com/di/media/images/dw/20250802/1028453472233590784759014.jpeg/rGRnV-P5UsBb2HU_p_3nINNhZOg_pvJ5InNVlSJzVZU",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/bd98d5ef-bfa5-4117-a701-44a3cb75ba4a/processed/1754151630540-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/bd98d5ef-bfa5-4117-a701-44a3cb75ba4a/processed/1754151630540-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:31.909Z"
+      },
+      "sizes": {
+        "original": "686.5KB",
+        "optimized": "138.4KB",
+        "whatsapp": "104.6KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802230020864-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/02740010-22e0-4f97-8d83-052f7b5647bd/processed/1754151629719-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/02740010-22e0-4f97-8d83-052f7b5647bd/processed/1754151629719-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:30.309Z"
+      },
+      "sizes": {
+        "original": "55.4KB",
+        "optimized": "58.5KB",
+        "whatsapp": "43.8KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816399_1_L_20250802230244.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/862f2b0c-8a58-48e3-9b56-a1b0eb43be78/processed/1754151630304-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/862f2b0c-8a58-48e3-9b56-a1b0eb43be78/processed/1754151630304-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:31.630Z"
+      },
+      "sizes": {
+        "original": "697.8KB",
+        "optimized": "92.5KB",
+        "whatsapp": "68.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://cdn.i-scmp.com/sites/default/files/d8/images/canvas/2025/08/02/c807cb35-c834-460c-a12e-a638be82bcc6_9dc05ba9.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/e8b5f3a1-b80d-4c39-9f5f-73c2227423f4/processed/1754151636329-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/e8b5f3a1-b80d-4c39-9f5f-73c2227423f4/processed/1754151636329-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:37.303Z"
+      },
+      "sizes": {
+        "original": "1947.0KB",
+        "optimized": "212.8KB",
+        "whatsapp": "162.4KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816396_1_L_20250802222842.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/45a92e99-2e5d-4128-999d-41681faa367e/processed/1754151636058-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/45a92e99-2e5d-4128-999d-41681faa367e/processed/1754151636058-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:37.672Z"
+      },
+      "sizes": {
+        "original": "1089.3KB",
+        "optimized": "171.4KB",
+        "whatsapp": "130.3KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802194527991-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/876f2d26-eaae-4e5c-8ddb-2a04bf4ab530/processed/1754151635502-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/876f2d26-eaae-4e5c-8ddb-2a04bf4ab530/processed/1754151635502-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:36.187Z"
+      },
+      "sizes": {
+        "original": "128.9KB",
+        "optimized": "121.1KB",
+        "whatsapp": "98.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816396_1_L_20250802222842.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5f30f4f0-9a74-469a-9322-0c41027b0ceb/processed/1754151636081-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/5f30f4f0-9a74-469a-9322-0c41027b0ceb/processed/1754151636081-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:37.753Z"
+      },
+      "sizes": {
+        "original": "1089.3KB",
+        "optimized": "171.4KB",
+        "whatsapp": "130.3KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://newsstatic.rthk.hk/images/mfile_1816396_1_L_20250802222842.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/fd2ec429-0854-4f02-9e14-b0c8a197bf14/processed/1754151636052-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/fd2ec429-0854-4f02-9e14-b0c8a197bf14/processed/1754151636052-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:37.807Z"
+      },
+      "sizes": {
+        "original": "1089.3KB",
+        "optimized": "171.4KB",
+        "whatsapp": "130.3KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://images.unsplash.com/photo-1586339949916-3e9457bef6d3?w=800&h=400&fit=crop",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/07e12dd0-3861-45ab-9495-669d861d310d/processed/1754151635672-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/07e12dd0-3861-45ab-9495-669d861d310d/processed/1754151635672-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:37.277Z"
+      },
+      "sizes": {
+        "original": "67.2KB",
+        "optimized": "95.7KB",
+        "whatsapp": "58.7KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://images.unsplash.com/photo-1586339949916-3e9457bef6d3?w=800&h=400&fit=crop",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/4b44eb94-679f-4b88-81cc-8d5fb49f4670/processed/1754151635705-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/4b44eb94-679f-4b88-81cc-8d5fb49f4670/processed/1754151635705-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:37.282Z"
+      },
+      "sizes": {
+        "original": "67.2KB",
+        "optimized": "95.7KB",
+        "whatsapp": "58.7KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802194527991-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/7ffac083-44d9-411e-bc0d-c1437e834418/processed/1754151635725-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/7ffac083-44d9-411e-bc0d-c1437e834418/processed/1754151635725-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:37.321Z"
+      },
+      "sizes": {
+        "original": "128.9KB",
+        "optimized": "121.1KB",
+        "whatsapp": "98.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://hk.on.cc/hk/bkn/cnt/news/20250802/photo/bkn-20250802194527991-0802_00822_001_01b.jpg",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/f4b96ef0-2e9c-4f21-a5ae-a93817a24571/processed/1754151635710-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/f4b96ef0-2e9c-4f21-a5ae-a93817a24571/processed/1754151635710-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:37.104Z"
+      },
+      "sizes": {
+        "original": "128.9KB",
+        "optimized": "121.1KB",
+        "whatsapp": "98.5KB"
+      }
+    },
+    {
+      "success": true,
+      "metadata": {
+        "original": "https://images.unsplash.com/photo-1586339949916-3e9457bef6d3?w=800&h=400&fit=crop",
+        "optimized": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/aebd82fe-e763-48cb-9808-f19bf08d4e42/processed/1754151635671-optimized.jpg",
+        "whatsapp": "https://egyuetfeubznhcvmtary.supabase.co/storage/v1/object/public/article-images/articles/aebd82fe-e763-48cb-9808-f19bf08d4e42/processed/1754151635671-whatsapp.jpg",
+        "processed_at": "2025-08-02T16:20:36.181Z"
+      },
+      "sizes": {
+        "original": "67.2KB",
+        "optimized": "95.7KB",
+        "whatsapp": "58.7KB"
+      }
+    }
+  ]
+}

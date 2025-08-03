@@ -119,7 +119,10 @@ const getSourceFavicon = (sourceSlug: string): string => {
     'emsd_util': '/gov-favicons-output/emsd.ico',
     
     // MTR - fallback to government icon
-    'mtr_rail': '/gov-favicons-output/gov_hk.ico'
+    'mtr_rail': '/gov-favicons-output/gov_hk.ico',
+    
+    // Hong Kong Police Force
+    'hkpf_press': '/gov-favicons-output/police.png'
   }
   
   return faviconMap[sourceSlug] || '/gov-favicons-output/gov_hk.ico'
@@ -208,7 +211,8 @@ export default function GovernmentBulletin({
           'Transport': 'transport_press',
           'Weather': 'weather_warning',
           'Health': 'health_alert',
-          'Gov': 'administrative'
+          'Gov': 'administrative',
+          'Police': 'police'
         }
         
         // Also support weather_earthquake as Weather
@@ -805,9 +809,10 @@ export default function GovernmentBulletin({
                             {/* Debug info for development */}
                             {process.env.NODE_ENV === 'development' && (
                               <div className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 p-2 rounded">
-                                Debug: body="{item.body}" | 
-                                enriched_summary="{item.enriched_summary}" | 
+                                Debug: body_length={item.body?.length || 0} | 
+                                enriched_summary_length={item.enriched_summary?.length || 0} | 
                                 Status: {item.enrichment_status} | 
+                                Source: {item.source_slug} |
                                 Link: {item.link}
                               </div>
                             )}

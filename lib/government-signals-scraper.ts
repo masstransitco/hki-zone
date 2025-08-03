@@ -311,12 +311,21 @@ export class GovernmentSignalsScraper {
    */
   private async scrapeContent(url: string, config: ScrapingConfig): Promise<ScrapingResult> {
     try {
-      const response = await fetch(url, {
+      // Convert HTTP to HTTPS for government domains to avoid redirects
+      let processedUrl = url
+      if (url.startsWith('http://') && 
+          (url.includes('td.gov.hk') || url.includes('hkma.gov.hk') || url.includes('gov.hk'))) {
+        processedUrl = url.replace('http://', 'https://')
+        console.log(`   🔒 Converting to HTTPS: ${processedUrl}`)
+      }
+      
+      const response = await fetch(processedUrl, {
         headers: {
           'User-Agent': this.USER_AGENT,
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           'Accept-Language': 'zh-TW,zh;q=0.9,en;q=0.8'
         },
+        redirect: 'follow', // Follow redirects automatically
         timeout: 30000
       })
       

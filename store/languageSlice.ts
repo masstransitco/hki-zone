@@ -479,6 +479,11 @@ const translations = {
     "filters.hospital": "Hospital",
     "filters.utility": "Utility",
     "filters.rail": "Rail",
+    "filters.police": "Police",
+    "filters.emergency": "Emergency",
+    "filters.education": "Education",
+    "filters.immigration": "Immigration",
+    "filters.environment": "Environment",
 
     // Bulletin
     "bulletin.noContent": "Content not yet available",
@@ -978,6 +983,11 @@ const translations = {
     "filters.hospital": "医院",
     "filters.utility": "公用",
     "filters.rail": "铁路",
+    "filters.police": "警察",
+    "filters.emergency": "紧急",
+    "filters.education": "教育",
+    "filters.immigration": "移民",
+    "filters.environment": "环境",
 
     // Bulletin
     "bulletin.noContent": "内容尚未可用",
@@ -1477,6 +1487,11 @@ const translations = {
     "filters.hospital": "醫院",
     "filters.utility": "公用",
     "filters.rail": "鐵路",
+    "filters.police": "警察",
+    "filters.emergency": "緊急",
+    "filters.education": "教育",
+    "filters.immigration": "移民",
+    "filters.environment": "環境",
 
     // Bulletin
     "bulletin.noContent": "內容尚未可用",

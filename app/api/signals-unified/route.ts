@@ -43,8 +43,9 @@ export async function GET(request: NextRequest) {
       query = query.eq('category', category)
     }
 
-    // Include both complete and partial content (but exclude failed/error states)
-    query = query.in('processing_status', ['content_complete', 'enriched', 'content_partial'])
+    // Only return signals with complete content for consistent user experience
+    // content_partial signals (TD/HKMA waiting for scraper) are excluded until scraped
+    query = query.in('processing_status', ['content_complete', 'enriched'])
 
     const { data: incidents, error } = await query
 
@@ -160,15 +161,22 @@ export async function GET(request: NextRequest) {
       let selectedLanguage = 'en'
       let languageContent = languages_content.en || {}
       
-      // Try to find requested language
-      if (language && languages_content[language] && languages_content[language].title) {
+      // Try to find requested language with both title AND body content
+      if (language && languages_content[language] && 
+          languages_content[language].title && 
+          languages_content[language].body && 
+          languages_content[language].body.trim().length > 0) {
         selectedLanguage = language
         languageContent = languages_content[language]
-      } else if (language === 'zh-CN' && languages_content['zh-TW'] && languages_content['zh-TW'].title) {
+      } else if (language === 'zh-CN' && languages_content['zh-TW'] && 
+                 languages_content['zh-TW'].title &&
+                 languages_content['zh-TW'].body && 
+                 languages_content['zh-TW'].body.trim().length > 0) {
         // Fallback from Simplified to Traditional Chinese
         selectedLanguage = 'zh-TW'
         languageContent = languages_content['zh-TW']
       }
+      // If requested language doesn't have complete content, keep English default
       
       // Extract content with fallbacks
       let title = languageContent.title || 'Untitled'

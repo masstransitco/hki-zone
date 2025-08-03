@@ -83,7 +83,7 @@ export class GovernmentSignalsAggregator {
       .from('government_feed_sources')
       .select('*')
       .eq('active', true)
-      .in('feed_group', ['td_notices', 'td_press']) // Check both td_notices and td_press
+      // Process ALL active feed sources, not just TD ones
     
     if (error || !feedSources) {
       console.error('❌ Error fetching feed sources:', error)
@@ -437,6 +437,22 @@ export class GovernmentSignalsAggregator {
       const pathMatch = url.match(/P(\d+)\.htm/) || url.match(/(\w+)\.htm/)
       if (pathMatch) {
         return pathMatch[1]
+      }
+    }
+    
+    if (feedSource.feed_group === 'hkpf_press') {
+      // For police press releases, extract the reference number (e.g., P202507250001)
+      const refMatch = url.match(/refno=([^&]+)/)
+      if (refMatch) {
+        return refMatch[1]
+      }
+    }
+    
+    if (feedSource.feed_group === 'td_press') {
+      // For TD press releases, extract the press release ID
+      const tdMatch = url.match(/P(\d+)/) || url.match(/([^/]+)\.htm/)
+      if (tdMatch) {
+        return tdMatch[1].replace(/\.htm$/, '')
       }
     }
     
