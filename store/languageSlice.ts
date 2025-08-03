@@ -480,6 +480,11 @@ const translations = {
     "filters.utility": "Utility",
     "filters.rail": "Rail",
 
+    // Bulletin
+    "bulletin.noContent": "Content not yet available",
+    "bulletin.readMore": "Read more",
+    "bulletin.viewOriginal": "View original",
+
     // News Outlets
     "outlets.allSources": "All Sources",
     "outlets.Bloomberg": "Bloomberg",
@@ -974,6 +979,11 @@ const translations = {
     "filters.utility": "公用",
     "filters.rail": "铁路",
 
+    // Bulletin
+    "bulletin.noContent": "内容尚未可用",
+    "bulletin.readMore": "阅读更多",
+    "bulletin.viewOriginal": "查看原文",
+
     // News Outlets
     "outlets.allSources": "所有来源",
     "outlets.Bloomberg": "彭博社",
@@ -1467,6 +1477,11 @@ const translations = {
     "filters.hospital": "醫院",
     "filters.utility": "公用",
     "filters.rail": "鐵路",
+
+    // Bulletin
+    "bulletin.noContent": "內容尚未可用",
+    "bulletin.readMore": "閱讀更多",
+    "bulletin.viewOriginal": "查看原文",
 
     // News Outlets
     "outlets.allSources": "所有來源",

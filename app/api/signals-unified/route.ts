@@ -109,11 +109,11 @@ export async function GET(request: NextRequest) {
       } else if (feedGroup.includes('td_notices') || feedGroup.includes('td_special') || feedGroup.includes('td_road')) {
         relevanceScore += 30 // Transport notices get high priority
       } else if (feedGroup.includes('td_press')) {
-        relevanceScore += 15 // Transport press releases also important
+        relevanceScore += 25 // Transport press releases are important (increased from 15 to 25)
+      } else if (feedGroup.includes('hkma_press')) {
+        relevanceScore += 10 // HKMA press releases are informational but important (changed from -10 to +10)
       } else if (feedGroup.includes('9day') || feedGroup.includes('forecast')) {
         relevanceScore -= 15 // Weather forecasts are less urgent than warnings (increased penalty)
-      } else if (feedGroup.includes('hkma_press')) {
-        relevanceScore -= 10 // HKMA press releases are informational (new penalty)
       } else if (feedGroup.includes('press')) {
         relevanceScore -= 5 // Other press releases are informational
       }
@@ -265,27 +265,34 @@ export async function POST(request: NextRequest) {
     const { action, feed_id } = body
 
     if (action === 'process_feeds') {
-      // Import and run the unified feed processor
-      const { getUnifiedFeeds } = await import('@/lib/government-feeds-unified')
-      const unifiedFeeds = getUnifiedFeeds()
+      // Import and run the new signals aggregator
+      const { getSignalsAggregator } = await import('@/lib/government-signals-aggregator')
+      const aggregator = getSignalsAggregator()
       
-      await unifiedFeeds.processAllFeeds()
+      const result = await aggregator.processAllFeeds()
       
       return NextResponse.json({
         success: true,
-        message: "Feed processing initiated",
-        timestamp: new Date().toISOString()
+        message: `Processed ${result.processed} RSS items into ${result.grouped} signals`,
+        timestamp: new Date().toISOString(),
+        result: {
+          rss_items_processed: result.processed,
+          signals_created: result.grouped,
+          signals_stored: result.stored,
+          errors: result.errors
+        }
       })
     }
 
     if (action === 'process_single_feed' && feed_id) {
-      // Process a single feed group
-      const { getUnifiedFeeds } = await import('@/lib/government-feeds-unified')
-      const unifiedFeeds = getUnifiedFeeds()
+      // For now, process all feeds since the aggregator doesn't support single feed processing
+      // This could be enhanced later to filter by specific feed group
+      const { getSignalsAggregator } = await import('@/lib/government-signals-aggregator')
+      const aggregator = getSignalsAggregator()
       
-      // Get feed configuration
+      // Get feed configuration from the new table for validation
       const { data: feed } = await supabase
-        .from('gov_feeds_unified')
+        .from('government_feed_sources')
         .select('*')
         .eq('id', feed_id)
         .single()
@@ -296,13 +303,19 @@ export async function POST(request: NextRequest) {
         }, { status: 404 })
       }
       
-      // Process just this feed
-      await unifiedFeeds.processFeedGroup(feed.base_slug, feed)
+      // Process all feeds (since single feed processing isn't implemented yet)
+      const result = await aggregator.processAllFeeds()
       
       return NextResponse.json({
         success: true,
-        message: `Processed feed: ${feed.base_slug}`,
-        timestamp: new Date().toISOString()
+        message: `Processed all feeds (requested: ${feed.feed_group})`,
+        timestamp: new Date().toISOString(),
+        result: {
+          rss_items_processed: result.processed,
+          signals_created: result.grouped,
+          signals_stored: result.stored,
+          errors: result.errors
+        }
       })
     }
 

@@ -280,14 +280,53 @@ This session demonstrated an effective debugging workflow for government signals
 3. Aggregator schedule verification
 4. Feed source active status check
 
-## Performance Metrics
+## Signal Processing Order & Performance
 
-### Current System Performance (August 2025)
+### Content Scraper Processing Logic
+
+The scraper processes signals in **priority and recency order** to ensure the most important and recent content is scraped first:
+
+#### **Database Query Order**:
+```sql
+SELECT * FROM government_signals
+WHERE processing_status IN ('discovered', 'content_partial')
+AND scraping_attempts < 3
+ORDER BY priority_score DESC,    -- 1. Highest priority first
+         created_at DESC          -- 2. Most recent first
+LIMIT 10;
+```
+
+#### **Priority Scoring System**:
+- **Base Score**: 50-100 (varies by feed type)
+- **Recency Boosts**:
+  - ≤6 hours: +30 points (breaking news)
+  - ≤24 hours: +20 points (recent news)
+  - ≤48 hours: +10 points (still relevant)
+  - >72 hours: -5 points per day (age penalty)
+- **Department Priority Adjustments**:
+  - **Transport notices (TD)**: +30 points (high public safety impact)
+  - **Weather warnings (HKO)**: +25 points (safety alerts)
+  - **HKMA press releases**: -10 points (informational, lower urgency)
+
+#### **Processing Order Example**:
+1. **Recent TD traffic notices** (priority ~200-250)
+2. **Weather warnings/alerts** (priority ~150-200)
+3. **Recent HKMA press releases** (priority ~55-85)
+4. **Older signals** in descending priority order
+
+### Performance Metrics
+
+#### **Current System Performance (August 2025)**
 
 - **Feed Sources**: 15 active government departments
 - **Processing Frequency**: 
-  - Aggregation: Every 7 minutes
-  - Content Scraping: Every 10 minutes
+  - RSS Aggregation: Every 7 minutes (`*/7 * * * *`)
+  - Content Scraping: Every 10 minutes (`3,13,23,33,43,53 * * * *`)
+- **Scraper Batch Processing**:
+  - **Signals per run**: 10 signals maximum
+  - **Concurrent processing**: 3 signals simultaneously
+  - **Processing time**: ~8 seconds per batch
+  - **Theoretical maximum**: 60 signals/hour
 - **Success Rates**:
   - RSS Aggregation: 95%+ success rate
   - Content Scraping: 90%+ success rate for active feeds
@@ -295,10 +334,16 @@ This session demonstrated an effective debugging workflow for government signals
   - API endpoint: <500ms
   - Real-time updates: <2s WebSocket latency
 
+#### **Processing Timeline Examples**:
+- **819 HKMA signals backlog**: ~14 hours theoretical (mixed with other signals)
+- **Recent TD notices**: Processed within 1-2 runs (high priority)
+- **Weather warnings**: Processed immediately (safety priority)
+
 ### Scalability Considerations
 
 - **Rate Limiting**: 2-second delays between scraping batches
 - **Concurrent Processing**: Max 3 signals processed simultaneously
+- **Retry Logic**: Max 3 attempts per signal before marking as failed
 - **Database Optimization**: JSONB indexing for fast language filtering
 - **Caching Strategy**: Frontend component-level caching with real-time updates
 

@@ -13,6 +13,7 @@ import {
   RefreshCw,
   X
 } from "lucide-react"
+import ExitToAppIcon from '@mui/icons-material/ExitToApp'
 import Image from "next/image"
 import { format } from "date-fns"
 import PullRefreshIndicator from "./pull-refresh-indicator"
@@ -745,8 +746,8 @@ export default function GovernmentBulletin({
                         </div>
                       </div>
                       
-                      {/* Expand button - show if there's content OR a link */}
-                      {((displayContent && displayContent.trim().length > 0) || item.link) && (
+                      {/* Expand button - show if there's content OR a link OR for content_partial status */}
+                      {((displayContent && displayContent.trim().length > 0) || item.link || item.enrichment_status === 'content_partial') && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -766,26 +767,51 @@ export default function GovernmentBulletin({
                     {isExpanded && (
                       <div className="pt-3 mt-1 border-t border-card-border/60">
                         {displayContent && displayContent.trim().length > 0 ? (
-                          <p className="text-sm text-2 leading-relaxed">
-                            {displayContent}
-                          </p>
+                          <div className="space-y-3">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+                              {displayContent}
+                            </p>
+                            {/* Debug info for development */}
+                            {process.env.NODE_ENV === 'development' && (
+                              <div className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                                Content source: {item.enriched_summary ? 'enriched_summary' : 'body'} | 
+                                Length: {displayContent.length} | 
+                                Status: {item.enrichment_status}
+                              </div>
+                            )}
+                          </div>
                         ) : (
-                          item.link && (
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-3">
+                          <div className="space-y-3">
+                            {item.link ? (
+                              <div className="flex justify-center">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    window.open(item.link, '_blank', 'noopener,noreferrer')
+                                  }}
+                                  className="h-8 px-4 text-sm border-neutral-300 dark:border-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-2"
+                                >
+                                  <ExitToAppIcon style={{ fontSize: 16 }} />
+                                  {t('bulletin.readMore', 'Read more')}
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="text-center text-sm text-gray-500">
                                 {t('bulletin.noContent', 'Content not yet available')}
-                              </span>
-                              <a 
-                                href={item.link} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-sm text-primary hover:underline"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                {t('bulletin.viewOriginal', 'View original')} →
-                              </a>
-                            </div>
-                          )
+                              </div>
+                            )}
+                            {/* Debug info for development */}
+                            {process.env.NODE_ENV === 'development' && (
+                              <div className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-800 p-2 rounded">
+                                Debug: body="{item.body}" | 
+                                enriched_summary="{item.enriched_summary}" | 
+                                Status: {item.enrichment_status} | 
+                                Link: {item.link}
+                              </div>
+                            )}
+                          </div>
                         )}
                         
                         {/* AI-Enhanced Content - only show if enriched fields exist */}
