@@ -31,13 +31,57 @@ export interface SelectedArticle extends CandidateArticle {
   priority_score: number;
 }
 
+// Source diversity quota system
+interface TierConfig {
+  sources: string[];
+  quota: number;
+  maxAgeHours: number;
+  minQuality: number;
+  weight: number;
+}
+
+const SOURCE_TIERS: Record<string, TierConfig> = {
+  premium: {
+    sources: ['HKFP', 'scmp', 'bloomberg'],
+    quota: 15,        // Higher quota for premium sources
+    maxAgeHours: 12,  // Longer time window due to lower frequency
+    minQuality: 200,  // Higher content threshold
+    weight: 100       // Highest quality weight
+  },
+  mainstream: {
+    sources: ['RTHK', 'SingTao', 'on.cc'],
+    quota: 25,        // Moderate quota
+    maxAgeHours: 6,   // Standard time window
+    minQuality: 100,  // Moderate content threshold
+    weight: 80        // Good quality weight
+  },
+  local: {
+    sources: ['HK01', 'am730'],
+    quota: 10,        // Lower quota to prevent dominance
+    maxAgeHours: 3,   // Shorter window due to high frequency
+    minQuality: 50,   // Lower threshold for Chinese content
+    weight: 60        // Moderate quality weight
+  }
+};
+
+const SOURCE_QUALITY_WEIGHTS: Record<string, number> = {
+  'HKFP': 100,        // Premium investigative journalism
+  'scmp': 95,         // International quality
+  'bloomberg': 90,    // Financial expertise
+  'RTHK': 85,         // Public broadcaster reliability
+  'SingTao': 70,      // Mainstream reliability
+  'on.cc': 65,        // Popular but mixed quality
+  'HK01': 60,         // High volume, variable quality
+  'am730': 55         // Lifestyle focus
+};
+
 export async function selectArticlesWithPerplexity(count: number = 10): Promise<SelectedArticle[]> {
   const sessionId = `selection_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   console.log(`🚀 Starting Perplexity-assisted article selection for ${count} articles (Session: ${sessionId})`);
 
-  // 1. Get candidate articles from database
-  console.log(`🔍 Fetching candidate articles...`);
-  const candidateArticles = await getCandidateArticles();
+  // 1. Get candidate articles from database using diversity quotas
+  console.log(`🔍 Fetching candidate articles with source diversity...`);
+  const candidateArticles = await getCandidateArticlesWithDiversity();
   
   if (candidateArticles.length === 0) {
     console.log(`❌ No candidate articles found. Checking why...`);
@@ -442,7 +486,7 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
       }
       
       // CRITICAL: Filter out articles with insufficient content to prevent AI hallucination
-      if (article.content_length < 100) {
+      if (article.content_length < 50) {
         console.log(`     ⚠️ Filtered "${article.title.substring(0, 50)}..." - insufficient content (${article.content_length} chars) may cause AI hallucination`);
         return false;
       }
@@ -468,6 +512,234 @@ async function getCandidateArticles(): Promise<CandidateArticle[]> {
     console.error('Error fetching candidate articles:', error);
     throw new Error('Failed to fetch candidate articles from database');
   }
+}
+
+// NEW: Source diversity quota system implementation
+async function getCandidateArticlesWithDiversity(): Promise<CandidateArticle[]> {
+  try {
+    console.log(`🎯 Using source diversity quota system for balanced selection`);
+    const allCandidates: CandidateArticle[] = [];
+    
+    // Step 1: Collect candidates from each tier with their quotas
+    for (const [tierName, config] of Object.entries(SOURCE_TIERS)) {
+      const tierCandidates = await getTierCandidates(tierName, config);
+      console.log(`📊 ${tierName} tier: ${tierCandidates.length}/${config.quota} articles (${config.sources.join(', ')})`);
+      allCandidates.push(...tierCandidates);
+    }
+    
+    if (allCandidates.length === 0) {
+      console.log(`⚠️ No candidates found across all tiers, falling back to original method...`);
+      return await getCandidateArticles();
+    }
+    
+    // Step 2: Apply quality-weighted sorting
+    const sortedCandidates = allCandidates.sort((a, b) => {
+      const aScore = calculateQualityScore(a);
+      const bScore = calculateQualityScore(b);
+      return bScore - aScore;
+    });
+    
+    // Step 3: Apply same deduplication as original system
+    const deduplicatedCandidates = await applyDeduplication(sortedCandidates);
+    
+    console.log(`✅ Diversity system results:`);
+    console.log(`   • Total collected: ${allCandidates.length} articles`);
+    console.log(`   • After deduplication: ${deduplicatedCandidates.length} articles`);
+    console.log(`   • Source distribution: ${getSourceDistribution(deduplicatedCandidates)}`);
+    
+    return deduplicatedCandidates;
+    
+  } catch (error) {
+    console.error('❌ Error in diversity system, falling back to original method:', error);
+    return await getCandidateArticles();
+  }
+}
+
+async function getTierCandidates(tierName: string, config: TierConfig): Promise<CandidateArticle[]> {
+  // Get recently selected article titles to avoid re-selecting similar content  
+  const { data: recentlySelected } = await supabase
+    .from('articles')
+    .select('title, selection_metadata')
+    .eq('selected_for_enhancement', true)
+    .gte('created_at', getDateDaysAgo(1))
+    .order('created_at', { ascending: false })
+    .limit(100);
+    
+  const recentTitles = new Set((recentlySelected || []).map(a => 
+    a.title.trim().toLowerCase().replace(/\s+/g, ' ').substring(0, 50)
+  ));
+  
+  // Reset stale selections (selected >4 hours ago but not enhanced)
+  const fourHoursAgo = getDateHoursAgo(4);
+  const { data: staleSelections } = await supabase
+    .from('articles')
+    .select('id')
+    .eq('selected_for_enhancement', true)
+    .eq('is_ai_enhanced', false)
+    .lt('selection_metadata->selected_at', fourHoursAgo)
+    .in('source', config.sources)
+    .limit(20);
+  
+  if (staleSelections && staleSelections.length > 0) {
+    const staleIds = staleSelections.map(a => a.id);
+    await supabase
+      .from('articles')
+      .update({ 
+        selected_for_enhancement: false,
+        selection_metadata: null 
+      })
+      .in('id', staleIds);
+    console.log(`   🔄 Reset ${staleSelections.length} stale selections in ${tierName} tier`);
+  }
+
+  // Get tier-specific candidates
+  const { data: articles, error } = await supabase
+    .from('articles')
+    .select('*')
+    .is('is_ai_enhanced', false)
+    .is('selected_for_enhancement', false)
+    .in('source', config.sources)
+    .gte('created_at', getDateHoursAgo(config.maxAgeHours))
+    .not('content', 'is', null)
+    .is('enhancement_metadata->source_article_status', null)
+    .order('created_at', { ascending: false })
+    .limit(config.quota);
+
+  if (error) {
+    console.error(`❌ Error fetching ${tierName} candidates:`, error);
+    return [];
+  }
+
+  if (!articles || articles.length === 0) {
+    console.log(`   ⚠️ No articles found for ${tierName} tier`);
+    return [];
+  }
+
+  // Transform and filter articles
+  const candidateArticles: CandidateArticle[] = articles
+    .map(article => ({
+      id: article.id,
+      title: article.title,
+      summary: article.summary,
+      content: article.content,
+      url: article.url,
+      source: article.source,
+      category: article.category || 'general',
+      published_at: article.published_at,
+      created_at: article.created_at,
+      image_url: article.image_url,
+      author: article.author,
+      content_length: article.content?.length || 0,
+      has_summary: !!(article.summary && article.summary.length > 50),
+      has_image: !!article.image_url
+    }))
+    .filter(article => {
+      // Apply tier-specific quality threshold
+      if (article.content_length < config.minQuality) {
+        console.log(`     ⚠️ ${tierName}: Filtered "${article.title.substring(0, 50)}..." - insufficient content (${article.content_length} < ${config.minQuality} chars)`);
+        return false;
+      }
+      
+      // Filter out articles with similar titles to recently selected ones
+      const normalizedTitle = article.title.trim().toLowerCase().replace(/\s+/g, ' ').substring(0, 50);
+      if (recentTitles.has(normalizedTitle)) {
+        console.log(`     ⚠️ ${tierName}: Filtered "${article.title.substring(0, 50)}..." - similar article recently selected`);
+        return false;
+      }
+      
+      // Filter out test articles
+      const titleLower = article.title.toLowerCase();
+      if (titleLower.includes('test') || titleLower.includes('測試') || titleLower === 'title') {
+        console.log(`     ❌ ${tierName}: Filtered "${article.title}" - appears to be test content`);
+        return false;
+      }
+      
+      console.log(`     ✅ ${tierName}: Accepted "${article.title.substring(0, 50)}..." (${article.content_length} chars)`);
+      return true;
+    });
+
+  return candidateArticles;
+}
+
+function calculateQualityScore(article: CandidateArticle): number {
+  const recencyScore = getRecencyScore(article.created_at);
+  const contentScore = getContentScore(article.content_length);
+  const sourceScore = SOURCE_QUALITY_WEIGHTS[article.source] || 50;
+  
+  return (
+    recencyScore * 0.3 +      // 30% - Still value freshness
+    contentScore * 0.4 +      // 40% - Content quality is key  
+    sourceScore * 0.3         // 30% - Source reputation
+  );
+}
+
+function getRecencyScore(createdAt: string): number {
+  const hoursAgo = getHoursAgo(new Date(createdAt));
+  if (hoursAgo < 1) return 100;
+  if (hoursAgo < 3) return 90;
+  if (hoursAgo < 6) return 80;
+  if (hoursAgo < 12) return 70;
+  if (hoursAgo < 24) return 60;
+  return 50;
+}
+
+function getContentScore(contentLength: number): number {
+  if (contentLength >= 2000) return 100;
+  if (contentLength >= 1000) return 90;
+  if (contentLength >= 500) return 80;
+  if (contentLength >= 200) return 70;
+  if (contentLength >= 100) return 60;
+  if (contentLength >= 50) return 50;
+  return 20;
+}
+
+async function applyDeduplication(candidates: CandidateArticle[]): Promise<CandidateArticle[]> {
+  // Apply the same deduplication logic as the original system
+  // 1. Title-based deduplication
+  const titleMap = new Map();
+  candidates.forEach(article => {
+    const normalizedTitle = article.title
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/[^\w\s\u4e00-\u9fff]/g, '')
+      .substring(0, 50);
+      
+    if (!titleMap.has(normalizedTitle)) {
+      titleMap.set(normalizedTitle, []);
+    }
+    titleMap.get(normalizedTitle).push(article);
+  });
+
+  const deduplicatedCandidates = Array.from(titleMap.entries()).map(([title, articles]) => {
+    if (articles.length === 1) {
+      return articles[0];
+    }
+    
+    // Keep the article with the highest quality score
+    return articles.reduce((best, current) => {
+      const bestScore = calculateQualityScore(best);
+      const currentScore = calculateQualityScore(current);
+      return currentScore > bestScore ? current : best;
+    });
+  });
+  
+  // 2. Topic similarity filtering (get recently enhanced topics)
+  const recentlyEnhancedTopics = await getRecentlyEnhancedTopics();
+  const finalCandidates = await filterSimilarTopics(deduplicatedCandidates, recentlyEnhancedTopics);
+  
+  return finalCandidates;
+}
+
+function getSourceDistribution(articles: CandidateArticle[]): string {
+  const distribution: Record<string, number> = {};
+  articles.forEach(article => {
+    distribution[article.source] = (distribution[article.source] || 0) + 1;
+  });
+  
+  return Object.entries(distribution)
+    .map(([source, count]) => `${source}:${count}`)
+    .join(', ');
 }
 
 // Convert recent topics to CSV format for better LLM parsing

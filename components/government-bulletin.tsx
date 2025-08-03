@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { 
   Loader2,
-  AlertTriangle,
   Clock,
   ChevronDown,
   ChevronUp,
@@ -32,12 +31,21 @@ interface BulletinItem {
   relevance_score: number
   source_slug: string
   source_updated_at: string
-  enrichment_status?: "pending" | "enriched" | "ready" | "failed"
+  enrichment_status?: "pending" | "enriched" | "ready" | "failed" | "content_partial" | "content_complete"
   enriched_title?: string
   enriched_summary?: string
   key_points?: string[]
   why_it_matters?: string
   created_at: string
+  // New fields from the updated API
+  has_translation?: boolean
+  original_language?: string
+  requested_language?: string
+  is_converted?: boolean
+  available_languages?: string[]
+  word_count?: number
+  source_identifier?: string
+  link?: string
 }
 
 // Map source slugs to their government favicon paths
@@ -79,6 +87,19 @@ const getSourceFavicon = (sourceSlug: string): string => {
     'hko_eq_zh_tw': '/gov-favicons-output/hko.ico',
     'hko_felt_earthquake_zh_tw': '/gov-favicons-output/hko.ico',
     
+    // Hong Kong Observatory (New feeds)
+    'hko_warnings': '/gov-favicons-output/hko.ico',
+    'hko_warnings_v3': '/gov-favicons-output/hko.ico',
+    'hko_warning_bulletin': '/gov-favicons-output/hko.ico',
+    'hko_current_weather': '/gov-favicons-output/hko.ico',
+    'hko_current_v2': '/gov-favicons-output/hko.ico',
+    'hko_forecast': '/gov-favicons-output/hko.ico',
+    'hko_local_forecast_v2': '/gov-favicons-output/hko.ico',
+    'hko_9day_v2': '/gov-favicons-output/hko.ico',
+    'hko_earthquakes': '/gov-favicons-output/hko.ico',
+    'hko_earthquakes_quick': '/gov-favicons-output/hko.ico',
+    'hko_special_tips': '/gov-favicons-output/hko.ico',
+    
     // Centre for Health Protection (English)
     'chp_press': '/gov-favicons-output/dh.ico',
     'chp_disease': '/gov-favicons-output/dh.ico',
@@ -114,13 +135,18 @@ interface GovernmentBulletinProps {
 // Available categories for filtering - using translation keys with emojis
 const AVAILABLE_CATEGORIES = [
   { value: 'all', labelKey: 'filters.all', emoji: '' },
-  { value: 'HKMA', labelKey: 'filters.hkma', emoji: '🏦' },
+  { value: 'Finance', labelKey: 'filters.finance', emoji: '💹' },
   { value: 'Gov', labelKey: 'filters.gov', emoji: '🏛️' },
   { value: 'Road', labelKey: 'filters.road', emoji: '🛣️' },
   { value: 'Transport', labelKey: 'filters.transport', emoji: '🚦' },
   { value: 'Weather', labelKey: 'filters.weather', emoji: '🌤️' },
   { value: 'Health', labelKey: 'filters.health', emoji: '🩺' },
   { value: 'Hospital', labelKey: 'filters.hospital', emoji: '🏥' },
+  { value: 'Police', labelKey: 'filters.police', emoji: '🚔' },
+  { value: 'Emergency', labelKey: 'filters.emergency', emoji: '🚨' },
+  { value: 'Education', labelKey: 'filters.education', emoji: '🎓' },
+  { value: 'Immigration', labelKey: 'filters.immigration', emoji: '✈️' },
+  { value: 'Environment', labelKey: 'filters.environment', emoji: '🌱' },
   { value: 'Utility', labelKey: 'filters.utility', emoji: '⚡' },
   { value: 'Rail', labelKey: 'filters.rail', emoji: '🚆' }
 ]
@@ -160,7 +186,7 @@ export default function GovernmentBulletin({
   })
 
   // Define loadBulletinItems first
-  const loadBulletinItems = useCallback(async (pageNum: number) => {
+  const loadBulletinItems = useCallback(async (pageNum: number, categoryFilter?: string) => {
     try {
       if (pageNum === 0) setLoading(true)
       else setLoadingMore(true)
@@ -171,10 +197,44 @@ export default function GovernmentBulletin({
         language: language || 'en' // Pass user's language preference
       })
 
+      // Add category filter to API call if not 'all'
+      const currentCategory = categoryFilter || selectedCategory
+      if (currentCategory && currentCategory !== 'all') {
+        // Map frontend categories to backend categories
+        const categoryMap: { [key: string]: string } = {
+          'Finance': 'monetary_press',
+          'Road': 'transport_notice', 
+          'Transport': 'transport_press',
+          'Weather': 'weather_warning',
+          'Health': 'health_alert',
+          'Gov': 'administrative'
+        }
+        
+        // Also support weather_earthquake as Weather
+        if (currentCategory === 'Weather') {
+          // For weather, we want both weather_warning and weather_earthquake
+          // We'll need to handle this differently - let's just use weather_warning for now
+          // and modify the backend to support multiple categories later
+        }
+        
+        const backendCategory = categoryMap[currentCategory]
+        if (backendCategory) {
+          params.set('category', backendCategory)
+        }
+      }
+
       const response = await fetch(`/api/signals-unified?${params.toString()}`)
       if (!response.ok) throw new Error('Failed to fetch bulletin items')
 
       const data = await response.json()
+      
+      console.log('📊 [GOV-BULLETIN] API Response:', {
+        totalSignals: data.signals?.length || 0,
+        hasMore: data.hasMore,
+        language: language,
+        category: currentCategory,
+        firstSignal: data.signals?.[0]
+      })
       
       if (pageNum === 0) {
         setItems(data.signals || [])
@@ -190,7 +250,7 @@ export default function GovernmentBulletin({
       setLoading(false)
       setLoadingMore(false)
     }
-  }, [language, limit])
+  }, [language, limit, selectedCategory])
 
   // Track when language is ready (after hydration)
   useEffect(() => {
@@ -216,9 +276,9 @@ export default function GovernmentBulletin({
 
   const handleLoadMore = useCallback(() => {
     if (hasMore && !loadingMore) {
-      loadBulletinItems(page + 1)
+      loadBulletinItems(page + 1, selectedCategory)
     }
-  }, [hasMore, loadingMore, loadBulletinItems, page])
+  }, [hasMore, loadingMore, loadBulletinItems, page, selectedCategory])
 
   // Infinite scroll effect
   useEffect(() => {
@@ -290,6 +350,8 @@ export default function GovernmentBulletin({
   const handleCategoryFilter = (category: string) => {
     setSelectedCategory(category)
     setShowCategoryFilter(false)
+    setPage(0) // Reset pagination
+    loadBulletinItems(0, category) // Reload data with new filter
   }
 
   // Close filter dropdown when clicking outside
@@ -316,35 +378,77 @@ export default function GovernmentBulletin({
   }, [])
 
   const getCategoryLabel = useCallback((category: string, sourceSlug: string) => {
-    // Enhanced categorization for all government feeds
+    // Enhanced categorization for all government feeds including new feed groups
     const sourceLabels: { [key: string]: string } = {
-      // HKMA feeds
-      'hkma_press': 'HKMA',
-      'hkma_speeches': 'HKMA',
-      'hkma_guidelines': 'HKMA',
-      'hkma_circulars': 'HKMA',
+      // New government signals feed groups
+      'hkma_press': 'Finance',
+      'hkma_circulars': 'Finance',
+      'hkma_guidelines': 'Finance',
       
-      // HKMA - Hong Kong Monetary Authority (Chinese)
-      'hkma_press_zh_tw': 'HKMA',
-      'hkma_speeches_zh_tw': 'HKMA',
-      'hkma_guidelines_zh_tw': 'HKMA',
-      'hkma_circulars_zh_tw': 'HKMA',
+      // Weather feeds - legacy and new
+      'hko_warnings': 'Weather',
+      'hko_warnings_v3': 'Weather',
+      'hko_warning_bulletin': 'Weather',
+      'hko_current_weather': 'Weather',
+      'hko_current_v2': 'Weather',
+      'hko_forecast': 'Weather',
+      'hko_local_forecast_v2': 'Weather',
+      'hko_9day_v2': 'Weather',
+      'hko_earthquakes': 'Weather',
+      'hko_earthquakes_quick': 'Weather',
+      'hko_felt_earthquake': 'Weather',
+      'hko_special_tips': 'Weather',
+      
+      // Transport feeds - legacy and new
+      'td_notices': 'Road', 
+      'td_press': 'Transport',
+      'td_special_traffic': 'Road',
+      'td_clearways': 'Road',
+      'td_public_transport': 'Transport',
+      'td_road_closure': 'Road',
+      'td_expressways': 'Road',
+      
+      // Health feeds
+      'chp_press': 'Health',
+      'chp_alerts': 'Health',
+      
+      // Government news feeds
+      'gov_news_main': 'Gov',
+      'gov_news_city': 'Gov',
+      'gov_news_finance': 'Finance',
+      'gov_news_business': 'Gov',
+      'gov_news_health': 'Health',
+      'gov_news_infrastructure': 'Transport',
+      'gov_news_environment': 'Environment',
+      
+      // Other department feeds
+      'hkpf_press': 'Police',
+      'fsd_press': 'Emergency',
+      'edb_announcements': 'Education',
+      'immd_announcements': 'Immigration',
+      'lands_press': 'Gov',
+      
+      // Legacy HKMA feeds
+      'hkma_speeches': 'Finance',
+      'hkma_guidelines': 'Finance',
+      'hkma_circulars': 'Finance',
+      
+      // Legacy HKMA - Hong Kong Monetary Authority (Chinese)
+      'hkma_press_zh_tw': 'Finance',
+      'hkma_speeches_zh_tw': 'Finance',
+      'hkma_guidelines_zh_tw': 'Finance',
+      'hkma_circulars_zh_tw': 'Finance',
       
       // Government news
       'news_gov_top': 'Gov',
       
-      // Transport Department (English)
-      'td_notices': 'Road',
-      'td_press': 'Transport',
-      'td_special': 'Transport',
-      
-      // Transport Department (Chinese)
+      // Legacy Transport Department (Chinese)
       'td_notices_zh_tw': 'Road',
       'td_notices_zh_cn': 'Road',
       'td_press_zh_tw': 'Transport',
       'td_press_zh_cn': 'Transport',
       
-      // Hong Kong Observatory
+      // Legacy Hong Kong Observatory
       'hko_warn': 'Weather',
       'hko_eq': 'Weather',
       'hko_felt_earthquake': 'Weather',
@@ -365,49 +469,101 @@ export default function GovernmentBulletin({
       'mtr_rail': 'Rail'
     }
     
+    // Priority check: use direct category mapping from new system
+    const categoryMap: { [key: string]: string } = {
+      'weather_warning': 'Weather',
+      'weather_earthquake': 'Weather', 
+      'monetary_press': 'Finance',
+      'monetary_circular': 'Finance',
+      'transport_notice': 'Road',
+      'transport_press': 'Transport',
+      'health_alert': 'Health',
+      'health_guideline': 'Health',
+      'administrative': 'Gov',
+      'emergency': 'Emergency',
+      'police': 'Police',
+      'education': 'Education',
+      'immigration': 'Immigration',
+      'environment': 'Environment',
+      'lands': 'Gov',
+      'utility': 'Utility'
+    }
+    
+    // Priority 1: Check new system category mappings first  
+    if (categoryMap[category]) {
+      return categoryMap[category]
+    }
+    
+    // Priority 2: Check source slug mappings
     if (sourceLabels[sourceSlug]) {
       return sourceLabels[sourceSlug]
     }
     
-    // Fallback to category-based labels
-    const categoryMap: { [key: string]: string } = {
+    // Priority 3: Fallback to legacy category-based labels
+    const legacyCategoryMap: { [key: string]: string } = {
       road: 'Road',
       rail: 'Rail',
       weather: 'Weather',
       utility: 'Utility',
       health: 'Health',
-      financial: 'Financial',
+      financial: 'Finance',
       gov: 'Gov',
       ae: 'A&E',
       top_signals: 'Priority',
       environment: 'Environment'
     }
     
-    return categoryMap[category] || category.charAt(0).toUpperCase() + category.slice(1)
+    return legacyCategoryMap[category] || category.charAt(0).toUpperCase() + category.slice(1)
   }, [])
 
-  // Filter items based on selected category
-  const filteredItems = selectedCategory === 'all' 
-    ? items 
-    : items.filter(item => {
-        const categoryLabel = getCategoryLabel(item.category, item.source_slug)
-        return categoryLabel === selectedCategory
-      })
+  // Items are already filtered server-side, so we use them directly
+  const filteredItems = items
 
   const getCategoryColor = () => {
     // Enhanced semantic color system - warm neutral colors
     return "bg-surface-2 text-text-2"
   }
 
-  const getSeverityColor = (severity: number) => {
-    if (severity >= 7) return "text-red-600 dark:text-red-400"
-    if (severity >= 4) return "text-orange-600 dark:text-orange-400"
-    return "text-green-600 dark:text-green-400"
+  const getPriorityLevel = (relevanceScore: number) => {
+    if (relevanceScore >= 200) return 'important'
+    if (relevanceScore >= 150) return 'high'
+    if (relevanceScore >= 100) return 'medium'
+    return 'low'
+  }
+
+  const getPriorityConfig = (level: string) => {
+    const configs = {
+      important: {
+        label: 'Important',
+        icon: '⭐',
+        className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800',
+        description: 'Key information and notices'
+      },
+      high: {
+        label: 'High',
+        icon: '⚡',
+        className: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800',
+        description: 'Notable warnings or notices'
+      },
+      medium: {
+        label: 'Medium',
+        icon: '📋',
+        className: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-800',
+        description: 'Regular notices'
+      },
+      low: {
+        label: 'Low',
+        icon: '📄',
+        className: 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-700',
+        description: 'Archive content'
+      }
+    }
+    return configs[level] || configs.low
   }
 
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'MMM dd, HH:mm')
+      return format(new Date(dateString), 'MMM dd')
     } catch {
       return dateString
     }
@@ -555,22 +711,42 @@ export default function GovernmentBulletin({
                             {getCategoryLabel(item.category, item.source_slug)}
                           </Badge>
                           
+                          {/* Language indicator */}
+                          {(item as any).is_converted && (
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300">
+                              {language === 'zh-CN' ? '简体' : 'Converted'}
+                            </Badge>
+                          )}
+                          
+                          
                           <div className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
                             <span>{formatDate(item.source_updated_at)}</span>
                           </div>
                           
-                          <div className="flex items-center gap-1">
-                            <AlertTriangle className={`h-3 w-3 ${getSeverityColor(item.severity)}`} />
-                            <span className={getSeverityColor(item.severity)}>
-                              {item.severity}
-                            </span>
-                          </div>
+                          {/* Priority Badge */}
+                          {(() => {
+                            // Use calculated_relevance first, fallback to severity, then to default medium
+                            const relevanceScore = item.calculated_relevance || item.severity || item.relevance_score || 100
+                            const priorityLevel = getPriorityLevel(relevanceScore)
+                            const priorityConfig = getPriorityConfig(priorityLevel)
+                            
+                            return (
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${priorityConfig.className}`}
+                                title={`${priorityConfig.description} (Score: ${relevanceScore})`}
+                              >
+                                <span className="mr-1">{priorityConfig.icon}</span>
+                                {priorityConfig.label}
+                              </Badge>
+                            )
+                          })()}
                         </div>
                       </div>
                       
-                      {/* Expand button */}
-                      {(displayContent && displayContent.trim().length > 0) && (
+                      {/* Expand button - show if there's content OR a link */}
+                      {((displayContent && displayContent.trim().length > 0) || item.link) && (
                         <Button
                           variant="ghost"
                           size="sm"
@@ -587,11 +763,30 @@ export default function GovernmentBulletin({
                     </div>
 
                     {/* Expandable content */}
-                    {isExpanded && displayContent && displayContent.trim().length > 0 && (
+                    {isExpanded && (
                       <div className="pt-3 mt-1 border-t border-card-border/60">
-                        <p className="text-sm text-2 leading-relaxed">
-                          {displayContent}
-                        </p>
+                        {displayContent && displayContent.trim().length > 0 ? (
+                          <p className="text-sm text-2 leading-relaxed">
+                            {displayContent}
+                          </p>
+                        ) : (
+                          item.link && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-3">
+                                {t('bulletin.noContent', 'Content not yet available')}
+                              </span>
+                              <a 
+                                href={item.link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-sm text-primary hover:underline"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {t('bulletin.viewOriginal', 'View original')} →
+                              </a>
+                            </div>
+                          )
+                        )}
                         
                         {/* AI-Enhanced Content - only show if enriched fields exist */}
                         {(item.key_points?.length > 0 || item.why_it_matters) && (

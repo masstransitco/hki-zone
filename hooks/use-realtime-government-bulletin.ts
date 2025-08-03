@@ -165,7 +165,7 @@ export function useRealtimeGovernmentBulletin({
     console.log(`📢 [REALTIME] Setting up subscription: ${channelName} (attempt ${reconnectAttemptsRef.current + 1})`)
     setConnectionStatus('connecting')
 
-    // Note: Using 'incidents' table as that's what the API uses
+    // Note: Using 'government_signals' table for the new architecture
     const bulletinChannel = supabaseAuth
       .channel(channelName)
       .on(
@@ -173,7 +173,7 @@ export function useRealtimeGovernmentBulletin({
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'incidents'
+          table: 'government_signals'
         },
         (payload) => handleBulletinInsert(payload as BulletinChange)
       )
@@ -182,7 +182,7 @@ export function useRealtimeGovernmentBulletin({
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'incidents'
+          table: 'government_signals'
         },
         (payload) => handleBulletinUpdate(payload as BulletinChange)
       )
@@ -191,7 +191,7 @@ export function useRealtimeGovernmentBulletin({
         {
           event: 'DELETE',
           schema: 'public',
-          table: 'incidents'
+          table: 'government_signals'
         },
         (payload) => handleBulletinDelete(payload as BulletinChange)
       )
