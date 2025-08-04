@@ -33,7 +33,7 @@ const translations = {
     "topics.world": "World",
 
     // Content Types (Main App)
-    "content.discover": "Discover",
+    "content.discover": "Top Stories",
     "content.finance": "Finance",
     "content.techScience": "Tech & Science", 
     "content.entertainment": "Entertainment",
