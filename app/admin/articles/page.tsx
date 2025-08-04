@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
-  Search, Filter, RefreshCw, Languages, Sparkles, Loader2, Trash2, CheckSquare, Copy,
+  Search, Filter, RefreshCw, Languages, Loader2, Trash2, CheckSquare, Copy,
   BarChart3, Target, Zap, Clock, TrendingUp, AlertCircle, Wand2, Brain, Bot, Wifi, WifiOff
 } from "lucide-react"
 import ArticleReviewGrid from "@/components/admin/article-review-grid"
@@ -20,6 +20,7 @@ import { useLanguage } from "@/components/language-provider"
 import { useRealtimeArticles } from "@/hooks/use-realtime-articles"
 import { toast } from "sonner"
 import type { Article } from "@/lib/types"
+import HKIIcon from "@/components/hki-icon"
 
 interface QuickStats {
   total: number
@@ -408,6 +409,76 @@ export default function ArticlesPage() {
   }
 
 
+  // AI Article Selection - Step 1: Select newsworthy articles
+  const handleAIArticleSelection = async () => {
+    try {
+      setIsProcessing(true)
+
+      // Step 1: Select article using admin API
+      console.log('🎯 AI selecting article with Perplexity...')
+      const selectResponse = await fetch('/api/admin/articles/select-article', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!selectResponse.ok) {
+        const error = await selectResponse.json()
+        throw new Error(error.error || 'Failed to select article')
+      }
+
+      const selectResult = await selectResponse.json()
+      console.log('✅ Article selected:', selectResult.article.title)
+      
+      toast.success(`Article selected: "${selectResult.article.title.substring(0, 50)}..." (Category: ${selectResult.article.category})`)
+      loadQuickStats() // Refresh stats
+
+    } catch (error) {
+      console.error('AI article selection error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to select article')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
+  // AI Enhancement - Step 2: Enhance selected articles
+  const handleAIEnhanceSelected = async () => {
+    try {
+      setIsProcessing(true)
+
+      // Enhance selected articles using admin endpoint
+      console.log('✨ Enhancing selected articles...')
+      const enhanceResponse = await fetch('/api/admin/articles/enhance-selected', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!enhanceResponse.ok) {
+        const error = await enhanceResponse.json()
+        throw new Error(error.error || 'Failed to enhance selected articles')
+      }
+
+      const result = await enhanceResponse.json()
+      
+      if (result.success) {
+        toast.success(`Enhanced ${result.processed} articles into ${result.totalSaved} trilingual versions. Cost: $${result.estimatedCost}`)
+      } else {
+        throw new Error(result.error || 'Enhancement failed')
+      }
+      
+      loadQuickStats() // Refresh stats
+
+    } catch (error) {
+      console.error('AI enhancement error:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to enhance articles')
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   const handleSingleTrilingualAutoSelect = async () => {
     try {
       setIsProcessing(true)
@@ -510,24 +581,6 @@ export default function ArticlesPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={handleSingleTrilingualAutoSelect}
-            disabled={isProcessing}
-            size="sm"
-            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-          >
-            {isProcessing ? (
-              <>
-                <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Processing...
-              </>
-            ) : (
-              <>
-                <Bot className="mr-2 h-3 w-3" />
-                AI Auto-Select
-              </>
-            )}
-          </Button>
           <Button onClick={handleRefresh} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -575,10 +628,10 @@ export default function ArticlesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">AI Enhanced</CardTitle>
-            <Sparkles className="h-4 w-4 text-purple-500" />
+            <HKIIcon className="h-4 w-4 text-slate-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{quickStats?.enhanced || 0}</div>
+            <div className="text-2xl font-bold text-slate-600">{quickStats?.enhanced || 0}</div>
             <p className="text-xs text-muted-foreground">
               {quickStats?.total ? ((quickStats.enhanced / quickStats.total) * 100).toFixed(1) : 0}% enhanced
             </p>
@@ -778,27 +831,6 @@ export default function ArticlesPage() {
                   )}
                 </div>
 
-                {/* AI Enhancement Actions */}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={handleSingleTrilingualAutoSelect}
-                    disabled={isProcessing}
-                    size="sm"
-                    className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white h-8"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="mr-2 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-3 w-3" />
-                        AI Select & Enhance (1→3)
-                      </>
-                    )}
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
@@ -899,42 +931,77 @@ export default function ArticlesPage() {
             <Card>
               <CardHeader>
                 <CardTitle>AI Selection Tools</CardTitle>
-                <CardDescription>Automated article selection and enhancement</CardDescription>
+                <CardDescription>Automated article selection and enhancement workflow</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button
-                  onClick={handleSingleTrilingualAutoSelect}
-                  disabled={isProcessing}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                >
-                  {isProcessing ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Processing AI Selection...
-                    </>
-                  ) : (
-                    <>
-                      <Brain className="mr-2 h-4 w-4" />
-                      AI Auto-Select & Enhance (1→3)
-                    </>
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Uses Perplexity AI to intelligently select the most newsworthy article and create trilingual enhanced versions. New articles will appear automatically via real-time updates.
-                </p>
+                {/* AI Article Selection */}
+                <div className="space-y-2">
+                  <Button
+                    onClick={handleAIArticleSelection}
+                    disabled={isProcessing}
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Selecting Article...
+                      </>
+                    ) : (
+                      <>
+                        <Target className="mr-2 h-4 w-4" />
+                        AI Article Selection
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Uses Perplexity AI to intelligently select and categorize the most newsworthy article for enhancement.
+                  </p>
+                </div>
+
+                {/* AI Enhancement */}
+                <div className="space-y-2">
+                  <Button
+                    onClick={handleAIEnhanceSelected}
+                    disabled={isProcessing}
+                    className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Enhancing Articles...
+                      </>
+                    ) : (
+                      <>
+                        <HKIIcon className="mr-2 h-4 w-4" />
+                        AI Enhance Selected Articles
+                      </>
+                    )}
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Process all selected articles through AI enhancement to create trilingual versions with contextual enrichment.
+                  </p>
+                </div>
               </CardContent>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Bulk Operations</CardTitle>
-                <CardDescription>Process multiple articles simultaneously</CardDescription>
+                <CardTitle>Manual Operations</CardTitle>
+                <CardDescription>Work with manually selected articles</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-sm text-muted-foreground">
                   {selectedArticleIds.size > 0 ? (
-                    <div className="space-y-2">
-                      <p className="font-medium">{selectedArticleIds.size} articles selected</p>
+                    <div className="space-y-3">
+                      <div className="p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                        <p className="font-medium text-blue-900 dark:text-blue-100">
+                          {selectedArticleIds.size} articles selected manually
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                          Use "Mark for Enhancement" to prepare selected articles, then use AI Enhancement tool above.
+                        </p>
+                      </div>
+                      
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
@@ -946,12 +1013,12 @@ export default function ArticlesPage() {
                           {isBulkCloning ? (
                             <>
                               <div className="mr-1 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                              Enhancing...
+                              Marking...
                             </>
                           ) : (
                             <>
-                              <Copy className="h-3 w-3 mr-1" />
-                              Enhance Selected
+                              <Target className="h-3 w-3 mr-1" />
+                              Mark for Enhancement
                             </>
                           )}
                         </Button>
@@ -977,8 +1044,12 @@ export default function ArticlesPage() {
                     </div>
                   ) : (
                     <div className="text-muted-foreground">
-                      <p>Select articles from the Article Browser tab to enable bulk operations.</p>
-                      <p className="text-xs mt-1">Changes will be reflected immediately via real-time updates.</p>
+                      <p className="font-medium mb-2">Manual Article Selection Workflow:</p>
+                      <div className="text-xs space-y-1 ml-4">
+                        <p>1. Select articles using checkboxes in Article Browser tab</p>
+                        <p>2. Click "Mark for Enhancement" to prepare articles</p>
+                        <p>3. Use "AI Enhance Selected Articles" tool above</p>
+                      </div>
                     </div>
                   )}
                 </div>

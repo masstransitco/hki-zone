@@ -5,10 +5,42 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Clock, ExternalLink, Eye, Image as ImageIcon, Sparkles, Edit, Trash2, Target } from "lucide-react"
+import { Clock, ExternalLink, Eye, Image as ImageIcon, Edit, Trash2, Target } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { formatDistanceToNow } from "date-fns"
 import type { Article } from "@/lib/types"
+import HKIIcon from "@/components/hki-icon"
+
+// Category badge styling function
+function getCategoryBadgeStyle(category: string): string {
+  switch (category) {
+    case 'Top Stories':
+      return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800'
+    case 'Tech & Science':
+      return 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800'
+    case 'Finance':
+      return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800'
+    case 'Arts & Culture':
+      return 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-950 dark:text-pink-300 dark:border-pink-800'
+    case 'Sports':
+      return 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950 dark:text-orange-300 dark:border-orange-800'
+    case 'Entertainment':
+      return 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800'
+    // Legacy categories (for backward compatibility)
+    case 'News':
+      return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950 dark:text-red-300 dark:border-red-800'
+    case 'Politics':
+      return 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800'
+    case 'General':
+      return 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-300 dark:border-gray-800'
+    case 'International':
+      return 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800'
+    case 'Local':
+      return 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950 dark:text-cyan-300 dark:border-cyan-800'
+    default:
+      return 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950 dark:text-slate-300 dark:border-slate-800'
+  }
+}
 
 interface OptimisticUpdates {
   [articleId: string]: {
@@ -210,8 +242,8 @@ function ArticleReviewCard({ article, onExpand, isSelected, onSelect, optimistic
                   </div>
                 )}
                 {article.isAiEnhanced && (
-                  <div className="bg-purple-600 rounded-full p-1 shadow-sm">
-                    <Sparkles className="h-2.5 w-2.5 text-white" />
+                  <div className="bg-slate-600 rounded-full p-1 shadow-sm">
+                    <HKIIcon className="h-2.5 w-2.5 text-white" />
                   </div>
                 )}
                 {isSelectedForEnhancement && !article.isAiEnhanced && (
@@ -238,12 +270,6 @@ function ArticleReviewCard({ article, onExpand, isSelected, onSelect, optimistic
                 <span className="font-medium">{article.source}</span>
                 <span>•</span>
                 <span>{formatDistanceToNow(publishedDate, { addSuffix: true })}</span>
-                {article.category && (
-                  <>
-                    <span>•</span>
-                    <span>{article.category}</span>
-                  </>
-                )}
               </div>
             </div>
 
@@ -258,13 +284,24 @@ function ArticleReviewCard({ article, onExpand, isSelected, onSelect, optimistic
 
             {/* Status Badges */}
             <div className="flex items-center gap-2">
+              {/* Category Badge */}
+              {article.category && (
+                <Badge 
+                  variant="outline" 
+                  className={`text-xs h-5 ${getCategoryBadgeStyle(article.category)}`}
+                >
+                  {article.category}
+                </Badge>
+              )}
+              
               {isDeleted && (
                 <Badge variant="destructive" className="text-xs h-5">
                   Deleted
                 </Badge>
               )}
               {article.isAiEnhanced && (
-                <Badge variant="secondary" className="text-xs h-5 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                <Badge variant="secondary" className="text-xs h-5 bg-slate-100 text-slate-700 dark:bg-slate-900 dark:text-slate-300 flex items-center gap-1">
+                  <HKIIcon className="h-3 w-3" />
                   AI Enhanced
                 </Badge>
               )}
