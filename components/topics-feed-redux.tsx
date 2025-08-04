@@ -48,6 +48,15 @@ export default function TopicsFeedRedux({ isActive = true, category = null }: To
     setIsBottomSheetOpen(true)
   }
 
+  // Set up real-time subscription for AI enhanced articles (no UI display)
+  useRealtimeArticles({
+    queryKey: ["topics-articles", language],
+    isAiEnhanced: true,
+    language: language,
+    onUpdate: handleRealtimeUpdate,
+    onDelete: handleRealtimeDelete
+  })
+
   const handleBottomSheetChange = (open: boolean) => {
     setIsBottomSheetOpen(open)
     if (!open) {
@@ -183,52 +192,9 @@ export default function TopicsFeedRedux({ isActive = true, category = null }: To
     </div>
   )
 
-  // During refresh, show loading state instead of empty message
-  if (articles.length === 0 && !isLoading && !isRefreshing) {
-    return (
-      <div className="relative h-full">
-        <PullRefreshIndicator 
-          pullDistance={pullDistance} 
-          isRefreshing={isRefreshing || isPullRefreshing} 
-        />
-        
-        {/* Pull-to-refresh transform wrapper */}
-        <div 
-          className="h-full"
-          style={{ 
-            transform: `translateY(${Math.min(pullDistance, 150)}px)`,
-            transition: pullDistance > 0 ? 'none' : 'transform 0.3s ease-out'
-          }}
-        >
-          {/* Actual scroll container */}
-          <div 
-            ref={scrollRef}
-            className="isolate overflow-auto h-full"
-            style={{ 
-              overscrollBehaviorY: 'contain', 
-              WebkitOverflowScrolling: 'touch',
-              ...(isBottomSheetOpen && {
-                overflow: 'hidden',
-                touchAction: 'none',
-                pointerEvents: 'none'
-              })
-            }}
-          >
-          <div className="px-4 md:px-6 lg:px-8 py-12 text-center">
-            <h3 className="text-lg font-semibold text-1 mb-2">
-              No AI-enhanced articles yet
-            </h3>
-            <p className="text-2 mb-4">
-              AI-enhanced articles will appear here as they are processed
-            </p>
-            <div className="text-sm text-2">
-              Pull down to refresh
-            </div>
-          </div>
-          </div>
-        </div>
-      </div>
-    )
+  // Show loading skeleton if no articles (instead of fallback text)
+  if (articles.length === 0) {
+    return <LoadingSkeleton variant="topics" count={12} />
   }
 
   return (
@@ -263,13 +229,6 @@ export default function TopicsFeedRedux({ isActive = true, category = null }: To
         {/* Invisible spacer for header + category selector height: 57px header + ~50px category selector */}
         <div className="h-[113px] w-full" aria-hidden="true" />
         
-        {/* Real-time connection status */}
-        {isActive && (
-          <div className="flex items-center justify-end gap-2 text-xs text-muted-foreground px-4 md:px-6 lg:px-8 pb-3">
-            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-orange-500'} animate-pulse`} />
-            <span>{isConnected ? t('realtime.active') : t('realtime.connecting')}</span>
-          </div>
-        )}
         
         {/* Responsive grid layout: mobile 1col, tablet 2col, desktop 3col, large 4col */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-5 isolate px-4 md:px-6 lg:px-8">

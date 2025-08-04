@@ -296,7 +296,7 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
         {/* Footer */}
         <div className="border-t border-border pt-2 mt-3">
           <p className="text-[10px] text-muted-foreground text-center">
-            © 2025 <a 
+            Printed by © 2025 <a 
               href="https://air.city" 
               target="_blank" 
               rel="noopener noreferrer"

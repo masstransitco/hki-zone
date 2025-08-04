@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from 'react';
-import { motion, PanInfo, useMotionValue, useTransform, animate } from 'framer-motion';
+import { motion, useMotionValue, animate } from 'framer-motion';
 import { ContentType, getContentConfig } from './content-type-selector';
 import TopicsFeedRedux from './topics-feed-redux';
 import NewsFeedMasonry from './news-feed-masonry';
@@ -21,9 +21,8 @@ export default function MainContent({ contentType, onContentTypeChange }: MainCo
   const contentTypes: ContentType[] = ['headlines', 'finance', 'techScience', 'entertainment', 'international', 'news', 'bulletin'];
   const currentIndex = contentTypes.indexOf(contentType);
   
-  // Framer Motion values for drag and animation
+  // Framer Motion values for smooth category animations only
   const x = useMotionValue(0);  
-  const containerRef = React.useRef<HTMLDivElement>(null);
   const [screenWidth, setScreenWidth] = React.useState(375);
 
   // Update screen width on mount and resize
@@ -71,7 +70,7 @@ export default function MainContent({ contentType, onContentTypeChange }: MainCo
   // Calculate the target position for the current index
   const targetX = -currentIndex * screenWidth;
 
-  // Animate to target position when contentType changes
+  // Animate to target position when contentType changes (button press only)
   React.useEffect(() => {
     animate(x, targetX, {
       type: "spring",
@@ -81,79 +80,14 @@ export default function MainContent({ contentType, onContentTypeChange }: MainCo
     });
   }, [x, targetX]);
 
-  // Handle drag end to determine if we should change content type
-  const handleDragEnd = React.useCallback((event: any, info: PanInfo) => {
-    console.log('Drag ended:', { offset: info.offset, velocity: info.velocity, currentIndex });
-    
-    if (!onContentTypeChange) {
-      console.log('No onContentTypeChange handler');
-      return;
-    }
-
-    const { offset, velocity } = info;
-    const swipeThreshold = 10; // Very sensitive - just 10px drag
-    const velocityThreshold = 5; // Very low velocity threshold - 5px/s
-
-    // Determine if we should swipe based on distance or velocity
-    const shouldSwipeLeft = offset.x < -swipeThreshold || velocity.x < -velocityThreshold;
-    const shouldSwipeRight = offset.x > swipeThreshold || velocity.x > velocityThreshold;
-
-    console.log('Swipe detection:', { 
-      shouldSwipeLeft, 
-      shouldSwipeRight, 
-      offsetX: offset.x, 
-      velocityX: velocity.x,
-      swipeThreshold,
-      velocityThreshold
-    });
-
-    if (shouldSwipeLeft) {
-      // Swipe to next content type (with wrapping)
-      const nextIndex = (currentIndex + 1) % contentTypes.length;
-      console.log('Swiping to next:', contentTypes[nextIndex]);
-      onContentTypeChange(contentTypes[nextIndex]);
-    } else if (shouldSwipeRight) {
-      // Swipe to previous content type (with wrapping)
-      const prevIndex = (currentIndex - 1 + contentTypes.length) % contentTypes.length;
-      console.log('Swiping to previous:', contentTypes[prevIndex]);
-      onContentTypeChange(contentTypes[prevIndex]);
-    } else {
-      console.log('Snapping back to current position');
-      // Snap back to current position
-      animate(x, targetX, {
-        type: "spring",
-        stiffness: 400,
-        damping: 40
-      });
-    }
-  }, [currentIndex, contentTypes, onContentTypeChange, screenWidth, x, targetX]);
-
-  // Simplified drag constraints - allow full drag range
-  const dragConstraints = React.useMemo(() => {
-    // Allow dragging the full screen width in both directions
-    // Framer Motion will handle the boundaries naturally
-    return {
-      left: -screenWidth,
-      right: screenWidth
-    };
-  }, [screenWidth]);
-
   return (
-    <div className="relative pb-2 h-full isolate bg-transparent overflow-hidden">
+    <div className="relative pb-2 h-full isolate bg-transparent">
       <motion.div
-        ref={containerRef}
-        className="flex h-full will-change-transform cursor-grab active:cursor-grabbing"
+        className="flex h-full will-change-transform"
         style={{ 
           x,
-          width: `${contentTypes.length * screenWidth}px`,
-          touchAction: 'pan-y' // Allow vertical scrolling within content
+          width: `${contentTypes.length * screenWidth}px`
         }}
-        drag="x"
-        dragConstraints={dragConstraints}
-        dragElastic={0.1}
-        dragMomentum={false}
-        onDragEnd={handleDragEnd}
-        whileDrag={{ cursor: 'grabbing' }}
       >
         {contentTypes.map((type, index) => (
           <div
@@ -161,10 +95,10 @@ export default function MainContent({ contentType, onContentTypeChange }: MainCo
             role="tabpanel"
             id={`${type}-panel`}
             aria-labelledby={`${type}-tab`}
-            className="flex-shrink-0 h-full isolate"
+            className="flex-shrink-0 h-full isolate overflow-y-auto overflow-x-hidden feed-vertical-scrollbar"
             style={{ width: `${screenWidth}px` }}
           >
-            <div className="relative h-full">
+            <div className="relative h-full overflow-y-auto feed-vertical-scrollbar">
               {renderContent(type)}
             </div>
           </div>

@@ -54,7 +54,7 @@ export default function HomePage() {
       {/* App container - main content takes full viewport */}
       <div className="fixed inset-0 flex flex-col">
         {/* Main content area - full viewport height */}
-        <main ref={mainContentRef} className="flex-1 relative">
+        <main ref={mainContentRef} className="flex-1 relative overflow-hidden">
           <MainContent 
             contentType={contentType}
             onContentTypeChange={handleContentTypeChange}

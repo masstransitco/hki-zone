@@ -886,3 +886,83 @@ body {
     background: rgb(82 82 82 / 0.7);
   }
 }
+
+/* Feed vertical scrollbar - hidden on mobile, visible on desktop */
+.feed-vertical-scrollbar {
+  /* Hide scrollbar on mobile */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.feed-vertical-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Global mobile scrollbar hiding - apply to all scrollable elements on mobile */
+@media (max-width: 767px) {
+  /* Hide all scrollbars on mobile */
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  *::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  /* Ensure main content areas are scrollable but hide scrollbars */
+  .overflow-y-auto,
+  .overflow-auto,
+  [class*="overflow-y-auto"],
+  [class*="overflow-auto"] {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  .overflow-y-auto::-webkit-scrollbar,
+  .overflow-auto::-webkit-scrollbar,
+  [class*="overflow-y-auto"]::-webkit-scrollbar,
+  [class*="overflow-auto"]::-webkit-scrollbar {
+    display: none !important;
+  }
+}
+
+/* Show vertical scrollbar on desktop breakpoints (768px and up) */
+@media (min-width: 768px) {
+  .feed-vertical-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(212 212 212) transparent;
+  }
+
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  .feed-vertical-scrollbar::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+  }
+
+  .feed-vertical-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .feed-vertical-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(212 212 212 / 0.4);
+    border-radius: 3px;
+  }
+
+  .feed-vertical-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(163 163 163 / 0.6);
+  }
+
+  /* Dark mode scrollbar */
+  .dark .feed-vertical-scrollbar {
+    scrollbar-color: rgb(64 64 64) transparent;
+  }
+
+  .dark .feed-vertical-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(64 64 64 / 0.4);
+  }
+
+  .dark .feed-vertical-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(82 82 82 / 0.6);
+  }
+}

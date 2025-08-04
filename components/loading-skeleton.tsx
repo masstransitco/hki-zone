@@ -326,12 +326,6 @@ export default function LoadingSkeleton({
           {/* Header spacer */}
           <div className="h-[113px] w-full" aria-hidden="true" />
           
-          {/* Real-time status skeleton */}
-          <div className="flex items-center justify-end gap-2 px-4 md:px-6 lg:px-8 pb-3">
-            <div className={cn("h-2 w-2 rounded-full bg-neutral-300 dark:bg-neutral-700", shimmerClass)} />
-            <div className={cn("h-3 w-20 bg-neutral-200 dark:bg-neutral-800 rounded", shimmerClass)} />
-          </div>
-          
           {/* Articles grid matching the actual layout */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 lg:gap-5 isolate px-4 md:px-6 lg:px-8">
             {Array.from({ length: count }).map((_, index) => (
