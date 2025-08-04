@@ -64,11 +64,11 @@ async function selectArticlesForBrief(articles: any[], briefType: 'morning' | 'a
     return acc
   }, {} as Record<string, any[]>)
 
-  // Define category priorities for different times of day
+  // Define category priorities for different times of day using new AI categories
   const categoryPriorities = {
-    morning: ['News', 'Politics', 'General', 'International', 'Local'],
-    afternoon: ['General', 'International', 'News', 'Local', 'Politics'],
-    evening: ['Local', 'General', 'News', 'International', 'Politics']
+    morning: ['Top Stories', 'Finance', 'Tech & Science', 'Sports', 'Arts & Culture', 'Entertainment'],
+    afternoon: ['Finance', 'Tech & Science', 'Top Stories', 'Sports', 'Arts & Culture', 'Entertainment'],
+    evening: ['Top Stories', 'Arts & Culture', 'Entertainment', 'Sports', 'Finance', 'Tech & Science']
   }
 
   const priorities = categoryPriorities[briefType]
@@ -105,7 +105,7 @@ async function selectArticlesForBrief(articles: any[], briefType: 'morning' | 'a
 async function generateNewsBriefContent(articles: any[], briefType: string, language: string): Promise<{ content: string; cost: number; wordCount: number }> {
   const articleSummaries = articles.map(article => ({
     title: article.title,
-    summary: article.ai_summary || article.summary,
+    summary: article.summary || article.ai_summary,
     category: article.category,
     keyPoints: article.enhancement_metadata?.keyPoints || []
   }))
@@ -114,7 +114,14 @@ async function generateNewsBriefContent(articles: any[], briefType: string, lang
 Your task is to create a natural, flowing news brief that sounds good when read aloud.
 
 Guidelines:
-- Write in a conversational, broadcast style suitable for ${language === 'en' ? 'English' : language === 'zh-TW' ? 'Traditional Chinese' : 'Simplified Chinese'} listeners
+- Write in a conversational, broadcast style suitable for ${language === 'en' ? 'English' : language === 'zh-TW' ? 'spoken Cantonese (口語粵語)' : 'Simplified Chinese'} listeners
+${language === 'zh-TW' ? `- IMPORTANT: Use spoken Cantonese (口語粵語), NOT formal written Chinese (書面語)
+- Use colloquial Cantonese expressions and sentence structures
+- Character examples: "係" not "是", "喺" not "在", "冇" not "沒有", "佢" not "他/她", "啲" not "些", "嘅" not "的"
+- Phrase examples: "點解" not "為什麼", "幾時" not "什麼時候", "邊度" not "哪裡", "乜嘢" not "什麼"
+- Use Cantonese final particles: 啦, 喎, 㗎, 囉, 呀, 嘅, 咩, 架
+- Keep the tone conversational like Hong Kong radio/TV news anchors (e.g., TVB, Commercial Radio)
+- Use natural Cantonese speech patterns and vocabulary` : ''}
 - Include smooth transitions between stories
 - Target approximately ${TARGET_WORD_COUNT} words
 - Start with a brief introduction mentioning the time of day (${briefType})
@@ -127,11 +134,12 @@ Guidelines:
 ${JSON.stringify(articleSummaries, null, 2)}
 
 Remember to:
-1. Start with a greeting appropriate for ${briefType} time
+1. Start with a greeting appropriate for ${briefType} time${language === 'zh-TW' ? ' (e.g., "早晨，各位聽眾" for morning)' : ''}
 2. Introduce the main stories briefly
 3. Cover each story with key points
-4. Use smooth transitions
-5. End with a brief closing
+4. Use smooth transitions${language === 'zh-TW' ? ' (e.g., "講完呢單新聞，我哋睇下..." or "另外，今日仲有...")' : ''}
+5. End with a brief closing${language === 'zh-TW' ? ' (e.g., "多謝收聽，我哋下次見")' : ''}
+${language === 'zh-TW' ? '\nCRITICAL: Write the ENTIRE script in spoken Cantonese (口語粵語), not formal written Chinese!' : ''}
 
 The output should be ready for TTS conversion.`
 

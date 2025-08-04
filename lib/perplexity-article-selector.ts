@@ -1079,16 +1079,156 @@ function getTimeAgo(date: Date): string {
   }
 }
 
-// Mark selected articles to prevent re-selection in future runs
+// AI Category Assignment using OpenAI
+async function assignAICategories(selectedArticles: SelectedArticle[], sessionId: string): Promise<(SelectedArticle & { ai_category?: string; category_confidence?: number })[]> {
+  console.log(`🤖 Assigning AI categories to ${selectedArticles.length} selected articles (${sessionId})...`);
+  
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn('⚠️ OpenAI API key not configured, skipping AI category assignment');
+    return selectedArticles.map(article => ({ ...article, ai_category: article.category }));
+  }
+
+  const AVAILABLE_CATEGORIES = [
+    'Top Stories',
+    'Tech & Science', 
+    'Finance',
+    'Arts & Culture',
+    'Sports',
+    'Entertainment'
+  ];
+
+  try {
+    // Prepare articles for categorization
+    const articlesForCategorization = selectedArticles.map((article, index) => ({
+      id: index + 1,
+      title: article.title,
+      summary: article.summary || article.content.substring(0, 200) + '...',
+      current_category: article.category
+    }));
+
+    const categorizationPrompt = `You are an expert news categorizer for a Hong Kong news platform. Categorize each article into the most appropriate category from the available options.
+
+AVAILABLE CATEGORIES:
+${AVAILABLE_CATEGORIES.map(cat => `- ${cat}`).join('\n')}
+
+CATEGORIZATION GUIDELINES:
+- **Top Stories**: Breaking news, major government announcements, significant Hong Kong developments, major accidents/incidents
+- **Tech & Science**: Technology companies, AI/innovation, scientific research, startup news, digital transformation
+- **Finance**: Stock market, economy, business mergers, banking, property market, cryptocurrency, economic policy
+- **Arts & Culture**: Museums, art exhibitions, cultural events, books, traditional culture, heritage, festivals
+- **Sports**: All sports coverage, Olympics, local teams, athlete profiles, sports events
+- **Entertainment**: Movies, TV shows, celebrities, music, gaming, lifestyle trends, social media
+
+ARTICLES TO CATEGORIZE:
+${articlesForCategorization.map(article => `
+ID: ${article.id}
+Title: ${article.title}
+Summary: ${article.summary}
+Current Category: ${article.current_category}
+---`).join('\n')}
+
+TASK: Return a JSON array with categorizations. Include confidence scores (1-10) for quality assessment.
+
+FORMAT:
+[
+  {"id": 1, "category": "Tech & Science", "confidence": 9, "reason": "Article about AI innovation in Hong Kong"},
+  {"id": 2, "category": "Finance", "confidence": 8, "reason": "Stock market analysis"}
+]
+
+Return ONLY the JSON array:`;
+
+    console.log(`📝 Sending ${selectedArticles.length} articles to OpenAI for categorization...`);
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert news categorizer. Return ONLY valid JSON arrays with article categorizations.'
+          },
+          {
+            role: 'user',
+            content: categorizationPrompt
+          }
+        ],
+        temperature: 0.3, // Lower temperature for consistent categorization
+        max_tokens: 1000
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0].message.content;
+
+    let categorizations: Array<{id: number, category: string, confidence: number, reason?: string}>;
+    try {
+      categorizations = JSON.parse(content);
+    } catch (error) {
+      console.error('❌ Failed to parse OpenAI categorization response:', content);
+      throw new Error('Invalid categorization response format');
+    }
+
+    // Validate and apply categorizations
+    const articlesWithCategories = selectedArticles.map((article, index) => {
+      const categorization = categorizations.find(cat => cat.id === index + 1);
+      
+      if (categorization && AVAILABLE_CATEGORIES.includes(categorization.category)) {
+        console.log(`   ✓ "${article.title.substring(0, 40)}..." → ${categorization.category} (confidence: ${categorization.confidence})`);
+        return {
+          ...article,
+          ai_category: categorization.category,
+          category_confidence: categorization.confidence
+        };
+      } else {
+        console.warn(`   ⚠️ "${article.title.substring(0, 40)}..." → keeping original category: ${article.category}`);
+        return {
+          ...article,
+          ai_category: article.category, // Fallback to original
+          category_confidence: 5 // Default confidence
+        };
+      }
+    });
+
+    const successfulCategorizations = articlesWithCategories.filter(a => a.ai_category !== a.category).length;
+    console.log(`✅ AI categorization complete (${sessionId}): ${successfulCategorizations}/${selectedArticles.length} articles recategorized`);
+
+    return articlesWithCategories;
+
+  } catch (error) {
+    console.error(`❌ Error in AI categorization (${sessionId}):`, error);
+    console.log(`🔄 Falling back to original categories for all articles`);
+    
+    // Fallback: return articles with original categories
+    return selectedArticles.map(article => ({
+      ...article,
+      ai_category: article.category,
+      category_confidence: 5
+    }));
+  }
+}
+
+// Mark selected articles to prevent re-selection in future runs and assign AI categories
 async function markArticlesAsSelected(
   selectedArticles: SelectedArticle[], 
   originalSelections: Array<{id: string, I?: number, N?: number, D?: number, S?: number, U?: number, score: number}>,
   sessionId: string
 ): Promise<void> {
-  console.log(`🔐 Marking ${selectedArticles.length} articles as selected to prevent re-selection (${sessionId})...`);
+  console.log(`🔐 Marking ${selectedArticles.length} articles as selected and assigning AI categories (${sessionId})...`);
   
-  for (let i = 0; i < selectedArticles.length; i++) {
-    const article = selectedArticles[i];
+  // First, assign AI categories to all selected articles
+  const articlesWithCategories = await assignAICategories(selectedArticles, sessionId);
+  
+  for (let i = 0; i < articlesWithCategories.length; i++) {
+    const article = articlesWithCategories[i];
     // Find the matching selection based on the article's stored reason and score
     const selection = originalSelections.find(sel => 
       sel.reason === article.selection_reason && 
@@ -1100,6 +1240,7 @@ async function markArticlesAsSelected(
         .from('articles')
         .update({ 
           selected_for_enhancement: true,
+          category: article.ai_category || article.category, // Use AI category if available
           selection_metadata: {
             selected_at: new Date().toISOString(),
             selection_reason: article.selection_reason,
@@ -1107,6 +1248,8 @@ async function markArticlesAsSelected(
             perplexity_selection_id: selection?.id || `${i + 1}`,
             selection_session: sessionId, // Track session for grouping and debugging
             selection_method: 'perplexity_ai',
+            ai_category_assigned: article.ai_category || null,
+            category_confidence: article.category_confidence || null,
             deduplication_stats: {
               candidates_before_dedup: selectedArticles.length + i, // approximation for logging
               candidates_after_dedup: selectedArticles.length,
@@ -1119,14 +1262,14 @@ async function markArticlesAsSelected(
       if (error) {
         console.error(`❌ Failed to mark article ${article.id} as selected:`, error);
       } else {
-        console.log(`   ✓ [${sessionId}] Marked "${article.title.substring(0, 40)}..." as selected`);
+        console.log(`   ✓ [${sessionId}] Marked "${article.title.substring(0, 40)}..." as selected with category: ${article.ai_category || article.category}`);
       }
     } catch (error) {
       console.error(`❌ Error marking article ${article.id} as selected:`, error);
     }
   }
   
-  console.log(`✅ Article marking complete (${sessionId}): ${selectedArticles.length} articles marked as selected`);
+  console.log(`✅ Article marking complete (${sessionId}): ${articlesWithCategories.length} articles marked as selected with AI categories`);
 }
 
 // Helper function to get selection statistics
