@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Switch } from "@/components/ui/switch"
 import { 
   Search, Filter, RefreshCw, Languages, Loader2, Trash2, CheckSquare, Copy,
-  BarChart3, Target, Zap, Clock, TrendingUp, AlertCircle, Wand2, Brain, Bot, Wifi, WifiOff
+  BarChart3, Target, Zap, Clock, TrendingUp, AlertCircle, Wand2, Brain, Bot, Wifi, WifiOff, Newspaper
 } from "lucide-react"
 import ArticleReviewGrid from "@/components/admin/article-review-grid"
 import ArticleDetailSheet from "@/components/admin/article-detail-sheet"
@@ -74,8 +75,8 @@ export default function ArticlesPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [sourceFilter, setSourceFilter] = useState("all")
-  const [languageFilter, setLanguageFilter] = useState("all")
-  const [aiEnhancedFilter, setAiEnhancedFilter] = useState("all")
+  const [languageFilter, setLanguageFilter] = useState("en")
+  const [aiEnhancedFilter, setAiEnhancedFilter] = useState("true")
   const [isProcessing, setIsProcessing] = useState(false)
   const [showProgressModal, setShowProgressModal] = useState(false)
   const [processProgress, setProcessProgress] = useState<any>(null)
@@ -109,7 +110,7 @@ export default function ArticlesPage() {
     queryFn: ({ pageParam = 0 }) => fetchAdminArticles({
       pageParam,
       sourceFilter,
-      languageFilter,
+      languageFilter: aiEnhancedFilter === "true" ? languageFilter : "all", // Reset language to all for Original articles
       aiEnhancedFilter,
       searchQuery
     }),
@@ -120,10 +121,11 @@ export default function ArticlesPage() {
 
   // Setup real-time subscriptions with intelligent filtering
   const aiEnhancedBool = aiEnhancedFilter === "true" ? true : aiEnhancedFilter === "false" ? false : undefined
+  const effectiveLanguageFilter = aiEnhancedFilter === "true" ? languageFilter : "all"
   const { connectionStatus, isConnected } = useRealtimeArticles({
     queryKey,
     isAiEnhanced: aiEnhancedBool,
-    language: languageFilter === "all" ? undefined : languageFilter,
+    language: effectiveLanguageFilter === "all" ? undefined : effectiveLanguageFilter,
     enabled: true
   })
 
@@ -212,6 +214,14 @@ export default function ArticlesPage() {
     refetch()
     loadQuickStats()
   }, [refetch, loadQuickStats])
+
+  const handleAiEnhancedToggle = (checked: boolean) => {
+    setAiEnhancedFilter(checked ? "true" : "false")
+    // Reset language filter to English when switching to AI Enhanced
+    if (checked && languageFilter === "all") {
+      setLanguageFilter("en")
+    }
+  }
 
   const handleArticleExpand = (article: Article) => {
     setSelectedArticle(article)
@@ -698,142 +708,183 @@ export default function ArticlesPage() {
         </TabsList>
 
         <TabsContent value="articles" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Article Management</CardTitle>
-              <CardDescription>
-                Browse, review, and manage scraped articles with advanced filtering and bulk operations
-              </CardDescription>
-            </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search articles..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Button type="submit" variant="outline" size="icon">
-                <Search className="h-4 w-4" />
-              </Button>
-            </form>
-            
-            {/* Filters Row */}
-            <div className="space-y-4">
-              {/* Primary Filters */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                  <SelectTrigger className="w-full sm:w-[160px]">
-                    <SelectValue placeholder="Source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Sources</SelectItem>
-                    <SelectItem value="HKFP">HKFP</SelectItem>
-                    <SelectItem value="SingTao">SingTao</SelectItem>
-                    <SelectItem value="HK01">HK01</SelectItem>
-                    <SelectItem value="ONCC">ONCC</SelectItem>
-                    <SelectItem value="RTHK">RTHK</SelectItem>
-                    <SelectItem value="on.cc">on.cc</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={languageFilter} onValueChange={setLanguageFilter}>
-                  <SelectTrigger className="w-full sm:w-[160px]">
-                    <SelectValue placeholder="Language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Languages</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="zh-TW">繁體中文</SelectItem>
-                    <SelectItem value="zh-CN">简体中文</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={aiEnhancedFilter} onValueChange={setAiEnhancedFilter}>
-                  <SelectTrigger className="w-full sm:w-[160px]">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Articles</SelectItem>
-                    <SelectItem value="true">AI Enhanced</SelectItem>
-                    <SelectItem value="false">Regular</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button onClick={handleRefresh} variant="outline" size="icon" className="ml-auto">
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Action Controls */}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                {/* Selection Controls */}
+          <Card className="border-slate-200 dark:border-slate-700 shadow-sm">
+            <CardContent className="p-4">
+              {/* Compact Header with Inline Controls */}
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  {selectedArticleIds.size > 0 ? (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                        {selectedArticleIds.size} selected
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleSelectNone}
-                        className="h-7 px-2 text-xs"
-                      >
-                        Clear
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleBulkClone}
-                        disabled={isBulkCloning}
-                        className="h-7 px-3 text-xs bg-gradient-to-r from-emerald-50 to-blue-50 border-emerald-200 text-emerald-700 hover:from-emerald-100 hover:to-blue-100"
-                      >
-                        {isBulkCloning ? (
-                          <div className="mr-1 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        ) : (
-                          <Copy className="h-3 w-3 mr-1" />
-                        )}
-                        Enhance to 3 Languages
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={handleBatchDelete}
-                        disabled={isDeleting}
-                        className="h-7 px-3 text-xs"
-                      >
-                        {isDeleting ? (
-                          <div className="mr-1 h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                        ) : (
-                          <Trash2 className="h-3 w-3 mr-1" />
-                        )}
-                        Delete
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleSelectAll}
-                        className="h-8 px-3 text-xs"
-                      >
-                        <CheckSquare className="h-3 w-3 mr-1" />
-                        Select All
-                      </Button>
-                    </div>
-                  )}
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">Articles</h3>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">Browse and manage articles</p>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+                    <span>Live</span>
+                  </div>
                 </div>
-
+                
+                {/* Compact Search */}
+                <form onSubmit={handleSearch} className="flex gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <Input
+                      placeholder="Search articles..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-8 h-8 w-64 text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                    />
+                  </div>
+                  <Button type="submit" variant="outline" size="sm" className="h-8 w-8 p-0">
+                    <Search className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button onClick={handleRefresh} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-500">
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </Button>
+                </form>
               </div>
-            </div>
-          </div>
+
+              {/* Compact Filters in Single Row */}
+              <div className="flex flex-wrap items-center gap-3 p-3 bg-slate-50/50 dark:bg-slate-900/30 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
+                {/* Source Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Source:</span>
+                  <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                    <SelectTrigger className="w-32 h-7 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sources</SelectItem>
+                      <SelectItem value="HKFP">HKFP</SelectItem>
+                      <SelectItem value="SingTao">SingTao</SelectItem>
+                      <SelectItem value="HK01">HK01</SelectItem>
+                      <SelectItem value="ONCC">ONCC</SelectItem>
+                      <SelectItem value="RTHK">RTHK</SelectItem>
+                      <SelectItem value="on.cc">on.cc</SelectItem>
+                      <SelectItem value="scmp">SCMP</SelectItem>
+                      <SelectItem value="am730">AM730</SelectItem>
+                      <SelectItem value="bloomberg">Bloomberg</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Modern Article Type Toggle */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Type:</span>
+                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
+                    {/* Original Button */}
+                    <button
+                      onClick={() => handleAiEnhancedToggle(false)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                        aiEnhancedFilter === "false"
+                          ? "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      <Newspaper className={`h-2.5 w-2.5 transition-colors ${
+                        aiEnhancedFilter === "false" ? "text-slate-600 dark:text-slate-400" : "text-slate-400 dark:text-slate-500"
+                      }`} />
+                      Original
+                    </button>
+                    
+                    {/* AI Enhanced Button */}
+                    <button
+                      onClick={() => handleAiEnhancedToggle(true)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
+                        aiEnhancedFilter === "true"
+                          ? "bg-gradient-to-r from-slate-600 to-slate-700 dark:from-slate-500 dark:to-slate-600 text-white shadow-md shadow-slate-500/20"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                      }`}
+                    >
+                      <HKIIcon className={`h-2.5 w-2.5 transition-colors ${
+                        aiEnhancedFilter === "true" ? "text-white" : "text-slate-400 dark:text-slate-500"
+                      }`} />
+                      AI Enhanced
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Compact Language Filter */}
+                {aiEnhancedFilter === "true" && (
+                  <div className="flex items-center gap-2 animate-in slide-in-from-left-1 duration-200">
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Language:</span>
+                    <Select value={languageFilter} onValueChange={setLanguageFilter}>
+                      <SelectTrigger className="w-28 h-7 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="zh-TW">繁體</SelectItem>
+                        <SelectItem value="zh-CN">简体</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              {/* Compact Bulk Actions */}
+              {selectedArticleIds.size > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800 mb-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                    <span className="text-xs font-medium text-blue-900 dark:text-blue-100">
+                      {selectedArticleIds.size} selected
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSelectNone}
+                      className="h-6 px-2 text-xs text-blue-700 hover:bg-blue-100"
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBulkClone}
+                      disabled={isBulkCloning}
+                      className="h-6 px-2 text-xs bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                    >
+                      {isBulkCloning ? (
+                        <div className="mr-1 h-2.5 w-2.5 animate-spin rounded-full border border-current border-t-transparent" />
+                      ) : (
+                        <Copy className="h-2.5 w-2.5 mr-1" />
+                      )}
+                      Enhance
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBatchDelete}
+                      disabled={isDeleting}
+                      className="h-6 px-2 text-xs bg-white border-red-200 text-red-700 hover:bg-red-50"
+                    >
+                      {isDeleting ? (
+                        <div className="mr-1 h-2.5 w-2.5 animate-spin rounded-full border border-current border-t-transparent" />
+                      ) : (
+                        <Trash2 className="h-2.5 w-2.5 mr-1" />
+                      )}
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between p-2 border border-dashed border-slate-200 dark:border-slate-700 rounded text-center mb-4">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">No articles selected</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleSelectAll}
+                    className="h-6 px-2 text-xs text-slate-600 hover:bg-slate-50"
+                  >
+                    <CheckSquare className="h-2.5 w-2.5 mr-1" />
+                    Select All
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
 

@@ -3,18 +3,33 @@
 import * as React from 'react';
 import { useLanguage } from './language-provider';
 
-export type ContentType = 'headlines' | 'news' | 'bulletin';
+export type ContentType = 'headlines' | 'finance' | 'techScience' | 'entertainment' | 'international' | 'news' | 'bulletin';
 
 interface ContentTypeSelectorProps {
   value: ContentType;
   onChange: (value: ContentType) => void;
 }
 
-const contentTypes: ContentType[] = ['headlines', 'news', 'bulletin'];
+const contentTypes: ContentType[] = ['headlines', 'finance', 'techScience', 'entertainment', 'international', 'news', 'bulletin'];
+
+// Map content types to their translation keys and category filters
+export const getContentConfig = (type: ContentType) => {
+  const configs = {
+    headlines: { translationKey: 'content.discover', category: null }, // All AI-enhanced (Top Stories)
+    finance: { translationKey: 'content.finance', category: 'Finance' },
+    techScience: { translationKey: 'content.techScience', category: 'Tech & Science' },
+    entertainment: { translationKey: 'content.entertainment', category: 'Entertainment' },
+    international: { translationKey: 'content.international', category: 'International' },
+    news: { translationKey: 'content.news', category: null }, // News feed masonry
+    bulletin: { translationKey: 'content.gov', category: null } // Government bulletin
+  }
+  return configs[type]
+}
 
 export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value, onChange }) => {
   const [isPressed, setIsPressed] = React.useState<ContentType | null>(null)
   const { t } = useLanguage()
+  const containerRef = React.useRef<HTMLDivElement>(null)
 
   const handlePress = (type: ContentType) => {
     setIsPressed(type)
@@ -22,78 +37,97 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
     setTimeout(() => setIsPressed(null), 150)
   }
 
-  return (
-    <div className="relative flex justify-center" role="tablist" aria-label="Content type selector">
-      {/* Minimalist pill container */}
-      <div className="inline-flex gap-1 p-1 bg-transparent rounded-full touch-manipulation">
-        {/* Discover button */}
-        <button
-          role="tab"
-          aria-selected={value === 'headlines'}
-          aria-controls="headlines-panel"
-          id="headlines-tab"
-          onClick={() => handlePress('headlines')}
-          onMouseDown={() => setIsPressed('headlines')}
-          onMouseUp={() => setIsPressed(null)}
-          onTouchStart={() => setIsPressed('headlines')}
-          className={`relative px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans ${
-            value === 'headlines'
-              ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
-              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
-          } ${isPressed === 'headlines' ? 'scale-[0.97]' : ''}`}
-          style={{ 
-            fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
-            letterSpacing: '-0.01em'
-          }}
-        >
-          {t('content.discover')}
-        </button>
-        
-        {/* News button */}
-        <button
-          role="tab"
-          aria-selected={value === 'news'}
-          aria-controls="news-panel"
-          id="news-tab"
-          onClick={() => handlePress('news')}
-          onMouseDown={() => setIsPressed('news')}
-          onMouseUp={() => setIsPressed(null)}
-          onTouchStart={() => setIsPressed('news')}
-          className={`relative px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans ${
-            value === 'news'
-              ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
-              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
-          } ${isPressed === 'news' ? 'scale-[0.97]' : ''}`}
-          style={{ 
-            fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
-            letterSpacing: '-0.01em'
-          }}
-        >
-          {t('content.news')}
-        </button>
+  // Enable horizontal scroll with mouse wheel on desktop
+  React.useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
 
-        {/* Gov button */}
-        <button
-          role="tab"
-          aria-selected={value === 'bulletin'}
-          aria-controls="bulletin-panel"
-          id="bulletin-tab"
-          onClick={() => handlePress('bulletin')}
-          onMouseDown={() => setIsPressed('bulletin')}
-          onMouseUp={() => setIsPressed(null)}
-          onTouchStart={() => setIsPressed('bulletin')}
-          className={`relative px-5 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans ${
-            value === 'bulletin'
-              ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
-              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200'
-          } ${isPressed === 'bulletin' ? 'scale-[0.97]' : ''}`}
-          style={{ 
-            fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
-            letterSpacing: '-0.01em'
-          }}
-        >
-          {t('content.gov')}
-        </button>
+    const handleWheel = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault()
+        container.scrollLeft += e.deltaY
+      }
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => container.removeEventListener('wheel', handleWheel)
+  }, [])
+
+  // Auto-scroll to keep selected category in view
+  React.useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    // Find the selected button element
+    const selectedButton = container.querySelector(`button[aria-selected="true"]`) as HTMLElement
+    if (!selectedButton) return
+
+    // Get container and button dimensions
+    const containerRect = container.getBoundingClientRect()
+    const buttonRect = selectedButton.getBoundingClientRect()
+    
+    // Calculate if button is out of view
+    const buttonLeft = selectedButton.offsetLeft
+    const buttonWidth = selectedButton.offsetWidth
+    const containerScrollLeft = container.scrollLeft
+    const containerWidth = container.clientWidth
+
+    // Check if button is partially or fully out of view
+    const isOutOfViewLeft = buttonLeft < containerScrollLeft
+    const isOutOfViewRight = buttonLeft + buttonWidth > containerScrollLeft + containerWidth
+
+    if (isOutOfViewLeft || isOutOfViewRight) {
+      // Calculate scroll position to center the button
+      const targetScrollLeft = buttonLeft - (containerWidth / 2) + (buttonWidth / 2)
+      
+      // Smooth scroll to center the selected category
+      container.scrollTo({
+        left: Math.max(0, targetScrollLeft),
+        behavior: 'smooth'
+      })
+    }
+  }, [value]) // Trigger when selected category changes
+
+  return (
+    <div className="relative w-full" role="tablist" aria-label="Content type selector">
+      {/* Horizontal scrolling container with custom scrollbar styling */}
+      <div 
+        ref={containerRef}
+        className="overflow-x-auto category-selector-scrollbar"
+      >
+        {/* Use justify-between on larger screens when content doesn't overflow */}
+        <div className="flex gap-1 p-1 bg-transparent min-w-max lg:min-w-full lg:justify-between">
+          {contentTypes.map((type) => {
+            const config = getContentConfig(type)
+            const isSelected = value === type
+            const isPressedState = isPressed === type
+            
+            return (
+              <button
+                key={type}
+                role="tab"
+                aria-selected={isSelected}
+                aria-controls={`${type}-panel`}
+                id={`${type}-tab`}
+                onClick={() => handlePress(type)}
+                onMouseDown={() => setIsPressed(type)}
+                onMouseUp={() => setIsPressed(null)}
+                onTouchStart={() => setIsPressed(type)}
+                className={`relative px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans whitespace-nowrap ${
+                  isSelected
+                    ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-800 dark:hover:text-neutral-200'
+                } ${isPressedState ? 'scale-[0.97]' : ''}`}
+                style={{ 
+                  fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
+                  letterSpacing: '-0.01em'
+                }}
+              >
+                {t(config.translationKey)}
+              </button>
+            )
+          })}
+        </div>
       </div>
     </div>
   );

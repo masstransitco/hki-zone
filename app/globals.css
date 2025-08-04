@@ -835,3 +835,54 @@ body {
     padding-right: var(--spacing-container-lg);
   }
 }
+
+/* Category selector custom scrollbar - hidden on mobile, visible on desktop */
+.category-selector-scrollbar {
+  /* Hide scrollbar on mobile */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.category-selector-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Show scrollbar on desktop breakpoints (768px and up) */
+@media (min-width: 768px) {
+  .category-selector-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(212 212 212) transparent;
+  }
+
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  .category-selector-scrollbar::-webkit-scrollbar {
+    display: block;
+    height: 4px;
+  }
+
+  .category-selector-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .category-selector-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(212 212 212 / 0.5);
+    border-radius: 2px;
+  }
+
+  .category-selector-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(163 163 163 / 0.7);
+  }
+
+  /* Dark mode scrollbar */
+  .dark .category-selector-scrollbar {
+    scrollbar-color: rgb(64 64 64) transparent;
+  }
+
+  .dark .category-selector-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(64 64 64 / 0.5);
+  }
+
+  .dark .category-selector-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(82 82 82 / 0.7);
+  }
+}

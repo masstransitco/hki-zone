@@ -34,6 +34,10 @@ const translations = {
 
     // Content Types (Main App)
     "content.discover": "Discover",
+    "content.finance": "Finance",
+    "content.techScience": "Tech & Science", 
+    "content.entertainment": "Entertainment",
+    "content.international": "International",
     "content.news": "Latest",
     "content.gov": "Notice",
     
@@ -541,6 +545,10 @@ const translations = {
     
     // Content Types (Main App)
     "content.discover": "要闻",
+    "content.finance": "金融",
+    "content.techScience": "科技", 
+    "content.entertainment": "娱乐",
+    "content.international": "国际",
     "content.news": "最新",
     "content.gov": "通告",
     
@@ -1048,6 +1056,10 @@ const translations = {
     
     // Content Types (Main App)
     "content.discover": "要聞",
+    "content.finance": "金融",
+    "content.techScience": "科技", 
+    "content.entertainment": "娛樂",
+    "content.international": "國際",
     "content.news": "最新",
     "content.gov": "通告",
     

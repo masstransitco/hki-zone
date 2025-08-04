@@ -4,7 +4,7 @@ interface HKIIconProps {
   className?: string
 }
 
-export default function HKIIcon({ className = "h-4 w-4" }: HKIIconProps) {
+export default function HKIIcon({ className = "h-10 w-10" }: HKIIconProps) {
   return (
     <svg 
       viewBox="0 0 1500 1500" 

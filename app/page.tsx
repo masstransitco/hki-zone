@@ -7,10 +7,10 @@ import MainContent from "@/components/main-content-with-selector"
 import SideMenu from "@/components/side-menu"
 import StickyCategorySelector from "@/components/sticky-category-selector"
 import { ContentType } from "@/components/content-type-selector"
-import { useEdgeSwipe, useSwipeGesture } from "@/hooks/use-swipe-gesture"
+import { useEdgeSwipe } from "@/hooks/use-swipe-gesture"
 import { useUIRedux } from "@/hooks/use-ui-redux"
 
-const contentTypes: ContentType[] = ['headlines', 'news', 'bulletin'];
+const contentTypes: ContentType[] = ['headlines', 'finance', 'techScience', 'entertainment', 'international', 'news', 'bulletin'];
 
 export default function HomePage() {
   const mainContentRef = useRef<HTMLDivElement>(null)
@@ -38,26 +38,8 @@ export default function HomePage() {
     }
   }
 
-  // Handle content swipe gestures
-  const handleSwipeLeft = () => {
-    const currentIndex = contentTypes.indexOf(contentType)
-    const nextIndex = (currentIndex + 1) % contentTypes.length
-    handleContentTypeChange(contentTypes[nextIndex])
-  }
-
-  const handleSwipeRight = () => {
-    const currentIndex = contentTypes.indexOf(contentType)
-    const prevIndex = (currentIndex - 1 + contentTypes.length) % contentTypes.length
-    handleContentTypeChange(contentTypes[prevIndex])
-  }
-
-  // Enable swipe gestures on main content area (always available)
-  useSwipeGesture(mainContentRef, {
-    onSwipeLeft: handleSwipeLeft,
-    onSwipeRight: handleSwipeRight,
-    threshold: 60,
-    enabled: !isMenuOpen
-  })
+  // Content type change handler (now handled by MainContent carousel)
+  // Removed old swipe gesture implementation - now handled by carousel
 
   return (
     <>
@@ -74,7 +56,8 @@ export default function HomePage() {
         {/* Main content area - full viewport height */}
         <main ref={mainContentRef} className="flex-1 relative">
           <MainContent 
-            contentType={contentType} 
+            contentType={contentType}
+            onContentTypeChange={handleContentTypeChange}
           />
         </main>
 

@@ -35,8 +35,8 @@ interface PageInfo {
 interface ArticlesState {
   // Normalized articles by ID
   byId: Record<string, NormalizedArticle>
-  // Page tracking by language
-  pagesByLanguage: Record<string, {
+  // Page tracking by language and category: "en-Finance", "en-all", etc.
+  pagesByKey: Record<string, {
     pages: PageInfo[]
     currentPage: number
   }>
@@ -48,9 +48,14 @@ interface ArticlesState {
   loadedTranslations: Record<string, string[]>
 }
 
+// Helper function to create cache key from language and category
+const createCacheKey = (language: string, category?: string | null): string => {
+  return `${language}-${category || 'all'}`
+}
+
 const initialState: ArticlesState = {
   byId: {},
-  pagesByLanguage: {},
+  pagesByKey: {},
   isLoading: false,
   isRefreshing: false,
   error: null,
@@ -82,12 +87,14 @@ const articlesSlice = createSlice({
       language: string
       page: number
       hasMore: boolean
+      category?: string | null
     }>) => {
-      const { articles, language, page, hasMore } = action.payload
+      const { articles, language, page, hasMore, category } = action.payload
+      const cacheKey = createCacheKey(language, category)
       
-      // Initialize language pages if needed
-      if (!state.pagesByLanguage[language]) {
-        state.pagesByLanguage[language] = {
+      // Initialize cache key if needed
+      if (!state.pagesByKey[cacheKey]) {
+        state.pagesByKey[cacheKey] = {
           pages: [],
           currentPage: 0
         }
@@ -140,8 +147,8 @@ const articlesSlice = createSlice({
       })
       
       // Update page info
-      if (!state.pagesByLanguage[language].pages[page]) {
-        state.pagesByLanguage[language].pages[page] = {
+      if (!state.pagesByKey[cacheKey].pages[page]) {
+        state.pagesByKey[cacheKey].pages[page] = {
           ids: articleIds,
           hasMore,
           lastFetched: Date.now(),
@@ -149,18 +156,18 @@ const articlesSlice = createSlice({
         }
       } else {
         // Append to existing page (for real-time updates)
-        const existingIds = [...state.pagesByLanguage[language].pages[page].ids]
+        const existingIds = [...state.pagesByKey[cacheKey].pages[page].ids]
         articleIds.forEach(id => {
           if (!existingIds.includes(id)) {
             existingIds.push(id)
           }
         })
-        state.pagesByLanguage[language].pages[page].ids = existingIds
-        state.pagesByLanguage[language].pages[page].hasMore = hasMore
-        state.pagesByLanguage[language].pages[page].lastFetched = Date.now()
+        state.pagesByKey[cacheKey].pages[page].ids = existingIds
+        state.pagesByKey[cacheKey].pages[page].hasMore = hasMore
+        state.pagesByKey[cacheKey].pages[page].lastFetched = Date.now()
       }
       
-      state.pagesByLanguage[language].currentPage = page
+      state.pagesByKey[cacheKey].currentPage = page
     },
     
     // Set page fetching state
@@ -168,33 +175,39 @@ const articlesSlice = createSlice({
       language: string
       page: number
       isFetching: boolean
+      category?: string | null
     }>) => {
-      const { language, page, isFetching } = action.payload
+      const { language, page, isFetching, category } = action.payload
+      const cacheKey = createCacheKey(language, category)
       
-      if (!state.pagesByLanguage[language]) {
-        state.pagesByLanguage[language] = {
+      if (!state.pagesByKey[cacheKey]) {
+        state.pagesByKey[cacheKey] = {
           pages: [],
           currentPage: 0
         }
       }
       
-      if (!state.pagesByLanguage[language].pages[page]) {
-        state.pagesByLanguage[language].pages[page] = {
+      if (!state.pagesByKey[cacheKey].pages[page]) {
+        state.pagesByKey[cacheKey].pages[page] = {
           ids: [],
           hasMore: true,
           lastFetched: 0,
           isFetching
         }
       } else {
-        state.pagesByLanguage[language].pages[page].isFetching = isFetching
+        state.pagesByKey[cacheKey].pages[page].isFetching = isFetching
       }
     },
     
-    // Clear articles for a language (for pull-to-refresh)
-    clearLanguageArticles: (state, action: PayloadAction<string>) => {
-      const language = action.payload
-      if (state.pagesByLanguage[language]) {
-        state.pagesByLanguage[language] = {
+    // Clear articles for a language and category (for pull-to-refresh)
+    clearArticles: (state, action: PayloadAction<{
+      language: string
+      category?: string | null
+    }>) => {
+      const { language, category } = action.payload
+      const cacheKey = createCacheKey(language, category)
+      if (state.pagesByKey[cacheKey]) {
+        state.pagesByKey[cacheKey] = {
           pages: [],
           currentPage: 0
         }
@@ -231,9 +244,9 @@ const articlesSlice = createSlice({
       delete state.byId[articleId]
       delete state.loadedTranslations[articleId]
       
-      // Remove from all language pages
-      Object.values(state.pagesByLanguage).forEach(langPages => {
-        langPages.pages.forEach(page => {
+      // Remove from all cache keys
+      Object.values(state.pagesByKey).forEach(keyPages => {
+        keyPages.pages.forEach(page => {
           page.ids = page.ids.filter(id => id !== articleId)
         })
       })
@@ -247,7 +260,7 @@ export const {
   setError,
   addArticles,
   setPageFetching,
-  clearLanguageArticles,
+  clearArticles,
   updateArticle,
   removeArticle
 } = articlesSlice.actions
@@ -255,15 +268,15 @@ export const {
 // Selectors
 export const selectArticlesState = (state: RootState) => state.articles
 
-// Get all article IDs for a language
-export const selectArticleIdsByLanguage = createSelector(
-  [selectArticlesState, (state: RootState, language: string) => language],
-  (articlesState, language) => {
-    const langPages = articlesState.pagesByLanguage[language]
-    if (!langPages) return []
+// Get all article IDs for a language and category
+export const selectArticleIdsByKey = createSelector(
+  [selectArticlesState, (state: RootState, language: string, category?: string | null) => createCacheKey(language, category)],
+  (articlesState, cacheKey) => {
+    const keyPages = articlesState.pagesByKey[cacheKey]
+    if (!keyPages) return []
     
     const allIds: string[] = []
-    langPages.pages.forEach(page => {
+    keyPages.pages.forEach(page => {
       allIds.push(...page.ids)
     })
     
@@ -271,9 +284,9 @@ export const selectArticleIdsByLanguage = createSelector(
   }
 )
 
-// Get articles for a language with translations
-export const selectArticlesByLanguage = createSelector(
-  [selectArticlesState, selectArticleIdsByLanguage, (state: RootState, language: string) => language],
+// Get articles for a language and category with translations
+export const selectArticlesByKey = createSelector(
+  [selectArticlesState, selectArticleIdsByKey, (state: RootState, language: string, category?: string | null) => language],
   (articlesState, ids, language) => {
     return ids.map(id => {
       const normalizedArticle = articlesState.byId[id]
@@ -340,29 +353,29 @@ export const selectArticleByIdAndLanguage = createSelector(
 
 // Check if more pages available
 export const selectHasMorePages = createSelector(
-  [selectArticlesState, (state: RootState, language: string) => language],
-  (articlesState, language) => {
-    const langPages = articlesState.pagesByLanguage[language]
-    if (!langPages || langPages.pages.length === 0) return true
+  [selectArticlesState, (state: RootState, language: string, category?: string | null) => createCacheKey(language, category)],
+  (articlesState, cacheKey) => {
+    const keyPages = articlesState.pagesByKey[cacheKey]
+    if (!keyPages || keyPages.pages.length === 0) return true
     
-    const lastPage = langPages.pages[langPages.pages.length - 1]
+    const lastPage = keyPages.pages[keyPages.pages.length - 1]
     return lastPage?.hasMore ?? true
   }
 )
 
-// Get current page for language
+// Get current page for language and category
 export const selectCurrentPage = createSelector(
-  [selectArticlesState, (state: RootState, language: string) => language],
-  (articlesState, language) => {
-    return articlesState.pagesByLanguage[language]?.currentPage ?? 0
+  [selectArticlesState, (state: RootState, language: string, category?: string | null) => createCacheKey(language, category)],
+  (articlesState, cacheKey) => {
+    return articlesState.pagesByKey[cacheKey]?.currentPage ?? 0
   }
 )
 
 // Check if a page is being fetched
 export const selectIsPageFetching = createSelector(
-  [selectArticlesState, (state: RootState, language: string) => language, (state: RootState, language: string, page: number) => page],
-  (articlesState, language, page) => {
-    return articlesState.pagesByLanguage[language]?.pages[page]?.isFetching ?? false
+  [selectArticlesState, (state: RootState, language: string, category: string | null, page: number) => createCacheKey(language, category), (state: RootState, language: string, category: string | null, page: number) => page],
+  (articlesState, cacheKey, page) => {
+    return articlesState.pagesByKey[cacheKey]?.pages[page]?.isFetching ?? false
   }
 )
 

@@ -114,9 +114,10 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const page = Number.parseInt(searchParams.get("page") || "0")
     const language = searchParams.get("language") || "en"
+    const category = searchParams.get("category") // Category filter
     const limit = 10
 
-    console.log(`Topics API called for language: ${language}, page: ${page}`)
+    console.log(`Topics API called for language: ${language}, page: ${page}, category: ${category || 'all'}`)
 
     // Check if database is set up
     const isDatabaseReady = await checkDatabaseSetup()
@@ -124,10 +125,12 @@ export async function GET(request: NextRequest) {
 
     if (!isDatabaseReady) {
       console.warn("Database not set up, using mock AI-enhanced articles")
-      // Filter mock articles by language
-      const filteredMockArticles = mockAiArticles.filter(article => 
-        article.language === language
-      )
+      // Filter mock articles by language and category
+      const filteredMockArticles = mockAiArticles.filter(article => {
+        const languageMatch = article.language === language
+        const categoryMatch = !category || article.category === category
+        return languageMatch && categoryMatch
+      })
       
       const startIndex = page * limit
       const endIndex = startIndex + limit
@@ -171,6 +174,11 @@ export async function GET(request: NextRequest) {
         // For English, include articles marked as English OR with null/missing metadata
         // This catches new articles that haven't been fully processed yet
         query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null,enhancement_metadata.is.null`)
+      }
+      
+      // Add category filtering if specified
+      if (category) {
+        query = query.eq('category', category)
       }
       
       const { data: articles, error } = await query.range(page * limit, (page + 1) * limit - 1)
@@ -221,9 +229,11 @@ export async function GET(request: NextRequest) {
 
     // If no AI-enhanced articles in database, fall back to mock data
     console.warn("No AI-enhanced articles in database, using mock data")
-    const filteredMockArticles = mockAiArticles.filter(article => 
-      article.language === language
-    )
+    const filteredMockArticles = mockAiArticles.filter(article => {
+      const languageMatch = article.language === language
+      const categoryMatch = !category || article.category === category
+      return languageMatch && categoryMatch
+    })
     
     const response = NextResponse.json({
       articles: filteredMockArticles.slice(0, limit),
@@ -241,11 +251,14 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const page = Number.parseInt(searchParams.get("page") || "0")
     const language = searchParams.get("language") || "en"
+    const category = searchParams.get("category")
     const limit = 10
     
-    const filteredMockArticles = mockAiArticles.filter(article => 
-      article.language === language
-    )
+    const filteredMockArticles = mockAiArticles.filter(article => {
+      const languageMatch = article.language === language
+      const categoryMatch = !category || article.category === category
+      return languageMatch && categoryMatch
+    })
     
     const startIndex = page * limit
     const endIndex = startIndex + limit

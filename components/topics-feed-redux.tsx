@@ -17,9 +17,10 @@ import type { RootState } from "@/store"
 
 interface TopicsFeedProps {
   isActive?: boolean
+  category?: string | null // Category filter for AI-enhanced articles
 }
 
-export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
+export default function TopicsFeedRedux({ isActive = true, category = null }: TopicsFeedProps) {
   const { ref, inView } = useInView()
   const language = useSelector(selectLanguage)
   const { t } = useLanguage()
@@ -40,7 +41,7 @@ export default function TopicsFeedRedux({ isActive = true }: TopicsFeedProps) {
     refresh,
     handleRealtimeUpdate,
     handleRealtimeDelete
-  } = useTopicsRedux({ language, enabled: isActive })
+  } = useTopicsRedux({ language, enabled: isActive, category })
 
   const handleReadMore = (articleId: string) => {
     setSelectedArticleId(articleId)
