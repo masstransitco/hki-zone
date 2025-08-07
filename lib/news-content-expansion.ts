@@ -43,45 +43,70 @@ const MAX_CHARS_PER_ARTICLE = 600
 function getExpansionPrompt(language: string): { systemPrompt: string; userInstructions: string } {
   const baseSystemPrompt = `You are a professional news content expansion specialist. Your job is to take short article summaries and expand them into rich, detailed content suitable for broadcast news.
 
+CRITICAL LENGTH REQUIREMENT: Each expanded article MUST be exactly ${TARGET_CHARS_PER_ARTICLE} characters (${MIN_CHARS_PER_ARTICLE}-${MAX_CHARS_PER_ARTICLE} range). This is NON-NEGOTIABLE.
+
 Your expanded content should:
-- Provide context and background information
-- Add relevant details and human interest angles
+- Provide extensive context and background information
+- Add relevant details, specific examples, and human interest angles
 - Include local Hong Kong relevance where appropriate
 - Maintain journalistic accuracy and objectivity
 - Be suitable for audio broadcast (conversational tone)
-- Target exactly ${TARGET_CHARS_PER_ARTICLE} characters per article`
+- MUST reach the target character count with comprehensive coverage`
 
   const languageSpecific = {
     'en': {
       systemPrompt: `${baseSystemPrompt}
 
 Write in clear, conversational English suitable for Hong Kong listeners. Use broadcast-style language that sounds natural when read aloud.`,
-      userInstructions: `Expand each article summary into approximately ${TARGET_CHARS_PER_ARTICLE} characters of rich content. Include:
-- Background context and why this matters to Hong Kong listeners
-- Specific details, numbers, and examples
-- Human interest angles where relevant
-- Clear, conversational language for broadcast`
+      userInstructions: `MANDATORY: Expand each article summary into EXACTLY ${TARGET_CHARS_PER_ARTICLE} characters of rich content. Count characters carefully to meet this requirement.
+
+Include comprehensive coverage with:
+- Extensive background context and why this matters to Hong Kong listeners
+- Specific details, numbers, statistics, and concrete examples
+- Human interest angles and personal impact stories where relevant
+- Multiple perspectives and implications
+- Clear, conversational language for broadcast
+- Additional context to reach the required ${TARGET_CHARS_PER_ARTICLE} character count`
     },
     'zh-TW': {
       systemPrompt: `${baseSystemPrompt}
 
-用廣東話口語(口語粵語)寫作，適合香港聽眾。使用自然嘅廣播風格，聽起嚟親切自然。
-重要字符：用「係」而唔係「是」，用「喺」而唔係「在」，用「冇」而唔係「沒有」，用「啲」而唔係「些」，用「嘅」而唔係「的」。`,
-      userInstructions: `將每篇文章摘要擴展至大約${TARGET_CHARS_PER_ARTICLE}個字符嘅豐富內容。包括：
-- 背景資料同對香港聽眾嘅重要性
-- 具體細節、數字同例子
-- 人情味角度（如果合適）
-- 清晰嘅廣播用語`
+用口語廣東話寫作，適合香港聽眾廣播收聽。使用自然嘅口語廣東話，聽起嚟親切自然。
+CRITICAL: 必須用口語廣東話，避免書面語：
+- 用「係」而唔係「是」
+- 用「喺」而唔係「在」  
+- 用「冇」而唔係「沒有」
+- 用「啲」而唔係「這些/那些」
+- 用「嘅」而唔係「的」
+- 用「佢哋」而唔係「他們」
+- 用「呢啲」而唔係「這些」
+- 用「嗰啲」而唔係「那些」
+- 用「點解」而唔係「為什麼」`,
+      userInstructions: `必須要求：將每篇文章摘要擴展至準確嘅${TARGET_CHARS_PER_ARTICLE}個字符豐富內容。要仔細計算字符數量達到呢個要求。
+
+包括全面報導（用口語廣東話）：
+- 廣泛背景資料同對香港聽眾嘅重要性
+- 具體細節、數字、統計數據同實際例子
+- 人情味角度同個人影響故事（如果合適）
+- 多角度分析同影響
+- 清晰嘅口語廣播用語（避免書面語如「這些」「那些」「他們」等）
+- 額外背景資料達到所需嘅${TARGET_CHARS_PER_ARTICLE}個字符數量
+
+重要：必須用口語廣東話，例如用「呢啲」而唔係「這些」，用「嗰啲」而唔係「那些」`
     },
     'zh-CN': {
       systemPrompt: `${baseSystemPrompt}
 
 用简洁明了的简体中文写作，适合广播播报。语言要自然流畅，听起来亲切专业。`,
-      userInstructions: `将每篇文章摘要扩展至大约${TARGET_CHARS_PER_ARTICLE}个字符的丰富内容。包括：
-- 背景信息以及对香港听众的重要意义
-- 具体细节、数字和实例
-- 人性化角度（如适用）
-- 清晰的广播用语`
+      userInstructions: `必须要求：将每篇文章摘要扩展至准确的${TARGET_CHARS_PER_ARTICLE}个字符丰富内容。仔细计算字符数量以达到此要求。
+
+包括全面报道：
+- 广泛背景信息以及对香港听众的重要意义
+- 具体细节、数字、统计数据和实际例子
+- 人性化角度和个人影响故事（如适用）
+- 多角度分析和影响
+- 清晰的广播用语
+- 额外背景资料以达到所需的${TARGET_CHARS_PER_ARTICLE}个字符数量`
     }
   }
 
@@ -105,12 +130,14 @@ export async function expandArticleContent(
 ARTICLES TO EXPAND:
 ${JSON.stringify(articles, null, 2)}
 
-REQUIREMENTS:
-- Each expanded article should be ${TARGET_CHARS_PER_ARTICLE} characters (${MIN_CHARS_PER_ARTICLE}-${MAX_CHARS_PER_ARTICLE} range)
+CRITICAL REQUIREMENTS:
+- Each expanded article MUST be exactly ${TARGET_CHARS_PER_ARTICLE} characters (${MIN_CHARS_PER_ARTICLE}-${MAX_CHARS_PER_ARTICLE} range) - COUNT CAREFULLY!
+- Articles under ${MIN_CHARS_PER_ARTICLE} characters will be rejected
 - Maintain the original category and title
-- Add context, background, and local relevance
-- Write in natural broadcast language
+- Add extensive context, background, and local relevance
+- Write in natural broadcast language with comprehensive detail
 - Ensure each article has sufficient detail for a comprehensive news brief
+- Add extra context, examples, and analysis to reach the character count
 
 FORMAT YOUR RESPONSE AS JSON:
 {
@@ -131,8 +158,8 @@ IMPORTANT: Return only valid JSON with the expanded articles.`
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.7,
-      max_tokens: 8000, // Enough for expanded content
+      temperature: 0.4, // Lower temperature for more consistent length adherence
+      max_tokens: 12000, // Increased for longer content
       response_format: { type: "json_object" }
     })
 

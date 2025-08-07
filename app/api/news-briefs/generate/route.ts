@@ -145,7 +145,7 @@ async function generateNewsBriefContentTwoStep(articles: any[], briefType: 'morn
 
     // Use the broadcast script validation for compatibility
     const validation = {
-      isValid: scriptResult.validation.meetsTargetLength && scriptResult.validation.hasTimeReferences && scriptResult.validation.correctSegmentCount,
+      isValid: scriptResult.validation.meetsTargetLength && scriptResult.validation.hasTimeReferences && scriptResult.validation.correctSegmentCount && scriptResult.validation.hasBrandMention,
       issues: Object.entries(scriptResult.validation)
         .filter(([key, value]) => !value && key !== 'meetsTargetLength')
         .map(([key]) => `Missing ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`),
@@ -157,7 +157,8 @@ async function generateNewsBriefContentTwoStep(articles: any[], briefType: 'morn
         hasProgressMarkers: scriptResult.validation.hasProgressMarkers,
         hasQuestions: scriptResult.validation.hasQuestions,
         hasTransitions: scriptResult.validation.hasTransitions,
-        correctSegmentCount: scriptResult.validation.correctSegmentCount
+        correctSegmentCount: scriptResult.validation.correctSegmentCount,
+        hasBrandMention: scriptResult.validation.hasBrandMention
       }
     }
 
@@ -170,6 +171,7 @@ async function generateNewsBriefContentTwoStep(articles: any[], briefType: 'morn
 
     return {
       content: scriptResult.content,
+      expandedArticles: expansionResult.expandedArticles,
       dialogueSegments: scriptResult.dialogueSegments,
       cost: totalCost,
       wordCount: scriptResult.totalWordCount,
@@ -230,6 +232,7 @@ export async function POST(request: NextRequest) {
       .insert([{
         title: `${briefType.charAt(0).toUpperCase() + briefType.slice(1)} News Brief - ${new Date().toLocaleDateString()}`,
         content: generationResult.content,
+        expanded_content: generationResult.expandedArticles || null,
         dialogue_segments: generationResult.dialogueSegments || null,
         language: language,
         category: briefType,

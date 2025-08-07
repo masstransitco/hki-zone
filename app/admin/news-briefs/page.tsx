@@ -55,10 +55,19 @@ interface DialogueOperation {
   error?: string
 }
 
+interface ExpandedArticle {
+  title: string
+  expandedContent: string
+  category: string
+  wordCount: number
+  characterCount: number
+}
+
 interface NewsBrief {
   id: string
   title: string
   content: string
+  expanded_content?: ExpandedArticle[]
   dialogue_segments?: DialogueSegment[]
   tts_dialogue_operations?: DialogueOperation[]
   language: string
@@ -73,6 +82,11 @@ interface NewsBrief {
   tts_synthesized_at?: string
   tts_synthesis_cost_usd?: number
   audio_file_size_bytes?: number
+  // TTS for expanded content (long audio format)
+  expanded_audio_url?: string
+  expanded_audio_duration?: number
+  expanded_tts_cost?: number
+  expanded_tts_operation?: string
   news_brief_articles?: {
     article_id: string
     inclusion_reason: string
@@ -173,6 +187,7 @@ export default function NewsBriefsAdmin() {
   const [synthesizingBriefs, setSynthesizingBriefs] = useState<Set<string>>(new Set())
   const [playingBriefId, setPlayingBriefId] = useState<string | null>(null)
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null)
+  const [expandedSynthesisStatus, setExpandedSynthesisStatus] = useState<Record<string, { isDone: boolean; progressPercentage: number }>>({})
 
   // Load briefs and stats
   const loadData = async () => {
@@ -439,6 +454,88 @@ export default function NewsBriefsAdmin() {
     } catch (error) {
       console.error('Error deleting TTS audio:', error)
       toast.error('Failed to delete audio')
+    }
+  }
+
+  const synthesizeExpandedContent = async (briefId: string) => {
+    setSynthesizingBriefs(prev => new Set([...prev, briefId]))
+    try {
+      const response = await fetch(`/api/news-briefs/${briefId}/synthesize-expanded`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.details || 'Failed to synthesize expanded content')
+      }
+
+      const result = await response.json()
+      toast.success(`Started expanded content synthesis! Duration: ${formatDuration(result.estimatedDuration || 0)}`)
+      
+      // Start monitoring this synthesis
+      setExpandedSynthesisStatus(prev => ({
+        ...prev,
+        [briefId]: { isDone: false, progressPercentage: 0 }
+      }))
+      
+      // Start checking status periodically
+      checkExpandedSynthesisStatus(briefId)
+      
+    } catch (error) {
+      console.error('Error synthesizing expanded content:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to synthesize expanded content')
+      setSynthesizingBriefs(prev => {
+        const next = new Set(prev)
+        next.delete(briefId)
+        return next
+      })
+    }
+  }
+
+  const checkExpandedSynthesisStatus = async (briefId: string) => {
+    try {
+      const response = await fetch(`/api/news-briefs/${briefId}/synthesize-expanded/status`)
+      
+      if (response.ok) {
+        const status = await response.json()
+        
+        setExpandedSynthesisStatus(prev => ({
+          ...prev,
+          [briefId]: { 
+            isDone: status.isDone, 
+            progressPercentage: status.progressPercentage || 0 
+          }
+        }))
+        
+        if (status.isDone) {
+          // Synthesis complete
+          setSynthesizingBriefs(prev => {
+            const next = new Set(prev)
+            next.delete(briefId)
+            return next
+          })
+          
+          if (status.audioUrl) {
+            toast.success('Expanded content audio is ready!')
+            loadData() // Refresh to show the audio
+          } else if (status.error) {
+            toast.error(`Synthesis failed: ${status.error}`)
+          }
+          
+          // Remove from monitoring
+          setExpandedSynthesisStatus(prev => {
+            const next = { ...prev }
+            delete next[briefId]
+            return next
+          })
+        } else {
+          // Still in progress, check again in 10 seconds
+          setTimeout(() => checkExpandedSynthesisStatus(briefId), 10000)
+        }
+      }
+    } catch (error) {
+      console.error('Error checking expanded synthesis status:', error)
     }
   }
 
@@ -826,6 +923,124 @@ export default function NewsBriefsAdmin() {
                     <div className="bg-muted p-4 rounded-lg">
                       <p className="text-sm line-clamp-3">{brief.content}</p>
                     </div>
+
+                    {/* Expanded Content from Step 1 */}
+                    {brief.expanded_content && brief.expanded_content.length > 0 && (
+                      <div className="bg-amber-50 dark:bg-amber-950/30 p-3 rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm">
+                            <div className="font-medium">Step 1: Expanded Content</div>
+                            <div className="text-muted-foreground">
+                              {brief.expanded_content.length} articles expanded • 
+                              {brief.expanded_content.reduce((sum, article) => sum + article.wordCount, 0)} total words • 
+                              {brief.expanded_content.reduce((sum, article) => sum + article.characterCount, 0)} characters
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge variant="secondary">
+                              Pre-Broadcast
+                            </Badge>
+                            {brief.expanded_audio_url ? (
+                              <Badge variant="default" className="bg-amber-600">
+                                <Volume2 className="h-3 w-3 mr-1" />
+                                TTS Ready
+                              </Badge>
+                            ) : synthesizingBriefs.has(brief.id) ? (
+                              <div className="flex items-center gap-2">
+                                <Badge variant="secondary" className="animate-pulse">
+                                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  Synthesizing... {expandedSynthesisStatus[brief.id]?.progressPercentage || 0}%
+                                </Badge>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => synthesizeExpandedContent(brief.id)}
+                                disabled={synthesizingBriefs.has(brief.id)}
+                              >
+                                <Mic className="h-4 w-4 mr-2" />
+                                Generate Long Audio
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {/* Show first few expanded articles */}
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {brief.expanded_content.slice(0, 3).map((article, idx) => (
+                            <div key={idx} className="text-xs p-2 bg-background/50 rounded">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="font-medium truncate">
+                                  {article.title}
+                                </div>
+                                <div className="flex gap-2">
+                                  <Badge variant="outline" className="h-5 text-xs">
+                                    {article.category}
+                                  </Badge>
+                                  <span className="text-muted-foreground">
+                                    {article.wordCount}w • {article.characterCount}c
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-muted-foreground line-clamp-2">
+                                {article.expandedContent}
+                              </div>
+                            </div>
+                          ))}
+                          {brief.expanded_content.length > 3 && (
+                            <div className="text-xs text-center text-muted-foreground">
+                              +{brief.expanded_content.length - 3} more expanded articles
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Expanded Content TTS Audio Controls */}
+                        {brief.expanded_audio_url && (
+                          <div className="pt-2 border-t">
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs">
+                                <div className="font-medium">Long Audio Available</div>
+                                <div className="text-muted-foreground">
+                                  Duration: {formatDuration(brief.expanded_audio_duration || 0)} • 
+                                  Cost: {formatCurrency(brief.expanded_tts_cost || 0)}
+                                </div>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => playAudio(`${brief.id}-expanded`, brief.expanded_audio_url!)}
+                                  disabled={synthesizingBriefs.has(brief.id)}
+                                >
+                                  {playingBriefId === `${brief.id}-expanded` ? (
+                                    <Pause className="h-4 w-4 mr-2" />
+                                  ) : (
+                                    <Play className="h-4 w-4 mr-2" />
+                                  )}
+                                  {playingBriefId === `${brief.id}-expanded` ? 'Pause' : 'Play'}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const link = document.createElement('a')
+                                    link.href = brief.expanded_audio_url!
+                                    link.download = `${brief.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_expanded_${brief.language}.wav`
+                                    document.body.appendChild(link)
+                                    link.click()
+                                    document.body.removeChild(link)
+                                  }}
+                                >
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Download
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Article breakdown */}
                     {brief.news_brief_articles && brief.news_brief_articles.length > 0 && (

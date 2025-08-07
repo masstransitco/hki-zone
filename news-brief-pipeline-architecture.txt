@@ -1,0 +1,121 @@
+News Brief Pipeline Architecture Summary
+
+  Based on my analysis of the codebase and database, here's a
+  high-level summary of the news brief generation pipeline:
+
+  1. Admin Interface (/app/admin/news-briefs/page.tsx)
+
+  Role: Main control center for the entire news brief pipeline
+  - Features:
+    - 5 tabs: Overview, Briefs, Articles, Generate, Settings
+    - Real-time stats dashboard showing total briefs, average
+  duration, available articles
+    - Article selection management (manual and AI-powered
+  auto-selection)
+    - Brief generation triggers (single language or batch for
+  all 3 languages)
+    - Audio synthesis controls with individual segment synthesis
+   for dialogue format
+    - Preview, edit, and export capabilities for generated
+  briefs
+
+  2. Article Selection System 
+  (/app/api/admin/news-briefs/select-articles/route.ts)
+
+  Role: Intelligent article curation for trilingual consistency
+  - Key Features:
+    - AI-powered scoring based on recency, category, quality
+  metrics
+    - Trilingual variant detection using trilingual_batch_id
+    - Category coverage enforcement (ensures diverse news
+  coverage)
+    - Batch selection: 15 English stories → 45 total articles
+  (EN/ZH-CN/ZH-TW)
+    - OpenAI GPT-4o-mini for final selection with category
+  balancing
+    - Metadata tracking: selection time, reason, method
+
+  3. Two-Step Script Generation
+
+  Step 1: Content Expansion (/lib/news-content-expansion.ts)
+
+  Role: Transforms article summaries into broadcast-ready
+  content
+  - Expands ~100 word summaries to 150-200 word segments
+  - Adds natural language elements for spoken delivery
+  - Maintains factual accuracy while enhancing readability
+
+  Step 2: Broadcast Script Generation 
+  (/lib/news-broadcast-script.ts)
+
+  Role: Creates dialogue-based broadcast format
+  - Structure:
+    - 24 dialogue segments (12 male, 12 female)
+    - Target: 10-12 minutes total duration
+    - ~2200 words total script length
+    - Each segment: 30-35 seconds when spoken
+  - Features:
+    - Natural conversational flow between two anchors
+    - Time-specific greetings based on brief type
+  (morning/afternoon/evening)
+    - Hong Kong location references and context
+    - Category-based story ordering (prioritized by time of day)
+
+  4. Google Cloud TTS Implementation (/lib/google-cloud-tts.ts)
+
+  Role: High-quality audio synthesis using Google's premium
+  voices
+  - Voice Configuration:
+    - English: Studio voices (en-US-Studio-M male,
+  en-US-Studio-O female)
+    - Traditional Chinese: Cantonese voices
+  (yue-HK-Standard-A/B)
+    - Simplified Chinese: Mandarin voices (cmn-CN-Standard-A/B)
+  - Technical Details:
+    - Uses Google Cloud Long Audio API for extended content
+    - 24kHz sample rate for broadcast quality
+    - Individual segment synthesis for dialogue format
+    - Cloud Storage integration for audio file management
+    - Signed URLs for secure audio access
+
+  5. Database Structure
+
+  Latest News Brief Analysis (Evening - 8/5/2025):
+  - Brief ID: d151e34f-4f30-44ff-aa56-6e9e49de43e9
+  - Language: English
+  - Metrics:
+    - 24 dialogue segments (12 male, 12 female)
+    - 914 total words
+    - 323 seconds estimated duration (~5.4 minutes)
+    - 15 articles selected as sources
+  - Content Structure:
+    - Dialogue segments stored as JSONB array
+    - Each segment contains: id, speaker, content, wordCount,
+  estimatedDuration
+    - Articles linked via junction table with inclusion reasons
+
+  6. API Routes Structure
+
+  - /api/news-briefs/generate: Main generation endpoint
+  - /api/admin/news-briefs/generate-all: Batch generation
+  trigger
+  - /api/admin/news-briefs/select-articles: Article selection
+  management
+  - /api/news-briefs/[id]/synthesize: TTS audio generation
+  - /api/news-briefs/[id]/synthesize-segment: Individual segment
+   synthesis
+
+  Key Pipeline Flow:
+
+  1. Article Selection: AI selects 15 English stories ensuring
+  category diversity
+  2. Trilingual Expansion: System finds ZH-CN and ZH-TW variants
+   (45 total articles)
+  3. Content Expansion: Articles expanded from summaries to
+  broadcast-ready content
+  4. Script Generation: Creates natural dialogue between two
+  news anchors
+  5. Audio Synthesis: Google Cloud TTS converts script to
+  high-quality audio
+  6. Distribution: Audio files stored in Cloud Storage with
+  signed URLs for access

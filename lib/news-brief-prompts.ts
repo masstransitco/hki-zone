@@ -75,26 +75,26 @@ export const SECTION_TRANSITIONS = {
 }
 
 /**
- * Time-aware greeting generators
+ * Time-aware greeting generators with brand mention
  */
 export function generateGreeting(briefType: 'morning' | 'afternoon' | 'evening', language: string): string {
   const { time } = getHongKongTime()
   
   const greetings = {
     morning: {
-      en: `Good morning! It's ${time} here in Hong Kong, and you're listening to your comprehensive morning news brief. Whether you're having breakfast, commuting to work, or starting your day, we've got you covered with everything you need to know.`,
-      'zh-TW': `早晨！而家係香港時間${time}，歡迎收聽今朝嘅新聞簡報。無論你而家食緊早餐、搭緊車返工，定係啱啱起身，我哋都為你準備咗最重要嘅新聞。`,
-      'zh-CN': `早上好！现在是香港时间${time}，欢迎收听今天的早间新闻简报。无论您正在享用早餐、通勤上班，还是刚刚起床，我们都为您准备了今天最重要的新闻。`
+      en: `Good morning from HKI. It's ${time} in Hong Kong. Today's top stories include developments in local politics, international markets, and Hong Kong business.`,
+      'zh-TW': `早晨。歡迎收聽香港資訊。而家係香港時間${time}。今日主要新聞包括本地政治發展、國際市場動向同香港商業消息。`,
+      'zh-CN': `早上好。欢迎收听香港资讯。现在是香港时间${time}。今天主要新闻包括本地政治发展、国际市场动向和香港商业消息。`
     },
     afternoon: {
-      en: `Good afternoon! It's ${time} in Hong Kong. Time for your mid-day news update. Let's catch up on what's been happening since this morning and what you need to know for the rest of your day.`,
-      'zh-TW': `午安！而家係香港時間${time}。係時候聽下午間新聞更新喇。我哋一齊睇下今朝以嚟發生咗啲咩事，同埋下晝你需要知道嘅重要資訊。`,
-      'zh-CN': `下午好！现在是香港时间${time}。是时候收听午间新闻更新了。让我们一起回顾上午以来发生的大事，以及您下午需要了解的重要信息。`
+      en: `Good afternoon from HKI. It's ${time} in Hong Kong. Midday updates include financial markets, regional developments, and local Hong Kong news.`,
+      'zh-TW': `午安。歡迎收聽香港資訊。而家係香港時間${time}。午間更新包括金融市場、區域發展同本地新聞。`,
+      'zh-CN': `下午好。欢迎收听香港资讯。现在是香港时间${time}。午间更新包括金融市场、区域发展和本地新闻。`
     },
     evening: {
-      en: `Good evening! It's ${time} in Hong Kong. As you wind down from your day, let's take a comprehensive look at today's most important stories and prepare you for tomorrow.`,
-      'zh-TW': `晚安！而家係香港時間${time}。喺你結束忙碌嘅一日之際，我哋一齊回顧今日最重要嘅新聞，並為聽日做好準備。`,
-      'zh-CN': `晚上好！现在是香港时间${time}。在您结束忙碌的一天之际，让我们全面回顾今天最重要的新闻，并为明天做好准备。`
+      en: `Good evening from HKI. It's ${time} in Hong Kong. Today's comprehensive coverage includes major political developments, economic updates, and international stories affecting Hong Kong.`,
+      'zh-TW': `晚安。歡迎收聽香港資訊。而家係香港時間${time}。今日全面報導包括主要政治發展、經濟更新同影響香港嘅國際新聞。`,
+      'zh-CN': `晚上好。欢迎收听香港资讯。现在是香港时间${time}。今天全面报道包括主要政治发展、经济更新和影响香港的国际新闻。`
     }
   }
   

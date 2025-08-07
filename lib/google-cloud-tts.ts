@@ -79,7 +79,7 @@ const VOICE_CONFIGS: Record<string, { male: VoiceConfig, female: VoiceConfig }> 
     },
     female: {
       languageCode: 'yue-HK', // Cantonese for Traditional Chinese  
-      name: 'yue-HK-Standard-A',
+      name: 'yue-HK-Standard-C',
       ssmlGender: 'FEMALE'
     }
   },
