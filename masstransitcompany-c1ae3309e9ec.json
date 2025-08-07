@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "masstransitcompany",
+  "private_key_id": "c1ae3309e9ecbfe04485c9353a7b54675b239058",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDSSEtm+fZORHNG\nilDEfQJ++MMYpBuEljtjFhtoVTXiN1LzQkvdegHRTXlQX6oQjY6mDuxNBEvSznTm\nvX9BMmgpYL6reW9bW2LFTN1Q7uWA5tKMXVl5+VshtSnG/v75rWh4J5E1+9QwdtBb\nhaV9o5ydr9rHoWJpSpHcAM5kCWTeNS3hmJpsKWPoE93VdonVCUuJSY7CDbCWmNum\n1hzCOIfyGG12NCrMLHWYHMO0/d6uKE7H+gDXus+5twGC1YEgNXY8S2ZDWTDfmPNK\n4cUjdFhw7zjlHMXcpaw+OxatjUHVLLPSq8bZ6QjzLQZPTIJ74Z40GOamq+LX3f0W\njD7xhzHzAgMBAAECggEACFJtH8qHrfe1Y1bI/jf/czf0GBOgR3SDdwTHB1QVHgyz\ndg89ZvP4OSjPHjOucRmxEy8wJnIjlKGwER3xwdNsOXQiowx/nessTnFWzcOqBj8A\n4krHwavxKGwiX+o813O+fS20Q9hPLmXUNmnkivpJtoZzWHTDz6NeEtLMfM29g41o\nb21DtSfwEZs34R22vL9mW71efmglOkGM1eKEoy6NPSEMcUcMC1xQwZ+ONYX+oKxw\nziSBKHokwNHPmaIzZCeQ0D/lDZFAbOF3SMSuuW/FKPrPW2eaqPZpBXFa35UWOTWL\nKJkiceslawcrH/mDgqKht1dirOnNH4N0PU22xXLxfQKBgQDoxGC9lufY+GTwURhb\nWt9jEVcFU9p16Xnm74WfIduHu7j36VbWr+xoiE9TAPufnO4bSIwNrAfxU10TNHCB\nIJwRmJ1Gd5tnemm8YO1K0OUzUH+1YPV8ydjWjC3ihVWEfcDf8cm1iQ+LITtH2kiL\nGNDOkFY6D7Yo51mqjkqBAQ+FJwKBgQDnRWRHncGt3Z0Ok+W43MhUb4rRwm3lEXs7\n7CnBNDyc660BHoI8gFPdWhvs8rxJTwlsQf+pe9gHX0fZFWKUToYATEW3TvqjQwBt\nWoWXyaM+H4sNyOkwGiHpQp8G9RYmg/O/XMopxliqRL+UrXPrBTMGu48X3URN6Aci\nl/ghYzWkVQKBgCxAIRAJ3zutRSs2j4XWib9AraVyooZmA2m2wVVWT3DHbEudDYg0\n26GnwETMXAmlANMpAI8c1Em5imk7P+Qcee8Sb1vVIzMR34YTeykM+3W86PpnW2QE\nz3dCIPr+VBqi+YbZZXpgexb9E1L+mWnwJsoOQIY7NGskSDSXZmyN8hBjAoGACMiI\n43NpXKoTAe+6BMhVz2chFZBVziJY1NDGUTEjsC3/NxCqj5OsG7cFYn1hi0M2L2de\nR1iNvtHuj58RTGKjEjXTW//i4vpzdLPAaSBeU8is5kwgFxSW/x3pnkEGo1XVlwn2\nH5oJ2gWcZRAlW+KpqnLLH3Pm2TKbusOcx9/VtLUCgYBioEHJOCJ0IC4vnI5Bg4em\nL0B4ovAfQYCrJRWylf6euzJZzqimtp1UB8oDdEqp7RqZz4BCvlYm+x3JtCtQcNFo\nP3sAzYgpdGg6TyS9CgbTeFtq9hGOD6gP/pFWPZqrxzwX2631851UGWo2v9SnjwQx\n7HJbbPLsyvb5pXtY1pn2QA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "tts-long-audio-service@masstransitcompany.iam.gserviceaccount.com",
+  "client_id": "107644805966546390678",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/tts-long-audio-service%40masstransitcompany.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -36,10 +36,31 @@ import {
 } from "lucide-react"
 import { toast } from "sonner"
 
+interface DialogueSegment {
+  id: string
+  speaker: 'male' | 'female'
+  content: string
+  estimatedDuration: number
+  wordCount: number
+}
+
+interface DialogueOperation {
+  segmentId: string
+  speaker: 'male' | 'female'
+  operationName?: string
+  outputGcsUri?: string
+  audioUrl?: string
+  duration?: number
+  cost?: number
+  error?: string
+}
+
 interface NewsBrief {
   id: string
   title: string
   content: string
+  dialogue_segments?: DialogueSegment[]
+  tts_dialogue_operations?: DialogueOperation[]
   language: string
   category: string
   estimated_duration_seconds: number
@@ -115,6 +136,20 @@ interface ArticleSelectionStats {
   }
 }
 
+interface SelectedArticle {
+  id: string
+  title: string
+  category: string
+  language_variant: string
+  created_at: string
+  source: string
+  tts_selection_metadata?: {
+    selected_at: string
+    selection_reason: string
+    selected_by: string
+  }
+}
+
 export default function NewsBriefsAdmin() {
   const [activeTab, setActiveTab] = useState("overview")
   const [briefs, setBriefs] = useState<NewsBrief[]>([])
@@ -132,6 +167,7 @@ export default function NewsBriefsAdmin() {
   const [articleSelectionStats, setArticleSelectionStats] = useState<ArticleSelectionStats | null>(null)
   const [selectedArticleIds, setSelectedArticleIds] = useState<string[]>([])
   const [articleLoading, setArticleLoading] = useState(false)
+  const [selectedArticles, setSelectedArticles] = useState<SelectedArticle[]>([])
   
   // TTS synthesis state
   const [synthesizingBriefs, setSynthesizingBriefs] = useState<Set<string>>(new Set())
@@ -198,7 +234,7 @@ export default function NewsBriefsAdmin() {
     }
   }, [currentAudio])
 
-  // Load article recommendations
+  // Load article recommendations and selected articles
   const loadArticleRecommendations = async () => {
     setArticleLoading(true)
     try {
@@ -211,12 +247,16 @@ export default function NewsBriefsAdmin() {
         params.set("category", selectedCategory)
       }
 
+      // Load recommendations and stats
       const response = await fetch(`/api/admin/news-briefs/select-articles?${params}`)
       if (response.ok) {
         const data = await response.json()
         setArticleRecommendations(data.recommendations || [])
         setArticleSelectionStats(data.stats)
       }
+
+      // Load currently selected articles
+      await loadSelectedArticles()
     } catch (error) {
       console.error("Error loading article recommendations:", error)
       toast.error("Failed to load article recommendations")
@@ -225,9 +265,41 @@ export default function NewsBriefsAdmin() {
     }
   }
 
+  // Load currently selected articles
+  const loadSelectedArticles = async () => {
+    try {
+      const params = new URLSearchParams({
+        language: selectedLanguage,
+        hours: "24",
+        selected_for_tts_brief: "true",
+        limit: "50"
+      })
+      if (selectedCategory) {
+        params.set("category", selectedCategory)
+      }
+
+      const response = await fetch(`/api/articles?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedArticles(data.articles || [])
+        console.log(`📰 Loaded ${data.articles?.length || 0} selected articles for ${selectedLanguage}`)
+      } else {
+        console.error('Failed to load selected articles:', response.status, response.statusText)
+      }
+    } catch (error) {
+      console.error("Error loading selected articles:", error)
+    }
+  }
+
   // Auto-select articles
   const autoSelectArticles = async () => {
+    if (articleLoading) {
+      console.log('🚫 Auto-selection already in progress, ignoring click')
+      return
+    }
+    
     setArticleLoading(true)
+    console.log('🎯 Starting auto-selection process...')
     try {
       const response = await fetch("/api/admin/news-briefs/select-articles", {
         method: "POST",
@@ -236,15 +308,26 @@ export default function NewsBriefsAdmin() {
           action: "auto_select",
           language: selectedLanguage,
           category: selectedCategory || undefined,
-          count: 5
+          count: 15
         })
       })
 
       if (!response.ok) throw new Error("Failed to auto-select articles")
 
       const result = await response.json()
-      toast.success(`Auto-selected ${result.selectedCount} articles for TTS briefs`)
-      loadArticleRecommendations()
+      
+      // Show detailed success message
+      const message = result.selectedCount 
+        ? `Auto-selected ${result.selectedCount} stories (${result.selectedCount * 3} articles across all languages)`
+        : 'Selection completed'
+      
+      toast.success(message)
+      
+      // Only reload recommendations if we actually selected something
+      if (result.selectedCount > 0) {
+        await loadSelectedArticles() // Reload selected articles immediately
+        loadArticleRecommendations()
+      }
     } catch (error) {
       console.error("Error auto-selecting articles:", error)
       toast.error("Failed to auto-select articles")
@@ -277,6 +360,7 @@ export default function NewsBriefsAdmin() {
       const result = await response.json()
       toast.success(`Selected ${result.selectedCount} articles for TTS briefs`)
       setSelectedArticleIds([])
+      await loadSelectedArticles()
       loadArticleRecommendations()
     } catch (error) {
       console.error("Error selecting articles:", error)
@@ -286,7 +370,7 @@ export default function NewsBriefsAdmin() {
     }
   }
 
-  // Clear article selection
+  // Clear ALL article selections across all languages
   const clearArticleSelection = async () => {
     setArticleLoading(true)
     try {
@@ -294,19 +378,20 @@ export default function NewsBriefsAdmin() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "clear_selection",
-          language: selectedLanguage
+          action: "clear_selection"
+          // No language parameter - clear ALL languages
         })
       })
 
-      if (!response.ok) throw new Error("Failed to clear selection")
+      if (!response.ok) throw new Error("Failed to clear all selections")
 
       const result = await response.json()
       toast.success(result.message)
+      setSelectedArticles([]) // Clear the selected articles list
       loadArticleRecommendations()
     } catch (error) {
-      console.error("Error clearing selection:", error)
-      toast.error("Failed to clear selection")
+      console.error("Error clearing all selections:", error)
+      toast.error("Failed to clear all selections")
     } finally {
       setArticleLoading(false)
     }
@@ -357,38 +442,104 @@ export default function NewsBriefsAdmin() {
     }
   }
 
+  const synthesizeSegment = async (briefId: string, segmentId: string) => {
+    setSynthesizingBriefs(prev => new Set([...prev, briefId]))
+    try {
+      const response = await fetch(`/api/news-briefs/${briefId}/synthesize-segment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ segmentId })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.details || 'Failed to synthesize segment')
+      }
+
+      const result = await response.json()
+      toast.success(`Started synthesis for ${segmentId}`)
+      
+      // Refresh briefs to show updated status
+      setTimeout(() => {
+        loadData()
+      }, 1000)
+      
+    } catch (error) {
+      console.error('Error synthesizing segment:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to synthesize segment')
+    } finally {
+      setSynthesizingBriefs(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(briefId)
+        return newSet
+      })
+    }
+  }
+
   const playAudio = async (briefId: string, audioUrl: string) => {
     try {
       // If clicking the same brief that's playing, pause it
       if (playingBriefId === briefId && currentAudio && !currentAudio.paused) {
         currentAudio.pause()
         setPlayingBriefId(null)
+        setCurrentAudio(null)
         return
       }
 
       // Stop any currently playing audio
       if (currentAudio) {
         currentAudio.pause()
+        currentAudio.src = '' // Clear the source to free up resources
         setCurrentAudio(null)
       }
 
+      // Reset playing state first
+      setPlayingBriefId(null)
+
       // Create and play new audio
       const audio = new Audio(audioUrl)
-      setCurrentAudio(audio)
-      setPlayingBriefId(briefId)
-
-      // Simple event handlers
-      audio.onended = () => setPlayingBriefId(null)
-      audio.onerror = () => {
+      
+      // Set up event handlers before setting state
+      audio.onloadstart = () => {
+        console.log(`🎵 Loading audio for brief ${briefId}`)
+      }
+      
+      audio.oncanplay = () => {
+        console.log(`✅ Audio ready for brief ${briefId}`)
+        setPlayingBriefId(briefId)
+      }
+      
+      audio.onended = () => {
+        console.log(`🏁 Audio ended for brief ${briefId}`)
+        setPlayingBriefId(null)
+        setCurrentAudio(null)
+      }
+      
+      audio.onerror = (e) => {
+        console.error(`❌ Audio error for brief ${briefId}:`, e)
         toast.error('Audio playback failed')
         setPlayingBriefId(null)
+        setCurrentAudio(null)
       }
 
+      audio.onpause = () => {
+        console.log(`⏸️ Audio paused for brief ${briefId}`)
+        if (playingBriefId === briefId) {
+          setPlayingBriefId(null)
+        }
+      }
+
+      // Set audio as current and attempt to play
+      setCurrentAudio(audio)
+      
       // Play the audio
       await audio.play()
+      
     } catch (error) {
+      console.error('Failed to play audio:', error)
       toast.error('Failed to play audio')
       setPlayingBriefId(null)
+      setCurrentAudio(null)
     }
   }
 
@@ -396,7 +547,7 @@ export default function NewsBriefsAdmin() {
   const generateBrief = async (briefType?: string, language?: string) => {
     setLoading(true)
     try {
-      const response = await fetch("/api/news-briefs/generate", {
+      const response = await fetch("/api/admin/news-briefs/generate-all", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -422,11 +573,10 @@ export default function NewsBriefsAdmin() {
   const triggerAllLanguages = async (briefType: string) => {
     setLoading(true)
     try {
-      const response = await fetch("/api/cron/generate-news-briefs", {
+      const response = await fetch("/api/admin/news-briefs/generate-all", {
         method: "POST",
         headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_CRON_SECRET || 'test-secret'}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           briefType,
@@ -729,6 +879,36 @@ export default function NewsBriefsAdmin() {
                               )}
                               {playingBriefId === brief.id ? 'Pause' : 'Play'}
                             </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const link = document.createElement('a')
+                                link.href = brief.audio_url!
+                                link.download = `${brief.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${brief.language}.wav`
+                                document.body.appendChild(link)
+                                link.click()
+                                document.body.removeChild(link)
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              WAV
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const link = document.createElement('a')
+                                link.href = `/api/news-briefs/${brief.id}/download-full-mp3`
+                                link.download = `${brief.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${brief.language}.mp3`
+                                document.body.appendChild(link)
+                                link.click()
+                                document.body.removeChild(link)
+                              }}
+                            >
+                              <Download className="h-4 w-4 mr-2 text-blue-600" />
+                              MP3
+                            </Button>
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button variant="outline" size="sm">
@@ -754,6 +934,124 @@ export default function NewsBriefsAdmin() {
                             </AlertDialog>
                           </div>
                         </div>
+                      </div>
+                    )}
+
+                    {/* Dialogue Segments Section */}
+                    {brief.dialogue_segments && brief.dialogue_segments.length > 0 && (
+                      <div className="bg-blue-50 dark:bg-blue-950/30 p-3 rounded-lg space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm">
+                            <div className="font-medium">Dialogue Format</div>
+                            <div className="text-muted-foreground">
+                              {brief.dialogue_segments.length} segments • 
+                              {brief.dialogue_segments.filter(s => s.speaker === 'male').length} male • 
+                              {brief.dialogue_segments.filter(s => s.speaker === 'female').length} female
+                            </div>
+                          </div>
+                          <Badge variant="secondary">
+                            Two-Broadcaster
+                          </Badge>
+                        </div>
+                        
+                        {/* Show first few dialogue segments */}
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {brief.dialogue_segments.slice(0, 4).map((segment, idx) => (
+                            <div key={segment.id} className="text-xs p-2 bg-background/50 rounded">
+                              <div className="flex items-center justify-between mb-1">
+                                <Badge variant={segment.speaker === 'male' ? 'default' : 'secondary'} className="h-5">
+                                  {segment.speaker === 'male' ? '👨 Male' : '👩 Female'}
+                                </Badge>
+                                <span className="text-muted-foreground">
+                                  {segment.wordCount} words • {segment.estimatedDuration}s
+                                </span>
+                              </div>
+                              <div className="text-muted-foreground line-clamp-2">
+                                {segment.content}
+                              </div>
+                            </div>
+                          ))}
+                          {brief.dialogue_segments.length > 4 && (
+                            <div className="text-xs text-center text-muted-foreground">
+                              +{brief.dialogue_segments.length - 4} more segments
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Dialogue Operations Status */}
+                        {brief.dialogue_segments && brief.dialogue_segments.length > 0 && (
+                          <div className="pt-2 border-t">
+                            <div className="text-xs font-medium mb-2">Individual Synthesis</div>
+                            <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+                              {brief.dialogue_segments.map((segment: DialogueSegment) => {
+                                const operation = brief.tts_dialogue_operations?.find((op: DialogueOperation) => op.segmentId === segment.id)
+                                return (
+                                  <div key={segment.id} className="flex items-center justify-between text-xs p-1 bg-background/30 rounded">
+                                    <div className="flex items-center gap-1">
+                                      <Badge variant={segment.speaker === 'male' ? 'default' : 'secondary'} className="h-4 text-xs">
+                                        {segment.speaker === 'male' ? '👨' : '👩'}
+                                      </Badge>
+                                      <span className="text-muted-foreground text-xs">{segment.id}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      {operation?.error ? (
+                                        <Badge variant="destructive" className="h-4 text-xs">Error</Badge>
+                                      ) : operation?.audioUrl ? (
+                                        <div className="flex items-center gap-1">
+                                          <Badge variant="default" className="h-4 text-xs">Ready</Badge>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-5 w-5 p-0"
+                                            onClick={() => {
+                                              const link = document.createElement('a')
+                                              link.href = operation.audioUrl!
+                                              link.download = `${brief.title.replace(/[^a-z0-9]/gi, '_')}_${segment.id}.wav`
+                                              document.body.appendChild(link)
+                                              link.click()
+                                              document.body.removeChild(link)
+                                            }}
+                                            title="Download WAV"
+                                          >
+                                            <Download className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-5 w-5 p-0"
+                                            onClick={() => {
+                                              const link = document.createElement('a')
+                                              link.href = `/api/news-briefs/${brief.id}/download-mp3?segmentId=${segment.id}`
+                                              link.download = `${brief.title.replace(/[^a-z0-9]/gi, '_')}_${segment.id}.mp3`
+                                              document.body.appendChild(link)
+                                              link.click()
+                                              document.body.removeChild(link)
+                                            }}
+                                            title="Download MP3"
+                                          >
+                                            <Download className="h-3 w-3 text-blue-600" />
+                                          </Button>
+                                        </div>
+                                      ) : operation?.operationName ? (
+                                        <Badge variant="secondary" className="h-4 text-xs">Processing</Badge>
+                                      ) : (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-5 w-5 p-0"
+                                          onClick={() => synthesizeSegment(brief.id, segment.id)}
+                                          disabled={synthesizingBriefs.has(brief.id)}
+                                        >
+                                          <Mic className="h-3 w-3" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -793,8 +1091,8 @@ export default function NewsBriefsAdmin() {
                         Edit
                       </Button>
 
-                      {/* TTS Synthesis Button */}
-                      {!brief.audio_url && (
+                      {/* TTS Synthesis Button - only for non-dialogue briefs */}
+                      {!brief.audio_url && (!brief.dialogue_segments || brief.dialogue_segments.length === 0) && (
                         <Button 
                           variant="outline" 
                           size="sm"
@@ -808,6 +1106,13 @@ export default function NewsBriefsAdmin() {
                           )}
                           {synthesizingBriefs.has(brief.id) ? 'Synthesizing...' : 'Generate Audio'}
                         </Button>
+                      )}
+
+                      {/* Info for dialogue briefs */}
+                      {brief.dialogue_segments && brief.dialogue_segments.length > 0 && !brief.audio_url && (
+                        <div className="text-xs text-muted-foreground italic">
+                          Use individual segment synthesis 🎙️ below
+                        </div>
                       )}
 
                       <Button 
@@ -834,7 +1139,7 @@ export default function NewsBriefsAdmin() {
             <div>
               <h3 className="text-lg font-medium">Article Selection for TTS News Briefs</h3>
               <p className="text-sm text-muted-foreground">
-                Select AI-enhanced articles to be used in news brief generation
+                Select stories for trilingual news briefs. Selection ensures consistent coverage across EN/ZH-CN/ZH-TW.
               </p>
             </div>
             <div className="flex gap-2">
@@ -892,7 +1197,7 @@ export default function NewsBriefsAdmin() {
                 className="justify-start"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Auto-Select (Top 5)
+                AI Auto-Select (Top 15)
               </Button>
             </div>
 
@@ -902,21 +1207,21 @@ export default function NewsBriefsAdmin() {
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" size="sm" className="justify-start">
                     <X className="h-4 w-4 mr-2" />
-                    Clear Selection
+                    Clear All Selections
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Clear Article Selection</AlertDialogTitle>
+                    <AlertDialogTitle>Clear All Article Selections</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This will clear all TTS selection flags for {selectedLanguage} articles. 
-                      Articles can be selected again for future news briefs.
+                      This will clear ALL TTS selection flags across all languages (EN, ZH-CN, ZH-TW). 
+                      All previously selected articles will be available for selection again.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={clearArticleSelection}>
-                      Clear Selection
+                      Clear All Selections
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
@@ -933,7 +1238,7 @@ export default function NewsBriefsAdmin() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{articleSelectionStats.totalAvailable}</div>
-                  <p className="text-xs text-muted-foreground">Not yet used for TTS</p>
+                  <p className="text-xs text-muted-foreground">English stories available</p>
                 </CardContent>
               </Card>
 
@@ -943,7 +1248,7 @@ export default function NewsBriefsAdmin() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{articleSelectionStats.currentlySelected}</div>
-                  <p className="text-xs text-muted-foreground">Marked for TTS briefs</p>
+                  <p className="text-xs text-muted-foreground">Stories selected (trilingual)</p>
                 </CardContent>
               </Card>
 
@@ -978,72 +1283,115 @@ export default function NewsBriefsAdmin() {
             </div>
           )}
 
-          {/* Article Recommendations */}
+          {/* Selected Articles List */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="text-md font-medium">Recommended Articles</h4>
-              <Badge variant="outline">
-                Showing top {articleRecommendations.length} by TTS suitability score
-              </Badge>
-            </div>
-
-            {articleLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                Loading article recommendations...
-              </div>
-            ) : articleRecommendations.length === 0 ? (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No Articles Available</h3>
-                  <p className="text-muted-foreground">
-                    No suitable AI-enhanced articles found for TTS news brief selection.
-                    Try adjusting the language or category filters.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4">
-                {articleRecommendations.map((article) => (
-                  <Card key={article.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-4">
-                        <Checkbox
-                          checked={selectedArticleIds.includes(article.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedArticleIds([...selectedArticleIds, article.id])
-                            } else {
-                              setSelectedArticleIds(selectedArticleIds.filter(id => id !== article.id))
-                            }
-                          }}
-                        />
-                        
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-start justify-between">
-                            <h5 className="font-medium line-clamp-2">{article.title}</h5>
-                            <div className="flex gap-2 ml-4">
-                              <Badge variant={article.score >= 80 ? "default" : article.score >= 60 ? "secondary" : "outline"}>
-                                {article.score}/100
-                              </Badge>
-                              <Badge variant="outline">{article.category}</Badge>
-                              <Badge variant="outline">{article.language_variant}</Badge>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Selected Articles for TTS ({selectedArticles.length})
+                </CardTitle>
+                <CardDescription>
+                  Articles currently selected for TTS news brief generation. Showing {selectedLanguage} articles.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {selectedArticles.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <div className="h-12 w-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                      <FileText className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-2">No Articles Selected</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Use the "AI Auto-Select (Top 15)" button above to intelligently select stories for TTS generation.
+                    </p>
+                    <div className="text-sm text-muted-foreground">
+                      <div className="grid grid-cols-2 gap-4 text-left max-w-md mx-auto">
+                        <div>
+                          <strong>Selection:</strong> 15 English stories
+                        </div>
+                        <div>
+                          <strong>Result:</strong> 45 total articles (EN/ZH-CN/ZH-TW)
+                        </div>
+                        <div>
+                          <strong>Coverage:</strong> All news categories
+                        </div>
+                        <div>
+                          <strong>Consistency:</strong> Same stories across languages
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="grid gap-3">
+                      {selectedArticles.map((article) => (
+                        <div 
+                          key={article.id} 
+                          className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {article.category}
+                                </Badge>
+                                <Badge variant="outline" className="text-xs">
+                                  {article.language_variant}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {article.source}
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-sm leading-tight mb-2 line-clamp-2">
+                                {article.title}
+                              </h4>
+                              <div className="text-xs text-muted-foreground">
+                                Selected: {new Date(article.tts_selection_metadata?.selected_at || article.created_at).toLocaleString()}
+                                {article.tts_selection_metadata?.selection_reason && (
+                                  <span className="ml-2">
+                                    • {article.tts_selection_metadata.selection_reason}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(article.created_at).toLocaleDateString()}
                             </div>
                           </div>
-                          
-                          <div className="text-sm text-muted-foreground">
-                            <div>Source: {article.source} • {new Date(article.created_at).toLocaleDateString()}</div>
-                            <div>Content: {article.content_length} chars • Summary: {article.has_summary ? 'Yes' : 'No'}</div>
-                            <div className="mt-1 italic">{article.reason}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {selectedArticles.length > 0 && (
+                      <div className="mt-6 p-4 bg-muted/30 rounded-lg">
+                        <div className="text-sm text-muted-foreground">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <strong>Total Selected:</strong> {selectedArticles.length} articles
+                            </div>
+                            <div>
+                              <strong>Language:</strong> {selectedLanguage}
+                            </div>
+                            <div>
+                              <strong>Categories:</strong> {
+                                [...new Set(selectedArticles.map(a => a.category))].join(', ')
+                              }
+                            </div>
+                            <div>
+                              <strong>Sources:</strong> {
+                                [...new Set(selectedArticles.map(a => a.source))].slice(0, 3).join(', ')
+                              }
+                              {[...new Set(selectedArticles.map(a => a.source))].length > 3 && ' ...'}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 
@@ -1131,7 +1479,7 @@ export default function NewsBriefsAdmin() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="text-sm text-muted-foreground mb-4">
-                  Generate high-quality TTS audio using Google's Studio voices for professional broadcast.
+                  Generate high-quality TTS audio for 8-12 minute comprehensive news briefs using Google's Studio voices.
                 </div>
                 <div className="grid gap-2">
                   <div className="text-xs text-muted-foreground">
@@ -1170,13 +1518,13 @@ export default function NewsBriefsAdmin() {
                 <div>
                   <Label>Target Duration</Label>
                   <p className="text-sm text-muted-foreground">
-                    {generationStats?.targetDurationMinutes} minutes
+                    8-12 minutes (comprehensive coverage)
                   </p>
                 </div>
                 <div>
                   <Label>Target Word Count</Label>
                   <p className="text-sm text-muted-foreground">
-                    {generationStats?.targetWordCount} words
+                    ~1500 words (expanded format)
                   </p>
                 </div>
                 <div>

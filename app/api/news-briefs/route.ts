@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
         id,
         title,
         content,
+        dialogue_segments,
+        tts_dialogue_operations,
         language,
         category,
         estimated_duration_seconds,

@@ -109,9 +109,11 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
     const page = Number.parseInt(searchParams.get("page") || "0")
-    const limit = 10
+    const limit = Number.parseInt(searchParams.get("limit") || "10")
     const category = searchParams.get("category") || null
     const enriched = searchParams.get("enriched") // "true", "false", or null
+    const selectedForTtsBrief = searchParams.get("selected_for_tts_brief") // "true", "false", or null
+    const language = searchParams.get("language") || null
 
     console.log("Articles API called, checking database setup...")
     if (category) {
@@ -119,6 +121,12 @@ export async function GET(request: NextRequest) {
     }
     if (enriched !== null) {
       console.log(`Enrichment filter: ${enriched}`)
+    }
+    if (selectedForTtsBrief !== null) {
+      console.log(`TTS selection filter: ${selectedForTtsBrief}`)
+    }
+    if (language) {
+      console.log(`Language filter: ${language}`)
     }
 
     // Check if database is set up with more detailed logging
@@ -163,6 +171,9 @@ export async function GET(request: NextRequest) {
     if (category) filters.category = category
     if (enriched === "true") filters.isAiEnhanced = true
     if (enriched === "false") filters.isAiEnhanced = false
+    if (selectedForTtsBrief === "true") filters.selectedForTtsBrief = true
+    if (selectedForTtsBrief === "false") filters.selectedForTtsBrief = false
+    if (language) filters.language = language
     
     const articles = await getArticles(page, limit, filters)
     console.log(`Fetched ${articles.length} articles from database`)
@@ -193,7 +204,12 @@ export async function GET(request: NextRequest) {
       readTime: Math.ceil((article.content?.length || 0) / 200) || 3,
       isAiEnhanced: article.is_ai_enhanced || false,
       originalArticleId: article.original_article_id,
-      enhancementMetadata: article.enhancement_metadata
+      enhancementMetadata: article.enhancement_metadata,
+      // TTS-related fields
+      language_variant: article.language_variant,
+      selected_for_tts_brief: article.selected_for_tts_brief,
+      tts_selection_metadata: article.tts_selection_metadata,
+      created_at: article.created_at
     }))
 
     console.log("Returning real articles from database")

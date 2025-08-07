@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import OpenAI from 'openai'
+import { generateBriefPrompt, validateAudioBrief } from '@/lib/news-brief-prompts'
+import { expandArticleContent, validateExpandedContent } from '@/lib/news-content-expansion'
+import { generateBroadcastScript } from '@/lib/news-broadcast-script'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -29,142 +32,152 @@ interface NewsBrief {
 }
 
 // Target duration in seconds for each news brief
-const TARGET_DURATION_SECONDS = 300 // 5 minutes
-const WORDS_PER_MINUTE = 150 // Average speaking rate
-const TARGET_WORD_COUNT = TARGET_DURATION_SECONDS / 60 * WORDS_PER_MINUTE // ~750 words
+const TARGET_DURATION_SECONDS = 600 // 10 minutes (8-12 minute range)
+const WORDS_PER_MINUTE = 170 // Average speaking rate for clear audio
+const TARGET_WORD_COUNT = 2200 // For 10-12 minute brief
 
-async function getRecentAIEnhancedArticles(language: string, hours: number = 24): Promise<any[]> {
+async function getSelectedTTSArticles(language: string, hours: number = 24): Promise<any[]> {
   const since = new Date()
   since.setHours(since.getHours() - hours)
+
+  console.log(`🔍 Fetching articles already selected for TTS in ${language}`)
 
   const { data, error } = await supabase
     .from('articles')
     .select('*')
     .eq('is_ai_enhanced', true)
     .eq('language_variant', language)
-    .eq('selected_for_tts_brief', false) // Only get articles not yet used for TTS
+    .eq('selected_for_tts_brief', true) // Use articles already selected for TTS
     .gte('created_at', since.toISOString())
     .order('created_at', { ascending: false })
-    .limit(100) // Get more articles to have better selection
 
   if (error) {
-    console.error('Error fetching articles:', error)
+    console.error('Error fetching selected TTS articles:', error)
     throw error
   }
 
+  console.log(`✅ Found ${data?.length || 0} pre-selected articles for ${language}`)
   return data || []
 }
 
-async function selectArticlesForBrief(articles: any[], briefType: 'morning' | 'afternoon' | 'evening'): Promise<any[]> {
-  // Group articles by category
-  const categorized = articles.reduce((acc, article) => {
-    const category = article.category || 'General'
-    if (!acc[category]) acc[category] = []
-    acc[category].push(article)
-    return acc
-  }, {} as Record<string, any[]>)
-
-  // Define category priorities for different times of day using new AI categories
+async function prepareArticlesForBrief(articles: any[], briefType: 'morning' | 'afternoon' | 'evening'): Promise<any[]> {
+  console.log(`📝 Preparing ${articles.length} pre-selected articles for ${briefType} brief`)
+  
+  // Articles are already selected by AI with category coverage
+  // Just sort them by category priority for better brief structure
   const categoryPriorities = {
-    morning: ['Top Stories', 'Finance', 'Tech & Science', 'Sports', 'Arts & Culture', 'Entertainment'],
-    afternoon: ['Finance', 'Tech & Science', 'Top Stories', 'Sports', 'Arts & Culture', 'Entertainment'],
-    evening: ['Top Stories', 'Arts & Culture', 'Entertainment', 'Sports', 'Finance', 'Tech & Science']
+    morning: ['Top Stories', 'Finance', 'Tech & Science', 'International', 'Entertainment', 'Arts & Culture', 'News'],
+    afternoon: ['Finance', 'Tech & Science', 'Top Stories', 'International', 'Entertainment', 'Arts & Culture', 'News'],
+    evening: ['Top Stories', 'Arts & Culture', 'Entertainment', 'International', 'Finance', 'Tech & Science', 'News']
   }
 
   const priorities = categoryPriorities[briefType]
-  const selectedArticles: any[] = []
-  let currentWordCount = 0
-
-  // Select articles based on priority and word count
-  for (const category of priorities) {
-    const categoryArticles = categorized[category] || []
+  
+  // Sort articles by category priority, then by creation date
+  const sortedArticles = articles.sort((a, b) => {
+    const aPriority = priorities.indexOf(a.category) !== -1 ? priorities.indexOf(a.category) : 999
+    const bPriority = priorities.indexOf(b.category) !== -1 ? priorities.indexOf(b.category) : 999
     
-    for (const article of categoryArticles) {
-      // Estimate word count from content length
-      const estimatedWords = (article.content?.length || 0) / 5 // Rough estimate: 5 chars per word
-      
-      if (currentWordCount + estimatedWords <= TARGET_WORD_COUNT * 1.1) { // Allow 10% overflow
-        selectedArticles.push(article)
-        currentWordCount += estimatedWords
-        
-        // Stop if we're close to target
-        if (currentWordCount >= TARGET_WORD_COUNT * 0.9) {
-          break
-        }
-      }
+    if (aPriority !== bPriority) {
+      return aPriority - bPriority
     }
     
-    if (currentWordCount >= TARGET_WORD_COUNT * 0.9) {
-      break
-    }
-  }
+    // Same category, sort by date (newer first)
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  })
 
-  return selectedArticles
+  console.log(`✅ Articles organized by ${briefType} priority:`, 
+    sortedArticles.reduce((acc, article) => {
+      const cat = article.category || 'Unknown'
+      acc[cat] = (acc[cat] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+  )
+
+  return sortedArticles
 }
 
-async function generateNewsBriefContent(articles: any[], briefType: string, language: string): Promise<{ content: string; cost: number; wordCount: number }> {
+async function generateNewsBriefContentTwoStep(articles: any[], briefType: 'morning' | 'afternoon' | 'evening', language: string): Promise<{ content: string; cost: number; wordCount: number; validation: any }> {
+  console.log(`🚀 Starting two-step news brief generation for ${language}`)
+  
   const articleSummaries = articles.map(article => ({
     title: article.title,
     summary: article.summary || article.ai_summary,
     category: article.category,
-    keyPoints: article.enhancement_metadata?.keyPoints || []
+    localRelevance: article.enhancement_metadata?.localRelevance || 'General'
   }))
 
-  const systemPrompt = `You are a professional news anchor creating a ${TARGET_DURATION_SECONDS / 60}-minute news brief for TTS (text-to-speech) broadcast. 
-Your task is to create a natural, flowing news brief that sounds good when read aloud.
-
-Guidelines:
-- Write in a conversational, broadcast style suitable for ${language === 'en' ? 'English' : language === 'zh-TW' ? 'spoken Cantonese (口語粵語)' : 'Simplified Chinese'} listeners
-${language === 'zh-TW' ? `- IMPORTANT: Use spoken Cantonese (口語粵語), NOT formal written Chinese (書面語)
-- Use colloquial Cantonese expressions and sentence structures
-- Character examples: "係" not "是", "喺" not "在", "冇" not "沒有", "佢" not "他/她", "啲" not "些", "嘅" not "的"
-- Phrase examples: "點解" not "為什麼", "幾時" not "什麼時候", "邊度" not "哪裡", "乜嘢" not "什麼"
-- Use Cantonese final particles: 啦, 喎, 㗎, 囉, 呀, 嘅, 咩, 架
-- Keep the tone conversational like Hong Kong radio/TV news anchors (e.g., TVB, Commercial Radio)
-- Use natural Cantonese speech patterns and vocabulary` : ''}
-- Include smooth transitions between stories
-- Target approximately ${TARGET_WORD_COUNT} words
-- Start with a brief introduction mentioning the time of day (${briefType})
-- End with a brief closing
-- Make it engaging and informative
-- Use appropriate language for TTS systems (avoid complex punctuation, use clear sentence structures)`
-
-  const userPrompt = `Create a ${briefType} news brief from these articles:
-
-${JSON.stringify(articleSummaries, null, 2)}
-
-Remember to:
-1. Start with a greeting appropriate for ${briefType} time${language === 'zh-TW' ? ' (e.g., "早晨，各位聽眾" for morning)' : ''}
-2. Introduce the main stories briefly
-3. Cover each story with key points
-4. Use smooth transitions${language === 'zh-TW' ? ' (e.g., "講完呢單新聞，我哋睇下..." or "另外，今日仲有...")' : ''}
-5. End with a brief closing${language === 'zh-TW' ? ' (e.g., "多謝收聽，我哋下次見")' : ''}
-${language === 'zh-TW' ? '\nCRITICAL: Write the ENTIRE script in spoken Cantonese (口語粵語), not formal written Chinese!' : ''}
-
-The output should be ready for TTS conversion.`
-
   try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt }
-      ],
-      temperature: 0.7,
-      max_tokens: 2000
-    })
-
-    const content = completion.choices[0].message.content || ''
-    const wordCount = content.split(/\s+/).length
+    // STEP 1: Expand article content
+    console.log(`📝 Step 1: Expanding content for ${articleSummaries.length} articles`)
+    const expansionResult = await expandArticleContent(articleSummaries, language)
     
-    // Estimate cost (gpt-4o-mini pricing: ~$0.15/1M input tokens, ~$0.60/1M output tokens)
-    const inputTokens = systemPrompt.length + userPrompt.length / 4 // rough estimate
-    const outputTokens = content.length / 4 // rough estimate
-    const cost = (inputTokens * 0.15 / 1000000) + (outputTokens * 0.60 / 1000000)
+    if (!expansionResult.success) {
+      throw new Error(`Content expansion failed: ${expansionResult.error}`)
+    }
 
-    return { content, cost, wordCount }
+    // Validate expanded content
+    const expansionValidation = validateExpandedContent(expansionResult.expandedArticles)
+    if (!expansionValidation.isValid) {
+      console.warn('⚠️ Content expansion issues:', expansionValidation.issues)
+    }
+
+    console.log(`✅ Step 1 Complete: ${expansionResult.expandedArticles.length} articles expanded`)
+    console.log(`📊 Expansion metrics:`, expansionValidation.metrics)
+
+    // STEP 2: Generate broadcast script
+    console.log(`📻 Step 2: Generating broadcast script`)
+    const scriptResult = await generateBroadcastScript(
+      expansionResult.expandedArticles,
+      briefType,
+      language
+    )
+    
+    if (!scriptResult.success) {
+      throw new Error(`Broadcast script generation failed: ${scriptResult.error}`)
+    }
+
+    console.log(`✅ Step 2 Complete: ${scriptResult.wordCount} words`)
+    console.log(`📊 Script validation:`, scriptResult.validation)
+
+    // Combine costs
+    const totalCost = expansionResult.cost + scriptResult.cost
+
+    // Use the broadcast script validation for compatibility
+    const validation = {
+      isValid: scriptResult.validation.meetsTargetLength && scriptResult.validation.hasTimeReferences && scriptResult.validation.correctSegmentCount,
+      issues: Object.entries(scriptResult.validation)
+        .filter(([key, value]) => !value && key !== 'meetsTargetLength')
+        .map(([key]) => `Missing ${key.replace(/([A-Z])/g, ' $1').toLowerCase()}`),
+      metrics: {
+        wordCount: scriptResult.totalWordCount,
+        estimatedDuration: scriptResult.totalEstimatedDuration / 60, // in minutes
+        segmentCount: scriptResult.dialogueSegments.length,
+        hasTimeReferences: scriptResult.validation.hasTimeReferences,
+        hasProgressMarkers: scriptResult.validation.hasProgressMarkers,
+        hasQuestions: scriptResult.validation.hasQuestions,
+        hasTransitions: scriptResult.validation.hasTransitions,
+        correctSegmentCount: scriptResult.validation.correctSegmentCount
+      }
+    }
+
+    console.log(`🎯 Two-step generation complete:`)
+    console.log(`   Step 1 cost: $${expansionResult.cost.toFixed(6)}`)
+    console.log(`   Step 2 cost: $${scriptResult.cost.toFixed(6)}`)
+    console.log(`   Total cost: $${totalCost.toFixed(6)}`)
+    console.log(`   Final length: ${scriptResult.totalWordCount} words (${Math.round(scriptResult.totalEstimatedDuration/60)} minutes)`)
+    console.log(`   Dialogue segments: ${scriptResult.dialogueSegments.length}`)
+
+    return {
+      content: scriptResult.content,
+      dialogueSegments: scriptResult.dialogueSegments,
+      cost: totalCost,
+      wordCount: scriptResult.totalWordCount,
+      validation
+    }
+
   } catch (error) {
-    console.error('Error generating news brief:', error)
+    console.error('❌ Two-step news brief generation failed:', error)
     throw error
   }
 }
@@ -182,24 +195,34 @@ export async function POST(request: NextRequest) {
 
     console.log(`🎙️ Generating ${briefType} news brief in ${language}`)
 
-    // 1. Fetch recent AI-enhanced articles that haven't been used in TTS briefs yet
-    const articles = await getRecentAIEnhancedArticles(language)
-    console.log(`📰 Found ${articles.length} AI-enhanced articles`)
+    // 1. Fetch articles already selected for TTS (using trilingual consistency approach)
+    const articles = await getSelectedTTSArticles(language)
+    console.log(`📰 Found ${articles.length} pre-selected articles for ${language}`)
 
     if (articles.length < 5) {
       return NextResponse.json({
-        error: 'Not enough articles for news brief generation',
-        availableArticles: articles.length
+        error: 'Not enough pre-selected articles for news brief generation',
+        availableArticles: articles.length,
+        minimumRequired: 5,
+        suggestion: 'Please use the Articles tab to select articles for TTS briefs first'
       }, { status: 400 })
     }
 
-    // 2. Select articles for the brief
-    const selectedArticles = await selectArticlesForBrief(articles, briefType)
-    console.log(`✅ Selected ${selectedArticles.length} articles for brief`)
+    // 2. Prepare articles for the brief (sort by priority, no additional selection needed)
+    const selectedArticles = await prepareArticlesForBrief(articles, briefType)
+    console.log(`✅ Using ${selectedArticles.length} pre-selected articles for brief`)
 
-    // 3. Generate the news brief content with cost tracking
-    const generationResult = await generateNewsBriefContent(selectedArticles, briefType, language)
+    // 3. Generate the news brief content using two-step process
+    const generationResult = await generateNewsBriefContentTwoStep(selectedArticles, briefType, language)
     const estimatedDuration = Math.round(generationResult.wordCount / WORDS_PER_MINUTE * 60)
+    
+    // Log validation results
+    if (generationResult.validation) {
+      console.log(`📊 Audio quality metrics:`, generationResult.validation.metrics)
+      if (!generationResult.validation.isValid) {
+        console.warn(`⚠️ Quality issues:`, generationResult.validation.issues)
+      }
+    }
 
     // 4. Save the news brief to database
     const { data: savedBrief, error: saveError } = await supabase
@@ -207,6 +230,7 @@ export async function POST(request: NextRequest) {
       .insert([{
         title: `${briefType.charAt(0).toUpperCase() + briefType.slice(1)} News Brief - ${new Date().toLocaleDateString()}`,
         content: generationResult.content,
+        dialogue_segments: generationResult.dialogueSegments || null,
         language: language,
         category: briefType,
         estimated_duration_seconds: estimatedDuration,
@@ -239,17 +263,16 @@ export async function POST(request: NextRequest) {
       // Don't fail the whole operation, but log the issue
     }
 
-    // 6. Mark selected articles as used for TTS brief
+    // 6. Update article metadata to link them to this specific brief
     const articleUpdatePromises = selectedArticles.map(article => 
       supabase
         .from('articles')
         .update({
-          selected_for_tts_brief: true,
           tts_selection_metadata: {
-            selected_at: new Date().toISOString(),
+            ...article.tts_selection_metadata,
             brief_id: savedBrief.id,
             brief_type: briefType,
-            selection_reason: 'Selected for TTS news brief generation'
+            used_in_brief_at: new Date().toISOString()
           }
         })
         .eq('id', article.id)
@@ -259,20 +282,20 @@ export async function POST(request: NextRequest) {
     const failedUpdates = updateResults.filter(r => r.status === 'rejected')
     
     if (failedUpdates.length > 0) {
-      console.warn(`Failed to update ${failedUpdates.length} articles with TTS selection status`)
+      console.warn(`Failed to update ${failedUpdates.length} articles with brief metadata`)
     }
 
     return NextResponse.json({
       success: true,
       brief: savedBrief,
       stats: {
-        articlesAnalyzed: articles.length,
-        articlesSelected: selectedArticles.length,
+        preSelectedArticles: articles.length,
+        articlesUsedInBrief: selectedArticles.length,
         wordCount: generationResult.wordCount,
         estimatedDurationSeconds: estimatedDuration,
         estimatedDurationMinutes: (estimatedDuration / 60).toFixed(1),
         generationCost: generationResult.cost.toFixed(6),
-        articlesMarkedForTTS: selectedArticles.length - failedUpdates.length
+        articlesLinkedToBrief: selectedArticles.length - failedUpdates.length
       }
     })
 
@@ -292,7 +315,7 @@ export async function GET(request: NextRequest) {
     const languages = ['en', 'zh-TW', 'zh-CN']
     const stats = await Promise.all(
       languages.map(async (lang) => {
-        const articles = await getRecentAIEnhancedArticles(lang, 24)
+        const articles = await getSelectedTTSArticles(lang, 24)
         return {
           language: lang,
           articleCount: articles.length,

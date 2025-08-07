@@ -137,7 +137,7 @@ export async function getArticleStats() {
 }
 
 // Balanced query function to ensure proportional representation from all sources
-export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean }) {
+export async function getBalancedArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean, selectedForTtsBrief?: boolean }) {
   try {
     // If specific source or category filter is applied, use regular query
     if (filters?.source || filters?.category) {
@@ -201,7 +201,7 @@ export async function getBalancedArticles(page = 0, limit = 10, filters?: { sour
 }
 
 // Original query function (renamed for clarity)
-export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean }) {
+export async function getArticlesRegular(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean, selectedForTtsBrief?: boolean }) {
   try {
     let query = supabase
       .from("articles")
@@ -221,10 +221,18 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
       query = query.eq('is_ai_enhanced', filters.isAiEnhanced)
     }
     
-    // Apply language filter if specified - use only metadata (language column doesn't exist)
+    // Apply TTS selection filter if specified
+    if (filters?.selectedForTtsBrief !== undefined) {
+      query = query.eq('selected_for_tts_brief', filters.selectedForTtsBrief)
+    }
+    
+    // Apply language filter if specified
     if (filters?.language) {
-      if (filters.language !== "en") {
-        // For non-English languages, check metadata language
+      if (filters.language === "en" || filters.language === "zh-TW" || filters.language === "zh-CN") {
+        // Use language_variant field for trilingual articles
+        query = query.eq('language_variant', filters.language)
+      } else if (filters.language !== "en") {
+        // For other languages, check enhancement metadata language
         query = query.eq('enhancement_metadata->>language', filters.language)
       } else {
         // For English, include articles where metadata shows 'en' OR metadata language is null/missing
@@ -258,7 +266,7 @@ export async function getArticlesRegular(page = 0, limit = 10, filters?: { sourc
 }
 
 // Main export - use regular query for better pagination reliability
-export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean }) {
+export async function getArticles(page = 0, limit = 10, filters?: { source?: string, isAiEnhanced?: boolean, language?: string, category?: string, hasEnrichment?: boolean, selectedForTtsBrief?: boolean }) {
   return getArticlesRegular(page, limit, filters)
 }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import OpenAI from 'openai'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -16,7 +17,7 @@ interface ArticleSelectionResult {
   score: number
 }
 
-// Score articles based on various criteria for TTS news briefs
+// Score articles based on simplified criteria for TTS news briefs
 async function scoreArticleForTTS(article: any): Promise<number> {
   let score = 50 // Base score
 
@@ -27,26 +28,17 @@ async function scoreArticleForTTS(article: any): Promise<number> {
   else if (hoursAgo < 12) score += 15
   else if (hoursAgo < 24) score += 10
 
-  // Category-based scoring
+  // Updated category-based scoring using actual database categories
   const categoryScores: Record<string, number> = {
-    'News': 25,
-    'Local': 20,
-    'Politics': 15,
+    'Top Stories': 25,
+    'Finance': 20,
+    'Tech & Science': 18,
     'International': 15,
-    'General': 10
+    'Entertainment': 12,
+    'Arts & Culture': 10,
+    'News': 15
   }
   score += categoryScores[article.category] || 5
-
-  // Quality score from existing system
-  if (article.quality_score) {
-    score += Math.min(article.quality_score / 10, 10) // Max 10 points from quality
-  }
-
-  // Content length (good TTS articles have substantial content)
-  const contentLength = (article.content?.length || 0) + (article.ai_summary?.length || 0)
-  if (contentLength > 2000) score += 15
-  else if (contentLength > 1000) score += 10
-  else if (contentLength > 500) score += 5
 
   // AI enhancement metadata
   if (article.enhancement_metadata?.keyPoints?.length > 0) {
@@ -66,15 +58,60 @@ async function scoreArticleForTTS(article: any): Promise<number> {
   return Math.min(score, 100) // Cap at 100
 }
 
-async function selectArticlesForTTS(options: {
+// Find trilingual variants for selected English articles
+async function findTrilingualVariants(selectedEnglishArticles: ArticleSelectionResult[]): Promise<ArticleSelectionResult[]> {
+  const allVariants: ArticleSelectionResult[] = []
+  
+  for (const englishItem of selectedEnglishArticles) {
+    const englishArticle = englishItem.article
+    
+    // Add the English article first
+    allVariants.push(englishItem)
+    
+    // Find Chinese variants using trilingual_batch_id
+    if (englishArticle.trilingual_batch_id) {
+      const { data: variants, error } = await supabase
+        .from('articles')
+        .select('*')
+        .eq('trilingual_batch_id', englishArticle.trilingual_batch_id)
+        .in('language_variant', ['zh-CN', 'zh-TW'])
+      
+      if (error) {
+        console.error(`Error finding variants for batch ${englishArticle.trilingual_batch_id}:`, error)
+        continue
+      }
+      
+      // Add Chinese variants
+      variants?.forEach(variant => {
+        allVariants.push({
+          article: variant,
+          score: englishItem.score, // Use same score as English version
+          reason: `Trilingual variant of selected English story (${variant.language_variant})`
+        })
+      })
+      
+      console.log(`🌐 Found ${variants?.length || 0} variants for "${englishArticle.title?.substring(0, 50)}..."`)
+    } else {
+      console.warn(`⚠️ English article "${englishArticle.title?.substring(0, 50)}..." has no trilingual_batch_id`)
+    }
+  }
+  
+  console.log(`📊 Trilingual expansion: ${selectedEnglishArticles.length} English stories → ${allVariants.length} total articles`)
+  return allVariants
+}
+
+
+async function selectArticlesForTTSWithAI(options: {
   count?: number
   language?: string
   category?: string
   hours?: number
 }): Promise<ArticleSelectionResult[]> {
-  const { count = 10, language, category, hours = 24 } = options
+  const { count = 15, language, category, hours = 24 } = options
 
-  // Get candidate articles
+  console.log(`🔍 Trilingual TTS selection: targeting ${count} stories, requested language: ${language || 'all'}`)
+
+  // Get candidate articles - ALWAYS use English for selection to ensure trilingual consistency
   const since = new Date()
   since.setHours(since.getHours() - hours)
 
@@ -82,15 +119,13 @@ async function selectArticlesForTTS(options: {
     .from('articles')
     .select('*')
     .eq('is_ai_enhanced', true)
-    .eq('selected_for_tts_brief', false) // Only articles not yet used for TTS
+    .eq('selected_for_tts_brief', false)
+    .eq('language_variant', 'en') // Always select from English articles
     .gte('created_at', since.toISOString())
     .order('created_at', { ascending: false })
-    .limit(200) // Get more candidates for better selection
+    .limit(500)
 
-  if (language) {
-    query = query.eq('language_variant', language)
-  }
-
+  // Apply category filter if specified
   if (category) {
     query = query.eq('category', category)
   }
@@ -105,22 +140,165 @@ async function selectArticlesForTTS(options: {
     return []
   }
 
-  // Score and rank articles
+  // First, score all articles using our simplified scoring
   const scoredArticles = await Promise.all(
     articles.map(async (article) => {
       const score = await scoreArticleForTTS(article)
       return {
         article,
         score,
-        reason: `Scored ${score}/100 for TTS suitability`
+        reason: `Initial score: ${score}/100`
       }
     })
   )
 
-  // Sort by score and return top articles
-  return scoredArticles
+  // Group articles by category to ensure coverage
+  const articlesByCategory = scoredArticles.reduce((acc, item) => {
+    const cat = item.article.category || 'Uncategorized'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(item)
+    return acc
+  }, {} as Record<string, typeof scoredArticles>)
+
+  // Sort each category by score
+  Object.keys(articlesByCategory).forEach(cat => {
+    articlesByCategory[cat].sort((a, b) => b.score - a.score)
+  })
+
+  // Use OpenAI to make final selection ensuring category coverage
+  const openai = new (await import('openai')).default({ 
+    apiKey: process.env.OPENAI_API_KEY 
+  })
+
+  const categoryStats = Object.keys(articlesByCategory).map(cat => ({
+    category: cat,
+    count: articlesByCategory[cat].length,
+    topScore: articlesByCategory[cat][0]?.score || 0
+  }))
+
+  const candidateArticles = scoredArticles
     .sort((a, b) => b.score - a.score)
-    .slice(0, count)
+    .slice(0, Math.min(50, scoredArticles.length)) // Top 50 for AI consideration
+
+  const selectionPrompt = `You are selecting ${count} news articles for a comprehensive TTS news brief that should cover diverse categories.
+
+Available categories and their article counts:
+${categoryStats.map(c => `- ${c.category}: ${c.count} articles available`).join('\n')}
+
+Candidate articles (with basic scores):
+${candidateArticles.map((item, idx) => 
+  `${idx + 1}. [${item.article.category}] "${item.article.title}" (Score: ${item.score}/100)\n   Summary: ${(item.article.ai_summary || item.article.summary || '').substring(0, 150)}...`
+).join('\n\n')}
+
+Select exactly ${count} articles that:
+1. Ensure every category is represented (minimum 1 article per category if possible)
+2. Prioritize recent, high-scoring articles
+3. Create a balanced, comprehensive news brief
+4. Avoid redundant or very similar stories
+
+Respond with ONLY a JSON array of the article numbers (1-${candidateArticles.length}) you select. 
+Do not include any markdown formatting, explanations, or code blocks.
+Just return a plain JSON array like: [1, 3, 7, 12, 15, 18, 22, 25, 28, 31, 35, 38, 41, 44, 47]`
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        { role: "system", content: "You are a news editor selecting articles for a comprehensive news brief. Respond only with the requested JSON array." },
+        { role: "user", content: selectionPrompt }
+      ],
+      temperature: 0.3,
+      max_tokens: 500
+    })
+
+    const response = completion.choices[0].message.content?.trim() || '[]'
+    
+    // Clean up the response - remove markdown code blocks if present
+    let cleanedResponse = response
+    if (response.startsWith('```json')) {
+      cleanedResponse = response.replace(/```json\s*/, '').replace(/\s*```$/, '')
+    } else if (response.startsWith('```')) {
+      cleanedResponse = response.replace(/```\s*/, '').replace(/\s*```$/, '')
+    }
+    
+    console.log('🤖 Raw AI response:', response)
+    console.log('🧹 Cleaned response:', cleanedResponse)
+    
+    let selectedIndices: number[]
+    try {
+      selectedIndices = JSON.parse(cleanedResponse) as number[]
+      
+      // Validate that it's actually an array of numbers
+      if (!Array.isArray(selectedIndices) || !selectedIndices.every(n => typeof n === 'number')) {
+        throw new Error('Response is not an array of numbers')
+      }
+      
+      console.log('✅ Successfully parsed AI selection:', selectedIndices)
+      
+    } catch (parseError) {
+      console.error('❌ Failed to parse AI response:', parseError)
+      console.error('Raw response was:', response)
+      throw new Error(`AI response parsing failed: ${parseError}`)
+    }
+    
+    const selectedArticles = selectedIndices
+      .map(idx => candidateArticles[idx - 1]) // Convert to 0-based index
+      .filter(Boolean) // Remove any invalid selections
+      .slice(0, count) // Ensure we don't exceed the requested count
+      .map(item => ({
+        ...item,
+        reason: `AI-selected for comprehensive news coverage (Original score: ${item.score}/100)`
+      }))
+
+    console.log(`🤖 AI selected ${selectedArticles.length} English articles across categories:`, 
+      selectedArticles.reduce((acc, item) => {
+        const cat = item.article.category
+        acc[cat] = (acc[cat] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+    )
+
+    // Now find and include trilingual variants
+    const articlesWithVariants = await findTrilingualVariants(selectedArticles)
+    console.log(`🌍 Found trilingual variants: ${articlesWithVariants.length} total articles (${selectedArticles.length} stories × ~3 languages)`)
+
+    return articlesWithVariants
+
+  } catch (error) {
+    console.error('AI selection failed, falling back to score-based selection:', error)
+    
+    // Fallback: ensure category coverage manually
+    const selected: typeof scoredArticles = []
+    const categoriesUsed = new Set<string>()
+    
+    // First pass: one article from each category
+    Object.keys(articlesByCategory).forEach(cat => {
+      if (selected.length < count && articlesByCategory[cat].length > 0) {
+        selected.push(articlesByCategory[cat][0])
+        categoriesUsed.add(cat)
+      }
+    })
+    
+    // Second pass: fill remaining slots with highest scores
+    const remaining = scoredArticles
+      .filter(item => !selected.includes(item))
+      .sort((a, b) => b.score - a.score)
+    
+    while (selected.length < count && remaining.length > 0) {
+      selected.push(remaining.shift()!)
+    }
+    
+    const fallbackSelection = selected.map(item => ({
+      ...item,
+      reason: `Score-based selection with category coverage (Score: ${item.score}/100)`
+    }))
+    
+    // Find trilingual variants for fallback selection too
+    const fallbackWithVariants = await findTrilingualVariants(fallbackSelection)
+    console.log(`🔄 Fallback selection with variants: ${fallbackWithVariants.length} total articles`)
+    
+    return fallbackWithVariants
+  }
 }
 
 async function markArticlesForTTS(articleIds: string[], reason: string): Promise<void> {
@@ -160,32 +338,44 @@ export async function GET(request: NextRequest) {
     const count = parseInt(searchParams.get('count') || '10')
     const hours = parseInt(searchParams.get('hours') || '24')
 
-    console.log(`🔍 Getting TTS article selection recommendations...`)
+    console.log(`📊 Getting TTS selection stats only...`)
     console.log(`   Language: ${language}, Category: ${category || 'all'}`)
-    console.log(`   Count: ${count}, Hours: ${hours}`)
 
-    // Get recommended articles
-    const recommendations = await selectArticlesForTTS({
-      count,
-      language: language || undefined,
-      category: category || undefined,
-      hours
-    })
+    // No recommendations on GET - just return empty array for display
+    const recommendations: any[] = []
 
-    // Get current stats
-    const { data: currentSelected } = await supabase
+    // Get current stats - articles selected for TTS briefs
+    // With trilingual approach, we count by stories (trilingual batches) not individual articles
+    let currentSelectedQuery = supabase
       .from('articles')
-      .select('id, title, category, language_variant, tts_selection_metadata')
+      .select('id, title, category, language_variant, tts_selection_metadata, created_at, trilingual_batch_id')
       .eq('selected_for_tts_brief', true)
-      .gte('tts_selection_metadata->selected_at', new Date(Date.now() - hours * 60 * 60 * 1000).toISOString())
+      .gte('created_at', new Date(Date.now() - hours * 60 * 60 * 1000).toISOString())
 
-    // Get total available articles
+    // Apply language filter if specified (but note this now represents stories, not just that language)
+    if (language) {
+      currentSelectedQuery = currentSelectedQuery.eq('language_variant', language)
+    }
+
+    // Apply category filter if specified  
+    if (category) {
+      currentSelectedQuery = currentSelectedQuery.eq('category', category)
+    }
+
+    const { data: currentSelected } = await currentSelectedQuery
+
+    console.log(`📊 Current selection stats: found ${currentSelected?.length || 0} selected articles for language=${language}, category=${category}`)
+
+    // Get total available articles (English only, since we select from English articles)
     const { data: totalAvailable } = await supabase
       .from('articles')
       .select('id')
       .eq('is_ai_enhanced', true)
       .eq('selected_for_tts_brief', false)
+      .eq('language_variant', 'en') // Count English articles as available stories
       .gte('created_at', new Date(Date.now() - hours * 60 * 60 * 1000).toISOString())
+
+    console.log(`📊 Available English stories for selection: ${totalAvailable?.length || 0}`)
 
     return NextResponse.json({
       success: true,
@@ -234,8 +424,8 @@ export async function POST(request: NextRequest) {
       autoSelect, 
       language, 
       category, 
-      count = 5,
-      reason = 'Selected for TTS news brief generation'
+      count = 15,
+      reason = 'AI-selected for comprehensive TTS news brief generation'
     } = body
 
     console.log(`🎯 TTS Article Selection Action: ${action}`)
@@ -259,7 +449,26 @@ export async function POST(request: NextRequest) {
         })
 
       case 'auto_select':
-        const recommendations = await selectArticlesForTTS({
+        // Check if we already have recent selections to avoid duplicates
+        const { data: existingSelections } = await supabase
+          .from('articles')
+          .select('id')
+          .eq('selected_for_tts_brief', true)
+          .gte('created_at', new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()) // Last 2 hours
+        
+        if (existingSelections && existingSelections.length >= 30) { // 10 stories × 3 languages = 30 articles
+          console.log(`⏭️ Already have ${existingSelections.length} recently selected articles, skipping auto-selection`)
+          return NextResponse.json({
+            success: true,
+            message: `Already have ${Math.floor(existingSelections.length / 3)} stories selected recently`,
+            selectedCount: 0,
+            method: 'auto_selection_skipped'
+          })
+        }
+
+        console.log(`🎯 Proceeding with auto-selection (found ${existingSelections?.length || 0} existing selections)`)
+        
+        const recommendations = await selectArticlesForTTSWithAI({
           count,
           language: language || undefined,
           category: category || undefined,
@@ -294,8 +503,29 @@ export async function POST(request: NextRequest) {
         })
 
       case 'clear_selection':
-        // Clear TTS selection flags for articles
-        const clearLanguage = language || 'en'
+        // Clear TTS selection flags for ALL articles (trilingual approach)
+        console.log('🧹 Clearing ALL TTS selections across all languages...')
+        
+        // First, count how many articles will be cleared
+        const { data: selectedArticles, error: countError } = await supabase
+          .from('articles')
+          .select('id, language_variant')
+          .eq('selected_for_tts_brief', true)
+        
+        if (countError) {
+          console.error('Error counting selected articles:', countError)
+          throw countError
+        }
+        
+        const articleCount = selectedArticles?.length || 0
+        const languageBreakdown = selectedArticles?.reduce((acc, article) => {
+          acc[article.language_variant] = (acc[article.language_variant] || 0) + 1
+          return acc
+        }, {} as Record<string, number>) || {}
+        
+        console.log(`📊 Found ${articleCount} selected articles:`, languageBreakdown)
+        
+        // Clear ALL selected articles regardless of language
         const { error: clearError } = await supabase
           .from('articles')
           .update({
@@ -303,16 +533,20 @@ export async function POST(request: NextRequest) {
             tts_selection_metadata: null
           })
           .eq('selected_for_tts_brief', true)
-          .eq('language_variant', clearLanguage)
 
         if (clearError) {
+          console.error('Error clearing selections:', clearError)
           throw clearError
         }
 
+        console.log(`✅ Successfully cleared ${articleCount} articles across all languages`)
+
         return NextResponse.json({
           success: true,
-          message: `Cleared TTS selection for ${clearLanguage} articles`,
-          method: 'clear_selection'
+          message: `Cleared ${articleCount} TTS selections across all languages (${Object.entries(languageBreakdown).map(([lang, count]) => `${lang}: ${count}`).join(', ')})`,
+          method: 'clear_selection',
+          clearedCount: articleCount,
+          languageBreakdown
         })
 
       default:
