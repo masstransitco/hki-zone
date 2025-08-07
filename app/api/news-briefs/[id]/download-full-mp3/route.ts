@@ -54,12 +54,12 @@ export async function GET(
 
     try {
       // Download WAV file from URL to temp file
-      const response = await fetch(brief.audio_url)
-      if (!response.ok) {
-        throw new Error(`Failed to download audio: ${response.statusText}`)
+      const audioResponse = await fetch(brief.audio_url)
+      if (!audioResponse.ok) {
+        throw new Error(`Failed to download audio: ${audioResponse.statusText}`)
       }
 
-      const arrayBuffer = await response.arrayBuffer()
+      const arrayBuffer = await audioResponse.arrayBuffer()
       const buffer = Buffer.from(arrayBuffer)
       
       await new Promise<void>((resolve, reject) => {
