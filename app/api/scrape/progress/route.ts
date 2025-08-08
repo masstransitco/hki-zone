@@ -31,6 +31,7 @@ let currentProgress: {
     am730: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
     scmp: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
     bloomberg: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
+    thestandard: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
   },
   overall: {
     progress: 0,

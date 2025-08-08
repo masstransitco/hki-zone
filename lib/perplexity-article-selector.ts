@@ -42,7 +42,7 @@ interface TierConfig {
 
 const SOURCE_TIERS: Record<string, TierConfig> = {
   premium: {
-    sources: ['HKFP', 'scmp', 'bloomberg'],
+    sources: ['HKFP', 'scmp', 'bloomberg', 'TheStandard'],
     quota: 15,        // Higher quota for premium sources
     maxAgeHours: 12,  // Longer time window due to lower frequency
     minQuality: 200,  // Higher content threshold
@@ -67,6 +67,7 @@ const SOURCE_TIERS: Record<string, TierConfig> = {
 const SOURCE_QUALITY_WEIGHTS: Record<string, number> = {
   'HKFP': 100,        // Premium investigative journalism
   'scmp': 95,         // International quality
+  'TheStandard': 92,  // Quality English news
   'bloomberg': 90,    // Financial expertise
   'RTHK': 85,         // Public broadcaster reliability
   'SingTao': 70,      // Mainstream reliability
@@ -249,7 +250,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 async function getCandidateArticles(): Promise<CandidateArticle[]> {
   try {
     // Get recent scraped articles that haven't been AI enhanced and haven't been selected before
-    const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg'];  // Note: am730, scmp, and bloomberg are lowercase in database
+    const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg', 'TheStandard'];  // Note: am730, scmp, and bloomberg are lowercase in database
     
     // First, get recently selected article titles to avoid re-selecting similar content
     const { data: recentlySelected } = await supabase
@@ -1094,7 +1095,11 @@ async function assignAICategories(selectedArticles: SelectedArticle[], sessionId
     'Finance',
     'Arts & Culture',
     'Sports',
-    'Entertainment'
+    'Entertainment',
+    'Politics',
+    'Local',
+    'International',
+    'General'
   ];
 
   try {
@@ -1118,6 +1123,10 @@ CATEGORIZATION GUIDELINES:
 - **Arts & Culture**: Museums, art exhibitions, cultural events, books, traditional culture, heritage, festivals
 - **Sports**: All sports coverage, Olympics, local teams, athlete profiles, sports events
 - **Entertainment**: Movies, TV shows, celebrities, music, gaming, lifestyle trends, social media
+- **Politics**: Government policy, political parties, elections, legislative council, political figures, political protests
+- **Local**: Hong Kong-specific news, local community events, district news, local infrastructure, local social issues
+- **International**: Global news, foreign affairs, international relations, overseas developments affecting Hong Kong
+- **General**: Miscellaneous news that doesn't fit other categories, human interest stories, general announcements
 
 ARTICLES TO CATEGORIZE:
 ${articlesForCategorization.map(article => `
@@ -1626,7 +1635,7 @@ async function callPerplexityForSimilarity(prompt: string): Promise<string[]> {
 
 // Debug function to understand why no articles are available
 async function debugArticleAvailability() {
-  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg'];
+  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg', 'TheStandard'];
   const sixHoursAgo = getDateHoursAgo(6);
   
   const { count: totalCount } = await supabase

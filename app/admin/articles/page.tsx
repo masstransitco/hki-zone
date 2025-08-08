@@ -12,8 +12,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Switch } from "@/components/ui/switch"
 import { 
   Search, Filter, RefreshCw, Languages, Loader2, Trash2, CheckSquare, Copy,
-  BarChart3, Target, Zap, Clock, TrendingUp, AlertCircle, Wand2, Brain, Bot, Wifi, WifiOff, Newspaper
+  BarChart3, Target, Zap, Clock, TrendingUp, AlertCircle, Wand2, Brain, Bot, Wifi, WifiOff, Newspaper, PieChart, Activity
 } from "lucide-react"
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts"
 import ArticleReviewGrid from "@/components/admin/article-review-grid"
 import ArticleDetailSheet from "@/components/admin/article-detail-sheet"
 import TrilingualAutoSelectModal from "@/components/admin/trilingual-auto-select-modal"
@@ -40,11 +41,27 @@ interface OptimisticUpdates {
   }
 }
 
+// Modern color palette for analytics charts
+const COLORS = [
+  '#8b5cf6', // violet-500 - Top Stories
+  '#10b981', // emerald-500 - Finance  
+  '#f59e0b', // amber-500 - Tech & Science
+  '#ef4444', // red-500 - Arts & Culture
+  '#3b82f6', // blue-500 - Entertainment
+  '#ec4899', // pink-500 - Sports
+  '#06b6d4', // cyan-500 - International
+  '#84cc16', // lime-500 - General
+  '#f97316', // orange-500
+  '#6366f1', // indigo-500
+]
+
 async function fetchAdminArticles({ 
   pageParam = 0, 
   sourceFilter = "all",
   languageFilter = "all", 
   aiEnhancedFilter = "all",
+  categoryFilter = "all",
+  dateFilter = "all",
   searchQuery = ""
 }): Promise<{ articles: Article[]; nextPage: number | null; hasMore: boolean }> {
   const params = new URLSearchParams({
@@ -55,6 +72,8 @@ async function fetchAdminArticles({
   if (sourceFilter !== "all") params.set("source", sourceFilter)
   if (languageFilter !== "all") params.set("language", languageFilter)
   if (aiEnhancedFilter !== "all") params.set("aiEnhanced", aiEnhancedFilter)
+  if (categoryFilter !== "all") params.set("category", categoryFilter)
+  if (dateFilter !== "all") params.set("dateFilter", dateFilter)
   if (searchQuery) params.set("search", searchQuery)
 
   const response = await fetch(`/api/admin/articles?${params}`)
@@ -77,6 +96,8 @@ export default function ArticlesPage() {
   const [sourceFilter, setSourceFilter] = useState("all")
   const [languageFilter, setLanguageFilter] = useState("en")
   const [aiEnhancedFilter, setAiEnhancedFilter] = useState("true")
+  const [categoryFilter, setCategoryFilter] = useState("all")
+  const [dateFilter, setDateFilter] = useState("all")
   const [isProcessing, setIsProcessing] = useState(false)
   const [showProgressModal, setShowProgressModal] = useState(false)
   const [processProgress, setProcessProgress] = useState<any>(null)
@@ -86,6 +107,8 @@ export default function ArticlesPage() {
   const [activeTab, setActiveTab] = useState("articles")
   const [quickStats, setQuickStats] = useState<QuickStats | null>(null)
   const [optimisticUpdates, setOptimisticUpdates] = useState<OptimisticUpdates>({})
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [analyticsDateFilter, setAnalyticsDateFilter] = useState("all")
   
   // Generate query key for React Query and real-time subscriptions
   const queryKey = useMemo(() => [
@@ -93,8 +116,10 @@ export default function ArticlesPage() {
     sourceFilter, 
     languageFilter, 
     aiEnhancedFilter, 
+    categoryFilter,
+    dateFilter,
     searchQuery
-  ], [sourceFilter, languageFilter, aiEnhancedFilter, searchQuery])
+  ], [sourceFilter, languageFilter, aiEnhancedFilter, categoryFilter, dateFilter, searchQuery])
 
   // Use React Query for infinite scrolling with real-time updates
   const {
@@ -112,6 +137,8 @@ export default function ArticlesPage() {
       sourceFilter,
       languageFilter: aiEnhancedFilter === "true" ? languageFilter : "all", // Reset language to all for Original articles
       aiEnhancedFilter,
+      categoryFilter,
+      dateFilter,
       searchQuery
     }),
     getNextPageParam: (lastPage) => lastPage.nextPage,
@@ -170,8 +197,25 @@ export default function ArticlesPage() {
     }
   }, [])
 
+  const loadAnalyticsData = useCallback(async (timeFilter?: string) => {
+    try {
+      const params = new URLSearchParams()
+      if (timeFilter && timeFilter !== "all") {
+        params.set("dateFilter", timeFilter)
+      }
+      const response = await fetch(`/api/admin/articles/analytics?${params}`)
+      if (response.ok) {
+        const data = await response.json()
+        setAnalyticsData(data)
+      }
+    } catch (error) {
+      console.error('Error loading analytics:', error)
+    }
+  }, [])
+
   useEffect(() => {
     loadQuickStats()
+    loadAnalyticsData()
   }, [])
 
   // Optimistic update helper function
@@ -213,7 +257,13 @@ export default function ArticlesPage() {
     setOptimisticUpdates({})
     refetch()
     loadQuickStats()
-  }, [refetch, loadQuickStats])
+    loadAnalyticsData(analyticsDateFilter)
+  }, [refetch, loadQuickStats, loadAnalyticsData, analyticsDateFilter])
+
+  const handleAnalyticsDateFilterChange = useCallback((newFilter: string) => {
+    setAnalyticsDateFilter(newFilter)
+    loadAnalyticsData(newFilter)
+  }, [loadAnalyticsData])
 
   const handleAiEnhancedToggle = (checked: boolean) => {
     setAiEnhancedFilter(checked ? "true" : "false")
@@ -763,6 +813,7 @@ export default function ArticlesPage() {
                       <SelectItem value="scmp">SCMP</SelectItem>
                       <SelectItem value="am730">AM730</SelectItem>
                       <SelectItem value="bloomberg">Bloomberg</SelectItem>
+                      <SelectItem value="TheStandard">TheStandard</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -820,6 +871,51 @@ export default function ArticlesPage() {
                     </Select>
                   </div>
                 )}
+                
+                {/* Category Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Category:</span>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-36 h-7 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="Top Stories">Top Stories</SelectItem>
+                      <SelectItem value="Finance">Finance</SelectItem>
+                      <SelectItem value="Tech & Science">Tech & Science</SelectItem>
+                      <SelectItem value="Arts & Culture">Arts & Culture</SelectItem>
+                      <SelectItem value="Entertainment">Entertainment</SelectItem>
+                      <SelectItem value="Sports">Sports</SelectItem>
+                      <SelectItem value="International">International</SelectItem>
+                      <SelectItem value="General">General</SelectItem>
+                      <SelectItem value="Local">Local</SelectItem>
+                      <SelectItem value="News">News</SelectItem>
+                      <SelectItem value="Politics">Politics</SelectItem>
+                      <SelectItem value="cars">Cars</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {/* Date Filter */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Time:</span>
+                  <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-32 h-7 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="2h">Past 2 Hours</SelectItem>
+                      <SelectItem value="6h">Past 6 Hours</SelectItem>
+                      <SelectItem value="24h">Past 24 Hours</SelectItem>
+                      <SelectItem value="7d">Past 7 Days</SelectItem>
+                      <SelectItem value="30d">Past 30 Days</SelectItem>
+                      <SelectItem value="60d">Past 60 Days</SelectItem>
+                      <SelectItem value="90d">Past 90 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               {/* Compact Bulk Actions */}
@@ -903,6 +999,36 @@ export default function ArticlesPage() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
+          {/* Analytics Date Filter */}
+          <Card className="border-slate-200 dark:border-slate-700 shadow-sm">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">Analytics Dashboard</h3>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">View analytics data for selected time period</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Time Period:</span>
+                  <Select value={analyticsDateFilter} onValueChange={handleAnalyticsDateFilterChange}>
+                    <SelectTrigger className="w-36 h-8 text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Time</SelectItem>
+                      <SelectItem value="2h">Past 2 Hours</SelectItem>
+                      <SelectItem value="6h">Past 6 Hours</SelectItem>
+                      <SelectItem value="24h">Past 24 Hours</SelectItem>
+                      <SelectItem value="7d">Past 7 Days</SelectItem>
+                      <SelectItem value="30d">Past 30 Days</SelectItem>
+                      <SelectItem value="60d">Past 60 Days</SelectItem>
+                      <SelectItem value="90d">Past 90 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
@@ -972,6 +1098,359 @@ export default function ArticlesPage() {
                     </Badge>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* New Analytics Cards */}
+          <div className="grid gap-4 md:grid-cols-2 mt-4">
+            {/* Category Distribution for Enhanced Articles */}
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white">
+                        <PieChart className="h-4 w-4" />
+                      </div>
+                      Enhanced Articles by Category
+                    </CardTitle>
+                    <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
+                      Distribution of AI-enhanced content across news categories
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-medium px-2 py-1">
+                    {analyticsData?.categoryDistribution ? 
+                      `${analyticsData.categoryDistribution.reduce((sum: number, cat: any) => sum + cat.value, 0).toLocaleString()} total` : 
+                      'Loading...'
+                    }
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-2">
+                {analyticsData?.categoryDistribution ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
+                    {/* Pie Chart */}
+                    <div className="lg:col-span-3">
+                      <ResponsiveContainer width="100%" height={280}>
+                        <RechartsPieChart>
+                          <Pie
+                            data={analyticsData.categoryDistribution}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            innerRadius={50}
+                            fill="#8884d8"
+                            dataKey="value"
+                            strokeWidth={2}
+                            stroke="rgba(255,255,255,0.8)"
+                          >
+                            {analyticsData.categoryDistribution.map((entry: any, index: number) => (
+                              <Cell 
+                                key={`cell-${index}`} 
+                                fill={COLORS[index % COLORS.length]}
+                                className="hover:opacity-80 transition-opacity duration-200"
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip 
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                const total = analyticsData.categoryDistribution.reduce((sum: number, cat: any) => sum + cat.value, 0);
+                                const percentage = ((data.value / total) * 100).toFixed(1);
+                                return (
+                                  <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
+                                    <p className="font-semibold text-sm">{data.name}</p>
+                                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                                      {data.value.toLocaleString()} articles ({percentage}%)
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                        </RechartsPieChart>
+                      </ResponsiveContainer>
+                    </div>
+                    
+                    {/* Legend with Stats */}
+                    <div className="lg:col-span-2 space-y-3">
+                      <div className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">
+                        Category Breakdown
+                      </div>
+                      <div className="space-y-2.5 max-h-64 overflow-y-auto pr-2" style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#cbd5e1 #f1f5f9'
+                      }}>
+                        {analyticsData.categoryDistribution.map((entry: any, index: number) => {
+                          const total = analyticsData.categoryDistribution.reduce((sum: number, cat: any) => sum + cat.value, 0);
+                          const percentage = ((entry.value / total) * 100).toFixed(1);
+                          return (
+                            <div key={entry.name} className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div 
+                                  className="w-3 h-3 rounded-full flex-shrink-0 ring-2 ring-white dark:ring-slate-800"
+                                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                />
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                                  {entry.name}
+                                </span>
+                              </div>
+                              <div className="text-right flex-shrink-0 ml-3">
+                                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                  {entry.value.toLocaleString()}
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                  {percentage}%
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[280px] text-slate-500 dark:text-slate-400">
+                    <div className="relative">
+                      <Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+                      <div className="absolute inset-0 rounded-full border-2 border-violet-200 dark:border-violet-900"></div>
+                    </div>
+                    <p className="mt-3 text-sm font-medium">Loading category distribution...</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Analyzing enhanced articles</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Selection Pipeline Metrics */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Selection Pipeline Health
+                </CardTitle>
+                <CardDescription>Article selection and enhancement pipeline metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {analyticsData?.pipelineMetrics ? (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Selection Success Rate</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${analyticsData.pipelineMetrics.selectionSuccessRate}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.selectionSuccessRate}%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Enhancement Conversion</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${analyticsData.pipelineMetrics.enhancementConversionRate}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.enhancementConversionRate}%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Source Diversity Score</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-purple-500 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${analyticsData.pipelineMetrics.sourceDiversityScore}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.sourceDiversityScore}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-3 border-t space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Avg. Time to Enhancement</span>
+                        <span className="font-medium">{analyticsData.pipelineMetrics.avgTimeToEnhancement}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Articles in Queue</span>
+                        <Badge variant={analyticsData.pipelineMetrics.queueSize > 0 ? "default" : "secondary"}>
+                          {analyticsData.pipelineMetrics.queueSize}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Stale Selections</span>
+                        <Badge variant={analyticsData.pipelineMetrics.staleSelections > 0 ? "destructive" : "secondary"}>
+                          {analyticsData.pipelineMetrics.staleSelections}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Enhancement Trends */}
+          <div className="mt-4">
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
+                        <TrendingUp className="h-4 w-4" />
+                      </div>
+                      Enhancement Trends
+                    </CardTitle>
+                    <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
+                      7-day daily article enhancement volume and pipeline flow
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Badge variant="outline" className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 border-emerald-200">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full mr-1.5"></div>
+                      Enhanced
+                    </Badge>
+                    <Badge variant="outline" className="text-xs px-2 py-1 bg-violet-50 text-violet-700 border-violet-200">
+                      <div className="w-2 h-2 bg-violet-500 rounded-full mr-1.5"></div>
+                      Selected
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {analyticsData?.enhancementTrends ? (
+                  <ResponsiveContainer width="100%" height={320}>
+                    <BarChart data={analyticsData.enhancementTrends} barCategoryGap="20%">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
+                      <XAxis 
+                        dataKey="date" 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#64748b' }}
+                        dy={10}
+                      />
+                      <YAxis 
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: '#64748b' }}
+                        dx={-10}
+                      />
+                      <Tooltip 
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
+                                <p className="font-semibold text-sm mb-2 text-slate-900 dark:text-slate-100">{label}</p>
+                                <div className="space-y-1">
+                                  {payload.map((entry, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                      <div 
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: entry.color }}
+                                      />
+                                      <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">
+                                        {entry.dataKey}: {entry.value?.toLocaleString()}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Bar 
+                        dataKey="selected" 
+                        name="Selected" 
+                        fill="#8b5cf6" 
+                        radius={[2, 2, 0, 0]}
+                        opacity={0.8}
+                      />
+                      <Bar 
+                        dataKey="enhanced" 
+                        name="Enhanced" 
+                        fill="#10b981" 
+                        radius={[2, 2, 0, 0]}
+                        opacity={0.9}
+                      />
+                      <Bar 
+                        dataKey="pending" 
+                        name="Pending" 
+                        fill="#f59e0b" 
+                        radius={[2, 2, 0, 0]}
+                        opacity={0.7}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[320px] text-slate-500 dark:text-slate-400">
+                    <div className="relative">
+                      <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+                      <div className="absolute inset-0 rounded-full border-2 border-emerald-200 dark:border-emerald-900"></div>
+                    </div>
+                    <p className="mt-3 text-sm font-medium">Loading enhancement trends...</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Analyzing 7-day pipeline performance</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Source Enhancement Coverage */}
+          <div className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Source Enhancement Coverage</CardTitle>
+                <CardDescription>Enhancement rates by news source</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {analyticsData?.sourceEnhancement ? (
+                  <div className="space-y-3">
+                    {analyticsData.sourceEnhancement.map((source: any) => (
+                      <div key={source.name} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">{source.name}</span>
+                          <span className="text-muted-foreground">
+                            {source.enhanced}/{source.total} ({source.rate}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              source.rate > 50 ? 'bg-green-500' : 
+                              source.rate > 20 ? 'bg-blue-500' : 
+                              source.rate > 5 ? 'bg-yellow-500' : 'bg-red-500'
+                            }`}
+                            style={{ width: `${source.rate}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

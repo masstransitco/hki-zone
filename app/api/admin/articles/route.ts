@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category")
     const language = searchParams.get("language")
     const aiEnhanced = searchParams.get("aiEnhanced")
+    const dateFilter = searchParams.get("dateFilter")
 
-    console.log("Admin articles API called with params:", { page, limit, source, search, category, language, aiEnhanced })
+    console.log("Admin articles API called with params:", { page, limit, source, search, category, language, aiEnhanced, dateFilter })
 
     // Check if database is set up
     const isDatabaseReady = await checkDatabaseSetup()
@@ -52,6 +53,41 @@ export async function GET(request: NextRequest) {
           return aiEnhanced === "true" ? isEnhanced : !isEnhanced
         })
       }
+      if (dateFilter && dateFilter !== "all") {
+        const now = new Date()
+        let cutoffDate: Date
+        
+        switch (dateFilter) {
+          case "2h":
+            cutoffDate = new Date(now.getTime() - 2 * 60 * 60 * 1000)
+            break
+          case "6h":
+            cutoffDate = new Date(now.getTime() - 6 * 60 * 60 * 1000)
+            break
+          case "24h":
+            cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+            break
+          case "7d":
+            cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            break
+          case "30d":
+            cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+            break
+          case "60d":
+            cutoffDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+            break
+          case "90d":
+            cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+            break
+          default:
+            cutoffDate = new Date(0) // No filter
+        }
+        
+        articles = articles.filter(article => {
+          const articleDate = new Date(article.created_at)
+          return articleDate >= cutoffDate
+        })
+      }
     } else {
       // Get articles with pagination
       const offset = page * limit
@@ -61,7 +97,8 @@ export async function GET(request: NextRequest) {
         source: source !== "all" ? source : undefined,
         category: category !== "all" ? category : undefined,
         language: language !== "all" ? language : undefined,
-        aiEnhanced: aiEnhanced !== "all" ? aiEnhanced : undefined
+        aiEnhanced: aiEnhanced !== "all" ? aiEnhanced : undefined,
+        dateFilter: dateFilter !== "all" ? dateFilter : undefined
       })
     }
 
@@ -120,7 +157,8 @@ async function getArticlesWithFilters({
   source,
   category,
   language,
-  aiEnhanced
+  aiEnhanced,
+  dateFilter
 }: {
   offset?: number
   limit?: number
@@ -128,6 +166,7 @@ async function getArticlesWithFilters({
   category?: string
   language?: string
   aiEnhanced?: string
+  dateFilter?: string
 }) {
   try {
     const { supabase } = await import("@/lib/supabase")
@@ -158,6 +197,39 @@ async function getArticlesWithFilters({
     if (aiEnhanced) {
       const isEnhanced = aiEnhanced === "true"
       query = query.eq("is_ai_enhanced", isEnhanced)
+    }
+    
+    if (dateFilter) {
+      const now = new Date()
+      let cutoffDate: Date
+      
+      switch (dateFilter) {
+        case "2h":
+          cutoffDate = new Date(now.getTime() - 2 * 60 * 60 * 1000)
+          break
+        case "6h":
+          cutoffDate = new Date(now.getTime() - 6 * 60 * 60 * 1000)
+          break
+        case "24h":
+          cutoffDate = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+          break
+        case "7d":
+          cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          break
+        case "30d":
+          cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          break
+        case "60d":
+          cutoffDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000)
+          break
+        case "90d":
+          cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
+          break
+        default:
+          cutoffDate = new Date(0)
+      }
+      
+      query = query.gte("created_at", cutoffDate.toISOString())
     }
 
     const { data, error } = await query

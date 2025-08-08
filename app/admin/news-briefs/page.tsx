@@ -1033,7 +1033,22 @@ export default function NewsBriefsAdmin() {
                                   }}
                                 >
                                   <Download className="h-4 w-4 mr-2" />
-                                  Download
+                                  WAV
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const link = document.createElement('a')
+                                    link.href = `/api/news-briefs/${brief.id}/download-expanded-mp3`
+                                    link.download = `${brief.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_expanded_${brief.language}.mp3`
+                                    document.body.appendChild(link)
+                                    link.click()
+                                    document.body.removeChild(link)
+                                  }}
+                                >
+                                  <Download className="h-4 w-4 mr-2 text-blue-600" />
+                                  MP3
                                 </Button>
                               </div>
                             </div>

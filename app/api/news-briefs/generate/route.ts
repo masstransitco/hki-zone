@@ -97,7 +97,7 @@ async function prepareArticlesForBrief(articles: any[], briefType: 'morning' | '
   return sortedArticles
 }
 
-async function generateNewsBriefContentTwoStep(articles: any[], briefType: 'morning' | 'afternoon' | 'evening', language: string): Promise<{ content: string; cost: number; wordCount: number; validation: any }> {
+async function generateNewsBriefContentTwoStep(articles: any[], briefType: 'morning' | 'afternoon' | 'evening', language: string): Promise<{ content: string; expandedArticles: any[]; dialogueSegments: any[]; cost: number; wordCount: number; validation: any }> {
   console.log(`🚀 Starting two-step news brief generation for ${language}`)
   
   const articleSummaries = articles.map(article => ({

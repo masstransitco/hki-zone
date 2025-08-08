@@ -13,6 +13,7 @@ const { scrape28CarWithContent } = require("./scrapers/28car")
 const { scrapeAM730 } = require("./scrapers/am730")
 const { scrapeSCMP } = require("./scrapers/scmp")
 const { scrapeBloombergWithContent } = require("./scrapers/bloomberg")
+const { scrapeTheStandard } = require("./scrapers/thestandard")
 
 const OUTLET_SCRAPERS = {
   hkfp: scrapeHKFPWithContent,
@@ -24,6 +25,7 @@ const OUTLET_SCRAPERS = {
   am730: scrapeAM730,
   scmp: scrapeSCMP,
   bloomberg: scrapeBloombergWithContent,
+  thestandard: scrapeTheStandard,
 }
 
 const OUTLET_NAMES = {
@@ -36,6 +38,7 @@ const OUTLET_NAMES = {
   am730: "AM730",
   scmp: "SCMP",
   bloomberg: "Bloomberg",
+  thestandard: "TheStandard",
 }
 
 // Separate news scrapers from car scrapers for runAllScrapers
@@ -49,6 +52,7 @@ const NEWS_OUTLET_SCRAPERS = {
   am730: scrapeAM730,
   scmp: scrapeSCMP,
   bloomberg: scrapeBloombergWithContent,
+  thestandard: scrapeTheStandard,
 }
 
 // Individual scraper function with progress tracking
@@ -436,6 +440,7 @@ export async function runAllScrapers(withProgress = false) {
         AM730: allArticles.filter((a) => a.source === "am730").length,
         SCMP: allArticles.filter((a) => a.source === "scmp").length,
         Bloomberg: allArticles.filter((a) => a.source === "bloomberg").length,
+        TheStandard: allArticles.filter((a) => a.source === "TheStandard").length,
       },
       database: {
         before: initialStats,
@@ -476,6 +481,8 @@ function getCategoryFromSource(source: string): string {
       return "International"
     case "bloomberg":
       return "International"
+    case "thestandard":
+      return "Local"
     default:
       return "General"
   }

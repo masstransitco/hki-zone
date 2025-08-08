@@ -90,6 +90,7 @@ export async function POST(
       .from('news_briefs')
       .update({
         expanded_tts_operation: synthesisResult.operationName,
+        expanded_tts_output_uri: synthesisResult.outputGcsUri,
         expanded_tts_cost: synthesisResult.cost,
         tts_started_at: new Date().toISOString()
       })

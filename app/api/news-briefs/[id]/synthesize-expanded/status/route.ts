@@ -45,7 +45,7 @@ export async function GET(
     // 2. Check the status with Google Cloud TTS
     const statusResult = await googleCloudTTSService.checkOperationStatus(
       brief.expanded_tts_operation,
-      // We don't have the expected GCS URI stored, but the service can handle that
+      brief.expanded_tts_output_uri // Pass the expected output URI
     )
 
     console.log(`📊 Operation status: ${statusResult.isDone ? 'Complete' : 'In Progress'} (${statusResult.progressPercentage}%)`)

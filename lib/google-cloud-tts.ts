@@ -349,14 +349,33 @@ class GoogleCloudTTSService {
         }
         
         // Last resort: try to construct it from the original request
+        // For Long Audio synthesis, the output file follows a specific pattern
         if (!outputUri) {
           console.log(`⚠️ Could not find output GCS URI in operation, attempting to construct it`)
-          // Extract brief ID from operation name for fallback
-          const briefIdMatch = operationName.match(/brief-([^-]+)/)
+          // The operation name contains the operation ID, but we need to construct the file path
+          // based on how we created it in synthesizeLongAudio
+          const briefIdMatch = operationName.match(/brief-([a-f0-9-]{36})/)
           if (briefIdMatch) {
             const briefId = briefIdMatch[1]
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-            outputUri = `gs://${BUCKET_NAME}/brief-${briefId}-en-${timestamp}.wav`
+            // Try to find the file by listing files with this brief ID
+            try {
+              const bucket = this.storage.bucket(BUCKET_NAME)
+              const [files] = await bucket.getFiles({
+                prefix: `brief-${briefId}-`
+              })
+              
+              // Find the most recent file for this brief
+              const briefFiles = files
+                .filter(file => file.name.includes(briefId))
+                .sort((a, b) => new Date(b.metadata.timeCreated).getTime() - new Date(a.metadata.timeCreated).getTime())
+              
+              if (briefFiles.length > 0) {
+                outputUri = `gs://${BUCKET_NAME}/${briefFiles[0].name}`
+                console.log(`🎯 Found output file: ${outputUri}`)
+              }
+            } catch (error) {
+              console.warn(`⚠️ Error finding output file:`, error)
+            }
           }
         }
         

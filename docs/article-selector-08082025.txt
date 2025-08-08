@@ -1,0 +1,139 @@
+How the Perplexity Article Selector Works
+
+  Overview
+
+  The system intelligently selects articles for AI enhancement
+  using a multi-layered approach that balances source diversity,
+   content quality, and newsworthiness through Perplexity AI
+  evaluation.
+
+  1. Source Tier System
+
+  Articles are grouped into three quality tiers to ensure
+  balanced representation:
+
+  Premium Tier (Weight: 100)
+  ├── HKFP, SCMP, Bloomberg, TheStandard
+  ├── Quota: 15 articles
+  ├── Time Window: 12 hours
+  └── Min Quality: 200 chars
+
+  Mainstream Tier (Weight: 80)
+  ├── RTHK, SingTao, on.cc
+  ├── Quota: 25 articles
+  ├── Time Window: 6 hours
+  └── Min Quality: 100 chars
+
+  Local Tier (Weight: 60)
+  ├── HK01, am730
+  ├── Quota: 10 articles
+  ├── Time Window: 3 hours
+  └── Min Quality: 50 chars
+
+  Rationale:
+  - Premium sources get longer time windows (12h) due to lower
+  publishing frequency but higher quality
+  - Local sources have shorter windows (3h) to prevent
+  high-volume sources from dominating
+  - Quotas ensure no single source overwhelms the selection
+
+  2. Quality Scoring System
+
+  Each article gets a base quality score based on:
+
+  SOURCE_QUALITY_WEIGHTS:
+  ├── HKFP: 100         (investigative journalism)
+  ├── SCMP: 95          (international quality)
+  ├── TheStandard: 92   (quality English news)
+  ├── Bloomberg: 90     (financial expertise)
+  ├── RTHK: 85         (public broadcaster)
+  ├── SingTao: 70      (mainstream reliability)
+  ├── on.cc: 65        (popular, mixed quality)
+  ├── HK01: 60         (high volume, variable)
+  └── am730: 55        (lifestyle focus)
+
+  Additional scoring factors:
+  - Content length (longer = better)
+  - Has images (+bonus points)
+  - Has summary (+bonus points)
+  - Recency (newer = higher score)
+  - Category importance (Politics/Economy > Entertainment)
+
+  3. Diversity & De-duplication
+
+  The system prevents redundancy through:
+  - Title similarity check (60% threshold using Levenshtein
+  distance)
+  - Recent selection memory (avoids re-selecting similar
+  stories)
+  - Stale selection reset (clears selections stuck >4 hours)
+  - Category diversity (aims for mix of categories)
+
+  4. Perplexity AI Evaluation
+
+  After collecting ~50 diverse candidates, Perplexity AI
+  evaluates them using the INDSU framework:
+
+  I - Informativeness (insights, revelations)
+  N - Necessity (importance to readers)
+  D - Distinctiveness (uniqueness)
+  S - Shareability (discussion potential)
+  U - Urgency (timeliness)
+
+  Each article gets scores (1-5) for each dimension, creating a
+  priority score (0-100).
+
+  5. Selection Process Flow
+
+  1. Collect Candidates (50 articles)
+     ↓
+  2. Apply Source Diversity Quotas
+     ├── Premium: up to 15
+     ├── Mainstream: up to 25
+     └── Local: up to 10
+     ↓
+  3. Quality Scoring & Sorting
+     ↓
+  4. De-duplication (60% similarity threshold)
+     ↓
+  5. Perplexity AI Analysis (INDSU scoring)
+     ↓
+  6. Select Top N Articles (usually 3-10)
+     ↓
+  7. Mark as Selected in Database
+
+  6. Smart Fallbacks
+
+  If Perplexity fails or returns invalid selections:
+  - Falls back to selecting most recent high-quality articles
+  - Maintains source diversity even in fallback mode
+  - Logs detailed debugging information
+
+  7. Key Design Principles
+
+  1. Balance over Volume: Premium sources get fair
+  representation despite lower output
+  2. Freshness with Memory: Prioritizes recent news while
+  avoiding repetition
+  3. Quality over Quantity: Better to select fewer high-quality
+  articles than many mediocre ones
+  4. Fail Gracefully: Multiple fallback mechanisms ensure
+  selection always works
+  5. Transparent Scoring: Every selection includes reason and
+  score for auditing
+
+  Example Selection Output:
+
+  1. [HKFP] "Gov't announces new housing policy"
+     Score: 95 | Reason: High policy impact, exclusive coverage
+
+  2. [TheStandard] "MTR service disruption affects thousands"
+     Score: 88 | Reason: High urgency, broad public impact
+
+  3. [Bloomberg] "HK stocks rally on China stimulus"
+     Score: 85 | Reason: Market significance, international
+  relevance
+
+  This system ensures a balanced, high-quality selection of
+  articles that represents diverse perspectives while
+  prioritizing newsworthiness and reader value.

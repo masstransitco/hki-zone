@@ -7,6 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
@@ -16,7 +24,7 @@ import {
 } from 'recharts'
 import { 
   RefreshCw, TrendingUp, Database, Zap, Target, Clock,
-  Calendar, Filter, Eye, EyeOff, Wifi, WifiOff
+  Calendar, Filter, Eye, EyeOff, Wifi, WifiOff, ChevronDown
 } from "lucide-react"
 import { useRealtimeMetrics } from "@/hooks/use-realtime-metrics"
 import { format, formatDistanceToNow } from "date-fns"
@@ -32,6 +40,14 @@ interface MetricsData {
     earliest_article: string
     latest_article: string
   }
+  pipeline: {
+    articles_last_24h: number
+    articles_last_hour: number
+    enhanced_last_24h: number
+    selected_last_24h: number
+    low_quality_articles: number
+    avg_content_length: number
+  }
   sourceBreakdown: Array<{
     source: string
     total_count: number
@@ -46,9 +62,20 @@ interface MetricsData {
     selected_for_enhancement: number
     ai_enhanced: number
     unique_sources_per_day: number
+    [sourceName: string]: any // Dynamic source counts
   }>
+  categoryDistribution: Array<{
+    category: string
+    count: number
+    enhanced_count: number
+    enhancement_rate: number
+  }>
+  availableSources: string[]
+  availableCategories: string[]
   timeframe: string
   recordsAnalyzed: number
+  generatedAt: string
+  cached: boolean
 }
 
 const COLORS = [
@@ -57,9 +84,13 @@ const COLORS = [
 ]
 
 const TIMEFRAME_OPTIONS = [
-  { value: '7d', label: 'Last 7 Days' },
-  { value: '30d', label: 'Last 30 Days' },
-  { value: '90d', label: 'Last 90 Days' },
+  { value: '2h', label: 'Past 2 Hours' },
+  { value: '6h', label: 'Past 6 Hours' },
+  { value: '24h', label: 'Past 24 Hours' },
+  { value: '7d', label: 'Past 7 Days' },
+  { value: '30d', label: 'Past 30 Days' },
+  { value: '60d', label: 'Past 60 Days' },
+  { value: '90d', label: 'Past 90 Days' },
   { value: 'all', label: 'All Time' }
 ]
 
@@ -87,7 +118,7 @@ async function fetchMetrics(timeframe: string, sources: string[]): Promise<Metri
 
 export default function AdminMetricsDashboard() {
   const queryClient = useQueryClient()
-  const [timeframe, setTimeframe] = useState('30d')
+  const [timeframe, setTimeframe] = useState('24h')
   const [selectedSources, setSelectedSources] = useState<string[]>([])
   const [availableSources, setAvailableSources] = useState<string[]>([])
   const [realtimeEnabled, setRealtimeEnabled] = useState(true)
@@ -152,6 +183,46 @@ export default function AdminMetricsDashboard() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString()
+  }
+
+  const getChartTitle = (baseTitle: string, timeframe: string) => {
+    const timeLabels = {
+      '2h': 'Last 2 Hours',
+      '6h': 'Last 6 Hours', 
+      '24h': 'Last 24 Hours',
+      '7d': 'Last 7 Days',
+      '30d': 'Last 30 Days',
+      '60d': 'Last 60 Days',
+      '90d': 'Last 90 Days',
+      'all': 'All Time'
+    }
+    return `${baseTitle} (${timeLabels[timeframe] || timeframe})`
+  }
+
+  const getTimeAxisFormatter = (timeframe: string) => {
+    switch (timeframe) {
+      case '2h':
+      case '6h':
+      case '24h':
+        return (value) => new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      default:
+        return (value) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    }
+  }
+
+  const getSourceColor = (sourceName: string, availableSources: string[]) => {
+    const index = availableSources.indexOf(sourceName)
+    return COLORS[index % COLORS.length]
+  }
+
+  const getCategoryColor = (categoryName: string, availableCategories: string[]) => {
+    const index = availableCategories.indexOf(categoryName)
+    // Use a slightly different color palette for categories to distinguish from sources
+    const categoryColors = [
+      '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', 
+      '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#6366f1'
+    ]
+    return categoryColors[index % categoryColors.length]
   }
 
   if (isLoading) {
@@ -239,9 +310,10 @@ export default function AdminMetricsDashboard() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          {/* Time Filter */}
           <Select value={timeframe} onValueChange={setTimeframe}>
-            <SelectTrigger className="w-[180px]">
-              <Calendar className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[160px]">
+              <Clock className="h-4 w-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -252,6 +324,53 @@ export default function AdminMetricsDashboard() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Compact Source Filter */}
+          {availableSources.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="h-10">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Sources
+                  {selectedSources.length > 0 && (
+                    <Badge variant="secondary" className="ml-2 h-5 px-1.5 text-xs">
+                      {selectedSources.length}
+                    </Badge>
+                  )}
+                  <ChevronDown className="h-4 w-4 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Filter by Sources</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {availableSources
+                  .filter(source => !source.includes('(AI Enhanced)'))
+                  .map(source => (
+                    <DropdownMenuCheckboxItem
+                      key={source}
+                      checked={selectedSources.includes(source)}
+                      onCheckedChange={(checked) => handleSourceToggle(source, checked)}
+                      disabled={isFilterUpdating}
+                    >
+                      {source}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+                {selectedSources.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <Button
+                      onClick={() => setSelectedSources([])}
+                      size="sm"
+                      variant="ghost"
+                      className="w-full h-8"
+                    >
+                      Clear all
+                    </Button>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           
           <Button 
             onClick={() => refetch()} 
@@ -265,148 +384,198 @@ export default function AdminMetricsDashboard() {
       </div>
 
       {/* Key Metrics Cards */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 transition-opacity duration-200 ${isFilterUpdating ? 'opacity-75' : ''}`}>
-        <Card>
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 transition-opacity duration-200 ${isFilterUpdating ? 'opacity-75' : ''}`}>
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Articles</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
+            <Database className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
               {formatNumber(data.overall.total_articles)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-blue-700 dark:text-blue-300">
               {formatNumber(data.recordsAnalyzed)} analyzed
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">AI Enhanced</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+            <Zap className="h-4 w-4 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-green-900 dark:text-green-100">
               {formatNumber(data.overall.ai_enhanced_articles)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-green-700 dark:text-green-300">
               {data.overall.enhancement_rate}% enhancement rate
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Sources</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <Target className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">
               {data.overall.unique_sources}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-purple-700 dark:text-purple-300">
               News outlets monitored
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Daily Average</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Last 24h</CardTitle>
+            <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {formatNumber(Math.round(data.overall.total_articles / Math.max(data.dailyTrends.length, 1)))}
+            <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+              {formatNumber(data.pipeline.articles_last_24h)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Articles per day
+            <p className="text-xs text-orange-700 dark:text-orange-300">
+              Articles scraped today
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-950 dark:to-teal-900">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Enhanced Today</CardTitle>
+            <TrendingUp className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-teal-900 dark:text-teal-100">
+              {formatNumber(data.pipeline.enhanced_last_24h)}
+            </div>
+            <p className="text-xs text-teal-700 dark:text-teal-300">
+              AI enhanced today
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-rose-50 to-rose-100 dark:from-rose-950 dark:to-rose-900">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Quality Score</CardTitle>
+            <Eye className="h-4 w-4 text-rose-600 dark:text-rose-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-rose-900 dark:text-rose-100">
+              {Math.round((data.overall.total_articles - data.pipeline.low_quality_articles) / data.overall.total_articles * 100)}%
+            </div>
+            <p className="text-xs text-rose-700 dark:text-rose-300">
+              High quality articles
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Source Filter */}
-      {availableSources.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Source Filters
-            </CardTitle>
-            <CardDescription>
-              Filter metrics by specific news sources
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {availableSources.filter(source => !source.includes('(AI Enhanced)')).map(source => (
-                <div key={source} className={`flex items-center space-x-2 transition-opacity duration-200 ${isFilterUpdating ? 'opacity-60' : ''}`}>
-                  <Checkbox
-                    id={source}
-                    checked={selectedSources.includes(source)}
-                    onCheckedChange={(checked) => handleSourceToggle(source, checked as boolean)}
-                    disabled={isFilterUpdating}
-                  />
-                  <label htmlFor={source} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                    {source}
-                  </label>
-                </div>
-              ))}
-            </div>
-            {selectedSources.length > 0 && (
-              <div className="mt-3 pt-3 border-t">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Active filters:</span>
-                  {selectedSources.map(source => (
-                    <Badge key={source} variant="secondary">
-                      {source}
-                    </Badge>
-                  ))}
-                  <Button 
-                    onClick={() => setSelectedSources([])} 
-                    size="sm" 
-                    variant="ghost"
-                    className="h-6 px-2"
-                  >
-                    Clear all
-                  </Button>
-                </div>
+      {/* Pipeline Health Status */}
+      <Card className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-green-600" />
+            Pipeline Health Status
+          </CardTitle>
+          <CardDescription>
+            Real-time performance indicators for your content pipeline
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-sm font-medium text-muted-foreground mb-1">Current Hour Activity</div>
+              <div className="text-2xl font-bold text-green-600">
+                {formatNumber(data.pipeline.articles_last_hour)}
               </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+              <div className="text-xs text-muted-foreground">articles scraped</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-muted-foreground mb-1">Average Content</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {Math.round(data.pipeline.avg_content_length / 1000)}k
+              </div>
+              <div className="text-xs text-muted-foreground">characters avg</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-muted-foreground mb-1">Quality Issues</div>
+              <div className="text-2xl font-bold text-amber-600">
+                {formatNumber(data.pipeline.low_quality_articles)}
+              </div>
+              <div className="text-xs text-muted-foreground">low quality articles</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-muted-foreground mb-1">Selection Pipeline</div>
+              <div className="text-2xl font-bold text-purple-600">
+                {formatNumber(data.pipeline.selected_last_24h)}
+              </div>
+              <div className="text-xs text-muted-foreground">selected today</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
 
       {/* Charts Row 1: Daily Trends */}
       <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity duration-200 ${isFilterUpdating ? 'opacity-75' : ''}`}>
         <Card>
           <CardHeader>
-            <CardTitle>Daily Article Collection</CardTitle>
-            <CardDescription>Articles scraped and enhanced over time</CardDescription>
+            <CardTitle>{getChartTitle('Article Collection', timeframe)}</CardTitle>
+            <CardDescription>Articles scraped and enhanced over selected time period</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={data.dailyTrends.slice(0, 30).reverse()}>
+              <ComposedChart data={data.dailyTrends}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(value) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  dataKey={timeframe === '2h' || timeframe === '6h' || timeframe === '24h' ? 'time' : 'date'}
+                  tickFormatter={getTimeAxisFormatter(timeframe)}
+                  angle={timeframe === '2h' || timeframe === '6h' ? -45 : 0}
+                  textAnchor={timeframe === '2h' || timeframe === '6h' ? 'end' : 'middle'}
+                  height={timeframe === '2h' || timeframe === '6h' ? 80 : 60}
                 />
                 <YAxis />
                 <Tooltip 
-                  labelFormatter={(value) => formatDate(value)}
+                  labelFormatter={(value) => timeframe === '2h' || timeframe === '6h' || timeframe === '24h' ? 
+                    new Date(value).toLocaleString() : formatDate(value)}
                   formatter={(value, name) => [formatNumber(value), name]}
                 />
                 <Legend />
-                <Bar dataKey="articles_scraped" fill="#8884d8" name="Articles Scraped" />
+                
+                {/* Stacked bars by source */}
+                {data.availableSources?.map((source, index) => (
+                  <Bar 
+                    key={source}
+                    dataKey={source}
+                    stackId="sources"
+                    fill={getSourceColor(source, data.availableSources)}
+                    name={source}
+                  />
+                ))}
+                
+                {/* AI Enhanced line overlay */}
                 <Line 
                   type="monotone" 
                   dataKey="ai_enhanced" 
-                  stroke="#82ca9d" 
-                  strokeWidth={2}
+                  stroke="#2563eb"
+                  strokeWidth={3}
                   name="AI Enhanced"
+                  dot={{ 
+                    r: 4, 
+                    fill: "#2563eb",
+                    stroke: "#ffffff",
+                    strokeWidth: 2,
+                    filter: "drop-shadow(0 2px 4px rgba(37, 99, 235, 0.3))"
+                  }}
+                  style={{
+                    filter: "drop-shadow(0 1px 3px rgba(37, 99, 235, 0.4))"
+                  }}
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -415,52 +584,97 @@ export default function AdminMetricsDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Enhancement Rate Trend</CardTitle>
-            <CardDescription>AI enhancement percentage over time</CardDescription>
+            <CardTitle>{getChartTitle('Enhancement Rate Trend', timeframe)}</CardTitle>
+            <CardDescription>AI enhancement percentage over selected time period</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={data.dailyTrends.slice(0, 30).reverse().map(d => ({
+              <ComposedChart data={data.dailyTrends.map(d => ({
                 ...d,
                 enhancement_rate: d.articles_scraped > 0 ? Math.round((d.ai_enhanced / d.articles_scraped) * 100 * 100) / 100 : 0
               }))}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
-                  dataKey="date" 
-                  tickFormatter={(value) => new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  dataKey={timeframe === '2h' || timeframe === '6h' || timeframe === '24h' ? 'time' : 'date'}
+                  tickFormatter={getTimeAxisFormatter(timeframe)}
+                  angle={timeframe === '2h' || timeframe === '6h' ? -45 : 0}
+                  textAnchor={timeframe === '2h' || timeframe === '6h' ? 'end' : 'middle'}
+                  height={timeframe === '2h' || timeframe === '6h' ? 80 : 60}
                 />
-                <YAxis />
+                {/* Left Y-axis for enhancement rate */}
+                <YAxis 
+                  yAxisId="rate"
+                  orientation="left"
+                  label={{ value: 'Enhancement Rate (%)', angle: -90, position: 'insideLeft' }}
+                />
+                {/* Right Y-axis for count */}
+                <YAxis 
+                  yAxisId="count"
+                  orientation="right"
+                  label={{ value: 'AI Enhanced Count', angle: 90, position: 'insideRight' }}
+                />
                 <Tooltip 
-                  labelFormatter={(value) => formatDate(value)}
-                  formatter={(value) => [`${value}%`, 'Enhancement Rate']}
+                  labelFormatter={(value) => timeframe === '2h' || timeframe === '6h' || timeframe === '24h' ? 
+                    new Date(value).toLocaleString() : formatDate(value)}
+                  formatter={(value, name, props) => {
+                    if (name === 'Enhancement Rate') {
+                      return [`${value}%`, name]
+                    }
+                    return [formatNumber(value), name]
+                  }}
                 />
+                <Legend />
+                
+                {/* Stacked bars for AI enhanced articles by category */}
+                {data.availableCategories?.map((category, index) => (
+                  <Bar 
+                    key={category}
+                    dataKey={`enhanced_${category}`}
+                    stackId="enhanced"
+                    yAxisId="count"
+                    fill={getCategoryColor(category, data.availableCategories)}
+                    name={category}
+                  />
+                ))}
+                
+                {/* Enhancement rate line */}
                 <Line 
                   type="monotone" 
                   dataKey="enhancement_rate" 
-                  stroke="#ff7c7c" 
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
+                  yAxisId="rate"
+                  stroke="#2563eb"
+                  strokeWidth={3}
+                  name="Enhancement Rate"
+                  dot={{ 
+                    r: 4, 
+                    fill: "#2563eb",
+                    stroke: "#ffffff",
+                    strokeWidth: 2
+                  }}
+                  style={{
+                    filter: "drop-shadow(0 1px 3px rgba(37, 99, 235, 0.4))"
+                  }}
                 />
-              </LineChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts Row 2: Source Analysis */}
-      <div className={`grid grid-cols-1 lg:grid-cols-2 gap-6 transition-opacity duration-200 ${isFilterUpdating ? 'opacity-75' : ''}`}>
+      {/* Charts Row 2: Source & Category Analysis */}
+      <div className={`grid grid-cols-1 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${isFilterUpdating ? 'opacity-75' : ''}`}>
         <Card>
           <CardHeader>
-            <CardTitle>Articles by Source</CardTitle>
-            <CardDescription>Volume distribution across news outlets</CardDescription>
+            <CardTitle>{getChartTitle('Articles by Source', timeframe)}</CardTitle>
+            <CardDescription>Volume distribution across news outlets for selected period</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={350}>
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart 
                 data={data.sourceBreakdown
                   .filter(source => !source.source.includes('(AI Enhanced)'))
                   .sort((a, b) => b.total_count - a.total_count)
-                  .slice(0, 12)
+                  .slice(0, 8)
                   .map((item, index) => ({
                     ...item,
                     color: COLORS[index % COLORS.length]
@@ -474,28 +688,19 @@ export default function AdminMetricsDashboard() {
                 <YAxis 
                   dataKey="source" 
                   type="category" 
-                  width={180}
-                  tick={{ fontSize: 12 }}
+                  width={80}
+                  tick={{ fontSize: 11 }}
                   interval={0}
                 />
                 <Tooltip 
                   formatter={(value, name) => [formatNumber(value), 'Articles']}
                   labelFormatter={(label) => `Source: ${label}`}
                 />
-                <Bar 
-                  dataKey="total_count" 
-                  radius={[0, 4, 4, 0]}
-                  label={{ 
-                    position: 'right', 
-                    fill: '#374151',
-                    fontSize: 12,
-                    formatter: (value) => formatNumber(value)
-                  }}
-                >
+                <Bar dataKey="total_count" radius={[0, 4, 4, 0]}>
                   {data.sourceBreakdown
                     .filter(source => !source.source.includes('(AI Enhanced)'))
                     .sort((a, b) => b.total_count - a.total_count)
-                    .slice(0, 12)
+                    .slice(0, 8)
                     .map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))
@@ -508,26 +713,66 @@ export default function AdminMetricsDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Enhancement Rates by Source</CardTitle>
-            <CardDescription>AI enhancement efficiency per outlet</CardDescription>
+            <CardTitle>{getChartTitle('Category Distribution', timeframe)}</CardTitle>
+            <CardDescription>Articles by content category for selected period</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={data.categoryDistribution?.slice(0, 8) || []}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={100}
+                  paddingAngle={2}
+                  dataKey="count"
+                >
+                  {(data.categoryDistribution?.slice(0, 8) || []).map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value, name, props) => [
+                    `${formatNumber(value)} articles (${Math.round((value / data.overall.total_articles) * 100)}%)`,
+                    props.payload.category
+                  ]}
+                />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36}
+                  formatter={(value, entry) => (
+                    <span className="text-sm">{entry.payload.category}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{getChartTitle('Enhancement Rates by Source', timeframe)}</CardTitle>
+            <CardDescription>AI enhancement efficiency per outlet for selected period</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={data.sourceBreakdown
-                .filter(source => source.enhancement_rate < 100)
-                .slice(0, 10)
+                .filter(source => source.enhancement_rate < 100 && source.total_count > 50)
+                .slice(0, 8)
               }>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="source" 
                   angle={-45}
                   textAnchor="end"
-                  height={100}
+                  height={80}
                   interval={0}
+                  tick={{ fontSize: 10 }}
                 />
                 <YAxis />
                 <Tooltip formatter={(value) => [`${value}%`, 'Enhancement Rate']} />
-                <Bar dataKey="enhancement_rate" fill="#82ca9d" />
+                <Bar dataKey="enhancement_rate" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -608,37 +853,103 @@ export default function AdminMetricsDashboard() {
         </Card>
       </div>
 
-      {/* Summary Stats */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Summary Statistics</CardTitle>
-          <CardDescription>Key insights from your article pipeline</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-            <div>
-              <p className="text-muted-foreground">Data Range</p>
-              <p className="font-medium">
-                {data.overall.earliest_article && formatDate(data.overall.earliest_article)} - {data.overall.latest_article && formatDate(data.overall.latest_article)}
-              </p>
+      {/* Enhanced Summary & Insights */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance Insights</CardTitle>
+            <CardDescription>Key metrics and recommendations</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                <div>
+                  <p className="font-medium text-green-900 dark:text-green-100">Top Performing Source</p>
+                  <p className="text-sm text-green-700 dark:text-green-300">{data.sourceBreakdown[0]?.source || 'N/A'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-green-600">{formatNumber(data.sourceBreakdown[0]?.total_count || 0)}</p>
+                  <p className="text-xs text-green-500">articles</p>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                <div>
+                  <p className="font-medium text-blue-900 dark:text-blue-100">Best Enhancement Rate</p>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    {data.sourceBreakdown.filter(s => s.total_count > 50).sort((a, b) => b.enhancement_rate - a.enhancement_rate)[0]?.source || 'N/A'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-blue-600">
+                    {Math.max(...data.sourceBreakdown.filter(s => s.total_count > 50).map(s => s.enhancement_rate)).toFixed(1)}%
+                  </p>
+                  <p className="text-xs text-blue-500">enhanced</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
+                <div>
+                  <p className="font-medium text-amber-900 dark:text-amber-100">Quality Alert</p>
+                  <p className="text-sm text-amber-700 dark:text-amber-300">
+                    {Math.round((data.pipeline.low_quality_articles / data.overall.total_articles) * 100)}% articles need attention
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-bold text-amber-600">{formatNumber(data.pipeline.low_quality_articles)}</p>
+                  <p className="text-xs text-amber-500">low quality</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground">Top Source</p>
-              <p className="font-medium">{data.sourceBreakdown[0]?.source || 'N/A'}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>System Information</CardTitle>
+            <CardDescription>Data overview and system status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="space-y-2">
+                <div>
+                  <p className="text-muted-foreground">Data Timeframe</p>
+                  <p className="font-medium">{data.timeframe === 'all' ? 'All Time' : `Last ${data.timeframe}`}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Records Analyzed</p>
+                  <p className="font-medium">{formatNumber(data.recordsAnalyzed)}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Date Range</p>
+                  <p className="font-medium text-xs">
+                    {data.overall.earliest_article && formatDate(data.overall.earliest_article)} - {data.overall.latest_article && formatDate(data.overall.latest_article)}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <p className="text-muted-foreground">Data Freshness</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <p className="font-medium">{data.cached ? 'Cached' : 'Real-time'}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Last Updated</p>
+                  <p className="font-medium text-xs">
+                    {formatDistanceToNow(new Date(data.generatedAt), { addSuffix: true })}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Top Category</p>
+                  <p className="font-medium">{data.categoryDistribution?.[0]?.category || 'N/A'}</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-muted-foreground">Best Enhancement Rate</p>
-              <p className="font-medium">
-                {Math.max(...data.sourceBreakdown.map(s => s.enhancement_rate)).toFixed(1)}%
-              </p>
-            </div>
-            <div>
-              <p className="text-muted-foreground">Records Analyzed</p>
-              <p className="font-medium">{formatNumber(data.recordsAnalyzed)}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
