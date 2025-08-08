@@ -97,7 +97,7 @@ export default function ArticlesPage() {
   const [languageFilter, setLanguageFilter] = useState("en")
   const [aiEnhancedFilter, setAiEnhancedFilter] = useState("true")
   const [categoryFilter, setCategoryFilter] = useState("all")
-  const [dateFilter, setDateFilter] = useState("all")
+  const [dateFilter, setDateFilter] = useState("24h")
   const [isProcessing, setIsProcessing] = useState(false)
   const [showProgressModal, setShowProgressModal] = useState(false)
   const [processProgress, setProcessProgress] = useState<any>(null)
@@ -108,7 +108,7 @@ export default function ArticlesPage() {
   const [quickStats, setQuickStats] = useState<QuickStats | null>(null)
   const [optimisticUpdates, setOptimisticUpdates] = useState<OptimisticUpdates>({})
   const [analyticsData, setAnalyticsData] = useState<any>(null)
-  const [analyticsDateFilter, setAnalyticsDateFilter] = useState("all")
+  const [analyticsDateFilter, setAnalyticsDateFilter] = useState("24h")
   
   // Generate query key for React Query and real-time subscriptions
   const queryKey = useMemo(() => [
@@ -670,315 +670,395 @@ export default function ArticlesPage() {
         </div>
       </div>
 
-      {/* Enhanced Stats Dashboard */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Articles</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+      {/* Modern Stats Dashboard */}
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50 hover:shadow-md transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-300">Total Articles</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-r from-slate-500 to-slate-600 text-white">
+              <BarChart3 className="h-3.5 w-3.5" />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{quickStats?.total || totalArticles}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently loaded: {totalArticles}
-            </p>
+          <CardContent className="pt-0">
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 mb-1">
+              {quickStats?.total?.toLocaleString() || totalArticles.toLocaleString()}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-slate-500 to-slate-600"></div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Loaded: {totalArticles.toLocaleString()}
+              </p>
+            </div>
           </CardContent>
         </Card>
         
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">AI Enhanced</CardTitle>
-            <HKIIcon className="h-4 w-4 text-slate-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-600">{quickStats?.enhanced || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {quickStats?.total ? ((quickStats.enhanced / quickStats.total) * 100).toFixed(1) : 0}% enhanced
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Selected</CardTitle>
-            <Target className="h-4 w-4 text-amber-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600">{quickStats?.selected || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Ready for enhancement
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent</CardTitle>
-            <Clock className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{quickStats?.recentlyAdded || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Added today
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Source</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {quickStats?.topSources?.[0]?.count || 0}
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50 hover:shadow-md transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-300">AI Enhanced</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-r from-slate-600 to-slate-700 text-white">
+              <HKIIcon className="h-3.5 w-3.5" />
             </div>
-            <p className="text-xs text-muted-foreground">
-              {quickStats?.topSources?.[0]?.name || 'N/A'}
-            </p>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-2xl sm:text-3xl font-bold text-slate-700 dark:text-slate-200 mb-1">
+              {quickStats?.enhanced?.toLocaleString() || 0}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-slate-600 to-slate-700"></div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {quickStats?.total ? ((quickStats.enhanced / quickStats.total) * 100).toFixed(1) : 0}% enhanced
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50 hover:shadow-md transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-300">Selected</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white">
+              <Target className="h-3.5 w-3.5" />
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-2xl sm:text-3xl font-bold text-amber-700 dark:text-amber-400 mb-1">
+              {quickStats?.selected?.toLocaleString() || 0}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-amber-500 to-orange-600"></div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Ready for enhancement
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50 hover:shadow-md transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-300">Recent</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+              <Clock className="h-3.5 w-3.5" />
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-2xl sm:text-3xl font-bold text-blue-700 dark:text-blue-400 mb-1">
+              {quickStats?.recentlyAdded?.toLocaleString() || 0}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Added today
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50 hover:shadow-md transition-all duration-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+            <CardTitle className="text-sm font-semibold text-slate-700 dark:text-slate-300">Top Source</CardTitle>
+            <div className="p-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white">
+              <TrendingUp className="h-3.5 w-3.5" />
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="text-2xl sm:text-3xl font-bold text-emerald-700 dark:text-emerald-400 mb-1">
+              {quickStats?.topSources?.[0]?.count?.toLocaleString() || 0}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-green-600"></div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                {quickStats?.topSources?.[0]?.name || 'N/A'}
+              </p>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Enhanced Tabbed Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="articles" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Article Browser
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Analytics
-          </TabsTrigger>
-          <TabsTrigger value="automation" className="flex items-center gap-2">
-            <Wand2 className="h-4 w-4" />
-            AI Tools
-          </TabsTrigger>
-        </TabsList>
+      {/* Modern Tabbed Interface */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <div className="border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 rounded-t-lg p-1">
+          <TabsList className="grid w-full grid-cols-3 bg-transparent">
+            <TabsTrigger 
+              value="articles" 
+              className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-slate-200 dark:data-[state=active]:border-slate-700 transition-all duration-200"
+            >
+              <div className="p-1 rounded-md bg-gradient-to-r from-slate-500 to-slate-600 text-white">
+                <BarChart3 className="h-3.5 w-3.5" />
+              </div>
+              <span className="font-medium">Article Browser</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="analytics" 
+              className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-slate-200 dark:data-[state=active]:border-slate-700 transition-all duration-200"
+            >
+              <div className="p-1 rounded-md bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
+                <TrendingUp className="h-3.5 w-3.5" />
+              </div>
+              <span className="font-medium">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="automation" 
+              className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-800 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-slate-200 dark:data-[state=active]:border-slate-700 transition-all duration-200"
+            >
+              <div className="p-1 rounded-md bg-gradient-to-r from-violet-500 to-purple-600 text-white">
+                <Wand2 className="h-3.5 w-3.5" />
+              </div>
+              <span className="font-medium">AI Tools</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-        <TabsContent value="articles" className="space-y-4">
-          <Card className="border-slate-200 dark:border-slate-700 shadow-sm">
-            <CardContent className="p-4">
-              {/* Compact Header with Inline Controls */}
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">Articles</h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400">Browse and manage articles</p>
+        <TabsContent value="articles" className="space-y-6">
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50">
+            <CardContent className="p-4 sm:p-6">
+              {/* Modern Header with Enhanced Controls */}
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 rounded-xl bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg">
+                    <BarChart3 className="h-5 w-5" />
                   </div>
-                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-                    <span>Live</span>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">Article Management</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Browse, filter, and manage articles with real-time updates</p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/20 px-3 py-1.5 rounded-full border border-green-200 dark:border-green-800">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">Live Updates</span>
                   </div>
                 </div>
                 
-                {/* Compact Search */}
-                <form onSubmit={handleSearch} className="flex gap-2">
+                {/* Enhanced Search */}
+                <form onSubmit={handleSearch} className="flex gap-3">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <Input
-                      placeholder="Search articles..."
+                      placeholder="Search articles by title, content, or source..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 h-8 w-64 text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                      className="pl-10 h-10 w-72 text-sm bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 shadow-sm hover:border-slate-300 dark:hover:border-slate-500 focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                     />
                   </div>
-                  <Button type="submit" variant="outline" size="sm" className="h-8 w-8 p-0">
-                    <Search className="h-3.5 w-3.5" />
+                  <Button type="submit" variant="outline" size="sm" className="h-10 px-4 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors">
+                    <Search className="h-4 w-4 mr-2" />
+                    Search
                   </Button>
-                  <Button onClick={handleRefresh} variant="ghost" size="sm" className="h-8 w-8 p-0 text-slate-500">
-                    <RefreshCw className="h-3.5 w-3.5" />
+                  <Button onClick={handleRefresh} variant="ghost" size="sm" className="h-10 w-10 p-0 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                    <RefreshCw className="h-4 w-4" />
                   </Button>
                 </form>
               </div>
 
-              {/* Compact Filters in Single Row */}
-              <div className="flex flex-wrap items-center gap-3 p-3 bg-slate-50/50 dark:bg-slate-900/30 rounded-lg border border-slate-200 dark:border-slate-700 mb-4">
-                {/* Source Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Source:</span>
-                  <Select value={sourceFilter} onValueChange={setSourceFilter}>
-                    <SelectTrigger className="w-32 h-7 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Sources</SelectItem>
-                      <SelectItem value="HKFP">HKFP</SelectItem>
-                      <SelectItem value="SingTao">SingTao</SelectItem>
-                      <SelectItem value="HK01">HK01</SelectItem>
-                      <SelectItem value="ONCC">ONCC</SelectItem>
-                      <SelectItem value="RTHK">RTHK</SelectItem>
-                      <SelectItem value="on.cc">on.cc</SelectItem>
-                      <SelectItem value="scmp">SCMP</SelectItem>
-                      <SelectItem value="am730">AM730</SelectItem>
-                      <SelectItem value="bloomberg">Bloomberg</SelectItem>
-                      <SelectItem value="TheStandard">TheStandard</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Modern Filters Section */}
+              <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-4 mb-6 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <Filter className="h-4 w-4 text-slate-500" />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Filters</span>
+                  <div className="flex-1 border-b border-slate-200 dark:border-slate-700 ml-2"></div>
                 </div>
                 
-                {/* Modern Article Type Toggle */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Type:</span>
-                  <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700">
-                    {/* Original Button */}
-                    <button
-                      onClick={() => handleAiEnhancedToggle(false)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
-                        aiEnhancedFilter === "false"
-                          ? "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                      }`}
-                    >
-                      <Newspaper className={`h-2.5 w-2.5 transition-colors ${
-                        aiEnhancedFilter === "false" ? "text-slate-600 dark:text-slate-400" : "text-slate-400 dark:text-slate-500"
-                      }`} />
-                      Original
-                    </button>
-                    
-                    {/* AI Enhanced Button */}
-                    <button
-                      onClick={() => handleAiEnhancedToggle(true)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all duration-200 ${
-                        aiEnhancedFilter === "true"
-                          ? "bg-gradient-to-r from-slate-600 to-slate-700 dark:from-slate-500 dark:to-slate-600 text-white shadow-md shadow-slate-500/20"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                      }`}
-                    >
-                      <HKIIcon className={`h-2.5 w-2.5 transition-colors ${
-                        aiEnhancedFilter === "true" ? "text-white" : "text-slate-400 dark:text-slate-500"
-                      }`} />
-                      AI Enhanced
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Compact Language Filter */}
-                {aiEnhancedFilter === "true" && (
-                  <div className="flex items-center gap-2 animate-in slide-in-from-left-1 duration-200">
-                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Language:</span>
-                    <Select value={languageFilter} onValueChange={setLanguageFilter}>
-                      <SelectTrigger className="w-28 h-7 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                        <SelectValue />
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  {/* Source Filter */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Source</label>
+                    <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                      <SelectTrigger className="h-9 text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-colors">
+                        <SelectValue placeholder="All Sources" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="zh-TW">繁體</SelectItem>
-                        <SelectItem value="zh-CN">简体</SelectItem>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        <SelectItem value="all">All Sources</SelectItem>
+                        <SelectItem value="HKFP">HKFP</SelectItem>
+                        <SelectItem value="SingTao">SingTao</SelectItem>
+                        <SelectItem value="HK01">HK01</SelectItem>
+                        <SelectItem value="ONCC">ONCC</SelectItem>
+                        <SelectItem value="RTHK">RTHK</SelectItem>
+                        <SelectItem value="on.cc">on.cc</SelectItem>
+                        <SelectItem value="scmp">SCMP</SelectItem>
+                        <SelectItem value="am730">AM730</SelectItem>
+                        <SelectItem value="bloomberg">Bloomberg</SelectItem>
+                        <SelectItem value="TheStandard">TheStandard</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-                
-                {/* Category Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Category:</span>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-36 h-7 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Categories</SelectItem>
-                      <SelectItem value="Top Stories">Top Stories</SelectItem>
-                      <SelectItem value="Finance">Finance</SelectItem>
-                      <SelectItem value="Tech & Science">Tech & Science</SelectItem>
-                      <SelectItem value="Arts & Culture">Arts & Culture</SelectItem>
-                      <SelectItem value="Entertainment">Entertainment</SelectItem>
-                      <SelectItem value="Sports">Sports</SelectItem>
-                      <SelectItem value="International">International</SelectItem>
-                      <SelectItem value="General">General</SelectItem>
-                      <SelectItem value="Local">Local</SelectItem>
-                      <SelectItem value="News">News</SelectItem>
-                      <SelectItem value="Politics">Politics</SelectItem>
-                      <SelectItem value="cars">Cars</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Date Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Time:</span>
-                  <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-32 h-7 text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="2h">Past 2 Hours</SelectItem>
-                      <SelectItem value="6h">Past 6 Hours</SelectItem>
-                      <SelectItem value="24h">Past 24 Hours</SelectItem>
-                      <SelectItem value="7d">Past 7 Days</SelectItem>
-                      <SelectItem value="30d">Past 30 Days</SelectItem>
-                      <SelectItem value="60d">Past 60 Days</SelectItem>
-                      <SelectItem value="90d">Past 90 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  
+                  {/* Enhanced Article Type Toggle */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Article Type</label>
+                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
+                      {/* Original Button */}
+                      <button
+                        onClick={() => handleAiEnhancedToggle(false)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 flex-1 justify-center ${
+                          aiEnhancedFilter === "false"
+                            ? "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 shadow-sm border border-slate-200 dark:border-slate-600"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        }`}
+                      >
+                        <Newspaper className={`h-3 w-3 transition-colors ${
+                          aiEnhancedFilter === "false" ? "text-slate-600 dark:text-slate-400" : "text-slate-400 dark:text-slate-500"
+                        }`} />
+                        Original
+                      </button>
+                      
+                      {/* AI Enhanced Button */}
+                      <button
+                        onClick={() => handleAiEnhancedToggle(true)}
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 flex-1 justify-center ${
+                          aiEnhancedFilter === "true"
+                            ? "bg-gradient-to-r from-slate-600 to-slate-700 dark:from-slate-500 dark:to-slate-600 text-white shadow-md shadow-slate-500/20"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                        }`}
+                      >
+                        <HKIIcon className={`h-3 w-3 transition-colors ${
+                          aiEnhancedFilter === "true" ? "text-white" : "text-slate-400 dark:text-slate-500"
+                        }`} />
+                        AI Enhanced
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Language Filter */}
+                  <div className={`space-y-2 transition-all duration-200 ${aiEnhancedFilter === "true" ? "opacity-100" : "opacity-50 pointer-events-none"}`}>
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Language</label>
+                    <Select value={languageFilter} onValueChange={setLanguageFilter} disabled={aiEnhancedFilter !== "true"}>
+                      <SelectTrigger className="h-9 text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-colors">
+                        <SelectValue placeholder="All Languages" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        <SelectItem value="all">All Languages</SelectItem>
+                        <SelectItem value="en">English</SelectItem>
+                        <SelectItem value="zh-TW">繁體中文</SelectItem>
+                        <SelectItem value="zh-CN">简体中文</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Category Filter */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Category</label>
+                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                      <SelectTrigger className="h-9 text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-colors">
+                        <SelectValue placeholder="All Categories" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        <SelectItem value="all">All Categories</SelectItem>
+                        <SelectItem value="Top Stories">Top Stories</SelectItem>
+                        <SelectItem value="Finance">Finance</SelectItem>
+                        <SelectItem value="Tech & Science">Tech & Science</SelectItem>
+                        <SelectItem value="Arts & Culture">Arts & Culture</SelectItem>
+                        <SelectItem value="Entertainment">Entertainment</SelectItem>
+                        <SelectItem value="Sports">Sports</SelectItem>
+                        <SelectItem value="International">International</SelectItem>
+                        <SelectItem value="General">General</SelectItem>
+                        <SelectItem value="Local">Local</SelectItem>
+                        <SelectItem value="News">News</SelectItem>
+                        <SelectItem value="Politics">Politics</SelectItem>
+                        <SelectItem value="cars">Cars</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* Time Filter */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-medium text-slate-600 dark:text-slate-400">Time Range</label>
+                    <Select value={dateFilter} onValueChange={setDateFilter}>
+                      <SelectTrigger className="h-9 text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 transition-colors">
+                        <SelectValue placeholder="Select time range" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                        <SelectItem value="2h">Past 2 Hours</SelectItem>
+                        <SelectItem value="6h">Past 6 Hours</SelectItem>
+                        <SelectItem value="24h">Past 24 Hours</SelectItem>
+                        <SelectItem value="7d">Past 7 Days</SelectItem>
+                        <SelectItem value="30d">Past 30 Days</SelectItem>
+                        <SelectItem value="60d">Past 60 Days</SelectItem>
+                        <SelectItem value="90d">Past 90 Days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
-              {/* Compact Bulk Actions */}
+              {/* Modern Bulk Actions */}
               {selectedArticleIds.size > 0 ? (
-                <div className="flex flex-wrap items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-950/20 rounded border border-blue-200 dark:border-blue-800 mb-4">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <span className="text-xs font-medium text-blue-900 dark:text-blue-100">
-                      {selectedArticleIds.size} selected
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSelectNone}
-                      className="h-6 px-2 text-xs text-blue-700 hover:bg-blue-100"
-                    >
-                      Clear
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleBulkClone}
-                      disabled={isBulkCloning}
-                      className="h-6 px-2 text-xs bg-white border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                    >
-                      {isBulkCloning ? (
-                        <div className="mr-1 h-2.5 w-2.5 animate-spin rounded-full border border-current border-t-transparent" />
-                      ) : (
-                        <Copy className="h-2.5 w-2.5 mr-1" />
-                      )}
-                      Enhance
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleBatchDelete}
-                      disabled={isDeleting}
-                      className="h-6 px-2 text-xs bg-white border-red-200 text-red-700 hover:bg-red-50"
-                    >
-                      {isDeleting ? (
-                        <div className="mr-1 h-2.5 w-2.5 animate-spin rounded-full border border-current border-t-transparent" />
-                      ) : (
-                        <Trash2 className="h-2.5 w-2.5 mr-1" />
-                      )}
-                      Delete
-                    </Button>
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-lg border border-blue-200 dark:border-blue-800 p-4 mb-6 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-500 text-white">
+                        <CheckSquare className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-blue-900 dark:text-blue-100">
+                          {selectedArticleIds.size} {selectedArticleIds.size === 1 ? 'article' : 'articles'} selected
+                        </div>
+                        <div className="text-xs text-blue-700 dark:text-blue-300">
+                          Choose an action to perform on selected articles
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSelectNone}
+                        className="h-8 px-3 text-xs text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                      >
+                        Clear Selection
+                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBulkClone}
+                          disabled={isBulkCloning}
+                          className="h-8 px-3 text-xs bg-white dark:bg-slate-800 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 shadow-sm transition-colors"
+                        >
+                          {isBulkCloning ? (
+                            <div className="mr-2 h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
+                          ) : (
+                            <Wand2 className="h-3 w-3 mr-2" />
+                          )}
+                          Enhance Articles
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBatchDelete}
+                          disabled={isDeleting}
+                          className="h-8 px-3 text-xs bg-white dark:bg-slate-800 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 shadow-sm transition-colors"
+                        >
+                          {isDeleting ? (
+                            <div className="mr-2 h-3 w-3 animate-spin rounded-full border border-current border-t-transparent" />
+                          ) : (
+                            <Trash2 className="h-3 w-3 mr-2" />
+                          )}
+                          Delete Articles
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-2 border border-dashed border-slate-200 dark:border-slate-700 rounded text-center mb-4">
-                  <span className="text-xs text-slate-500 dark:text-slate-400">No articles selected</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleSelectAll}
-                    className="h-6 px-2 text-xs text-slate-600 hover:bg-slate-50"
-                  >
-                    <CheckSquare className="h-2.5 w-2.5 mr-1" />
-                    Select All
-                  </Button>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 p-4 mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-500">
+                        <CheckSquare className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium text-slate-600 dark:text-slate-400">No articles selected</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-500">Select articles to perform bulk actions</div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      className="h-8 px-3 text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <CheckSquare className="h-3 w-3 mr-2" />
+                      Select All Articles
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -998,30 +1078,49 @@ export default function ArticlesPage() {
           />
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-4">
-          {/* Analytics Date Filter */}
-          <Card className="border-slate-200 dark:border-slate-700 shadow-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">Analytics Dashboard</h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">View analytics data for selected time period</p>
+        <TabsContent value="analytics" className="space-y-6">
+          {/* Modern Analytics Dashboard Header */}
+          <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
+                    <TrendingUp className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100">Analytics Dashboard</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">View comprehensive pipeline analytics for selected time period</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Time Period:</span>
+                <div className="flex items-center gap-3 bg-white dark:bg-slate-800 rounded-lg p-3 border border-slate-200 dark:border-slate-700 shadow-sm">
+                  <Clock className="h-4 w-4 text-slate-500 flex-shrink-0" />
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300 whitespace-nowrap">Time Period:</span>
                   <Select value={analyticsDateFilter} onValueChange={handleAnalyticsDateFilterChange}>
-                    <SelectTrigger className="w-36 h-8 text-sm bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700">
+                    <SelectTrigger className="w-40 h-9 text-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-600 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="2h">Past 2 Hours</SelectItem>
-                      <SelectItem value="6h">Past 6 Hours</SelectItem>
-                      <SelectItem value="24h">Past 24 Hours</SelectItem>
-                      <SelectItem value="7d">Past 7 Days</SelectItem>
-                      <SelectItem value="30d">Past 30 Days</SelectItem>
-                      <SelectItem value="60d">Past 60 Days</SelectItem>
-                      <SelectItem value="90d">Past 90 Days</SelectItem>
+                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-xl">
+                      <SelectItem value="2h" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <span>Past 2 Hours</span>
+                      </SelectItem>
+                      <SelectItem value="6h" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <span>Past 6 Hours</span>
+                      </SelectItem>
+                      <SelectItem value="24h" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <span>Past 24 Hours</span>
+                      </SelectItem>
+                      <SelectItem value="7d" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <span>Past 7 Days</span>
+                      </SelectItem>
+                      <SelectItem value="30d" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <span>Past 30 Days</span>
+                      </SelectItem>
+                      <SelectItem value="60d" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <span>Past 60 Days</span>
+                      </SelectItem>
+                      <SelectItem value="90d" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
+                        <span>Past 90 Days</span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1030,79 +1129,262 @@ export default function ArticlesPage() {
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Source Performance</CardTitle>
-                <CardDescription>Article distribution by news source ({analyticsData?.timePeriod || 'selected time period'})</CardDescription>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-600 text-white">
+                        <BarChart3 className="h-4 w-4" />
+                      </div>
+                      Source Performance
+                    </CardTitle>
+                    <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
+                      Article distribution by news source ({analyticsData?.timePeriod || 'selected time period'})
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-medium px-2 py-1">
+                    {analyticsData?.sourceEnhancement ? 
+                      `${analyticsData.sourceEnhancement.reduce((sum: number, source: any) => sum + source.total, 0).toLocaleString()} total` : 
+                      'Loading...'
+                    }
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {analyticsData?.sourceEnhancement ? (
-                    analyticsData.sourceEnhancement.slice(0, 10).map((source: any) => {
+              <CardContent className="pt-2">
+                {analyticsData?.sourceEnhancement ? (
+                  <div className="space-y-4">
+                    {analyticsData.sourceEnhancement.slice(0, 8).map((source: any) => {
                       const maxCount = analyticsData.sourceEnhancement[0]?.total || 1
+                      const barWidth = (source.total / maxCount) * 100
                       return (
-                        <div key={source.name} className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{source.name}</span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-20 bg-gray-200 rounded-full h-2">
-                              <div 
-                                className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                                style={{ width: `${(source.total / maxCount) * 100}%` }}
-                              />
+                        <div key={source.name} className="group">
+                          {/* Header with source name and badge */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-600 flex-shrink-0"></div>
+                              <span className="text-sm sm:text-base font-medium text-slate-900 dark:text-slate-100 truncate">
+                                {source.name}
+                              </span>
                             </div>
-                            <span className="text-sm text-muted-foreground">{source.total}</span>
+                            <Badge 
+                              variant={source.rate >= 50 ? "default" : source.rate >= 20 ? "secondary" : "outline"}
+                              className="text-xs px-2 py-1 flex-shrink-0 ml-2"
+                            >
+                              {source.rate}%
+                            </Badge>
+                          </div>
+                          
+                          {/* Progress bar with left-aligned count */}
+                          <div className="relative">
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 sm:h-3 overflow-hidden">
+                              <div 
+                                className="bg-gradient-to-r from-blue-500 to-cyan-600 h-full rounded-full transition-all duration-700 ease-out group-hover:shadow-lg group-hover:shadow-blue-500/25 relative" 
+                                style={{ width: `${Math.max(barWidth, 25)}%` }}
+                              >
+                                {/* Count positioned inside bar, left-aligned */}
+                                <div className="absolute inset-y-0 left-0 flex items-center pl-2 sm:pl-3">
+                                  <span className="text-xs sm:text-sm font-semibold text-white drop-shadow-sm">
+                                    {source.total.toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Fallback count for very small bars */}
+                            {barWidth < 25 && (
+                              <div className="absolute top-1/2 -translate-y-1/2 right-2">
+                                <span className="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300">
+                                  {source.total.toLocaleString()}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Additional metrics for larger screens */}
+                          <div className="hidden sm:flex items-center justify-between mt-2 text-xs text-slate-500 dark:text-slate-400">
+                            <span>Enhanced: {source.enhanced.toLocaleString()}</span>
+                            <span className="text-right">
+                              {((source.total / analyticsData.sourceEnhancement.reduce((sum: number, s: any) => sum + s.total, 0)) * 100).toFixed(1)}% of total
+                            </span>
                           </div>
                         </div>
                       )
-                    })
-                  ) : (
-                    <div className="flex items-center justify-center py-4 text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Loading source data...
+                    })}
+                    
+                    {/* Summary stats for mobile */}
+                    <div className="sm:hidden mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                            {analyticsData.sourceEnhancement.reduce((sum: number, s: any) => sum + s.total, 0).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Total Articles</div>
+                        </div>
+                        <div>
+                          <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                            {analyticsData.sourceEnhancement.length}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Active Sources</div>
+                        </div>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[280px] sm:h-[320px] text-slate-500 dark:text-slate-400">
+                    <div className="relative">
+                      <Loader2 className="h-7 w-7 sm:h-8 sm:w-8 animate-spin text-blue-500" />
+                      <div className="absolute inset-0 rounded-full border-2 border-blue-200 dark:border-blue-900"></div>
+                    </div>
+                    <p className="mt-3 text-sm sm:text-base font-medium text-center">Loading source performance...</p>
+                    <p className="text-xs sm:text-sm text-slate-400 dark:text-slate-500 text-center">Analyzing article distribution</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Enhancement Pipeline</CardTitle>
-                <CardDescription>AI processing statistics (real-time)</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Enhanced Articles</span>
-                    <Badge variant="secondary" className="transition-all duration-300">
-                      {quickStats?.enhanced || 0}
-                    </Badge>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-600 text-white">
+                        <Zap className="h-4 w-4" />
+                      </div>
+                      Enhancement Pipeline
+                    </CardTitle>
+                    <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
+                      AI processing statistics ({analyticsData?.timePeriod || 'selected time period'})
+                    </CardDescription>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Selected for Enhancement</span>
-                    <Badge variant="outline" className="transition-all duration-300">
-                      {quickStats?.selected || 0}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Operations in Progress</span>
-                    <Badge 
-                      variant={Object.keys(optimisticUpdates).length > 0 ? "default" : "outline"}
-                      className="transition-all duration-300"
-                    >
-                      {Object.keys(optimisticUpdates).length}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Real-time Status</span>
-                    <Badge 
-                      variant={isConnected ? "default" : "secondary"}
-                      className="transition-all duration-300"
-                    >
-                      {connectionStatus}
-                    </Badge>
-                  </div>
+                  <Badge variant="outline" className="text-xs font-medium px-2 py-1">
+                    {analyticsData?.pipelineMetrics ? 
+                      `${analyticsData.pipelineMetrics.enhancementConversionRate}% rate` : 
+                      'Loading...'
+                    }
+                  </Badge>
                 </div>
+              </CardHeader>
+              <CardContent className="pt-2">
+                {analyticsData?.pipelineMetrics ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-3">
+                      <div className="group p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:shadow-sm transition-all duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Enhancement Rate</span>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.enhancementConversionRate >= 30 ? "default" : "secondary"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.enhancementConversionRate}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                          <div 
+                            className="bg-gradient-to-r from-emerald-500 to-teal-600 h-1.5 rounded-full transition-all duration-500" 
+                            style={{ width: `${analyticsData.pipelineMetrics.enhancementConversionRate}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="group p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:shadow-sm transition-all duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Processing Efficiency</span>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.processingEfficiency >= 70 ? "default" : analyticsData.pipelineMetrics.processingEfficiency >= 40 ? "secondary" : "outline"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.processingEfficiency}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-cyan-600 h-1.5 rounded-full transition-all duration-500" 
+                            style={{ width: `${analyticsData.pipelineMetrics.processingEfficiency}%` }}
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="group p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:shadow-sm transition-all duration-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Source Coverage</span>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.sourceCoverageScore >= 70 ? "default" : "secondary"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.sourceCoverageScore}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5">
+                          <div 
+                            className="bg-gradient-to-r from-violet-500 to-purple-600 h-1.5 rounded-full transition-all duration-500" 
+                            style={{ width: `${analyticsData.pipelineMetrics.sourceCoverageScore}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-slate-500" />
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Processing Time</span>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          {analyticsData.pipelineMetrics.avgTimeToEnhancement}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2">
+                          <Target className="h-4 w-4 text-slate-500" />
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Queue Size</span>
+                        </div>
+                        <Badge 
+                          variant={analyticsData.pipelineMetrics.queueSize > 0 ? "destructive" : "outline"} 
+                          className="text-xs"
+                        >
+                          {analyticsData.pipelineMetrics.queueSize}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-slate-500" />
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Stale Selections</span>
+                        </div>
+                        <Badge 
+                          variant={analyticsData.pipelineMetrics.staleSelections > 0 ? "destructive" : "outline"} 
+                          className="text-xs"
+                        >
+                          {analyticsData.pipelineMetrics.staleSelections}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2">
+                          <RefreshCw className="h-4 w-4 text-slate-500" />
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Operations</span>
+                        </div>
+                        <Badge 
+                          variant={Object.keys(optimisticUpdates).length > 0 ? "default" : "outline"}
+                          className="text-xs"
+                        >
+                          {Object.keys(optimisticUpdates).length}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[280px] text-slate-500 dark:text-slate-400">
+                    <div className="relative">
+                      <Loader2 className="h-8 w-8 animate-spin text-emerald-500" />
+                      <div className="absolute inset-0 rounded-full border-2 border-emerald-200 dark:border-emerald-900"></div>
+                    </div>
+                    <p className="mt-3 text-sm font-medium">Loading pipeline metrics...</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">Processing enhancement statistics</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -1121,7 +1403,7 @@ export default function ArticlesPage() {
                       Enhanced Articles by Category
                     </CardTitle>
                     <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
-                      Distribution of AI-enhanced content across news categories
+                      Distribution of AI-enhanced content across news categories ({analyticsData?.timePeriod || 'selected time period'})
                     </CardDescription>
                   </div>
                   <Badge variant="outline" className="text-xs font-medium px-2 py-1">
@@ -1231,88 +1513,149 @@ export default function ArticlesPage() {
               </CardContent>
             </Card>
 
-            {/* Selection Pipeline Metrics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Selection Pipeline Health
-                </CardTitle>
-                <CardDescription>
-                  Article selection and enhancement pipeline metrics
-                  {analyticsData?.systemEvolution && (
-                    <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
-                      ⚠️ {analyticsData.systemEvolution.note} - See current 7d performance for latest metrics
-                    </div>
-                  )}
-                </CardDescription>
+            {/* Selection Pipeline Health */}
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <CardTitle className="flex items-center gap-2 text-base sm:text-lg font-semibold mb-1.5">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-r from-orange-500 to-red-600 text-white flex-shrink-0">
+                        <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      </div>
+                      <span className="truncate">Selection Pipeline Health</span>
+                    </CardTitle>
+                    <CardDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                      Pipeline metrics ({analyticsData?.timePeriod || 'selected time period'})
+                      {analyticsData?.systemEvolution && (
+                        <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                          ⚠️ System performance has improved significantly over time
+                        </div>
+                      )}
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-medium px-2 py-1 flex-shrink-0 whitespace-nowrap">
+                    {analyticsData?.pipelineMetrics ? 
+                      `${analyticsData.pipelineMetrics.processingEfficiency}% efficiency` : 
+                      'Loading...'
+                    }
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 {analyticsData?.pipelineMetrics ? (
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Enhancement Conversion Rate</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                              style={{ width: `${analyticsData.pipelineMetrics.enhancementConversionRate}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.enhancementConversionRate}%</span>
+                    {/* Primary metrics - always stacked for consistency */}
+                    <div className="space-y-3">
+                      <div className="p-3 sm:p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Enhancement Rate</span>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.enhancementConversionRate >= 30 ? "default" : "secondary"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.enhancementConversionRate}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-blue-500 to-cyan-600 h-2 rounded-full transition-all duration-500" 
+                            style={{ width: `${analyticsData.pipelineMetrics.enhancementConversionRate}%` }}
+                          />
                         </div>
                       </div>
                       
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Source Coverage Score</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                              style={{ width: `${analyticsData.pipelineMetrics.sourceCoverageScore}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.sourceCoverageScore}%</span>
+                      <div className="p-3 sm:p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Source Coverage</span>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.sourceCoverageScore >= 70 ? "default" : "secondary"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.sourceCoverageScore}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-emerald-500 to-teal-600 h-2 rounded-full transition-all duration-500" 
+                            style={{ width: `${analyticsData.pipelineMetrics.sourceCoverageScore}%` }}
+                          />
                         </div>
                       </div>
                       
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Processing Efficiency</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-purple-500 h-2 rounded-full transition-all duration-300" 
-                              style={{ width: `${analyticsData.pipelineMetrics.processingEfficiency}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.processingEfficiency}%</span>
+                      <div className="p-3 sm:p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Processing Efficiency</span>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.processingEfficiency >= 70 ? "default" : analyticsData.pipelineMetrics.processingEfficiency >= 40 ? "secondary" : "outline"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.processingEfficiency}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-orange-500 to-red-600 h-2 rounded-full transition-all duration-500" 
+                            style={{ width: `${analyticsData.pipelineMetrics.processingEfficiency}%` }}
+                          />
                         </div>
                       </div>
                     </div>
                     
-                    <div className="pt-3 border-t space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Avg. Time to Enhancement</span>
-                        <span className="font-medium">{analyticsData.pipelineMetrics.avgTimeToEnhancement}</span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Articles in Queue</span>
-                        <Badge variant={analyticsData.pipelineMetrics.queueSize > 0 ? "default" : "secondary"}>
-                          {analyticsData.pipelineMetrics.queueSize}
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Stale Selections</span>
-                        <Badge variant={analyticsData.pipelineMetrics.staleSelections > 0 ? "destructive" : "secondary"}>
-                          {analyticsData.pipelineMetrics.staleSelections}
-                        </Badge>
+                    {/* Operational metrics in responsive grid */}
+                    <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
+                      <h4 className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">Operational Status</h4>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div className="flex flex-col items-center p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
+                          <Clock className="h-4 w-4 text-slate-500 mb-2" />
+                          <div className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Processing Time</div>
+                          <Badge variant="outline" className="text-xs">
+                            {analyticsData.pipelineMetrics.avgTimeToEnhancement}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex flex-col items-center p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
+                          <Target className="h-4 w-4 text-slate-500 mb-2" />
+                          <div className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Queue Size</div>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.queueSize > 0 ? "destructive" : "outline"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.queueSize}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex flex-col items-center p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
+                          <AlertCircle className="h-4 w-4 text-slate-500 mb-2" />
+                          <div className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Stale Items</div>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.staleSelections > 0 ? "destructive" : "outline"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.staleSelections}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex flex-col items-center p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-center">
+                          <RefreshCw className="h-4 w-4 text-slate-500 mb-2" />
+                          <div className="text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Operations</div>
+                          <Badge 
+                            variant={Object.keys(optimisticUpdates).length > 0 ? "default" : "outline"}
+                            className="text-xs"
+                          >
+                            {Object.keys(optimisticUpdates).length}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin" />
+                  <div className="flex flex-col items-center justify-center h-[280px] text-slate-500 dark:text-slate-400">
+                    <div className="relative">
+                      <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+                      <div className="absolute inset-0 rounded-full border-2 border-orange-200 dark:border-orange-900"></div>
+                    </div>
+                    <p className="mt-3 text-sm font-medium text-center">Loading pipeline health...</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 text-center">Analyzing selection metrics</p>
                   </div>
                 )}
               </CardContent>
@@ -1360,12 +1703,13 @@ export default function ArticlesPage() {
                         dataKey="date"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 12, fill: '#64748b' }}
+                        tick={{ fontSize: analyticsDateFilter === '2h' || analyticsDateFilter === '6h' ? 10 : 11, fill: '#64748b' }}
                         dy={10}
-                        angle={dateFilter === '2h' || dateFilter === '6h' ? -45 : 0}
-                        textAnchor={dateFilter === '2h' || dateFilter === '6h' ? 'end' : 'middle'}
-                        height={dateFilter === '2h' || dateFilter === '6h' ? 80 : 60}
-                        interval={0}
+                        angle={analyticsDateFilter === '2h' || analyticsDateFilter === '6h' ? -45 : 0}
+                        textAnchor={analyticsDateFilter === '2h' || analyticsDateFilter === '6h' ? 'end' : 'middle'}
+                        height={analyticsDateFilter === '2h' || analyticsDateFilter === '6h' ? 80 : 60}
+                        interval={analyticsDateFilter === '2h' ? 0 : analyticsDateFilter === '6h' || analyticsDateFilter === '24h' ? 'preserveStartEnd' : 0}
+                        minTickGap={analyticsDateFilter === '2h' || analyticsDateFilter === '6h' ? 5 : 10}
                       />
                       <YAxis 
                         axisLine={false}
@@ -1378,7 +1722,7 @@ export default function ArticlesPage() {
                           if (active && payload && payload.length) {
                             // Format label based on time filter for better readability
                             let formattedLabel = label
-                            if (dateFilter === '2h' || dateFilter === '6h' || dateFilter === '24h') {
+                            if (analyticsDateFilter === '2h' || analyticsDateFilter === '6h' || analyticsDateFilter === '24h') {
                               // For hourly/minute intervals, show as time
                               const timeMatch = label?.match(/(\d{2}):(\d{2})/)
                               if (timeMatch) {
@@ -1457,38 +1801,133 @@ export default function ArticlesPage() {
 
           {/* Source Enhancement Coverage */}
           <div className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Source Enhancement Coverage</CardTitle>
-                <CardDescription>Enhancement rates by news source</CardDescription>
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-800/50">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+                        <BarChart3 className="h-4 w-4" />
+                      </div>
+                      Source Enhancement Coverage
+                    </CardTitle>
+                    <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
+                      Enhancement rates by news source ({analyticsData?.timePeriod || 'selected time period'})
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-xs font-medium px-2 py-1">
+                    {analyticsData?.sourceEnhancement ? 
+                      `${analyticsData.sourceEnhancement.length} sources` : 
+                      'Loading...'
+                    }
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-2">
                 {analyticsData?.sourceEnhancement ? (
-                  <div className="space-y-3">
-                    {analyticsData.sourceEnhancement.map((source: any) => (
-                      <div key={source.name} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-medium">{source.name}</span>
-                          <span className="text-muted-foreground">
-                            {source.enhanced}/{source.total} ({source.rate}%)
-                          </span>
+                  <div className="space-y-4">
+                    {analyticsData.sourceEnhancement.map((source: any) => {
+                      // Calculate performance tier for dynamic styling
+                      const getPerformanceColor = (rate: number) => {
+                        if (rate >= 50) return 'from-emerald-500 to-green-600'
+                        if (rate >= 20) return 'from-blue-500 to-indigo-600'
+                        if (rate >= 10) return 'from-amber-500 to-orange-600'
+                        return 'from-red-500 to-rose-600'
+                      }
+                      
+                      const getPerformanceBadge = (rate: number) => {
+                        if (rate >= 50) return 'default'
+                        if (rate >= 20) return 'secondary' 
+                        if (rate >= 10) return 'outline'
+                        return 'destructive'
+                      }
+
+                      return (
+                        <div key={source.name} className="group">
+                          {/* Header with source name and metrics */}
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 gap-2">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <div className={`w-2.5 h-2.5 rounded-full bg-gradient-to-r ${getPerformanceColor(source.rate)} flex-shrink-0`}></div>
+                              <span className="text-sm sm:text-base font-medium text-slate-900 dark:text-slate-100 truncate">
+                                {source.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Badge 
+                                variant={getPerformanceBadge(source.rate)}
+                                className="text-xs px-2 py-1"
+                              >
+                                {source.rate}%
+                              </Badge>
+                              <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                {source.enhanced.toLocaleString()}/{source.total.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          {/* Enhanced progress bar */}
+                          <div className="relative mb-2">
+                            <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2.5 sm:h-3 overflow-hidden">
+                              <div 
+                                className={`bg-gradient-to-r ${getPerformanceColor(source.rate)} h-full rounded-full transition-all duration-700 ease-out group-hover:shadow-lg`}
+                                style={{ width: `${Math.max(source.rate, 2)}%` }}
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Additional context for larger screens */}
+                          <div className="hidden sm:flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                            <span>
+                              Enhanced: {source.enhanced.toLocaleString()} articles
+                            </span>
+                            <span className="text-right">
+                              {source.rate >= 30 ? '🟢 Excellent' : 
+                               source.rate >= 15 ? '🟡 Good' : 
+                               source.rate >= 5 ? '🟠 Fair' : '🔴 Needs attention'}
+                            </span>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              source.rate > 50 ? 'bg-green-500' : 
-                              source.rate > 20 ? 'bg-blue-500' : 
-                              source.rate > 5 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${source.rate}%` }}
-                          />
+                      )
+                    })}
+                    
+                    {/* Summary stats */}
+                    <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <div className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
+                            {analyticsData.sourceEnhancement.filter((s: any) => s.rate >= 30).length}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">High Performers</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
+                            {Math.round(analyticsData.sourceEnhancement.reduce((avg: number, s: any) => avg + s.rate, 0) / analyticsData.sourceEnhancement.length)}%
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Avg Rate</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
+                            {analyticsData.sourceEnhancement.reduce((sum: number, s: any) => sum + s.enhanced, 0).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Total Enhanced</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-slate-100">
+                            {analyticsData.sourceEnhancement.reduce((sum: number, s: any) => sum + s.total, 0).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">Total Articles</div>
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin" />
+                  <div className="flex flex-col items-center justify-center h-[280px] sm:h-[320px] text-slate-500 dark:text-slate-400">
+                    <div className="relative">
+                      <Loader2 className="h-7 w-7 sm:h-8 sm:w-8 animate-spin text-indigo-500" />
+                      <div className="absolute inset-0 rounded-full border-2 border-indigo-200 dark:border-indigo-900"></div>
+                    </div>
+                    <p className="mt-3 text-sm sm:text-base font-medium text-center">Loading coverage data...</p>
+                    <p className="text-xs sm:text-sm text-slate-400 dark:text-slate-500 text-center">Analyzing source performance</p>
                   </div>
                 )}
               </CardContent>
