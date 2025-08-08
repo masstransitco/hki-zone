@@ -969,8 +969,6 @@ export default function ArticlesPage() {
                         <SelectItem value="24h">Past 24 Hours</SelectItem>
                         <SelectItem value="7d">Past 7 Days</SelectItem>
                         <SelectItem value="30d">Past 30 Days</SelectItem>
-                        <SelectItem value="60d">Past 60 Days</SelectItem>
-                        <SelectItem value="90d">Past 90 Days</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1114,12 +1112,6 @@ export default function ArticlesPage() {
                       </SelectItem>
                       <SelectItem value="30d" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
                         <span>Past 30 Days</span>
-                      </SelectItem>
-                      <SelectItem value="60d" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
-                        <span>Past 60 Days</span>
-                      </SelectItem>
-                      <SelectItem value="90d" className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700">
-                        <span>Past 90 Days</span>
                       </SelectItem>
                     </SelectContent>
                   </Select>

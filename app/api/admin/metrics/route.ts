@@ -849,6 +849,65 @@ export async function GET(request: NextRequest) {
 
     const { count: selected24hCount, error: selected24hError } = await selected24hQuery
 
+    // Get AI enhanced words by language for the timeframe
+    let enhancedWordsQuery = supabaseAdmin
+      .from('articles')
+      .select('content, language_variant')
+      .eq('is_ai_enhanced', true)
+      .not('content', 'is', null)
+      .is('deleted_at', null)
+
+    // Apply timeframe filter
+    if (timeframe !== 'all') {
+      const threshold = new Date()
+      switch (timeframe) {
+        case '2h':
+          threshold.setTime(threshold.getTime() - 2 * 60 * 60 * 1000)
+          break
+        case '6h':
+          threshold.setTime(threshold.getTime() - 6 * 60 * 60 * 1000)
+          break
+        case '24h':
+          threshold.setTime(threshold.getTime() - 24 * 60 * 60 * 1000)
+          break
+        case '7d':
+          threshold.setDate(threshold.getDate() - 7)
+          break
+        case '30d':
+          threshold.setDate(threshold.getDate() - 30)
+          break
+      }
+      enhancedWordsQuery = enhancedWordsQuery.gte('created_at', threshold.toISOString())
+    }
+
+    if (sources.length > 0) {
+      enhancedWordsQuery = enhancedWordsQuery.in('source', sources)
+    }
+
+    const { data: enhancedArticles, error: enhancedWordsError } = await enhancedWordsQuery
+
+    // Process enhanced words by language
+    const languageStats: Record<string, { count: number, total_words: number, avg_words: number }> = {}
+    
+    if (!enhancedWordsError && enhancedArticles) {
+      enhancedArticles.forEach(article => {
+        const lang = article.language_variant || 'mixed'
+        if (!languageStats[lang]) {
+          languageStats[lang] = { count: 0, total_words: 0, avg_words: 0 }
+        }
+        languageStats[lang].count++
+        const wordCount = article.content?.split(/\s+/).filter(word => word.length > 0).length || 0
+        languageStats[lang].total_words += wordCount
+      })
+
+      // Calculate averages
+      Object.keys(languageStats).forEach(lang => {
+        if (languageStats[lang].count > 0) {
+          languageStats[lang].avg_words = Math.round(languageStats[lang].total_words / languageStats[lang].count)
+        }
+      })
+    }
+
     // Use database-level aggregation instead of client-side processing
     const aggregatedData = await getAggregatedTimeData(timeframe, sources)
     const { timeTrendsArray = [], availableSourcesList = [], availableCategoriesList = [] } = aggregatedData || {}
@@ -874,7 +933,8 @@ export async function GET(request: NextRequest) {
           enhanced_last_24h: enhanced24hCount || 0,
           selected_last_24h: selected24hCount || 0,
           low_quality_articles: 0,
-          avg_content_length: 0
+          avg_content_length: 0,
+          enhanced_words_by_language: {}
         },
         sourceBreakdown: [],
         dailyTrends: [],
@@ -910,7 +970,8 @@ export async function GET(request: NextRequest) {
       enhanced_last_24h: enhanced24hCount || 0,
       selected_last_24h: selected24hCount || 0,
       low_quality_articles: 0, // Cannot calculate without content data in aggregation
-      avg_content_length: 0     // Cannot calculate without content data in aggregation
+      avg_content_length: 0,    // Cannot calculate without content data in aggregation
+      enhanced_words_by_language: languageStats
     }
 
     // Calculate source breakdown by aggregating from existing daily trends data
