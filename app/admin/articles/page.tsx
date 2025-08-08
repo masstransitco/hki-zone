@@ -1033,27 +1033,32 @@ export default function ArticlesPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Source Performance</CardTitle>
-                <CardDescription>Article distribution by news source (current view)</CardDescription>
+                <CardDescription>Article distribution by news source ({analyticsData?.timePeriod || 'selected time period'})</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {Object.entries(sourceStats).slice(0, 10).map(([source, count]) => (
-                    <div key={source} className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{source}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-20 bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${totalArticles > 0 ? (count / totalArticles) * 100 : 0}%` }}
-                          />
+                  {analyticsData?.sourceEnhancement ? (
+                    analyticsData.sourceEnhancement.slice(0, 10).map((source: any) => {
+                      const maxCount = analyticsData.sourceEnhancement[0]?.total || 1
+                      return (
+                        <div key={source.name} className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{source.name}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-20 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-500 h-2 rounded-full transition-all duration-300" 
+                                style={{ width: `${(source.total / maxCount) * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-sm text-muted-foreground">{source.total}</span>
+                          </div>
                         </div>
-                        <span className="text-sm text-muted-foreground">{count}</span>
-                      </div>
-                    </div>
-                  ))}
-                  {Object.keys(sourceStats).length === 0 && (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No articles loaded yet
+                      )
+                    })
+                  ) : (
+                    <div className="flex items-center justify-center py-4 text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Loading source data...
                     </div>
                   )}
                 </div>
@@ -1233,27 +1238,21 @@ export default function ArticlesPage() {
                   <Activity className="h-5 w-5" />
                   Selection Pipeline Health
                 </CardTitle>
-                <CardDescription>Article selection and enhancement pipeline metrics</CardDescription>
+                <CardDescription>
+                  Article selection and enhancement pipeline metrics
+                  {analyticsData?.systemEvolution && (
+                    <div className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">
+                      ⚠️ {analyticsData.systemEvolution.note} - See current 7d performance for latest metrics
+                    </div>
+                  )}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {analyticsData?.pipelineMetrics ? (
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm">Selection Success Rate</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-24 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                              style={{ width: `${analyticsData.pipelineMetrics.selectionSuccessRate}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.selectionSuccessRate}%</span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm">Enhancement Conversion</span>
+                        <span className="text-sm">Enhancement Conversion Rate</span>
                         <div className="flex items-center gap-2">
                           <div className="w-24 bg-gray-200 rounded-full h-2">
                             <div 
@@ -1266,15 +1265,28 @@ export default function ArticlesPage() {
                       </div>
                       
                       <div className="flex justify-between items-center">
-                        <span className="text-sm">Source Diversity Score</span>
+                        <span className="text-sm">Source Coverage Score</span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-24 bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-green-500 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${analyticsData.pipelineMetrics.sourceCoverageScore}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.sourceCoverageScore}%</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm">Processing Efficiency</span>
                         <div className="flex items-center gap-2">
                           <div className="w-24 bg-gray-200 rounded-full h-2">
                             <div 
                               className="bg-purple-500 h-2 rounded-full transition-all duration-300" 
-                              style={{ width: `${analyticsData.pipelineMetrics.sourceDiversityScore}%` }}
+                              style={{ width: `${analyticsData.pipelineMetrics.processingEfficiency}%` }}
                             />
                           </div>
-                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.sourceDiversityScore}%</span>
+                          <span className="text-sm font-medium">{analyticsData.pipelineMetrics.processingEfficiency}%</span>
                         </div>
                       </div>
                     </div>
@@ -1320,10 +1332,14 @@ export default function ArticlesPage() {
                       Enhancement Trends
                     </CardTitle>
                     <CardDescription className="text-sm text-slate-600 dark:text-slate-400">
-                      7-day daily article enhancement volume and pipeline flow
+                      Article enhancement pipeline flow ({analyticsData?.timePeriod || 'selected time period'})
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
+                    <Badge variant="outline" className="text-xs px-2 py-1 bg-slate-50 text-slate-700 border-slate-200">
+                      <div className="w-2 h-2 bg-slate-400 rounded-full mr-1.5"></div>
+                      Scraped
+                    </Badge>
                     <Badge variant="outline" className="text-xs px-2 py-1 bg-emerald-50 text-emerald-700 border-emerald-200">
                       <div className="w-2 h-2 bg-emerald-500 rounded-full mr-1.5"></div>
                       Enhanced
@@ -1341,11 +1357,15 @@ export default function ArticlesPage() {
                     <BarChart data={analyticsData.enhancementTrends} barCategoryGap="20%">
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} />
                       <XAxis 
-                        dataKey="date" 
+                        dataKey="date"
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 12, fill: '#64748b' }}
                         dy={10}
+                        angle={dateFilter === '2h' || dateFilter === '6h' ? -45 : 0}
+                        textAnchor={dateFilter === '2h' || dateFilter === '6h' ? 'end' : 'middle'}
+                        height={dateFilter === '2h' || dateFilter === '6h' ? 80 : 60}
+                        interval={0}
                       />
                       <YAxis 
                         axisLine={false}
@@ -1356,9 +1376,22 @@ export default function ArticlesPage() {
                       <Tooltip 
                         content={({ active, payload, label }) => {
                           if (active && payload && payload.length) {
+                            // Format label based on time filter for better readability
+                            let formattedLabel = label
+                            if (dateFilter === '2h' || dateFilter === '6h' || dateFilter === '24h') {
+                              // For hourly/minute intervals, show as time
+                              const timeMatch = label?.match(/(\d{2}):(\d{2})/)
+                              if (timeMatch) {
+                                formattedLabel = `${timeMatch[0]} ${new Date().toDateString()}`
+                              }
+                            } else {
+                              // For daily intervals, label should already be properly formatted
+                              formattedLabel = label
+                            }
+                            
                             return (
                               <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
-                                <p className="font-semibold text-sm mb-2 text-slate-900 dark:text-slate-100">{label}</p>
+                                <p className="font-semibold text-sm mb-2 text-slate-900 dark:text-slate-100">{formattedLabel}</p>
                                 <div className="space-y-1">
                                   {payload.map((entry, index) => (
                                     <div key={index} className="flex items-center gap-2">
@@ -1367,7 +1400,7 @@ export default function ArticlesPage() {
                                         style={{ backgroundColor: entry.color }}
                                       />
                                       <span className="text-xs font-medium text-slate-700 dark:text-slate-300 capitalize">
-                                        {entry.dataKey}: {entry.value?.toLocaleString()}
+                                        {entry.dataKey === 'articles_scraped' ? 'Scraped' : entry.dataKey}: {entry.value?.toLocaleString()}
                                       </span>
                                     </div>
                                   ))}
@@ -1379,11 +1412,11 @@ export default function ArticlesPage() {
                         }}
                       />
                       <Bar 
-                        dataKey="selected" 
-                        name="Selected" 
-                        fill="#8b5cf6" 
+                        dataKey="articles_scraped" 
+                        name="Scraped" 
+                        fill="#94a3b8" 
                         radius={[2, 2, 0, 0]}
-                        opacity={0.8}
+                        opacity={0.6}
                       />
                       <Bar 
                         dataKey="enhanced" 
@@ -1391,6 +1424,13 @@ export default function ArticlesPage() {
                         fill="#10b981" 
                         radius={[2, 2, 0, 0]}
                         opacity={0.9}
+                      />
+                      <Bar 
+                        dataKey="selected" 
+                        name="Selected" 
+                        fill="#8b5cf6" 
+                        radius={[2, 2, 0, 0]}
+                        opacity={0.8}
                       />
                       <Bar 
                         dataKey="pending" 
