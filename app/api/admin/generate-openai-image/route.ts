@@ -30,38 +30,48 @@ async function generateContextualPrompt(article: any): Promise<string> {
   const summary = article?.summary || ''
   const category = article?.category || ''
   
-  const systemPrompt = `You are a senior photo editor at a leading Hong Kong news agency. Your job is to write ONE DALL·E 3 prompt that produces a photorealistic, editorial-quality news photograph suitable for front-page use.
-CONTEXT: You work for a Hong Kong-based news organization that requires authentic, professional photojournalistic images that capture the essence of news stories while maintaining the highest editorial standards.
+  const systemPrompt = `You are a photo editor creating DALL-E 3 prompts for news articles. Generate prompts that create professional, editorial-quality images while STRICTLY avoiding content that triggers DALL-E's safety filters.
 
-GOALS
-- Authentic Hong Kong context, people, and atmosphere.
-- Photojournalistic style consistent with Reuters/AP/AFP.
-- Truthful, non-sensational, minimally processed look.
+CRITICAL SAFETY RULES (MUST FOLLOW):
+- NO TEXT: Never request any text, signage, words, letters, numbers, or characters in the image
+- NO BRANDS: Never mention company names, brand names, logos, trademarks, or branded products
+- NO SPECIFIC PEOPLE: Never describe ages, ethnicities, or physical features
+- Use ONLY generic terms: "people", "person", "crowd", "professionals", "residents", "workers"
+- Focus on ENVIRONMENTS, ARCHITECTURE, and ABSTRACT CONCEPTS rather than people
 
-NON-NEGOTIABLES
-- No public figures by name or likeness. No logos, trademarks, or text of any kind.
-- Avoid cinematic/CGI aesthetics (e.g., “Unreal Engine,” “Octane,” “8k wallpaper,” “hyperreal,” “render”).
-- Neutral, documentary tone; no propaganda or stereotypes.
+TEXT & BRAND AVOIDANCE (ESSENTIAL):
+- Always explicitly add "no text, no signage, no logos, no brands" to every prompt
+- Instead of "shop signs" say "storefronts without text"
+- Instead of "branded vehicles" say "generic vehicles"
+- Instead of "company buildings" say "office buildings"
+- Replace any branded items with generic equivalents
 
-TECH SPECS HINTS (embed naturally in the prompt)
-- Camera: Nikon D850 or Canon 5D Mark IV
-- Lens: 24–70mm (context), 50mm (street/medium), 85mm (portrait)
-- Typical settings: f/5.6–f/8 for scenes; f/2.8 for portraits; 1/500–1/1000s for motion; ISO 100–800
-- Lighting: natural daylight, overcast, or golden hour; or discreet on-camera flash for night spot news
-- Composition: clean framing; horizon straight; rule of thirds or central framing when justified
-- Post: minimal, newsroom-standard color and contrast
+SAFE PROMPT STRUCTURE:
+1. Start with the LOCATION or SETTING (buildings, landscapes, cityscapes)
+2. Add ATMOSPHERIC elements (weather, time of day, lighting)
+3. Include ACTIVITY if needed (using generic terms like "busy street scene")
+4. ALWAYS end with: "no text, no signage, no logos, no brands, professional editorial photography"
 
-HK CONTEXT HINTS (embed specifics)
-- Micro-locations: name a district and a precise setting (e.g., “Mong Kok wet market on Fa Yuen Street,” “Central outside Exchange Square,” “Sham Shui Po street market,” “Tsim Sha Tsui promenade”).
-- Atmosphere/props: MTR signage (generic, no text), minibus/taxis (unbranded), wet market stalls, tong lau facades, Octopus gates (no text).
-- People: diverse Hong Kong residents (age/gender mix; Cantonese majority; some expats), candid interactions, natural clothing.
+HONG KONG CONTEXT (safe elements):
+- Locations: Victoria Harbour, Central district skyline, street markets, MTR stations
+- Architecture: modern skyscrapers, traditional shophouses, public housing estates
+- Atmosphere: urban density, storefronts without text, busy streets, harbor views
+- Vehicles: generic taxis, buses without branding, anonymous vehicles
 
-NEGATIVE LIST (include at end of prompt)
-Exclude: text overlays, watermarks, brand logos, celebrity/politician likenesses, AI art artifacts, heavy bokeh balls, extreme color grading, tilt-shift, motion trails that look artificial.
+AVOID COMPLETELY:
+- Any form of text, writing, or signage
+- Brand names, company names, product names
+- Age descriptors (elderly, old, young, child, teen, senior, etc.)
+- Specific demographics or ethnicities
+- Physical descriptions of people
+- Medical or health-related imagery
+- Any potentially sensitive social issues
 
-OUTPUT
-- Return only the DALL·E prompt text (no preamble, no quotes, no numbering).
-- Use one crisp paragraph in natural language.`
+OUTPUT:
+- Keep prompts under 100 words
+- MUST include "no text, no signage, no logos, no brands" in every prompt
+- Focus on environment and atmosphere
+- Return only the prompt text`
 
   const userPrompt = `Create a DALL-E prompt for this Hong Kong news article:
 
@@ -91,8 +101,29 @@ Generate a prompt that will create a professional news photograph that captures 
     return prompt
   } catch (error) {
     console.error('Error generating contextual prompt:', error)
-    // Fallback to a basic Hong Kong news scene
-    return `Professional news photograph of Hong Kong urban scene, diverse crowd of people, modern city life, authentic street photography, Ultra-realistic photojournalism, World-class news agency photographer quality, Professional Nikon D850, 85mm lens, Natural lighting, High resolution editorial quality, No text overlays, Hyper-realistic magazine quality`
+    // Fallback to a safer category-based prompt
+    const safeCategoryPrompts: Record<string, string> = {
+      'Politics': 'Hong Kong government buildings and administrative district, modern architecture, professional atmosphere',
+      'Business': 'Hong Kong financial district skyline, Central business towers, commercial buildings without signage',
+      'Technology': 'Modern Hong Kong tech hub, contemporary office buildings, clean minimalist architecture',
+      'Health': 'Modern medical facility exterior in Hong Kong, clean architecture, professional healthcare environment',
+      'Education': 'Hong Kong university campus buildings, modern educational architecture, academic environment',
+      'Sports': 'Hong Kong sports facility, stadium architecture, athletic venue exterior',
+      'Entertainment': 'Hong Kong cultural district, performance venue architecture, creative spaces',
+      'Crime': 'Hong Kong justice building exterior, courthouse architecture, legal district',
+      'Environment': 'Hong Kong green spaces and sustainable architecture, urban nature, eco-friendly buildings',
+      'International': 'Hong Kong international commerce buildings, trade center architecture, global business district'
+    }
+    
+    // Try to use category-specific fallback, or default to safe Hong Kong scene
+    const categoryFallback = category ? safeCategoryPrompts[category] : null
+    
+    if (categoryFallback) {
+      return `${categoryFallback}, no text, no signage, no logos, no brands, documentary photography style, natural lighting, professional editorial photography`
+    }
+    
+    // Ultimate fallback - safe generic Hong Kong scene
+    return `Hong Kong urban district, modern architecture mixed with traditional buildings, busy street atmosphere, no text, no signage, no logos, no brands, professional documentary photography style, editorial quality, natural lighting`
   }
 }
 

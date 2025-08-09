@@ -284,19 +284,25 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
   useEffect(() => {
     if (!isActive) return
 
-    let timeoutId: NodeJS.Timeout | null = null
+    let rafId: number | null = null
     let attachedElement: HTMLElement | null = null
 
     const handleScroll = () => {
-      if (!tickingRef.current && scrollRef.current) {
-        window.requestAnimationFrame(() => {
-          if (scrollRef.current) {
-            setScrollPosition(scrollRef.current.scrollTop)
-          }
-          tickingRef.current = false
-        })
-        tickingRef.current = true
+      const element = scrollRef.current
+      if (!element) return
+
+      // Cancel any pending RAF
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
       }
+
+      rafId = requestAnimationFrame(() => {
+        rafId = null
+        // Double-check element still exists
+        if (scrollRef.current) {
+          setScrollPosition(scrollRef.current.scrollTop)
+        }
+      })
     }
 
     const attachScrollListener = () => {
@@ -323,25 +329,20 @@ export default function NewsFeedMasonry({ isActive = true }: NewsFeedMasonryProp
     const checkInterval = setInterval(() => {
       if (scrollRef.current && scrollRef.current !== attachedElement) {
         attachScrollListener()
-        clearInterval(checkInterval)
       }
     }, 100)
 
-    // Set timeout to stop checking after 5 seconds
-    timeoutId = setTimeout(() => {
-      clearInterval(checkInterval)
-    }, 5000)
-
     // Cleanup function
     return () => {
-      if (timeoutId) clearTimeout(timeoutId)
       clearInterval(checkInterval)
       if (attachedElement) {
         attachedElement.removeEventListener('scroll', handleScroll)
       }
-      tickingRef.current = false
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
     }
-  }, [isActive, setScrollPosition, isRefreshing])
+  }, [isActive, setScrollPosition, isRefreshing, isBottomSheetOpen])
 
   // Check if component is visible in the DOM
   useEffect(() => {

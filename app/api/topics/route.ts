@@ -14,7 +14,9 @@ function addCacheHeaders(response: NextResponse, articles: any[] = []) {
   const etag = `"topics-${articles.length}-${latestArticleTime}"`
   
   // No caching - articles update every minute, always serve fresh data
-  response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+  response.headers.set('Pragma', 'no-cache')
+  response.headers.set('Vary', 'Accept-Language, X-Lang, Cookie')
   response.headers.set('Last-Modified', lastModified)
   response.headers.set('ETag', etag)
   

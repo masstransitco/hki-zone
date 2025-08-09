@@ -15,7 +15,9 @@ import { useRealtimeArticles } from "@/hooks/use-realtime-articles"
 import type { Article } from "@/lib/types"
 
 async function fetchTopicsArticles({ pageParam = 0, language = "en" }): Promise<{ articles: Article[]; nextPage: number | null }> {
-  const response = await fetch(`/api/topics?page=${pageParam}&language=${language}`)
+  const response = await fetch(`/api/topics?page=${pageParam}&language=${language}`, {
+    cache: 'no-store'
+  })
   if (!response.ok) throw new Error("Failed to fetch topics articles")
   return response.json()
 }
@@ -55,6 +57,8 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
     queryFn: ({ pageParam }) => fetchTopicsArticles({ pageParam, language }),
     getNextPageParam: (lastPage) => lastPage.nextPage,
     initialPageParam: 0,
+    // Always refetch on mount to ensure fresh data
+    refetchOnMount: "always",
     // With real-time updates, we can use normal caching
     staleTime: 5 * 60 * 1000, // 5 minutes - real-time updates keep data fresh
     // Reduce background refetch since real-time handles updates
@@ -110,38 +114,64 @@ export default function TopicsFeed({ isActive = true }: TopicsFeedProps) {
   useEffect(() => {
     if (!isActive) return
 
+    let rafId: number | null = null
+    let attachedElement: HTMLElement | null = null
+
     const handleScroll = () => {
       const element = scrollRef.current
       if (!element) return
 
-      if (!ticking.current) {
-        window.requestAnimationFrame(() => {
-          setScrollPosition(element.scrollTop)
-          ticking.current = false
-        })
-        ticking.current = true
+      // Cancel any pending RAF
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
       }
+
+      rafId = requestAnimationFrame(() => {
+        rafId = null
+        // Double-check element still exists
+        if (scrollRef.current) {
+          setScrollPosition(scrollRef.current.scrollTop)
+        }
+      })
     }
 
-    const checkInterval = setInterval(() => {
+    const attachScrollListener = () => {
       const element = scrollRef.current
-      if (element) {
-        clearInterval(checkInterval)
-        element.addEventListener('scroll', handleScroll, { passive: true })
-        // Initial check
-        setScrollPosition(element.scrollTop)
+      if (!element || element === attachedElement) return
+
+      // Remove from old element if exists
+      if (attachedElement) {
+        attachedElement.removeEventListener('scroll', handleScroll)
+      }
+
+      // Attach to new element
+      element.addEventListener('scroll', handleScroll, { passive: true })
+      attachedElement = element
+
+      // Initial position update
+      setScrollPosition(element.scrollTop)
+    }
+
+    // Try to attach immediately
+    attachScrollListener()
+
+    // Set up polling as fallback for dynamic content
+    const checkInterval = setInterval(() => {
+      if (scrollRef.current && scrollRef.current !== attachedElement) {
+        attachScrollListener()
       }
     }, 100)
 
     return () => {
       clearInterval(checkInterval)
-      const element = scrollRef.current
-      if (element) {
-        element.removeEventListener('scroll', handleScroll)
+      if (attachedElement) {
+        attachedElement.removeEventListener('scroll', handleScroll)
       }
-      ticking.current = false
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
     }
-  }, [isActive, setScrollPosition])
+  }, [isActive, setScrollPosition, isBottomSheetOpen])
 
   useEffect(() => {
     if (inView && hasNextPage) {

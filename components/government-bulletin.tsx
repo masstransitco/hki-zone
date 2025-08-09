@@ -309,36 +309,62 @@ export default function GovernmentBulletin({
   useEffect(() => {
     if (!isActive) return
 
+    let rafId: number | null = null
+    let attachedElement: HTMLElement | null = null
+
     const handleScroll = () => {
       const element = scrollRef.current
       if (!element) return
 
-      if (!tickingRef.current) {
-        window.requestAnimationFrame(() => {
-          setScrollPosition(element.scrollTop)
-          tickingRef.current = false
-        })
-        tickingRef.current = true
+      // Cancel any pending RAF
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
       }
+
+      rafId = requestAnimationFrame(() => {
+        rafId = null
+        // Double-check element still exists
+        if (scrollRef.current) {
+          setScrollPosition(scrollRef.current.scrollTop)
+        }
+      })
     }
 
-    const checkInterval = setInterval(() => {
+    const attachScrollListener = () => {
       const element = scrollRef.current
-      if (element) {
-        clearInterval(checkInterval)
-        element.addEventListener('scroll', handleScroll, { passive: true })
-        // Initial check
-        setScrollPosition(element.scrollTop)
+      if (!element || element === attachedElement) return
+
+      // Remove from old element if exists
+      if (attachedElement) {
+        attachedElement.removeEventListener('scroll', handleScroll)
+      }
+
+      // Attach to new element
+      element.addEventListener('scroll', handleScroll, { passive: true })
+      attachedElement = element
+
+      // Initial position update
+      setScrollPosition(element.scrollTop)
+    }
+
+    // Try to attach immediately
+    attachScrollListener()
+
+    // Set up polling as fallback for dynamic content
+    const checkInterval = setInterval(() => {
+      if (scrollRef.current && scrollRef.current !== attachedElement) {
+        attachScrollListener()
       }
     }, 100)
 
     return () => {
       clearInterval(checkInterval)
-      const element = scrollRef.current
-      if (element) {
-        element.removeEventListener('scroll', handleScroll)
+      if (attachedElement) {
+        attachedElement.removeEventListener('scroll', handleScroll)
       }
-      tickingRef.current = false
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
     }
   }, [isActive, setScrollPosition])
 

@@ -12,18 +12,31 @@ const HeaderVisibilityContext = createContext<HeaderVisibilityContextType | unde
 export function HeaderVisibilityProvider({ children }: { children: React.ReactNode }) {
   const [isHeaderVisible, setIsHeaderVisible] = useState(true)
   const lastScrollTopRef = React.useRef(0)
+  const lastUpdateTimeRef = React.useRef(0)
 
   const setScrollPosition = useCallback((scrollTop: number) => {
+    // Debounce rapid updates
+    const now = Date.now()
+    if (now - lastUpdateTimeRef.current < 16) return // Skip if less than 16ms (60fps)
+    lastUpdateTimeRef.current = now
+
+    // Ensure scrollTop is valid
+    if (typeof scrollTop !== 'number' || isNaN(scrollTop)) return
+
     const isNearTop = scrollTop < 50
-    const isScrollingDown = scrollTop > lastScrollTopRef.current && scrollTop > 100
-    const isScrollingUp = scrollTop < lastScrollTopRef.current
+    const scrollDelta = scrollTop - lastScrollTopRef.current
+    const isSignificantScroll = Math.abs(scrollDelta) > 5 // Ignore tiny movements
+    const isScrollingDown = scrollDelta > 0 && scrollTop > 100
+    const isScrollingUp = scrollDelta < 0
 
     if (isNearTop) {
       setIsHeaderVisible(true)
-    } else if (isScrollingDown) {
-      setIsHeaderVisible(false)
-    } else if (isScrollingUp) {
-      setIsHeaderVisible(true)
+    } else if (isSignificantScroll) {
+      if (isScrollingDown) {
+        setIsHeaderVisible(false)
+      } else if (isScrollingUp) {
+        setIsHeaderVisible(true)
+      }
     }
 
     lastScrollTopRef.current = scrollTop
