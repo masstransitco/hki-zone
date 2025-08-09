@@ -32,6 +32,7 @@ let currentProgress: {
     scmp: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
     bloomberg: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
     thestandard: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
+    bastillepost: { status: 'idle', progress: 0, articlesFound: 0, message: 'Ready' },
   },
   overall: {
     progress: 0,

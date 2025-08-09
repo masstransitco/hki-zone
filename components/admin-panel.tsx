@@ -38,6 +38,7 @@ const OUTLET_NAMES = {
   scmp: "SCMP",
   bloomberg: "Bloomberg",
   thestandard: "TheStandard",
+  bastillepost: "BastillePost",
 }
 
 export default function AdminPanel({ onManualScrape, onDatabaseSetup }: AdminPanelProps) {

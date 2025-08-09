@@ -1,82 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { autoProcessArticleImage } from '@/lib/image-processor'
+import sharp from 'sharp'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Generic scenic image generation using reference elements
+// Generate completely new supplementary scene based on article context
 function generateGenericScenicPrompt(article: any): string {
-  // Base generic scene creation prompt
-  const baseScenic = "photorealistic generic scene, professional stock photography style, clean composition, commercial quality imagery, suitable for editorial use"
+  // Shortened article context for API limits
+  const title = article?.title ? article.title.slice(0, 80) : ''
+  const summary = article?.summary ? article.summary.slice(0, 100) : ''
   
-  // Scenic generation prompts for different content types
-  const scenicPrompts: Record<string, string> = {
-    'Politics': `${baseScenic}, modern government building exterior, professional conference room, or contemporary office meeting space, neutral political imagery, institutional architecture`,
-    'Technology': `${baseScenic}, modern tech office environment, sleek conference room, contemporary workspace, clean minimalist design, professional business setting`,
-    'Business': `${baseScenic}, executive boardroom, modern corporate lobby, professional office space, contemporary business environment, clean architectural lines`,
-    'Sports': `${baseScenic}, modern sports facility, athletic field or court, fitness center, stadium exterior, sports equipment in clean setting`,
-    'Health': `${baseScenic}, modern medical facility exterior, clean hospital corridor, contemporary healthcare environment, professional medical setting`,
-    'Environment': `${baseScenic}, natural landscape, urban park, sustainable architecture, environmental conservation scene, clean outdoor setting`,
-    'Entertainment': `${baseScenic}, modern theater or venue exterior, contemporary cultural space, arts facility, entertainment district street view`,
-    'Crime': `${baseScenic}, courthouse exterior, modern justice building, professional legal environment, institutional architecture`,
-    'Education': `${baseScenic}, modern university campus, contemporary library, educational facility exterior, academic institution architecture`,
-    'International': `${baseScenic}, modern diplomatic building, international conference center, contemporary institutional architecture, professional governmental facility`
+  // Much shorter base prompt
+  const basePrompt = title ? `"${title}". ` : ''
+  
+  // Shorter category-specific prompts
+  const categoryPrompts: Record<string, string> = {
+    'Politics': 'government building, diplomatic meeting room, civic plaza',
+    'Technology': 'tech lab, data center, innovation workspace',
+    'Business': 'trading floor, corporate office, industrial facility',
+    'Sports': 'training facility, stadium, sports equipment',
+    'Health': 'medical facility, research lab, wellness center',
+    'Environment': 'renewable energy site, natural landscape, eco project',
+    'Entertainment': 'production studio, theater, creative space',
+    'Crime': 'courthouse, police station, legal office',
+    'Education': 'classroom, library, campus',
+    'International': 'port, trade center, diplomatic venue'
   }
   
-  // Default generic scene prompt
-  let scenicPrompt = `Generate a generic ${baseScenic}`
+  // Build concise prompt
+  let prompt = basePrompt
   
-  // Apply category-specific scenic enhancement if available
-  if (article?.category && scenicPrompts[article.category]) {
-    scenicPrompt = `Generate a ${scenicPrompts[article.category]}`
+  // Add category-specific scene
+  if (article?.category && categoryPrompts[article.category]) {
+    prompt += `Create supplementary ${categoryPrompts[article.category]} scene. `
+  } else {
+    prompt += 'Create supplementary professional scene. '
   }
   
-  // Extract scenic elements from reference image context
-  const scenicKeywords = extractScenicElements(article)
-  if (scenicKeywords.length > 0) {
-    scenicPrompt += `, incorporating themes of: ${scenicKeywords.slice(0, 3).join(', ')}`
-  }
+  // Core instructions (very concise)
+  prompt += 'Photorealistic, editorial quality, completely new scene not replicating input, different location and perspective, clean professional composition'
   
-  // Generic scene quality modifiers
-  const qualityModifiers = [
-    "professional stock photography",
-    "clean commercial composition", 
-    "editorial-appropriate imagery",
-    "neutral perspective",
-    "contemporary aesthetic",
-    "high production value",
-    "suitable for publication",
-    "generic representative imagery",
-    "broad appeal composition"
-  ].join(", ")
-  
-  scenicPrompt += `, ${qualityModifiers}`
-  
-  // Elements to avoid for generic imagery
-  const genericAvoidList = [
-    "specific identifiable people",
-    "recognizable faces", 
-    "branded elements",
-    "copyrighted content",
-    "specific locations",
-    "identifiable architecture",
-    "personal details",
-    "controversial imagery"
-  ]
-  
-  scenicPrompt += `, avoiding ${genericAvoidList.slice(0, 5).join(", ")}`
-  
-  return scenicPrompt
+  return prompt
 }
 
 // Scenic element extraction for generic imagery inspiration
 function extractScenicElements(article: any): string[] {
-  if (!article?.title && !article?.summary) return []
+  if (!article?.title && !article?.summary && !article?.content) return []
   
-  const text = `${article.title || ''} ${article.summary || ''}`.toLowerCase()
+  // Use title, summary, and first part of content for better context
+  const text = `${article.title || ''} ${article.summary || ''} ${(article.content || '').slice(0, 500)}`.toLowerCase()
   
   // Scenic themes and environmental elements for generic imagery
   const scenicElements: Record<string, string[]> = {
@@ -122,23 +98,23 @@ function extractScenicElements(article: any): string[] {
   return foundElements
 }
 
-// Generic creative generation parameters - optimized for scenic inspiration
+// Creative generation parameters - optimized for NEW supplementary scenes
 function getCreativeStrength(article: any): number {
-  // Higher strength for creative interpretation while maintaining reference themes
+  // Much higher strength to create completely NEW scenes (not replicas)
   const creativeStrengths: Record<string, number> = {
-    'Politics': 0.65,     // Creative political/institutional imagery
-    'Crime': 0.60,        // Generic legal/judicial environments
-    'Business': 0.70,     // Creative corporate/office settings
-    'Technology': 0.75,   // Modern tech environments with flexibility
-    'Sports': 0.70,       // Generic athletic/fitness facilities
-    'Entertainment': 0.75,// Creative cultural/entertainment spaces
-    'Health': 0.65,       // Clean medical/wellness environments
-    'Environment': 0.80,  // Creative natural/urban landscapes
-    'Education': 0.70,    // Generic academic/institutional settings
-    'International': 0.65 // Generic diplomatic/governmental imagery
+    'Politics': 0.85,     // Highly original political/civic scenes
+    'Crime': 0.80,        // New justice/legal perspectives
+    'Business': 0.85,     // Fresh business/economic angles
+    'Technology': 0.90,   // Innovative tech visualizations
+    'Sports': 0.85,       // Original athletic perspectives
+    'Entertainment': 0.90,// Creative cultural interpretations
+    'Health': 0.80,       // New healthcare visualizations
+    'Environment': 0.95,  // Highly creative environmental scenes
+    'Education': 0.85,    // Fresh educational perspectives
+    'International': 0.85 // Original global/diplomatic scenes
   }
   
-  return creativeStrengths[article?.category] || 0.70 // Balanced creative default
+  return creativeStrengths[article?.category] || 0.85 // High creative default for originality
 }
 
 function getCreativeSteps(article: any): number {
@@ -160,21 +136,21 @@ function getCreativeSteps(article: any): number {
 }
 
 function getCreativeGuidance(article: any): number {
-  // Moderate guidance for balanced prompt following with creative freedom
+  // Lower guidance for more creative freedom in generating NEW scenes
   const creativeGuidance: Record<string, number> = {
-    'Politics': 7.5,      // Balanced institutional guidance
-    'Crime': 7.5,         // Professional legal environment adherence
-    'Business': 7.0,      // Standard corporate prompt following
-    'Technology': 6.5,    // Flexible tech environment creation
-    'Sports': 7.0,        // Athletic facility prompt adherence
-    'Entertainment': 6.5, // Creative cultural space flexibility
-    'Health': 7.5,        // Professional medical adherence
-    'Environment': 6.0,   // Natural creative landscape flexibility
-    'Education': 7.0,     // Academic setting prompt following
-    'International': 7.5  // Professional governmental adherence
+    'Politics': 5.5,      // More freedom for civic scene creation
+    'Crime': 5.5,         // Flexible justice perspective creation
+    'Business': 5.0,      // Creative business angle freedom
+    'Technology': 4.5,    // High flexibility for tech innovation
+    'Sports': 5.0,        // Creative athletic scene freedom
+    'Entertainment': 4.5, // Maximum creative cultural flexibility
+    'Health': 5.5,        // Flexible healthcare visualization
+    'Environment': 4.0,   // Maximum creative environmental freedom
+    'Education': 5.0,     // Creative educational scene flexibility
+    'International': 5.5  // Flexible global perspective creation
   }
   
-  return creativeGuidance[article?.category] || 7.0 // Balanced default
+  return creativeGuidance[article?.category] || 5.0 // Lower default for creativity
 }
 
 export async function POST(request: NextRequest) {
@@ -201,48 +177,32 @@ export async function POST(request: NextRequest) {
       // Continue with basic prompt if article fetch fails
     }
 
-    // Generate generic scenic prompt based on article content  
+    // Generate supplementary scene prompt based on article content  
     const scenicPrompt = article ? generateGenericScenicPrompt(article) : 
-      "Generate a photorealistic generic scene, professional stock photography style, clean composition, commercial quality imagery, suitable for editorial use"
+      "Create a completely new original scene that supplements the article, photorealistic professional photography, fresh perspective, do not replicate reference image"
     
-    // Enhanced scene creation and cleaning instructions
-    const sceneCreationInstructions = [
-      // Generic scene requirements
-      "create entirely new generic scene inspired by reference",
-      "professional stock photography composition",
-      "editorial-appropriate commercial imagery",
-      "clean modern aesthetic suitable for publication",
-      
-      // Reference extraction without replication
-      "draw scenic inspiration from reference image themes",
-      "interpret environmental and architectural elements generically", 
-      "maintain reference mood and atmosphere in new composition",
-      "use reference for color palette and lighting inspiration",
-      
-      // Content sanitization  
-      "completely avoid specific identifiable people or faces",
-      "exclude all branded elements, logos, and corporate identities",
-      "remove any text, typography, captions, or graphic overlays",
-      "avoid recognizable specific locations or unique architecture",
-      
-      // Final composition specifications
-      "single unified scene with consistent lighting",
-      "professional depth of field and composition",
-      "neutral perspective suitable for broad editorial use",
-      "contemporary aesthetic with commercial appeal"
-    ].join(", ")
+    // Much shorter instructions
+    const sceneCreationInstructions = "Use input only for mood/color reference, create entirely different supplementary scene, new location and angle, no people or brands, professional editorial photography"
     
     const finalPrompt = scenicPrompt + ", " + sceneCreationInstructions
     
-    console.log('Generated scenic prompt:', finalPrompt)
+    console.log('Article context being used:', {
+      title: article?.title?.slice(0, 100) || 'No title',
+      summary: article?.summary?.slice(0, 100) || 'No summary',
+      contentLength: article?.content?.length || 0,
+      category: article?.category || 'Unknown'
+    })
+    
+    console.log('Final prompt length:', finalPrompt.length, 'characters')
+    console.log('Final prompt:', finalPrompt)
     console.log('Creative generation parameters:', {
       strength: getCreativeStrength(article),
       steps: getCreativeSteps(article), 
-      guidance: getCreativeGuidance(article),
+      guidance_scale: getCreativeGuidance(article),
       category: article?.category || 'Unknown'
     })
 
-    // Fetch the image and convert to base64
+    // Fetch the image and resize it for API consumption
     console.log('Fetching image from URL:', imageUrl)
     const imageResponse = await fetch(imageUrl)
     
@@ -250,29 +210,49 @@ export async function POST(request: NextRequest) {
       throw new Error(`Failed to fetch image: ${imageResponse.statusText}`)
     }
 
-    const imageBuffer = await imageResponse.arrayBuffer()
-    const base64Image = Buffer.from(imageBuffer).toString('base64')
+    const originalBuffer = await imageResponse.arrayBuffer()
     
-    console.log('Image converted to base64, length:', base64Image.length)
+    // Resize and optimize the image to reduce base64 size
+    // GetImg API works better with smaller images (512x512 is common for img2img)
+    console.log('Resizing and optimizing image for API...')
+    const resizedBuffer = await sharp(Buffer.from(originalBuffer))
+      .resize(512, 512, {
+        fit: 'cover',
+        position: 'center'
+      })
+      .jpeg({
+        quality: 85, // Good quality while keeping file size down
+        mozjpeg: true // Better compression
+      })
+      .toBuffer()
+    
+    // Convert resized image to base64
+    const base64Image = resizedBuffer.toString('base64')
+    
+    console.log('Original image size:', originalBuffer.byteLength, 'bytes')
+    console.log('Resized image size:', resizedBuffer.length, 'bytes')
+    console.log('Base64 length:', base64Image.length, 'characters')
 
     // Call getimg.ai API with base64 image
-    const apiResponse = await fetch('https://api.getimg.ai/v1/stable-diffusion/image-to-image', {
+    // Using the correct endpoint and model for stable diffusion XL
+    const apiResponse = await fetch('https://api.getimg.ai/v1/stable-diffusion-xl/image-to-image', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.GETIMG_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'stable-diffusion-v1-5',
+        // Don't include model parameter - it's determined by the endpoint
+        // Use plain base64 without data URI prefix
         image: base64Image,
         prompt: finalPrompt,
-        negative_prompt: "specific people, identifiable faces, recognizable individuals, branded elements, corporate logos, news media branding, text overlays, captions, headlines, watermarks, specific locations, identifiable architecture, copyrighted content, controversial imagery, multiple photo layouts, collage compositions",
+        negative_prompt: "copy of input, same scene, people, faces, text, logos, brands",
         width: 1024,
-        height: 768,
+        height: 1024, // SDXL works better with square images
         strength: getCreativeStrength(article),
         steps: getCreativeSteps(article),
-        guidance: getCreativeGuidance(article),
-        response_format: 'url'
+        guidance_scale: getCreativeGuidance(article), // Use guidance_scale instead of guidance
+        output_format: 'jpeg' // Use output_format instead of response_format
       }),
     })
 
@@ -289,22 +269,35 @@ export async function POST(request: NextRequest) {
     console.log('GetImg.ai API response:', JSON.stringify(data, null, 2))
     
     // Handle different possible response formats
-    let generatedImageUrl = data.image_url || data.url || data.image || data.output
+    // The API returns base64 image data directly
+    let generatedImageData = data.image || data.images?.[0] || data.output
     
-    if (!generatedImageUrl) {
-      console.error('No image URL found in response:', data)
-      throw new Error('Generated image URL not found in API response')
+    if (!generatedImageData) {
+      console.error('No image data found in response:', data)
+      throw new Error('Generated image data not found in API response')
     }
     
-    console.log('Generated image URL:', generatedImageUrl)
+    // Convert base64 to buffer if needed
+    let generatedImageBuffer: ArrayBuffer
     
-    // Download the generated image
-    const generatedImageResponse = await fetch(generatedImageUrl)
-    if (!generatedImageResponse.ok) {
-      throw new Error('Failed to download generated image')
+    if (generatedImageData.startsWith('data:')) {
+      // Extract base64 from data URI
+      const base64Data = generatedImageData.split(',')[1]
+      generatedImageBuffer = Buffer.from(base64Data, 'base64')
+      console.log('Converted base64 data URI to buffer')
+    } else if (generatedImageData.startsWith('http')) {
+      // If it's a URL, download the image
+      console.log('Downloading generated image from URL:', generatedImageData)
+      const downloadResponse = await fetch(generatedImageData)
+      if (!downloadResponse.ok) {
+        throw new Error('Failed to download generated image')
+      }
+      generatedImageBuffer = await downloadResponse.arrayBuffer()
+    } else {
+      // Assume it's raw base64
+      generatedImageBuffer = Buffer.from(generatedImageData, 'base64')
+      console.log('Converted raw base64 to buffer')
     }
-    
-    const generatedImageBuffer = await generatedImageResponse.arrayBuffer()
     
     // Generate a unique filename for the generated image
     const timestamp = Date.now()
