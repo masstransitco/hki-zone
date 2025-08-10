@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { deduplicateStories, type DeduplicationResult } from './story-deduplicator';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -83,7 +84,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 
   // 1. Get candidate articles from database using diversity quotas
   console.log(`🔍 Fetching candidate articles with source diversity...`);
-  const candidateArticles = await getCandidateArticlesWithDiversity();
+  let candidateArticles = await getCandidateArticlesWithDiversity();
   
   if (candidateArticles.length === 0) {
     console.log(`❌ No candidate articles found. Checking why...`);
@@ -99,6 +100,42 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   console.log(`   • Categories: ${[...new Set(candidateArticles.map(a => a.category))].join(', ')}`);
   console.log(`   • Date range: ${candidateArticles[candidateArticles.length - 1]?.created_at?.substring(0, 16)} to ${candidateArticles[0]?.created_at?.substring(0, 16)}`);
   console.log(`   • Time window: Last 6 hours (recent news priority)`);
+
+  // 1.5 NEW: Deduplicate stories from different sources using embeddings + NLP
+  let deduplicationResult: DeduplicationResult | null = null;
+  
+  // Check if embeddings deduplication is enabled
+  const enableStoryDedup = process.env.ENABLE_STORY_DEDUP !== 'false';
+  
+  if (enableStoryDedup && candidateArticles.length > 5) {
+    console.log(`\n🧬 Cross-Source Story Deduplication (${sessionId}):`);
+    console.log(`   • Running advanced deduplication using embeddings + NLP...`);
+    
+    try {
+      deduplicationResult = await deduplicateStories(candidateArticles);
+      candidateArticles = deduplicationResult.uniqueArticles;
+      
+      // Log deduplication statistics
+      if (deduplicationResult.duplicatesRemoved > 0) {
+        console.log(`   ✅ Deduplication successful:`);
+        console.log(`      • Original articles: ${deduplicationResult.stats.originalCount}`);
+        console.log(`      • Unique stories: ${deduplicationResult.stats.uniqueStories}`);
+        console.log(`      • Duplicates removed: ${deduplicationResult.duplicatesRemoved}`);
+        console.log(`      • Average cluster size: ${deduplicationResult.stats.averageClusterSize.toFixed(1)}`);
+        console.log(`      • Largest cluster: ${deduplicationResult.stats.largestCluster} articles`);
+      } else {
+        console.log(`   • No cross-source duplicates found`);
+      }
+    } catch (error) {
+      console.error(`   ⚠️ Cross-source deduplication failed:`, error);
+      console.log(`   • Continuing with original ${candidateArticles.length} articles`);
+      // Continue with original articles if deduplication fails
+    }
+  } else if (!enableStoryDedup) {
+    console.log(`   • Cross-source deduplication disabled (ENABLE_STORY_DEDUP=false)`);
+  } else {
+    console.log(`   • Skipping cross-source deduplication (too few articles: ${candidateArticles.length})`);
+  }
 
   // 2. Get recently enhanced topics for deduplication
   const recentlyEnhancedTopics = await getRecentlyEnhancedTopics();
@@ -204,7 +241,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
   
   // Mark selected articles to prevent re-selection in future runs
   if (selectedArticles.length > 0) {
-    await markArticlesAsSelected(selectedArticles, selectedIds, sessionId);
+    await markArticlesAsSelected(selectedArticles, selectedIds, sessionId, deduplicationResult);
   }
   
   if (selectedArticles.length === 0 && selectedIds.length > 0) {
@@ -1230,7 +1267,8 @@ Return ONLY the JSON array:`;
 async function markArticlesAsSelected(
   selectedArticles: SelectedArticle[], 
   originalSelections: Array<{id: string, I?: number, N?: number, D?: number, S?: number, U?: number, score: number}>,
-  sessionId: string
+  sessionId: string,
+  deduplicationResult?: DeduplicationResult | null
 ): Promise<void> {
   console.log(`🔐 Marking ${selectedArticles.length} articles as selected and assigning AI categories (${sessionId})...`);
   
@@ -1245,6 +1283,22 @@ async function markArticlesAsSelected(
       sel.score === article.priority_score
     ) || originalSelections[i]; // Fallback to index if no match found
     
+    // Find which cluster this article belonged to (if deduplication was run)
+    let clusterInfo = null;
+    if (deduplicationResult) {
+      const cluster = deduplicationResult.clusters.find(c => 
+        c.articles.some(a => a.id === article.id)
+      );
+      if (cluster && cluster.articles.length > 1) {
+        clusterInfo = {
+          cluster_id: cluster.clusterId,
+          cluster_size: cluster.articles.length,
+          sources_in_cluster: cluster.articles.map(a => a.source),
+          average_similarity: cluster.averageSimilarity
+        };
+      }
+    }
+    
     try {
       const { error } = await supabase
         .from('articles')
@@ -1258,13 +1312,15 @@ async function markArticlesAsSelected(
             perplexity_selection_id: selection?.id || `${i + 1}`,
             selection_session: sessionId, // Track session for grouping and debugging
             selection_method: 'perplexity_ai',
+            // Add deduplication statistics if available
+            deduplication_stats: deduplicationResult ? {
+              original_count: deduplicationResult.stats.originalCount,
+              unique_stories: deduplicationResult.stats.uniqueStories,
+              duplicates_removed: deduplicationResult.duplicatesRemoved,
+              cluster_info: clusterInfo
+            } : null,
             ai_category_assigned: article.ai_category || null,
-            category_confidence: article.category_confidence || null,
-            deduplication_stats: {
-              candidates_before_dedup: selectedArticles.length + i, // approximation for logging
-              candidates_after_dedup: selectedArticles.length,
-              ai_powered_dedup: process.env.PERPLEXITY_API_KEY ? true : false
-            }
+            category_confidence: article.category_confidence || null
           }
         })
         .eq('id', article.id);
