@@ -27,40 +27,44 @@ export default function AboutUs() {
   return (
     <div className="h-screen overflow-y-auto snap-y snap-mandatory">
       {/* Page 1: Hero with Video (100vh) */}
-      <section className="h-screen snap-start relative flex items-center justify-center">
-        {/* Video Background */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src="/videos/hki-newsroom-video.mp4" type="video/mp4" />
-        </video>
+      <section className="h-screen snap-start relative flex items-center justify-center overflow-hidden">
+        {/* Video Container with explicit z-index */}
+        <div className="absolute inset-0 z-0">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="w-full h-full object-cover"
+          >
+            <source src="/videos/hki-newsroom-video.mp4" type="video/mp4" />
+          </video>
+        </div>
         
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/50" />
+        {/* Overlay with higher z-index */}
+        <div className="absolute inset-0 bg-black/50 z-10" />
         
-        {/* Content */}
-        <div className="relative z-10 text-center text-white px-6 max-w-4xl mx-auto">
+        {/* Content with highest z-index and position relative for iOS */}
+        <div className="relative z-20 text-center text-white px-6 max-w-4xl mx-auto" style={{ position: 'relative' }}>
           <div className="mb-8 flex justify-center">
             <LongLogo 
-              className="h-auto w-full max-w-[280px] md:max-w-[400px]"
+              className="h-auto w-full max-w-[280px] md:max-w-[400px] relative z-30"
               style={{
-                filter: 'brightness(0) invert(1)'
+                filter: 'brightness(0) invert(1)',
+                position: 'relative',
+                zIndex: 30
               }}
             />
           </div>
           
-          <h1 className="text-xl md:text-3xl lg:text-4xl mb-6 font-light">
+          <h1 className="text-xl md:text-3xl lg:text-4xl mb-6 font-light relative z-30">
             {t('about.hero.subtitle')}
           </h1>
           
-          <div className="w-20 h-0.5 bg-white/60 mx-auto mb-12" />
+          <div className="w-20 h-0.5 bg-white/60 mx-auto mb-12 relative z-30" />
           
           {/* Mission Statement */}
-          <div className="mt-16">
+          <div className="mt-16 relative z-30">
             <h2 className="text-2xl md:text-4xl font-bold mb-6">
               {t('about.mission.title')}
             </h2>

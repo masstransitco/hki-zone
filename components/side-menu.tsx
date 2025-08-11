@@ -320,7 +320,7 @@ export default function SideMenu({ isOpen, onOpenChange, onNavigate }: SideMenuP
               className="hover:text-foreground transition-colors underline"
             >
               Aircity Operating System (HK) Limited
-            </a>. All rights reserved. Rm 830, 8/F, Beverley Commercial Centre, No. 87-105 Chatham Road South, Tsim Sha Tsui, Hong Kong
+            </a>. All rights reserved.
           </p>
         </div>
       </div>
