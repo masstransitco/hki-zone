@@ -28,43 +28,88 @@ export default function AboutUs() {
     <div className="h-screen overflow-y-auto snap-y snap-mandatory">
       {/* Page 1: Hero with Video (100vh) */}
       <section className="h-screen snap-start relative flex items-center justify-center overflow-hidden">
-        {/* Video Container with explicit z-index */}
-        <div className="absolute inset-0 z-0">
+        {/* Video Container with explicit z-index and iOS fixes */}
+        <div className="absolute inset-0 z-0" style={{ zIndex: 0 }}>
           <video
             autoPlay
             muted
             loop
             playsInline
             className="w-full h-full object-cover"
+            style={{ 
+              zIndex: 0,
+              isolation: 'isolate',
+              transform: 'translateZ(0)',
+              WebkitTransform: 'translateZ(0)'
+            }}
           >
             <source src="/videos/hki-newsroom-video.mp4" type="video/mp4" />
           </video>
         </div>
         
-        {/* Overlay with higher z-index */}
-        <div className="absolute inset-0 bg-black/50 z-10" />
+        {/* Overlay with higher z-index and iOS stacking context */}
+        <div className="absolute inset-0 bg-black/50 z-10" style={{ zIndex: 10, isolation: 'isolate' }} />
         
-        {/* Content with highest z-index and position relative for iOS */}
-        <div className="relative z-20 text-center text-white px-6 max-w-4xl mx-auto" style={{ position: 'relative' }}>
+        {/* Content with highest z-index and forced stacking context for iOS */}
+        <div 
+          className="relative z-20 text-center text-white px-6 max-w-4xl mx-auto" 
+          style={{ 
+            position: 'relative',
+            zIndex: 20,
+            isolation: 'isolate',
+            transform: 'translateZ(0)',
+            WebkitTransform: 'translateZ(0)'
+          }}
+        >
           <div className="mb-8 flex justify-center">
             <LongLogo 
               className="h-auto w-full max-w-[280px] md:max-w-[400px] relative z-30"
               style={{
                 filter: 'brightness(0) invert(1)',
                 position: 'relative',
-                zIndex: 30
+                zIndex: 30,
+                isolation: 'isolate',
+                transform: 'translateZ(0)',
+                WebkitTransform: 'translateZ(0)'
               }}
             />
           </div>
           
-          <h1 className="text-xl md:text-3xl lg:text-4xl mb-6 font-light relative z-30">
+          <h1 
+            className="text-xl md:text-3xl lg:text-4xl mb-6 font-light relative z-30"
+            style={{ 
+              position: 'relative',
+              zIndex: 30,
+              isolation: 'isolate',
+              transform: 'translateZ(0)',
+              WebkitTransform: 'translateZ(0)'
+            }}
+          >
             {t('about.hero.subtitle')}
           </h1>
           
-          <div className="w-20 h-0.5 bg-white/60 mx-auto mb-12 relative z-30" />
+          <div 
+            className="w-20 h-0.5 bg-white/60 mx-auto mb-12 relative z-30"
+            style={{ 
+              position: 'relative',
+              zIndex: 30,
+              isolation: 'isolate',
+              transform: 'translateZ(0)',
+              WebkitTransform: 'translateZ(0)'
+            }}
+          />
           
           {/* Mission Statement */}
-          <div className="mt-16 relative z-30">
+          <div 
+            className="mt-16 relative z-30"
+            style={{ 
+              position: 'relative',
+              zIndex: 30,
+              isolation: 'isolate',
+              transform: 'translateZ(0)',
+              WebkitTransform: 'translateZ(0)'
+            }}
+          >
             <h2 className="text-2xl md:text-4xl font-bold mb-6">
               {t('about.mission.title')}
             </h2>
