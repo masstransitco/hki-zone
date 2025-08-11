@@ -215,8 +215,13 @@ export default function AboutUs() {
           </div>
         </div>
         
-        {/* Spacer for footer nav bar - matches footer nav height exactly */}
-        <div className="h-[76px]" />
+        {/* Spacer for footer nav bar - exact height calculation for mobile */}
+        <div 
+          style={{
+            height: 'calc(68px + env(safe-area-inset-bottom, 0px))',
+            minHeight: '68px'
+          }}
+        />
       </section>
     </div>
   )
