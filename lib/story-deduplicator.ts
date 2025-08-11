@@ -5,6 +5,7 @@
  */
 
 import OpenAI from 'openai'
+import { createClient } from '@supabase/supabase-js'
 import { 
   generateEmbeddings, 
   clusterBySimilarity, 
@@ -14,6 +15,13 @@ import {
 } from './embeddings-service'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+// Initialize Supabase client for metrics storage
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabase = supabaseUrl && supabaseServiceRoleKey 
+  ? createClient(supabaseUrl, supabaseServiceRoleKey)
+  : null
 
 // Source reliability scores (higher = more reliable)
 export const SOURCE_RELIABILITY_SCORES: Record<string, number> = {
@@ -58,7 +66,8 @@ export interface DeduplicationResult {
  * Removes duplicate stories and selects the best version from each cluster
  */
 export async function deduplicateStories(
-  candidateArticles: ArticleWithMetadata[]
+  candidateArticles: ArticleWithMetadata[],
+  sessionId?: string
 ): Promise<DeduplicationResult> {
   if (candidateArticles.length === 0) {
     return {
@@ -77,12 +86,30 @@ export async function deduplicateStories(
 
   console.log(`\n🔄 Starting story deduplication for ${candidateArticles.length} articles...`)
   
+  // Track timing for performance metrics
+  const startTime = Date.now()
+  let embeddingsTime = 0
+  let clusteringTime = 0
+  let nlpVerificationTime = 0
+  let nlpVerifications = 0
+  let clustersMerged = 0
+  
+  // Track source distribution before deduplication
+  const sourcesBefore: Record<string, number> = {}
+  candidateArticles.forEach(article => {
+    sourcesBefore[article.source] = (sourcesBefore[article.source] || 0) + 1
+  })
+  
   try {
     // Step 1: Generate embeddings for all articles
+    const embeddingsStart = Date.now()
     const embeddings = await generateEmbeddings(candidateArticles)
+    embeddingsTime = Date.now() - embeddingsStart
     
     // Step 2: Cluster articles with high similarity (>85%)
+    const clusteringStart = Date.now()
     let clusters = clusterBySimilarity(candidateArticles, embeddings, 0.85)
+    clusteringTime = Date.now() - clusteringStart
     
     // Step 3: Find borderline cases that need NLP verification
     const borderlinePairs = findBorderlinePairs(embeddings, 0.70, 0.85)
@@ -90,8 +117,16 @@ export async function deduplicateStories(
     if (borderlinePairs.length > 0) {
       console.log(`🤖 Running NLP verification for ${borderlinePairs.length} borderline pairs...`)
       
+      const nlpStart = Date.now()
+      // Track merges for metrics
+      const initialClusterCount = clusters.length
+      
       // Verify borderline cases and merge clusters if needed
       clusters = await verifyAndMergeClusters(clusters, borderlinePairs, candidateArticles)
+      
+      nlpVerificationTime = Date.now() - nlpStart
+      nlpVerifications = Math.min(borderlinePairs.length, 10) // We limit to 10 verifications
+      clustersMerged = initialClusterCount - clusters.length
     }
     
     // Step 4: Select the best article from each cluster
@@ -116,11 +151,72 @@ export async function deduplicateStories(
       ? clusterSizes.reduce((a, b) => a + b, 0) / clusterSizes.length 
       : 1
     
+    // Track source distribution after deduplication
+    const sourcesAfter: Record<string, number> = {}
+    uniqueArticles.forEach(article => {
+      sourcesAfter[article.source] = (sourcesAfter[article.source] || 0) + 1
+    })
+    
+    // Calculate costs
+    const embeddingsCost = candidateArticles.length * 0.00002 // $0.00002 per embedding
+    const nlpCost = nlpVerifications * 0.00015 // $0.00015 per GPT-4o-mini call
+    const totalCost = embeddingsCost + nlpCost
+    
+    const totalTime = Date.now() - startTime
+    const reductionRate = candidateArticles.length > 0 
+      ? (duplicatesRemoved / candidateArticles.length) * 100 
+      : 0
+    
     console.log(`\n✨ Deduplication complete:`)
     console.log(`   • Original articles: ${candidateArticles.length}`)
     console.log(`   • Unique stories: ${uniqueArticles.length}`)
-    console.log(`   • Duplicates removed: ${duplicatesRemoved} (${Math.round(duplicatesRemoved / candidateArticles.length * 100)}%)`)
+    console.log(`   • Duplicates removed: ${duplicatesRemoved} (${Math.round(reductionRate)}%)`)
     console.log(`   • Sources represented: ${sourcesRepresented.join(', ')}`)
+    console.log(`   • Processing time: ${totalTime}ms`)
+    console.log(`   • Cost: $${totalCost.toFixed(6)}`)
+    
+    // Store metrics in database if Supabase is configured and sessionId provided
+    if (supabase && sessionId) {
+      try {
+        const metrics = {
+          session_id: sessionId,
+          original_count: candidateArticles.length,
+          unique_stories: uniqueArticles.length,
+          duplicates_removed: duplicatesRemoved,
+          reduction_rate: reductionRate,
+          embeddings_time_ms: embeddingsTime,
+          clustering_time_ms: clusteringTime,
+          nlp_verification_time_ms: nlpVerificationTime,
+          total_time_ms: totalTime,
+          average_cluster_size: averageClusterSize,
+          largest_cluster: largestCluster,
+          cluster_count: clusters.length,
+          sources_before: sourcesBefore,
+          sources_after: sourcesAfter,
+          sources_represented: sourcesRepresented,
+          borderline_pairs: borderlinePairs.length,
+          nlp_verifications: nlpVerifications,
+          clusters_merged: clustersMerged,
+          embeddings_cost: embeddingsCost,
+          nlp_cost: nlpCost,
+          total_cost: totalCost,
+          enable_story_dedup: true,
+          error_occurred: false
+        }
+        
+        const { error } = await supabase
+          .from('deduplication_metrics')
+          .insert(metrics)
+        
+        if (error) {
+          console.error('Failed to store deduplication metrics:', error)
+        } else {
+          console.log(`   📊 Metrics stored for session ${sessionId}`)
+        }
+      } catch (error) {
+        console.error('Error storing metrics:', error)
+      }
+    }
     
     return {
       uniqueArticles,
@@ -137,6 +233,27 @@ export async function deduplicateStories(
     
   } catch (error) {
     console.error('❌ Error in story deduplication:', error)
+    
+    // Store error metrics if possible
+    if (supabase && sessionId) {
+      try {
+        await supabase
+          .from('deduplication_metrics')
+          .insert({
+            session_id: sessionId,
+            original_count: candidateArticles.length,
+            unique_stories: candidateArticles.length,
+            duplicates_removed: 0,
+            reduction_rate: 0,
+            total_time_ms: Date.now() - startTime,
+            error_occurred: true,
+            error_message: error instanceof Error ? error.message : 'Unknown error',
+            enable_story_dedup: true
+          })
+      } catch (metricError) {
+        console.error('Failed to store error metrics:', metricError)
+      }
+    }
     
     // Fallback: return original articles if deduplication fails
     console.log('⚠️ Falling back to original articles without deduplication')

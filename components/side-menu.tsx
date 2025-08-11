@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { X, User, LogOut, UserPlus, LogIn } from "lucide-react"
+import { X, User, LogOut, UserPlus, LogIn, Info } from "lucide-react"
 import LiveNewsIndicator from "./live-news-indicator"
 import LanguageSelector from "./language-selector"
 import ThemeToggle from "./theme-toggle"
@@ -17,9 +17,10 @@ import { useLanguage } from "./language-provider"
 interface SideMenuProps {
   isOpen: boolean
   onOpenChange: (open: boolean) => void
+  onNavigate?: (view: 'main' | 'about') => void
 }
 
-export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
+export default function SideMenu({ isOpen, onOpenChange, onNavigate }: SideMenuProps) {
   const { user, session, signOut, loading, sessionValid } = useAuth()
   const { t } = useLanguage()
   const menuRef = React.useRef<HTMLDivElement>(null)
@@ -268,6 +269,7 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
                 </div>
               </div>
 
+
               {/* System Settings */}
               <div className="flex flex-col gap-2">
                 <h3 className="text-sm font-medium text-foreground">{t('menu.systemStatus')}</h3>
@@ -291,6 +293,21 @@ export default function SideMenu({ isOpen, onOpenChange }: SideMenuProps) {
               </div>
             </div>
           )}
+        </div>
+
+        {/* About HKI Button */}
+        <div className="pb-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start"
+            onClick={() => {
+              onNavigate?.('about')
+              onOpenChange(false)
+            }}
+          >
+            About HKI
+          </Button>
         </div>
 
         {/* Footer */}

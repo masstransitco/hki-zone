@@ -160,7 +160,7 @@ function processArticlesIntoTimeBuckets(articles: any[], timeframe: string) {
   const timeBuckets: { [key: string]: any } = {}
   const sources = new Set<string>()
   const categories = new Set<string>()
-  const sourceStats: { [key: string]: { total: number, enhanced: number } } = {}
+  const sourceStats: { [key: string]: { total: number, selected: number, enhanced: number } } = {}
 
   // Process each article
   articles.forEach(article => {
@@ -173,11 +173,14 @@ function processArticlesIntoTimeBuckets(articles: any[], timeframe: string) {
       categories.add(category)
     }
 
-    // Track source statistics
+    // Track source statistics with selection data
     if (!sourceStats[sourceKey]) {
-      sourceStats[sourceKey] = { total: 0, enhanced: 0 }
+      sourceStats[sourceKey] = { total: 0, selected: 0, enhanced: 0 }
     }
     sourceStats[sourceKey].total++
+    if (article.selected_for_enhancement) {
+      sourceStats[sourceKey].selected++
+    }
     if (article.is_ai_enhanced) {
       sourceStats[sourceKey].enhanced++
     }
@@ -215,13 +218,15 @@ function processArticlesIntoTimeBuckets(articles: any[], timeframe: string) {
       return new Date(`${a.date} 2025`).getTime() - new Date(`${b.date} 2025`).getTime()
     })
 
-  // Calculate source enhancement data
+  // Calculate source enhancement data with selection opportunity
   const sourceEnhancement = Object.entries(sourceStats)
     .map(([name, stats]) => ({
       name,
       total: stats.total,
+      selected: stats.selected,
       enhanced: stats.enhanced,
-      rate: stats.total > 0 ? Math.round((stats.enhanced / stats.total) * 100) : 0
+      selectionRate: stats.total > 0 ? Math.round((stats.selected / stats.total) * 100 * 10) / 10 : 0,
+      enhancementRate: stats.total > 0 ? Math.round((stats.enhanced / stats.total) * 100) : 0
     }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 10)
@@ -395,17 +400,19 @@ export async function GET(request: NextRequest) {
       avgTimeToEnhancement = avgHours < 1 ? "< 1 hour" : `${avgHours} hours`
     }
 
-    // Calculate source coverage score (sources with meaningful enhancement rates)
-    const sourceStats: { [key: string]: { total: number, enhanced: number } } = {}
+    // Calculate source coverage score (articles with selection opportunity vs total scraped)
+    const sourceStats: { [key: string]: { total: number, selected: number, enhanced: number } } = {}
     articles.forEach(a => {
       const source = a.source || 'Unknown'
-      if (!sourceStats[source]) sourceStats[source] = { total: 0, enhanced: 0 }
+      if (!sourceStats[source]) sourceStats[source] = { total: 0, selected: 0, enhanced: 0 }
       sourceStats[source].total++
+      if (a.selected_for_enhancement) sourceStats[source].selected++
       if (a.is_ai_enhanced) sourceStats[source].enhanced++
     })
     
+    // Source coverage = sources where articles had chance to be selected
     const activeSources = Object.values(sourceStats).filter(s => s.total >= 10)
-    const wellCoveredSources = activeSources.filter(s => (s.enhanced / s.total) >= 0.1)
+    const wellCoveredSources = activeSources.filter(s => (s.selected / s.total) >= 0.05) // 5% selection opportunity threshold
     const sourceCoverageScore = activeSources.length > 0 ? 
       Math.round((wellCoveredSources.length / activeSources.length) * 100) : 0
 
@@ -438,10 +445,18 @@ export async function GET(request: NextRequest) {
       processingEfficiency = Math.max(0, Math.min(100, Math.round(100 - (avgProcessingHours / maxHours) * 100)))
     }
 
+    // Calculate overall selection opportunity rate
+    const totalArticlesInPeriod = articles.length
+    const articlesWithSelectionOpportunity = articles.filter(a => a.selected_for_enhancement).length
+    const selectionOpportunityRate = totalArticlesInPeriod > 0 
+      ? Math.round((articlesWithSelectionOpportunity / totalArticlesInPeriod) * 100 * 10) / 10
+      : 0
+    
     // Build comprehensive pipeline metrics
     const pipelineMetrics = {
       enhancementConversionRate: totalArticles > 0 ? Math.round((enhancedArticles / totalArticles) * 100) : 0,
       sourceCoverageScore,
+      selectionOpportunityRate, // New metric: % of articles that had chance to be selected
       processingEfficiency,
       avgTimeToEnhancement,
       queueSize: selectedArticles,

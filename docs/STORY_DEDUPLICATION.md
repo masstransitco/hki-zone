@@ -100,23 +100,36 @@ Daily cost (96 selections/day):
 
 ## Monitoring
 
-The system tracks deduplication effectiveness in the database:
+### Database Metrics
+The system stores comprehensive deduplication metrics in the `deduplication_metrics` table:
 
-```json
-{
-  "deduplication_stats": {
-    "original_count": 50,
-    "unique_stories": 15,
-    "duplicates_removed": 35,
-    "cluster_info": {
-      "cluster_id": "cluster_1_abc123",
-      "cluster_size": 4,
-      "sources_in_cluster": ["bastillepost", "RTHK", "HK01", "am730"],
-      "average_similarity": 0.92
-    }
-  }
-}
+- **Session tracking**: Each deduplication run is tracked with timing and cost data
+- **Source distribution**: Before/after article counts by source
+- **Cluster analysis**: Average cluster sizes and merging statistics
+- **Performance metrics**: Processing times for each stage
+- **Cost tracking**: Embeddings and NLP verification costs
+
+### Admin Dashboard
+View real-time deduplication metrics in the admin dashboard:
+1. Navigate to `/admin/articles`
+2. Click on the "Analytics" tab
+3. Find the "Story Deduplication Metrics" section
+
+The dashboard shows:
+- **Summary stats**: Total duplicates removed, reduction rates, costs
+- **Time series charts**: Deduplication trends over time
+- **Source efficiency**: Which sources have the most duplicates
+- **Cluster analysis**: Story clustering patterns
+- **Performance metrics**: Processing time breakdown
+- **Cost analysis**: Per-duplicate removal costs
+
+### API Endpoint
+Access metrics programmatically:
+```bash
+GET /api/admin/articles/deduplication-metrics?timeframe=24h
 ```
+
+Timeframe options: `1h`, `6h`, `24h`, `7d`, `30d`
 
 ## Expected Results
 

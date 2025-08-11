@@ -112,7 +112,7 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
     console.log(`   • Running advanced deduplication using embeddings + NLP...`);
     
     try {
-      deduplicationResult = await deduplicateStories(candidateArticles);
+      deduplicationResult = await deduplicateStories(candidateArticles, sessionId);
       candidateArticles = deduplicationResult.uniqueArticles;
       
       // Log deduplication statistics

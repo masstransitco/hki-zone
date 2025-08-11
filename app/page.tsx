@@ -1,19 +1,23 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useState } from "react"
 import UnifiedHeader from "@/components/unified-header"
 import FooterNav from "@/components/footer-nav"
 import MainContent from "@/components/main-content-with-selector"
+import AboutUs from "@/components/about-us"
 import SideMenu from "@/components/side-menu"
 import StickyCategorySelector from "@/components/sticky-category-selector"
 import { ContentType } from "@/components/content-type-selector"
 import { useEdgeSwipe } from "@/hooks/use-swipe-gesture"
 import { useUIRedux } from "@/hooks/use-ui-redux"
 
+type ViewType = 'main' | 'about'
+
 const contentTypes: ContentType[] = ['headlines', 'finance', 'techScience', 'entertainment', 'international', 'news', 'bulletin'];
 
 export default function HomePage() {
   const mainContentRef = useRef<HTMLDivElement>(null)
+  const [currentView, setCurrentView] = useState<ViewType>('main')
   const { 
     contentType, 
     isMenuOpen, 
@@ -38,13 +42,21 @@ export default function HomePage() {
     }
   }
 
+  const handleNavigation = (view: ViewType) => {
+    setCurrentView(view)
+  }
+
   // Content type change handler (now handled by MainContent carousel)
   // Removed old swipe gesture implementation - now handled by carousel
 
   return (
     <>
       {/* Side menu as pure overlay */}
-      <SideMenu isOpen={isMenuOpen} onOpenChange={setMenuOpen} />
+      <SideMenu 
+        isOpen={isMenuOpen} 
+        onOpenChange={setMenuOpen}
+        onNavigate={handleNavigation}
+      />
       
       {/* Screen reader announcements */}
       <div className="sr-only" aria-live="polite" aria-atomic="true">
@@ -55,23 +67,34 @@ export default function HomePage() {
       <div className="fixed inset-0 flex flex-col">
         {/* Main content area - full viewport height */}
         <main ref={mainContentRef} className="flex-1 relative overflow-hidden">
-          <MainContent 
-            contentType={contentType}
-            onContentTypeChange={handleContentTypeChange}
-          />
+          {currentView === 'main' ? (
+            <MainContent 
+              contentType={contentType}
+              onContentTypeChange={handleContentTypeChange}
+            />
+          ) : currentView === 'about' ? (
+            <div className="h-full overflow-auto bg-background">
+              <AboutUs />
+            </div>
+          ) : null}
         </main>
 
         {/* Unified header - floating overlay */}
         <UnifiedHeader 
           isMenuOpen={isMenuOpen}
           onMenuOpenChange={setMenuOpen}
+          showBackButton={currentView !== 'main'}
+          onBackClick={() => setCurrentView('main')}
+          backButtonLabel="Back to Home"
         />
 
-        {/* Sticky category selector - floating overlay */}
-        <StickyCategorySelector 
-          value={contentType}
-          onChange={handleContentTypeChange}
-        />
+        {/* Sticky category selector - floating overlay - only show on main view */}
+        {currentView === 'main' && (
+          <StickyCategorySelector 
+            value={contentType}
+            onChange={handleContentTypeChange}
+          />
+        )}
       </div>
 
       {/* Fixed bottom navigation */}

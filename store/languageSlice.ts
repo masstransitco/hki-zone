@@ -519,6 +519,47 @@ const translations = {
     "outlets.Bastille Post": "Bastille Post",
     "outlets.Metro Radio": "Metro Radio",
     "outlets.Commercial Radio": "Commercial Radio",
+
+    // About Us
+    "about.title": "About Us",
+    "about.hero.subtitle": "Cut through the noise. News that matters.",
+    
+    // What We Are
+    "about.mission.title": "What We Are",
+    "about.mission.description": "HKI is a Hong Kong–focused intelligence platform that uses agentic AI and advanced NLP to actively surface the stories that matter most. Instead of flooding readers with every update, our system applies editorial and domain-specific reasoning to identify high-impact developments, distill their meaning, and connect them to relevant context — enabling decision-makers to act with clarity and speed.",
+    
+    // For Readers
+    "about.whatWeDo.title": "For Readers",
+    "about.whatWeDo.filters.title": "Precision over volume",
+    "about.whatWeDo.filters.description": "We focus on developments that genuinely affect Hong Kong, filtering out the noise so you only see what's worth your time.",
+    "about.whatWeDo.enhances.title": "One story, any language",
+    "about.whatWeDo.enhances.description": "Read or listen in English, Traditional Chinese, or Simplified Chinese — seamlessly switching with a tap.",
+    "about.whatWeDo.delivers.title": "Context you can use",
+    "about.whatWeDo.delivers.description": "Every story includes essential background, key facts, and plain-language explanations so you can understand not just what happened, but why it matters.",
+    "about.whatWeDo.clean.title": "Designed for clarity",
+    "about.whatWeDo.clean.description": "A clean reading and listening experience, free from clickbait, algorithmic clutter, and intrusive ads.",
+    
+    // For Business
+    "about.whyDifferent.title": "For Businesses and Institutions",
+    "about.whyDifferent.hyperLocal.title": "Targeted local insight",
+    "about.whyDifferent.hyperLocal.description": "Sector-specific intelligence curated for Hong Kong's policy, market, and regulatory landscape.",
+    "about.whyDifferent.multiLanguage.title": "Multilingual delivery",
+    "about.whyDifferent.multiLanguage.description": "Every update is instantly available in English, Traditional Chinese, and Simplified Chinese — ready for internal distribution.",
+    "about.whyDifferent.context.title": "Structured intelligence feeds",
+    "about.whyDifferent.context.description": "Integrate our curated news streams directly into your systems via API, with metadata and tagging optimised for analysis and decision support.",
+    "about.whyDifferent.noNoise.title": "Trust-first environment",
+    "about.whyDifferent.noNoise.description": "An information ecosystem built for credibility — safe for brand association and institutional use.",
+    
+    // Our Approach
+    "about.promise.title": "Our Approach",
+    "about.promise.subtitle": "We treat news as a form of actionable intelligence.",
+    "about.promise.description": "By combining local editorial expertise with agentic AI processes — including domain-tuned NLP, relevance scoring, and context mapping — HKI isolates the developments that matter, explains their significance, and delivers them in a form decision-makers can act on. Whether you're navigating policy, monitoring markets, or managing public communication, we strip away noise so the signal is clear.",
+    
+    // Contact
+    "about.contact.title": "Get in Touch",
+    "about.companyName": "Company Name",
+    "about.address": "Address",
+    "about.phone": "Phone",
   },
   "zh-CN": {
     // Header
@@ -1030,6 +1071,48 @@ const translations = {
     "outlets.Bastille Post": "巴士的报",
     "outlets.Metro Radio": "新城电台",
     "outlets.Commercial Radio": "商业电台",
+
+    // About Us
+    "about.title": "关于我们",
+    "about.hero.subtitle": "去除噪音，呈现重要新闻。",
+    
+    // Mission
+    "about.mission.title": "我们的使命",
+    "about.mission.description": "HKI 的存在是为了去除噪音。我们为香港带来重要的新闻——事实核查、清晰呈现、没有不必要的杂乱——让读者能够在不感到overwhelm的情况下保持信息灵通。",
+    
+    // What We Do
+    "about.whatWeDo.title": "我们做什么",
+    "about.whatWeDo.description": "每天，HKI 从可信的本地和全球来源收集并增强数百篇文章。我们的AI驱动平台：",
+    "about.whatWeDo.filters.title": "筛选",
+    "about.whatWeDo.filters.description": "识别对香港最相关、最具影响力的新闻。",
+    "about.whatWeDo.enhances.title": "增强",
+    "about.whatWeDo.enhances.description": "添加清晰度、背景和多种语言的通俗易懂摘要。",
+    "about.whatWeDo.delivers.title": "传递",
+    "about.whatWeDo.delivers.description": "提供清洁、无干扰的阅读和聆听体验——随时随地。",
+    
+    // Why We're Different
+    "about.whyDifferent.title": "我们的不同之处",
+    "about.whyDifferent.hyperLocal.title": "超本地化关注",
+    "about.whyDifferent.hyperLocal.description": "我们优先考虑与香港相关的内容，即使故事来源于其他地方。",
+    "about.whyDifferent.multiLanguage.title": "多语言覆盖",
+    "about.whyDifferent.multiLanguage.description": "在英文、繁体中文和简体中文之间无缝切换。",
+    "about.whyDifferent.context.title": "值得信赖的背景",
+    "about.whyDifferent.context.description": "我们提供背景信息并解释为什么一个故事很重要，没有编辑偏见。",
+    "about.whyDifferent.noNoise.title": "无噪音新闻",
+    "about.whyDifferent.noNoise.description": "简约设计，无点击诱饵，无无尽滚动。",
+    
+    // Our Promise
+    "about.promise.title": "我们的承诺",
+    "about.promise.subtitle": "尊重您的时间、注意力和智慧。",
+    "about.promise.description": "我们相信，当信息易于获取、准确且经过深思熟虑的呈现时，它能够为个人、企业和整个城市做出更好的决策提供支持。",
+    
+    // Contact
+    "about.contact.title": "联系我们",
+    "about.contact.subtitle": "准备好体验无噪音新闻了吗？",
+    "about.companyName": "公司名称",
+    "about.address": "地址",
+    "about.phone": "电话",
+    "about.whatsapp": "微信",
   },
   "zh-TW": {
     // Header
@@ -1541,6 +1624,47 @@ const translations = {
     "outlets.Bastille Post": "巴士的報",
     "outlets.Metro Radio": "新城電台",
     "outlets.Commercial Radio": "商業電台",
+
+    // About Us
+    "about.title": "關於我們",
+    "about.hero.subtitle": "去除雜訊，呈現重要新聞。",
+    
+    // What We Are
+    "about.mission.title": "我們是誰",
+    "about.mission.description": "HKI 是一個以香港為核心的情報平台，運用自主式 AI 與先進自然語言處理技術，主動發掘最重要的新聞事件。我們的系統不會用大量資訊淹沒讀者，而是透過編輯判斷與特定領域推理，識別高影響力的發展動態，提煉其意義，並連結相關背景脈絡——讓決策者能夠以清晰思維快速行動。",
+    
+    // For Readers
+    "about.whatWeDo.title": "給讀者",
+    "about.whatWeDo.filters.title": "精準勝於數量",
+    "about.whatWeDo.filters.description": "我們專注於真正影響香港的發展動態，過濾雜訊，讓你只看到值得花時間的內容。",
+    "about.whatWeDo.enhances.title": "一則新聞，任意語言",
+    "about.whatWeDo.enhances.description": "可用英文、繁體中文或簡體中文閱讀或收聽——只需輕觸即可無縫切換。",
+    "about.whatWeDo.delivers.title": "實用脈絡資訊",
+    "about.whatWeDo.delivers.description": "每則新聞都包含重要背景、關鍵事實與淺白解釋，讓你不只了解發生了什麼，更明白為何重要。",
+    "about.whatWeDo.clean.title": "清晰設計",
+    "about.whatWeDo.clean.description": "簡潔的閱讀與收聽體驗，沒有標題黨、演算法雜訊和擾人廣告。",
+    
+    // For Business
+    "about.whyDifferent.title": "給企業及機構",
+    "about.whyDifferent.hyperLocal.title": "針對性本地洞察",
+    "about.whyDifferent.hyperLocal.description": "針對香港政策、市場與監管環境策劃的行業專屬情報。",
+    "about.whyDifferent.multiLanguage.title": "多語言交付",
+    "about.whyDifferent.multiLanguage.description": "每則更新都即時提供英文、繁體中文與簡體中文版本——為內部分發作好準備。",
+    "about.whyDifferent.context.title": "結構化情報饋送",
+    "about.whyDifferent.context.description": "透過 API 將我們策劃的新聞流直接整合到你的系統，具備為分析與決策支援而優化的元數據與標籤。",
+    "about.whyDifferent.noNoise.title": "信任優先環境",
+    "about.whyDifferent.noNoise.description": "為公信力而建的資訊生態系統——適合品牌合作與機構使用。",
+    
+    // Our Approach
+    "about.promise.title": "我們的方式",
+    "about.promise.subtitle": "我們將新聞視為可行動的情報。",
+    "about.promise.description": "透過結合本地編輯專業與自主式 AI 流程——包括領域調校的自然語言處理、相關性評分與脈絡映射——HKI 找出重要發展動態，解釋其重要性，並以決策者可採取行動的形式交付。無論你在處理政策導向、監控市場還是管理公共傳播，我們去除雜訊，讓訊號清晰可見。",
+    
+    // Contact
+    "about.contact.title": "聯繫我們",
+    "about.companyName": "公司名稱",
+    "about.address": "地址",
+    "about.phone": "電話",
   },
 }
 

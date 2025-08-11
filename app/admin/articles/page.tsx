@@ -23,6 +23,7 @@ import { useRealtimeArticles } from "@/hooks/use-realtime-articles"
 import { toast } from "sonner"
 import type { Article } from "@/lib/types"
 import HKIIcon from "@/components/hki-icon"
+import { DeduplicationMetrics } from "./components/DeduplicationMetrics"
 
 interface QuickStats {
   total: number
@@ -1576,6 +1577,27 @@ export default function ArticlesPage() {
                       
                       <div className="p-3 sm:p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                         <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Selection Opportunity</span>
+                          <Badge 
+                            variant={analyticsData.pipelineMetrics.selectionOpportunityRate >= 10 ? "default" : analyticsData.pipelineMetrics.selectionOpportunityRate >= 5 ? "secondary" : "outline"} 
+                            className="text-xs"
+                          >
+                            {analyticsData.pipelineMetrics.selectionOpportunityRate || 0}%
+                          </Badge>
+                        </div>
+                        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                          <div 
+                            className="bg-gradient-to-r from-cyan-500 to-blue-600 h-2 rounded-full transition-all duration-500" 
+                            style={{ width: `${Math.min(100, (analyticsData.pipelineMetrics.selectionOpportunityRate || 0) * 5)}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                          Articles with selection chance vs total scraped
+                        </p>
+                      </div>
+                      
+                      <div className="p-3 sm:p-4 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Processing Efficiency</span>
                           <Badge 
                             variant={analyticsData.pipelineMetrics.processingEfficiency >= 70 ? "default" : analyticsData.pipelineMetrics.processingEfficiency >= 40 ? "secondary" : "outline"} 
@@ -1652,6 +1674,11 @@ export default function ArticlesPage() {
                 )}
               </CardContent>
             </Card>
+          </div>
+
+          {/* Story Deduplication Metrics */}
+          <div className="mt-4">
+            <DeduplicationMetrics />
           </div>
 
           {/* Enhancement Trends */}
