@@ -215,15 +215,8 @@ export default function AboutUs() {
           </div>
         </div>
         
-        {/* Enhanced spacer for footer nav bar with iOS safe area support */}
-        <div 
-          className="h-20 bottom-nav-safe"
-          style={{
-            /* Additional iOS-specific bottom spacing for footer navigation */
-            paddingBottom: 'max(20px, calc(20px + env(safe-area-inset-bottom, 0px) + 60px))',
-            minHeight: 'calc(80px + env(safe-area-inset-bottom, 0px))'
-          }}
-        />
+        {/* Spacer for footer nav bar - matches footer nav height exactly */}
+        <div className="h-[76px]" />
       </section>
     </div>
   )
