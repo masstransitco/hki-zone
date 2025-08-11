@@ -19,6 +19,20 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* iOS safe area utilities */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Enhanced bottom spacing for iOS footer navigation */
+.bottom-nav-safe {
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 0px));
+}
+
 /* Fix scrolling containers on mobile */
 .overflow-y-auto,
 .overflow-auto {
