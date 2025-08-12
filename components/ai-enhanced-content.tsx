@@ -61,7 +61,7 @@ export default function AIEnhancedContent({ content, isBottomSheet = false, sour
           parts.push(
             <button
               key={`citation-${citationNumber}-${match.index}`}
-              className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-primary/10 hover:bg-primary/20 text-primary rounded transition-colors cursor-pointer mx-0.5"
+              className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium bg-surface-3/50 dark:bg-surface-3/40 hover:bg-surface-3/70 dark:hover:bg-surface-3/60 text-text-2 dark:text-text-2 rounded transition-colors cursor-pointer mx-0.5"
               onClick={(e) => {
                 e.stopPropagation()
                 if (source.url) {
@@ -174,7 +174,7 @@ export default function AIEnhancedContent({ content, isBottomSheet = false, sour
           <ul className="space-y-2">
             {parsed.keyPoints.map((point, index) => (
               <li key={index} className="flex items-start gap-3">
-                <span className="flex-shrink-0 w-2 h-2 bg-primary rounded-full mt-2"></span>
+                <span className="flex-shrink-0 w-2 h-2 bg-text-3 dark:bg-text-3 rounded-full mt-2"></span>
                 <span className={`${textSizeClass} text-foreground leading-loose font-normal flex-1`}>
                   {processTextWithCitations(point)}
                 </span>

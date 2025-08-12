@@ -93,7 +93,7 @@ export default function ArticleDetailSheet({ articleId, onArticleSelect }: Artic
               <PublicSources 
                 sources={article.enhancementMetadata.sources}
                 trigger={
-                  <span className="text-sm text-primary font-medium hover:underline cursor-pointer">
+                  <span className="text-sm text-text-2 dark:text-text-2 font-medium hover:text-text-1 dark:hover:text-text-1 hover:underline cursor-pointer transition-colors">
                     {article.enhancementMetadata.sources.length} sources
                   </span>
                 }
@@ -105,7 +105,7 @@ export default function ArticleDetailSheet({ articleId, onArticleSelect }: Artic
                   size="md" 
                   showFallback={true}
                 />
-                <span className="text-sm text-primary font-medium">
+                <span className="text-sm text-text-2 dark:text-text-2 font-medium">
                   {getSourceDisplayNameWithAI(article.source, article.isAiEnhanced)}
                 </span>
               </div>
@@ -177,7 +177,7 @@ export default function ArticleDetailSheet({ articleId, onArticleSelect }: Artic
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-primary hover:opacity-70 transition-opacity rounded-lg p-1 -m-1"
+            className="inline-flex items-center gap-2 text-text-2 dark:text-text-2 hover:text-text-1 dark:hover:text-text-1 transition-colors rounded-lg p-1 -m-1"
           >
             <ExternalLink className="w-4 h-4" />
             <span className="text-sm font-medium">{t("article.readOriginal")}</span>

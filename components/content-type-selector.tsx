@@ -95,36 +95,50 @@ export const ContentTypeSelector: React.FC<ContentTypeSelectorProps> = ({ value,
         ref={containerRef}
         className="overflow-x-auto category-selector-scrollbar"
       >
-        {/* Use justify-between on larger screens when content doesn't overflow */}
-        <div className="flex gap-1 p-1 bg-transparent min-w-max lg:min-w-full lg:justify-between">
+        {/* Pills container */}
+        <div className="flex gap-2 p-1 min-w-max lg:min-w-full lg:justify-between">
           {contentTypes.map((type) => {
             const config = getContentConfig(type)
             const isSelected = value === type
             const isPressedState = isPressed === type
             
             return (
-              <button
-                key={type}
-                role="tab"
-                aria-selected={isSelected}
-                aria-controls={`${type}-panel`}
-                id={`${type}-tab`}
-                onClick={() => handlePress(type)}
-                onMouseDown={() => setIsPressed(type)}
-                onMouseUp={() => setIsPressed(null)}
-                onTouchStart={() => setIsPressed(type)}
-                className={`relative px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans whitespace-nowrap ${
-                  isSelected
-                    ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900 shadow-sm'
-                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-700 hover:text-neutral-800 dark:hover:text-neutral-200'
-                } ${isPressedState ? 'scale-[0.97]' : ''}`}
-                style={{ 
-                  fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
-                  letterSpacing: '-0.01em'
-                }}
-              >
-                {t(config.translationKey)}
-              </button>
+              <div key={type} className="relative">
+                {/* Blur emission layer behind pill */}
+                <div 
+                  className={`absolute inset-0 rounded-full transition-all duration-200 pointer-events-none ${
+                    isSelected 
+                      ? 'bg-accent-1/20 dark:bg-accent-1/15' 
+                      : 'bg-surface-3/20 dark:bg-surface-4/15'
+                  }`}
+                  style={{
+                    filter: isSelected ? 'blur(24px)' : 'blur(20px)',
+                    transform: isSelected ? 'scale(1.15)' : 'scale(1.1)'
+                  }}
+                />
+                {/* Actual pill button */}
+                <button
+                  role="tab"
+                  aria-selected={isSelected}
+                  aria-controls={`${type}-panel`}
+                  id={`${type}-tab`}
+                  onClick={() => handlePress(type)}
+                  onMouseDown={() => setIsPressed(type)}
+                  onMouseUp={() => setIsPressed(null)}
+                  onTouchStart={() => setIsPressed(type)}
+                  className={`relative px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ease-out touch-manipulation font-sans whitespace-nowrap ${
+                    isSelected
+                      ? 'bg-accent-1/95 text-white dark:bg-accent-1/95 dark:text-white backdrop-blur-sm'
+                      : 'bg-surface-1/70 dark:bg-surface-2/60 text-text-3 dark:text-text-3 hover:bg-surface-2/80 dark:hover:bg-surface-3/70 hover:text-text-2 dark:hover:text-text-2 backdrop-blur-sm'
+                  } ${isPressedState ? 'scale-[0.97]' : ''}`}
+                  style={{ 
+                    fontFamily: '"Inter", "SF Pro Display", "Noto Sans CJK SC", "Noto Sans CJK TC", "PingFang SC", "PingFang TC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", system-ui, sans-serif',
+                    letterSpacing: '-0.01em'
+                  }}
+                >
+                  {t(config.translationKey)}
+                </button>
+              </div>
             )
           })}
         </div>

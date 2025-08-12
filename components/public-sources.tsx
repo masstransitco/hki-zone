@@ -45,7 +45,7 @@ export default function PublicSources({ sources, trigger, className = "" }: Publ
       <DialogContent className="max-w-2xl max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Globe className="h-5 w-5 text-blue-600" />
+            <Globe className="h-5 w-5 text-text-2 dark:text-text-2" />
             Sources ({sources.length})
           </DialogTitle>
         </DialogHeader>
@@ -84,14 +84,14 @@ function SourceCard({ source, index }: SourceCardProps) {
 
   return (
     <Card 
-      className={`group transition-all hover:shadow-sm ${source.url ? 'cursor-pointer hover:border-blue-300' : ''}`}
+      className={`group transition-all hover:shadow-sm ${source.url ? 'cursor-pointer hover:border-surface-3 dark:hover:border-surface-3' : ''}`}
       onClick={handleClick}
     >
       <CardContent className="p-4">
         <div className="flex items-start gap-3">
           {/* Source Number */}
-          <div className="flex-shrink-0 w-6 h-6 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center">
-            <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+          <div className="flex-shrink-0 w-6 h-6 bg-surface-2 dark:bg-surface-3 rounded-full flex items-center justify-center">
+            <span className="text-xs font-semibold text-text-2 dark:text-text-2">
               {index}
             </span>
           </div>
@@ -99,11 +99,11 @@ function SourceCard({ source, index }: SourceCardProps) {
           {/* Source Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2">
-              <h4 className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-blue-600 transition-colors">
+              <h4 className="font-medium text-sm leading-tight line-clamp-2 group-hover:text-text-1 dark:group-hover:text-text-1 transition-colors">
                 {source.title}
               </h4>
               {source.url && (
-                <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-blue-600 transition-colors flex-shrink-0" />
+                <ExternalLink className="h-4 w-4 text-muted-foreground group-hover:text-text-2 dark:group-hover:text-text-2 transition-colors flex-shrink-0" />
               )}
             </div>
             
