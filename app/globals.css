@@ -42,57 +42,57 @@ body {
 
 @layer base {
   :root {
-    /* Enhanced Semantic Color System - Light Mode (Fine-tuned for balance) */
-    /* Surface hierarchy for depth and elevation - warmer, less stark */
-    --color-surface-100: 245 245 244; /* Stone-100: Softer base (was Stone-50) */
-    --color-surface-200: 241 241 240; /* Stone-150: Subtle surface */
-    --color-surface-300: 231 229 228; /* Stone-200: Medium surface */
-    --color-surface-400: 214 211 209; /* Stone-300: Elevated surface */
+    /* Enhanced Semantic Color System - Light Mode (Cool Studio Style) */
+    /* Surface hierarchy for depth and elevation - crisp cool whites */
+    --color-surface-100: 246 248 250; /* Crisp cool white with faint blue tone #F6F8FA */
+    --color-surface-200: 238 241 244; /* Light grey panel backgrounds #EEF1F4 */
+    --color-surface-300: 225 229 233; /* For grouped blocks and insets #E1E5E9 */
+    --color-surface-400: 210 216 222; /* For toolbars, high-elevation cards #D2D8DE */
     
     /* Text hierarchy for optimal readability - enhanced contrast */
-    --color-text-100: 28 25 23;       /* Stone-800: Deeper primary text (was Stone-700) */
-    --color-text-200: 68 64 60;       /* Stone-600: Rich secondary text */
-    --color-text-300: 87 83 78;       /* Stone-600: Muted text (was Stone-500) */
-    --color-text-400: 120 113 108;    /* Stone-500: Subtle text (was Stone-400) */
+    --color-text-100: 22 28 36;       /* Deep navy-black (mirrors dark theme's base) #161C24 */
+    --color-text-200: 51 61 73;       /* Rich secondary #333D49 */
+    --color-text-300: 90 100 112;     /* Metadata and muted text #5A6470 */
+    --color-text-400: 130 138 150;    /* Placeholders and low-priority labels #828A96 */
     
-    /* Accent colors for interactive elements - warmer and more defined */
-    --color-accent-primary: 68 64 60;    /* Stone-600: Rich warm primary */
-    --color-accent-secondary: 120 113 108; /* Stone-500: Warmer secondary */
-    --color-accent-hover: 57 53 52;      /* Stone-700: Deeper hover state */
-    --color-accent-pressed: 41 37 36;    /* Stone-700: Strong pressed state */
+    /* Accent colors for interactive elements - HKI signature blue */
+    --color-accent-primary: 0 122 204;    /* HKI signature blue #007ACC */
+    --color-accent-secondary: 0 102 184;  /* Darker blue for secondary #0066B8 */
+    --color-accent-hover: 0 142 224;      /* Brighter blue hover state #008EE0 */
+    --color-accent-pressed: 0 82 164;     /* Darker blue pressed state #0052A4 */
     
     /* Component-specific semantic colors - enhanced contrast for cards */
     --color-nav-active: var(--color-accent-primary);
     --color-nav-inactive: var(--color-text-300);
-    --color-card-border: var(--color-surface-300);
+    --color-card-border: 224 229 235;     /* Soft separators without heavy contrast #E0E5EB */
     --color-card-hover: var(--color-surface-200);
-    --color-card-background: 255 255 255; /* Pure white for article cards - higher contrast */
+    --color-card-background: 255 255 255; /* Pure white for article cards - maximum contrast */
     
     /* Legacy compatibility - keep existing variables */
     --background: var(--color-surface-100);
     --surface: var(--color-surface-200);
-    --surface-secondary: 241 245 249; /* Warmer stone-100 variant */
+    --surface-secondary: var(--color-surface-200);
     --foreground: var(--color-text-100);
     --foreground-secondary: var(--color-text-200);
     --foreground-muted: var(--color-text-300);
     
-    /* Semantic UI colors - warm white spectrum */
-    --card: var(--color-surface-100);
+    /* Semantic UI colors - cool studio spectrum */
+    --card: var(--color-card-background);
     --card-foreground: var(--color-text-100);
     --popover: var(--color-surface-100);
     --popover-foreground: var(--color-text-100);
     --primary: var(--color-accent-primary);
-    --primary-foreground: var(--color-surface-100);
+    --primary-foreground: 255 255 255; /* Pure white for contrast on blue */
     --secondary: var(--color-surface-200);
-    --secondary-foreground: 68 64 60; /* Stone-600 for contrast */
-    --muted: var(--color-surface-100);
+    --secondary-foreground: var(--color-text-100);
+    --muted: var(--color-surface-200);
     --muted-foreground: var(--color-text-300);
     --accent: var(--color-accent-secondary);
-    --accent-foreground: var(--color-surface-100);
-    --destructive: 220 38 38; /* Red-600: Refined error color */
-    --destructive-foreground: var(--color-surface-100);
+    --accent-foreground: 255 255 255; /* Pure white for contrast on blue */
+    --destructive: 230 75 75; /* Muted red #E64B4B - matches dark theme */
+    --destructive-foreground: 255 255 255; /* Pure white for contrast */
     --border: var(--color-card-border);
-    --input: var(--color-surface-100);
+    --input: 255 255 255; /* Pure white input backgrounds */
     --ring: var(--color-accent-primary);
     --radius: 0.5rem; /* 8px for modern minimal look */
 
@@ -100,56 +100,56 @@ body {
     --text-primary: var(--color-text-100);
     --text-secondary: var(--color-text-200);
     --text-muted: var(--color-text-300);
-    --text-inverse: var(--color-surface-100);
-    --surface-elevated: var(--color-surface-100);
+    --text-inverse: 255 255 255; /* Pure white for inverse text */
+    --surface-elevated: var(--color-surface-200);
     --surface-hover: var(--color-card-hover);
     --surface-pressed: var(--color-surface-300);
     --interactive-primary: var(--color-accent-primary);
     --interactive-hover: var(--color-accent-hover);
     --interactive-pressed: var(--color-accent-pressed);
     
-    /* Apple-inspired TTS semantic colors - Light Theme */
-    --tts-surface: 250 250 249; /* Stone-50: Warm translucent surface */
+    /* Apple-inspired TTS semantic colors - Light Theme (adapted to cool palette) */
+    --tts-surface: var(--color-surface-100); /* Use base surface */
     --tts-surface-elevated: 255 255 255; /* Pure white for highest elevation */
-    --tts-surface-glass: 250 250 249 / 0.8; /* Glassmorphism surface */
-    --tts-accent: 52 199 89; /* Apple green for audio visualization */
-    --tts-accent-muted: 52 199 89 / 0.3; /* Subtle accent for inactive states */
-    --tts-accent-glow: 52 199 89 / 0.1; /* Subtle glow effect */
-    --tts-control-bg: 242 242 247; /* Apple system gray 6 */
-    --tts-control-bg-hover: 229 229 234; /* Apple system gray 5 */
-    --tts-control-bg-active: 209 209 214; /* Apple system gray 4 */
-    --tts-control-fg: 60 60 67; /* Apple label color */
-    --tts-control-fg-secondary: 142 142 147; /* Apple secondary label */
-    --tts-border: 209 209 214; /* Apple separator light */
-    --tts-shadow: 0 0 0 / 0.1; /* Subtle shadow base */
+    --tts-surface-glass: 246 248 250 / 0.8; /* Glassmorphism surface */
+    --tts-accent: 48 209 88; /* Cool green (Apple modern green) #30D158 */
+    --tts-accent-muted: 48 209 88 / 0.3; /* Subtle accent for inactive states */
+    --tts-accent-glow: 48 209 88 / 0.1; /* Subtle glow effect */
+    --tts-control-bg: var(--color-surface-200); /* Use subtle surface */
+    --tts-control-bg-hover: var(--color-surface-300); /* Use medium surface */
+    --tts-control-bg-active: var(--color-surface-400); /* Use elevated surface */
+    --tts-control-fg: var(--color-text-100); /* Primary text */
+    --tts-control-fg-secondary: var(--color-text-200); /* Secondary text */
+    --tts-border: 224 229 235; /* Soft separator #E0E5EB */
+    --tts-shadow: 0 0 0 / 0.08; /* Subtle shadow base */
   }
 
   .dark {
-    /* Enhanced Semantic Color System - Dark Mode (Fine-tuned for comfort) */
-    /* Surface hierarchy for depth and elevation - warmer, less harsh */
-    --color-surface-100: 41 37 36;    /* Stone-800: Warmer base (was Stone-900) */
-    --color-surface-200: 50 46 43;    /* Custom: Softer elevated surface */
-    --color-surface-300: 57 53 52;    /* Stone-700: Medium surface */  
-    --color-surface-400: 68 64 60;    /* Stone-600: Elevated surface */
+    /* Enhanced Semantic Color System - Dark Mode (Cool navy-black palette) */
+    /* Surface hierarchy for depth and elevation - cooler, minimal glow */
+    --color-surface-100: 14 20 27;     /* Deep navy-black base #0E141B */
+    --color-surface-200: 20 28 36;     /* Slightly lighter navy for elevated panels #141C24 */
+    --color-surface-300: 28 36 45;     /* Mid-layer overlays #1C242D */  
+    --color-surface-400: 36 44 54;     /* Highest elevation (modals/toolbars) #242C36 */
     
     /* Text hierarchy for optimal readability - balanced contrast */
-    --color-text-100: 245 245 244;    /* Stone-100: Softer primary text (was Stone-50) */
-    --color-text-200: 231 229 228;    /* Stone-200: Rich secondary text */
-    --color-text-300: 214 211 209;    /* Stone-300: Clear muted text */
-    --color-text-400: 168 162 158;    /* Stone-400: Subtle text */
+    --color-text-100: 235 240 245;    /* Crisp but not pure white #EBF0F5 */
+    --color-text-200: 200 210 220;    /* Muted but clear secondary #C8D2DC */
+    --color-text-300: 160 170 182;    /* For metadata and less important text #A0AAB6 */
+    --color-text-400: 110 118 130;    /* For placeholders and subtle hints #6E7682 */
     
-    /* Accent colors for interactive elements - more vibrant */
-    --color-accent-primary: 214 211 209;  /* Stone-300: Clear warm primary */
-    --color-accent-secondary: 168 162 158; /* Stone-400: Balanced secondary */
-    --color-accent-hover: 231 229 228;    /* Stone-200: Brighter hover state */
-    --color-accent-pressed: 245 245 244;  /* Stone-100: Strong pressed state */
+    /* Accent colors for interactive elements - HKI signature blue */
+    --color-accent-primary: 0 122 204;    /* HKI signature blue #007ACC */
+    --color-accent-secondary: 0 102 184;  /* Darker blue for secondary #0066B8 */
+    --color-accent-hover: 0 142 224;      /* Brighter blue hover state #008EE0 */
+    --color-accent-pressed: 0 82 164;     /* Darker blue pressed state #0052A4 */
     
     /* Component-specific semantic colors - enhanced contrast for cards */
     --color-nav-active: var(--color-accent-primary);
     --color-nav-inactive: var(--color-text-300);
-    --color-card-border: var(--color-surface-300);
+    --color-card-border: 40 48 58;        /* Low-contrast border #28303A */
     --color-card-hover: var(--color-surface-200);
-    --color-card-background: 32 29 27; /* Custom: Slightly lighter than base for article cards */
+    --color-card-background: 18 24 31;    /* Slightly lighter than base for separation #12181F */
     
     /* Legacy compatibility - keep existing variables */
     --background: var(--color-surface-100);
@@ -160,44 +160,44 @@ body {
     --foreground-muted: var(--color-text-300);
     
     /* Semantic UI colors - sophisticated dark */
-    --card: var(--color-surface-100);
+    --card: var(--color-card-background);
     --card-foreground: var(--color-text-100);
     --popover: var(--color-surface-200);
     --popover-foreground: var(--color-text-100);
     --primary: var(--color-accent-primary);
-    --primary-foreground: var(--color-surface-100);
+    --primary-foreground: 255 255 255; /* Pure white for contrast on blue */
     --secondary: var(--color-surface-300);
-    --secondary-foreground: 231 229 228; /* Stone-200: Light contrast */
+    --secondary-foreground: var(--color-text-100);
     --muted: var(--color-surface-200);
     --muted-foreground: var(--color-text-300);
     --accent: var(--color-accent-secondary);
-    --accent-foreground: var(--color-surface-100);
+    --accent-foreground: 255 255 255; /* Pure white for contrast on blue */
     
-    /* Apple-inspired TTS semantic colors - Dark Theme */
-    --tts-surface: 28 28 30; /* Apple system gray 6 dark */
-    --tts-surface-elevated: 44 44 46; /* Apple system gray 5 dark */
-    --tts-surface-glass: 28 28 30 / 0.8; /* Glassmorphism surface dark */
-    --tts-accent: 48 209 88; /* Apple green dark mode */
+    /* Apple-inspired TTS semantic colors - Dark Theme (adapted to navy palette) */
+    --tts-surface: var(--color-surface-200); /* Use elevated surface */
+    --tts-surface-elevated: var(--color-surface-300); /* Use medium surface */
+    --tts-surface-glass: 20 28 36 / 0.8; /* Glassmorphism surface dark */
+    --tts-accent: 48 209 88; /* Cool green (Apple modern green) #30D158 */
     --tts-accent-muted: 48 209 88 / 0.3; /* Subtle accent for inactive states */
     --tts-accent-glow: 48 209 88 / 0.15; /* Subtle glow effect */
-    --tts-control-bg: 58 58 60; /* Apple system gray 4 dark */
-    --tts-control-bg-hover: 72 72 74; /* Apple system gray 3 dark */
-    --tts-control-bg-active: 99 99 102; /* Apple system gray 2 dark */
-    --tts-control-fg: 255 255 255; /* Apple label dark */
-    --tts-control-fg-secondary: 174 174 178; /* Apple secondary label dark */
-    --tts-border: 58 58 60; /* Apple separator dark */
-    --tts-shadow: 0 0 0 / 0.3; /* Deeper shadow for dark mode */
-    --destructive: 239 68 68; /* Red-500: Balanced error color */
+    --tts-control-bg: var(--color-surface-300); /* Use medium surface */
+    --tts-control-bg-hover: var(--color-surface-400); /* Use highest surface */
+    --tts-control-bg-active: 44 52 62; /* Custom active state #2C343E */
+    --tts-control-fg: var(--color-text-100); /* Primary text */
+    --tts-control-fg-secondary: var(--color-text-200); /* Secondary text */
+    --tts-border: 40 48 58; /* Low-contrast border #28303A */
+    --tts-shadow: 0 0 0 / 0.4; /* Deeper shadow for dark mode */
+    --destructive: 230 75 75; /* Controlled red, not neon #E64B4B */
     --destructive-foreground: var(--color-text-100);
     --border: var(--color-card-border);
-    --input: var(--color-surface-100);
+    --input: var(--color-surface-200);
     --ring: var(--color-accent-primary);
 
     /* Enhanced news-specific semantic colors */
     --text-primary: var(--color-text-100);
     --text-secondary: var(--color-text-200);
     --text-muted: var(--color-text-300);
-    --text-inverse: var(--color-surface-100);
+    --text-inverse: 14 20 27; /* Deep navy base for inverse text background */
     --surface-elevated: var(--color-surface-200);
     --surface-hover: var(--color-card-hover);
     --surface-pressed: var(--color-surface-400);
