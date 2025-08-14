@@ -548,18 +548,49 @@ export class GovernmentSignalsAggregator {
       try {
         const sourceIdentifier = `${signal.feedGroup}_${signal.noticeId}`
         
-        // Build content structure
-        const content = {
-          meta: {
-            notice_id: signal.noticeId,
-            urls: signal.urls,
-            published_at: signal.publishedAt.toISOString(),
-            discovered_at: new Date().toISOString()
-          },
-          languages: {}
-        }
+        // Calculate base priority
+        const basePriority = 50 + (signal.feedGroup === 'td_notices' ? 15 : 0)
         
-        // Add language content with validation
+        // First, upsert the main signal record
+        const { data: signalData, error: signalError } = await this.supabase
+          .from('government_signals')
+          .upsert({
+            source_identifier: sourceIdentifier,
+            feed_group: signal.feedGroup,
+            category: signal.category,
+            priority_score: basePriority,
+            processing_status: 'content_partial', // Will be updated after content is added
+            scraping_attempts: 0
+          }, {
+            onConflict: 'source_identifier',
+            ignoreDuplicates: false
+          })
+          .select('id')
+          .single()
+
+        if (signalError || !signalData) {
+          console.error(`❌ Error storing main signal ${sourceIdentifier}:`, signalError)
+          continue
+        }
+
+        const signalId = signalData.id
+
+        // Store metadata
+        await this.supabase
+          .from('government_signals_meta')
+          .upsert({
+            signal_id: signalId,
+            notice_id: signal.noticeId,
+            published_at: signal.publishedAt.toISOString(),
+            urls: signal.urls,
+            discovered_at: new Date().toISOString()
+          }, {
+            onConflict: 'signal_id',
+            ignoreDuplicates: false
+          })
+
+        // Store content for each language
+        let hasCompleteContent = false
         for (const [lang, langContent] of Object.entries(signal.languages)) {
           if (langContent.title.trim() === '') {
             console.warn(`⚠️ Empty title for ${sourceIdentifier} in ${lang}`)
@@ -571,42 +602,37 @@ export class GovernmentSignalsAggregator {
             .update(langContent.title + langContent.body)
             .digest('hex')
           
-          content.languages[lang] = {
-            title: langContent.title,
-            body: langContent.body,
-            scraped_at: new Date().toISOString(),
-            content_hash: contentHash,
-            word_count: wordCount
+          await this.supabase
+            .from('government_signals_content')
+            .upsert({
+              signal_id: signalId,
+              language: lang,
+              title: langContent.title,
+              body: langContent.body,
+              word_count: wordCount,
+              content_hash: contentHash,
+              scraped_at: new Date().toISOString()
+            }, {
+              onConflict: 'signal_id,language',
+              ignoreDuplicates: false
+            })
+
+          // Check if this constitutes complete content
+          if (lang === 'en' && langContent.body.trim() !== '') {
+            hasCompleteContent = true
           }
         }
-        
-        // Ensure we have at least English content
-        if (!content.languages['en']) {
-          console.warn(`⚠️ No English content for ${sourceIdentifier}, skipping`)
-          continue
-        }
-        
-        // Calculate base priority
-        const basePriority = 50 + (signal.feedGroup === 'td_notices' ? 15 : 0)
-        
-        // Upsert the signal
-        const { error } = await this.supabase
+
+        // Update processing status based on content completeness
+        const { error: updateError } = await this.supabase
           .from('government_signals')
-          .upsert({
-            source_identifier: sourceIdentifier,
-            feed_group: signal.feedGroup,
-            content,
-            category: signal.category,
-            priority_score: basePriority, // Will be auto-calculated by trigger
-            processing_status: this.hasCompleteContent(content) ? 'content_complete' : 'content_partial',
-            scraping_attempts: 0
-          }, {
-            onConflict: 'source_identifier',
-            ignoreDuplicates: false
+          .update({
+            processing_status: hasCompleteContent ? 'content_complete' : 'content_partial'
           })
+          .eq('id', signalId)
         
-        if (error) {
-          console.error(`❌ Error storing signal ${sourceIdentifier}:`, error)
+        if (updateError) {
+          console.error(`❌ Error updating signal status ${sourceIdentifier}:`, updateError)
         } else {
           storedCount++
           console.log(`   ✅ Stored: ${sourceIdentifier} (${Object.keys(signal.languages).join(', ')})`)
@@ -620,19 +646,6 @@ export class GovernmentSignalsAggregator {
     return storedCount
   }
 
-  /**
-   * Check if signal has complete content (all expected languages with body text)
-   */
-  private hasCompleteContent(content: any): boolean {
-    const languages = content.languages
-    
-    // Check if English has both title and body
-    const englishComplete = languages.en && 
-      languages.en.title.trim() !== '' && 
-      languages.en.body.trim() !== ''
-    
-    return englishComplete
-  }
 
   /**
    * Clean text content from RSS feeds
@@ -680,7 +693,15 @@ export class GovernmentSignalsAggregator {
   }> {
     const { data: signals, error } = await this.supabase
       .from('government_signals')
-      .select('processing_status, feed_group, content')
+      .select(`
+        processing_status, 
+        feed_group,
+        government_signals_content (
+          language,
+          title,
+          body
+        )
+      `)
     
     if (error || !signals) {
       return {
@@ -705,14 +726,19 @@ export class GovernmentSignalsAggregator {
       // Count by feed group
       stats.byFeedGroup[signal.feed_group] = (stats.byFeedGroup[signal.feed_group] || 0) + 1
       
-      // Analyze content completeness
-      const languages = signal.content?.languages || {}
-      const hasEnglish = languages.en && languages.en.title && languages.en.body
-      const hasOtherLanguages = Object.keys(languages).length > 1
+      // Analyze content completeness using new structure
+      const contentArray = signal.government_signals_content || []
+      const contentByLang = {}
+      contentArray.forEach(content => {
+        contentByLang[content.language] = content
+      })
+      
+      const hasEnglish = contentByLang['en'] && contentByLang['en'].title && contentByLang['en'].body
+      const hasOtherLanguages = Object.keys(contentByLang).length > 1
       
       if (hasEnglish && hasOtherLanguages) {
         stats.contentCompleteness.complete++
-      } else if (hasEnglish) {
+      } else if (contentByLang['en']) {
         stats.contentCompleteness.english_only++
       } else {
         stats.contentCompleteness.partial++

@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
       includePartial
     })
     
-    // Build the query
+    // Build the query with joins to new content structure
     let query = supabase
       .from('government_signals')
       .select(`
@@ -44,10 +44,21 @@ export async function GET(request: NextRequest) {
         feed_group,
         category,
         priority_score,
-        content,
         processing_status,
         created_at,
-        updated_at
+        updated_at,
+        government_signals_meta (
+          notice_id,
+          published_at,
+          urls
+        ),
+        government_signals_content (
+          language,
+          title,
+          body,
+          word_count,
+          scraped_at
+        )
       `)
       .gte('priority_score', minPriority)
       .order('priority_score', { ascending: false })
@@ -92,30 +103,35 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Transform signals with language preference
+    // Transform signals with language preference using new structure
     const transformedSignals = signals.map(signal => {
-      const content = signal.content || {}
-      const languages_content = content.languages || {}
-      const meta = content.meta || {}
+      const meta = signal.government_signals_meta || {}
+      const contentArray = signal.government_signals_content || []
+      
+      // Create language lookup
+      const contentByLanguage = {}
+      contentArray.forEach(content => {
+        contentByLanguage[content.language] = content
+      })
       
       // Determine which language to use (preference order)
       let selectedLanguage = 'en'
-      let languageContent = languages_content.en || {}
+      let languageContent = contentByLanguage.en || {}
       
       for (const lang of languages) {
-        if (languages_content[lang] && languages_content[lang].title) {
+        if (contentByLanguage[lang] && contentByLanguage[lang].title) {
           selectedLanguage = lang
-          languageContent = languages_content[lang]
+          languageContent = contentByLanguage[lang]
           break
         }
       }
       
       // Fallback to first available language if preferred not found
       if (!languageContent.title) {
-        const availableLanguages = Object.keys(languages_content)
+        const availableLanguages = Object.keys(contentByLanguage)
         if (availableLanguages.length > 0) {
           selectedLanguage = availableLanguages[0]
-          languageContent = languages_content[selectedLanguage]
+          languageContent = contentByLanguage[selectedLanguage]
         }
       }
       
@@ -132,7 +148,7 @@ export async function GET(request: NextRequest) {
         body: languageContent.body || '',
         language_used: selectedLanguage,
         
-        // Metadata
+        // Metadata from new structure
         published_at: meta.published_at,
         notice_id: meta.notice_id,
         urls: meta.urls || {},
@@ -142,7 +158,7 @@ export async function GET(request: NextRequest) {
         scraped_at: languageContent.scraped_at,
         
         // Available languages
-        available_languages: Object.keys(languages_content),
+        available_languages: Object.keys(contentByLanguage),
         content_complete: signal.processing_status === 'content_complete' || signal.processing_status === 'enriched',
         
         // Timestamps

@@ -131,8 +131,8 @@ CREATE INDEX idx_government_signals_priority ON government_signals(priority_scor
 CREATE INDEX idx_government_signals_published ON government_signals((content->'meta'->>'published_at') DESC);
 CREATE INDEX idx_government_signals_updated ON government_signals(updated_at DESC);
 
--- GIN indexes for JSONB content searching
-CREATE INDEX idx_government_signals_content_gin ON government_signals USING GIN (content);
+-- REMOVED: GIN index on entire JSONB content - causes massive storage waste!
+-- Use selective indexes in the optimization migration instead
 CREATE INDEX idx_government_signals_tags_gin ON government_signals USING GIN (tags);
 
 -- Create feed configuration table for the new system

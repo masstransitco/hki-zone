@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       category, language, page, limit, source 
     })
 
-    // Query the new government_signals table - get more data for proper ranking
+    // Query the new government_signals table with joins to content and meta tables
     let query = supabase
       .from('government_signals')
       .select(`
@@ -31,10 +31,22 @@ export async function GET(request: NextRequest) {
         feed_group,
         category,
         priority_score,
-        content,
         processing_status,
         created_at,
-        updated_at
+        updated_at,
+        government_signals_meta (
+          notice_id,
+          published_at,
+          urls
+        ),
+        government_signals_content (
+          language,
+          title,
+          body,
+          word_count,
+          scraped_at,
+          content_hash
+        )
       `)
       .limit(500) // Get larger sample for proper ranking
 
@@ -59,8 +71,15 @@ export async function GET(request: NextRequest) {
 
     // Enhanced ranking system for government signals
     const rankedIncidents = incidents.map((incident: any) => {
-      const content = incident.content || {}
-      const meta = content.meta || {}
+      const meta = incident.government_signals_meta || {}
+      const contentArray = incident.government_signals_content || []
+      
+      // Create content lookup by language
+      const contentByLanguage = {}
+      contentArray.forEach(content => {
+        contentByLanguage[content.language] = content
+      })
+      
       const publishedAt = meta.published_at ? new Date(meta.published_at) : new Date(incident.created_at)
       const now = new Date()
       const ageInHours = (now.getTime() - publishedAt.getTime()) / (1000 * 60 * 60)
@@ -83,8 +102,8 @@ export async function GET(request: NextRequest) {
       }
       
       // 2. Content urgency analysis
-      const title = content.languages?.en?.title || content.languages?.['zh-TW']?.title || ''
-      const body = content.languages?.en?.body || content.languages?.['zh-TW']?.body || ''
+      const title = contentByLanguage?.en?.title || contentByLanguage?.['zh-TW']?.title || ''
+      const body = contentByLanguage?.en?.body || contentByLanguage?.['zh-TW']?.body || ''
       const fullText = (title + ' ' + body).toLowerCase()
       
       // Urgency keywords detection
@@ -153,28 +172,33 @@ export async function GET(request: NextRequest) {
 
     // Transform to match expected format
     const transformedIncidents = paginatedIncidents.map((incident: any) => {
-      const content = incident.content || {}
-      const languages_content = content.languages || {}
-      const meta = content.meta || {}
+      const meta = incident.government_signals_meta || {}
+      const contentArray = incident.government_signals_content || []
+      
+      // Create content lookup by language
+      const contentByLanguage = {}
+      contentArray.forEach(content => {
+        contentByLanguage[content.language] = content
+      })
       
       // Determine which language to use (preference order)
       let selectedLanguage = 'en'
-      let languageContent = languages_content.en || {}
+      let languageContent = contentByLanguage.en || {}
       
       // Try to find requested language with both title AND body content
-      if (language && languages_content[language] && 
-          languages_content[language].title && 
-          languages_content[language].body && 
-          languages_content[language].body.trim().length > 0) {
+      if (language && contentByLanguage[language] && 
+          contentByLanguage[language].title && 
+          contentByLanguage[language].body && 
+          contentByLanguage[language].body.trim().length > 0) {
         selectedLanguage = language
-        languageContent = languages_content[language]
-      } else if (language === 'zh-CN' && languages_content['zh-TW'] && 
-                 languages_content['zh-TW'].title &&
-                 languages_content['zh-TW'].body && 
-                 languages_content['zh-TW'].body.trim().length > 0) {
+        languageContent = contentByLanguage[language]
+      } else if (language === 'zh-CN' && contentByLanguage['zh-TW'] && 
+                 contentByLanguage['zh-TW'].title &&
+                 contentByLanguage['zh-TW'].body && 
+                 contentByLanguage['zh-TW'].body.trim().length > 0) {
         // Fallback from Simplified to Traditional Chinese
         selectedLanguage = 'zh-TW'
-        languageContent = languages_content['zh-TW']
+        languageContent = contentByLanguage['zh-TW']
       }
       // If requested language doesn't have complete content, keep English default
       
@@ -207,7 +231,7 @@ export async function GET(request: NextRequest) {
         updated_at: incident.updated_at,
         
         // Language metadata
-        has_translation: Object.keys(languages_content).length > 1,
+        has_translation: Object.keys(contentByLanguage).length > 1,
         original_language: selectedLanguage,
         requested_language: language,
         is_converted: isConverted,
@@ -230,7 +254,7 @@ export async function GET(request: NextRequest) {
         source_updated_at: meta.published_at || incident.created_at,
         
         // Additional metadata
-        available_languages: Object.keys(languages_content),
+        available_languages: Object.keys(contentByLanguage),
         word_count: languageContent.word_count || 0,
         source_identifier: incident.source_identifier
       }
