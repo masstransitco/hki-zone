@@ -1,0 +1,45 @@
+<!--
+  Info.plist configuration for DEVELOPMENT
+  Add this to ios/App/App/Info.plist inside the main <dict> tag
+
+  This enables HTTP connections to your local development server
+  REMOVE before App Store submission!
+-->
+
+<!-- Allow HTTP connections for local development -->
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSAllowsArbitraryLoadsInWebContent</key>
+    <true/>
+    <key>NSExceptionDomains</key>
+    <dict>
+        <key>192.168.0.116</key>
+        <dict>
+            <key>NSExceptionAllowsInsecureHTTPLoads</key>
+            <true/>
+            <key>NSExceptionMinimumTLSVersion</key>
+            <string>TLSv1.0</string>
+        </dict>
+        <key>localhost</key>
+        <dict>
+            <key>NSExceptionAllowsInsecureHTTPLoads</key>
+            <true/>
+            <key>NSExceptionMinimumTLSVersion</key>
+            <string>TLSv1.0</string>
+        </dict>
+    </dict>
+</dict>
+
+<!-- Background modes for push notifications -->
+<key>UIBackgroundModes</key>
+<array>
+    <string>remote-notification</string>
+</array>
+
+<!-- Camera usage description (add if your app uses camera) -->
+<key>NSCameraUsageDescription</key>
+<string>This app uses the camera to take photos.</string>
+
+<!-- Photo library usage description (add if your app uses photos) -->
+<key>NSPhotoLibraryUsageDescription</key>
+<string>This app needs access to your photo library to share images.</string>

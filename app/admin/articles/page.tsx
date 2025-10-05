@@ -56,6 +56,9 @@ const COLORS = [
   '#6366f1', // indigo-500
 ]
 
+// Environment flag to control RPC usage
+const USE_RPC_ARTICLES = process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_USE_RPC_ARTICLES !== 'false'
+
 async function fetchAdminArticles({ 
   pageParam = 0, 
   sourceFilter = "all",
@@ -65,26 +68,110 @@ async function fetchAdminArticles({
   dateFilter = "all",
   searchQuery = ""
 }): Promise<{ articles: Article[]; nextPage: number | null; hasMore: boolean }> {
-  const params = new URLSearchParams({
-    page: pageParam.toString(),
-    limit: "20",
-  })
   
-  if (sourceFilter !== "all") params.set("source", sourceFilter)
-  if (languageFilter !== "all") params.set("language", languageFilter)
-  if (aiEnhancedFilter !== "all") params.set("aiEnhanced", aiEnhancedFilter)
-  if (categoryFilter !== "all") params.set("category", categoryFilter)
-  if (dateFilter !== "all") params.set("dateFilter", dateFilter)
-  if (searchQuery) params.set("search", searchQuery)
+  // Use search operation if there's a search query
+  if (searchQuery && searchQuery.trim()) {
+    return fetchAdminArticlesSearch(searchQuery, pageParam)
+  }
+  
+  const startTime = Date.now()
+  
+  if (USE_RPC_ARTICLES) {
+    // Use optimized RPC endpoint
+    const params = new URLSearchParams({
+      operation: "list",
+      page: pageParam.toString(),
+      limit: "20",
+    })
+    
+    if (sourceFilter !== "all") params.set("source", sourceFilter)
+    if (languageFilter !== "all") params.set("language", languageFilter)
+    if (aiEnhancedFilter !== "all") params.set("aiEnhanced", aiEnhancedFilter)
+    if (categoryFilter !== "all") params.set("category", categoryFilter)
+    if (dateFilter !== "all") params.set("dateFilter", dateFilter)
 
-  const response = await fetch(`/api/admin/articles?${params}`)
-  if (!response.ok) throw new Error("Failed to fetch articles")
-  
-  const data = await response.json()
-  return {
-    articles: data.articles,
-    nextPage: data.hasMore ? pageParam + 1 : null,
-    hasMore: data.hasMore
+    const response = await fetch(`/api/admin/articles-optimized?${params}`)
+    if (!response.ok) throw new Error("Failed to fetch articles via RPC")
+    
+    const data = await response.json()
+    
+    // Log performance metrics
+    if (data._metadata) {
+      console.log(`📄 Articles fetched in ${data._metadata.executionTime}ms via RPC (${data._metadata.cached ? 'cached' : 'fresh'})`)
+    }
+    
+    return {
+      articles: data.articles || [],
+      nextPage: data.hasMore ? pageParam + 1 : null,
+      hasMore: data.hasMore || false
+    }
+  } else {
+    // Legacy implementation
+    const params = new URLSearchParams({
+      page: pageParam.toString(),
+      limit: "20",
+    })
+    
+    if (sourceFilter !== "all") params.set("source", sourceFilter)
+    if (languageFilter !== "all") params.set("language", languageFilter)
+    if (aiEnhancedFilter !== "all") params.set("aiEnhanced", aiEnhancedFilter)
+    if (categoryFilter !== "all") params.set("category", categoryFilter)
+    if (dateFilter !== "all") params.set("dateFilter", dateFilter)
+    if (searchQuery) params.set("search", searchQuery)
+
+    const response = await fetch(`/api/admin/articles?${params}`)
+    if (!response.ok) throw new Error("Failed to fetch articles")
+    
+    const data = await response.json()
+    const executionTime = Date.now() - startTime
+    console.log(`📄 Articles fetched in ${executionTime}ms via legacy API`)
+    
+    return {
+      articles: data.articles,
+      nextPage: data.hasMore ? pageParam + 1 : null,
+      hasMore: data.hasMore
+    }
+  }
+}
+
+// Optimized search function
+async function fetchAdminArticlesSearch(
+  query: string, 
+  pageParam = 0
+): Promise<{ articles: Article[]; nextPage: number | null; hasMore: boolean }> {
+  if (USE_RPC_ARTICLES) {
+    const params = new URLSearchParams({
+      operation: "search",
+      query: query.trim(),
+      limit: "20"
+    })
+
+    const response = await fetch(`/api/admin/articles-optimized?${params}`)
+    if (!response.ok) throw new Error("Failed to search articles via RPC")
+    
+    const data = await response.json()
+    
+    // Log performance metrics
+    if (data._metadata) {
+      console.log(`🔍 Search completed in ${data._metadata.executionTime}ms via RPC (${data.total} results)`)
+    }
+    
+    return {
+      articles: data.articles || [],
+      nextPage: null, // Search doesn't support pagination yet
+      hasMore: false
+    }
+  } else {
+    // Legacy search - fall back to regular fetch with search param
+    return fetchAdminArticles({ 
+      pageParam, 
+      searchQuery: query,
+      sourceFilter: "all",
+      languageFilter: "all",
+      aiEnhancedFilter: "all", 
+      categoryFilter: "all",
+      dateFilter: "all"
+    })
   }
 }
 
@@ -188,10 +275,30 @@ export default function ArticlesPage() {
 
   const loadQuickStats = useCallback(async () => {
     try {
-      const response = await fetch('/api/admin/articles/stats')
-      if (response.ok) {
-        const stats = await response.json()
-        setQuickStats(stats)
+      const startTime = Date.now()
+      
+      if (USE_RPC_ARTICLES) {
+        // Use optimized RPC endpoint
+        const response = await fetch('/api/admin/articles-optimized?operation=stats')
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Log performance metrics
+          if (data._metadata) {
+            console.log(`📊 Stats loaded in ${data._metadata.executionTime}ms via RPC (${data._metadata.cached ? 'cached' : 'fresh'})`)
+          }
+          
+          setQuickStats(data)
+        }
+      } else {
+        // Legacy implementation
+        const response = await fetch('/api/admin/articles/stats')
+        if (response.ok) {
+          const stats = await response.json()
+          const executionTime = Date.now() - startTime
+          console.log(`📊 Stats loaded in ${executionTime}ms via legacy API`)
+          setQuickStats(stats)
+        }
       }
     } catch (error) {
       console.error('Error loading stats:', error)
@@ -200,14 +307,41 @@ export default function ArticlesPage() {
 
   const loadAnalyticsData = useCallback(async (timeFilter?: string) => {
     try {
-      const params = new URLSearchParams()
-      if (timeFilter && timeFilter !== "all") {
-        params.set("dateFilter", timeFilter)
-      }
-      const response = await fetch(`/api/admin/articles/analytics?${params}`)
-      if (response.ok) {
-        const data = await response.json()
-        setAnalyticsData(data)
+      const startTime = Date.now()
+      
+      if (USE_RPC_ARTICLES) {
+        // Use optimized RPC endpoint
+        const params = new URLSearchParams({
+          operation: "analytics"
+        })
+        if (timeFilter && timeFilter !== "all") {
+          params.set("dateFilter", timeFilter)
+        }
+        
+        const response = await fetch(`/api/admin/articles-optimized?${params}`)
+        if (response.ok) {
+          const data = await response.json()
+          
+          // Log performance metrics
+          if (data._metadata) {
+            console.log(`📈 Analytics loaded in ${data._metadata.executionTime}ms via RPC (${data.totalArticlesAnalyzed} articles analyzed)`)
+          }
+          
+          setAnalyticsData(data)
+        }
+      } else {
+        // Legacy implementation
+        const params = new URLSearchParams()
+        if (timeFilter && timeFilter !== "all") {
+          params.set("dateFilter", timeFilter)
+        }
+        const response = await fetch(`/api/admin/articles/analytics?${params}`)
+        if (response.ok) {
+          const data = await response.json()
+          const executionTime = Date.now() - startTime
+          console.log(`📈 Analytics loaded in ${executionTime}ms via legacy API`)
+          setAnalyticsData(data)
+        }
       }
     } catch (error) {
       console.error('Error loading analytics:', error)

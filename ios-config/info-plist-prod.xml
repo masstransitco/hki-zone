@@ -1,0 +1,46 @@
+<!--
+  Info.plist configuration for PRODUCTION
+  Add this to ios/App/App/Info.plist inside the main <dict> tag
+
+  This is the clean production configuration for App Store submission
+  NO ATS overrides - only HTTPS connections allowed
+-->
+
+<!-- Background modes for push notifications -->
+<key>UIBackgroundModes</key>
+<array>
+    <string>remote-notification</string>
+</array>
+
+<!-- Associated Domains for Universal Links -->
+<key>com.apple.developer.associated-domains</key>
+<array>
+    <string>applinks:hki.zone</string>
+    <string>applinks:www.hki.zone</string>
+</array>
+
+<!-- Camera usage description (add if your app uses camera) -->
+<key>NSCameraUsageDescription</key>
+<string>This app uses the camera to take photos.</string>
+
+<!-- Photo library usage description (add if your app uses photos) -->
+<key>NSPhotoLibraryUsageDescription</key>
+<string>This app needs access to your photo library to share images.</string>
+
+<!-- User tracking usage description (required for iOS 14.5+) -->
+<key>NSUserTrackingUsageDescription</key>
+<string>This app would like to access your device identifier to provide personalized content and improve your experience.</string>
+
+<!-- Location usage descriptions (add if your app uses location) -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>This app needs location access to provide location-based features.</string>
+
+<!-- App Transport Security (optional - only add if you need specific exceptions) -->
+<!-- For production, generally omit this entirely to enforce HTTPS only -->
+<!--
+<key>NSAppTransportSecurity</key>
+<dict>
+    <key>NSRequiresCertificateTransparency</key>
+    <false/>
+</dict>
+-->

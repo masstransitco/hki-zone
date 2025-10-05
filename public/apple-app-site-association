@@ -1,0 +1,21 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["<TEAM_ID>.com.aircity.hki"],
+        "components": [
+          {
+            "/": "*",
+            "comment": "Matches all paths"
+          }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["<TEAM_ID>.com.aircity.hki"]
+  },
+  "appclips": {
+    "apps": ["<TEAM_ID>.com.aircity.hki.Clip"]
+  }
+}

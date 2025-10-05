@@ -95,7 +95,7 @@ const TIMEFRAME_OPTIONS = [
   { value: '30d', label: 'Past 30 Days' },
 ]
 
-// Fetch metrics function
+// Optimized fetch metrics function using RPC
 async function fetchMetrics(timeframe: string, sources: string[]): Promise<MetricsData> {
   const params = new URLSearchParams({ timeframe })
   if (sources.length > 0) {
@@ -109,9 +109,17 @@ async function fetchMetrics(timeframe: string, sources: string[]): Promise<Metri
   
   const metricsData = await response.json()
   
-  // Sort daily trends by date
+  // Data comes pre-processed from RPC function, minimal processing needed
   if (metricsData.dailyTrends) {
-    metricsData.dailyTrends.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    // Sort by date ascending for chart display
+    metricsData.dailyTrends.sort((a: any, b: any) => 
+      new Date(a.date || a.time).getTime() - new Date(b.date || b.time).getTime()
+    )
+  }
+  
+  // Log performance metrics if available
+  if (metricsData._metadata) {
+    console.log(`📊 Metrics loaded in ${metricsData._metadata.executionTime}ms (${metricsData._metadata.cached ? 'cached' : 'fresh'})`)
   }
   
   return metricsData
@@ -127,11 +135,12 @@ export default function AdminMetricsDashboard() {
   const [isFilterUpdating, setIsFilterUpdating] = useState(false)
   const [showQualityIssues, setShowQualityIssues] = useState(false)
   
-  // React Query for data fetching with smart invalidation
+  // React Query for data fetching with optimized caching (RPC is fast!)
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['admin-metrics', timeframe, selectedSources],
     queryFn: () => fetchMetrics(timeframe, selectedSources),
-    staleTime: 30000, // 30 seconds
+    staleTime: 60000, // 1 minute - can be more aggressive since RPC is fast
+    gcTime: 5 * 60 * 1000, // 5 minutes cache
     refetchOnWindowFocus: false,
     // Only show loading state on initial load, not on filter changes
     placeholderData: (previousData) => isInitialLoad ? undefined : previousData
