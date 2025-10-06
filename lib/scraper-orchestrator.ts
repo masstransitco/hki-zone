@@ -46,13 +46,13 @@ const OUTLET_NAMES = {
 
 // Separate news scrapers from car scrapers for runAllScrapers
 // Car scraping is handled by a dedicated cron job at /api/cron/scrape-cars
+// HK01 and am730 are in separate crons (/api/cron/scrape-hk01 and /api/cron/scrape-am730)
+// because they're slow and cause timeouts when run in parallel with other scrapers
 const NEWS_OUTLET_SCRAPERS = {
   hkfp: scrapeHKFPWithContent,
   singtao: scrapeSingTaoWithContent,
-  hk01: scrapeHK01WithContent,
   oncc: scrapeOnccWithContent,
   rthk: scrapeRTHKWithContent,
-  am730: scrapeAM730,
   scmp: scrapeSCMP,
   bloomberg: scrapeBloombergWithContent,
   thestandard: scrapeTheStandard,

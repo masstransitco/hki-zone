@@ -5,14 +5,6 @@
       "schedule": "*/30 * * * *"
     },
     {
-      "path": "/api/cron/scrape-hk01",
-      "schedule": "5,35 * * * *"
-    },
-    {
-      "path": "/api/cron/scrape-am730",
-      "schedule": "10,40 * * * *"
-    },
-    {
       "path": "/api/cron/select-article",
       "schedule": "0,15,30,45 * * * *"
     },
