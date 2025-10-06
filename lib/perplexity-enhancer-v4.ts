@@ -340,8 +340,18 @@ Return ONLY valid JSON:
       }
 
       const data = await response.json();
-      const content = data.choices[0]?.message?.content || '{}';
-      
+      let content = data.choices[0]?.message?.content || '{}';
+
+      // Strip markdown code blocks if present
+      content = content.trim();
+      if (content.startsWith('```')) {
+        // Remove opening code block (```json or ```)
+        content = content.replace(/^```(?:json)?\s*/i, '');
+        // Remove closing code block
+        content = content.replace(/\s*```\s*$/i, '');
+        content = content.trim();
+      }
+
       // Validate the response is valid JSON
       try {
         JSON.parse(content);
@@ -349,7 +359,7 @@ Return ONLY valid JSON:
         console.error('Invalid JSON response from generation:', content.substring(0, 200));
         throw new Error('Invalid JSON response from generation API');
       }
-      
+
       return content;
     } catch (error: any) {
       // Add more context to the error
