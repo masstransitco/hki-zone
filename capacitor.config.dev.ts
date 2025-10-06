@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.aircity.hki',
+  appId: 'com.aircity.hkizone',
   appName: 'HKI',
   webDir: 'out',
   server: {

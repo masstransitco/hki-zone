@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useRef, useState, useEffect } from "react"
 import UnifiedHeader from "@/components/unified-header"
 import FooterNav from "@/components/footer-nav"
 import MainContent from "@/components/main-content-with-selector"
@@ -18,11 +18,11 @@ const contentTypes: ContentType[] = ['headlines', 'finance', 'techScience', 'ent
 export default function HomePage() {
   const mainContentRef = useRef<HTMLDivElement>(null)
   const [currentView, setCurrentView] = useState<ViewType>('main')
-  const { 
-    contentType, 
-    isMenuOpen, 
-    setContentType, 
-    setMenuOpen 
+  const {
+    contentType,
+    isMenuOpen,
+    setContentType,
+    setMenuOpen
   } = useUIRedux()
 
   // Enable edge swipe to open menu
@@ -31,6 +31,25 @@ export default function HomePage() {
     edgeWidth: 30,
     enabled: !isMenuOpen
   })
+
+  // Handle hash navigation for direct links
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash
+      if (hash === '#about') {
+        setCurrentView('about')
+      } else {
+        setCurrentView('main')
+      }
+    }
+
+    // Check initial hash on mount
+    handleHashChange()
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
 
   const handleContentTypeChange = (newType: ContentType) => {
     setContentType(newType)
@@ -44,6 +63,12 @@ export default function HomePage() {
 
   const handleNavigation = (view: ViewType) => {
     setCurrentView(view)
+    // Update URL hash to make it shareable
+    if (view === 'about') {
+      window.history.pushState(null, '', '#about')
+    } else {
+      window.history.pushState(null, '', '#')
+    }
   }
 
   // Content type change handler (now handled by MainContent carousel)
@@ -80,11 +105,11 @@ export default function HomePage() {
         </main>
 
         {/* Unified header - floating overlay */}
-        <UnifiedHeader 
+        <UnifiedHeader
           isMenuOpen={isMenuOpen}
           onMenuOpenChange={setMenuOpen}
           showBackButton={currentView !== 'main'}
-          onBackClick={() => setCurrentView('main')}
+          onBackClick={() => handleNavigation('main')}
           backButtonLabel="Back to Home"
         />
 

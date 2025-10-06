@@ -305,8 +305,11 @@ export default function SideMenu({ isOpen, onOpenChange, onNavigate }: SideMenuP
               onNavigate?.('about')
               onOpenChange(false)
             }}
+            asChild
           >
-            About HKI
+            <a href="#about">
+              About HKI
+            </a>
           </Button>
         </div>
 
