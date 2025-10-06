@@ -460,6 +460,7 @@ const translations = {
     "menu.loading": "Loading...",
     "menu.backToMenu": "Back to menu",
     "menu.closeMenu": "Close menu",
+    "menu.privacyPolicy": "Privacy Policy",
 
     // Real-time updates
     "realtime.active": "Real-time updates active",
@@ -1012,6 +1013,7 @@ const translations = {
     "menu.loading": "加载中...",
     "menu.backToMenu": "返回菜单",
     "menu.closeMenu": "关闭菜单",
+    "menu.privacyPolicy": "隐私政策",
 
     // Real-time updates
     "realtime.active": "实时更新已启动",
@@ -1565,6 +1567,7 @@ const translations = {
     "menu.loading": "載入中...",
     "menu.backToMenu": "返回選單",
     "menu.closeMenu": "關閉選單",
+    "menu.privacyPolicy": "私隱政策",
 
     // Real-time updates
     "realtime.active": "實時更新已啟動",

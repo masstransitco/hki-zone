@@ -296,7 +296,7 @@ export default function SideMenu({ isOpen, onOpenChange, onNavigate }: SideMenuP
         </div>
 
         {/* About HKI Button */}
-        <div className="pb-2">
+        <div className="pb-2 space-y-2">
           <Button
             variant="ghost"
             size="sm"
@@ -309,6 +309,18 @@ export default function SideMenu({ isOpen, onOpenChange, onNavigate }: SideMenuP
           >
             <a href="#about">
               About HKI
+            </a>
+          </Button>
+
+          {/* Privacy Policy Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full justify-start"
+            asChild
+          >
+            <a href="/privacy" target="_blank" rel="noopener noreferrer">
+              {t('menu.privacyPolicy') || 'Privacy Policy'}
             </a>
           </Button>
         </div>
