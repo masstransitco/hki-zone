@@ -2,11 +2,108 @@
  * Embeddings Service for Article Deduplication
  * Uses OpenAI's text-embedding-3-small model to generate vector embeddings
  * for similarity comparison between articles
+ *
+ * OPTIMIZED: Added caching layer to reduce API costs by reusing embeddings
  */
 
 import OpenAI from 'openai'
+import { createClient } from '@supabase/supabase-js'
+import crypto from 'crypto'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+// Initialize Supabase client for caching
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+const supabase = supabaseUrl && supabaseKey
+  ? createClient(supabaseUrl, supabaseKey)
+  : null
+
+// Feature flag for embedding cache
+const ENABLE_EMBEDDING_CACHE = process.env.ENABLE_EMBEDDING_CACHE === 'true'
+const CACHE_TTL_DAYS = 7 // Embeddings valid for 7 days
+
+/**
+ * Generate a content hash for cache key
+ */
+function generateContentHash(text: string): string {
+  return crypto.createHash('md5').update(text).digest('hex')
+}
+
+/**
+ * Get cached embeddings from database
+ */
+async function getCachedEmbeddings(
+  contentHashes: string[]
+): Promise<Map<string, number[]>> {
+  if (!supabase || !ENABLE_EMBEDDING_CACHE || contentHashes.length === 0) {
+    return new Map()
+  }
+
+  try {
+    const cutoffDate = new Date()
+    cutoffDate.setDate(cutoffDate.getDate() - CACHE_TTL_DAYS)
+
+    const { data, error } = await supabase
+      .from('embedding_cache')
+      .select('content_hash, embedding')
+      .in('content_hash', contentHashes)
+      .gte('created_at', cutoffDate.toISOString())
+
+    if (error) {
+      console.warn('⚠️ Failed to fetch cached embeddings:', error.message)
+      return new Map()
+    }
+
+    const cache = new Map<string, number[]>()
+    if (data) {
+      data.forEach(row => {
+        if (row.embedding) {
+          cache.set(row.content_hash, row.embedding)
+        }
+      })
+    }
+
+    console.log(`📦 Embedding cache: ${cache.size}/${contentHashes.length} hits`)
+    return cache
+  } catch (error) {
+    console.warn('⚠️ Embedding cache error:', error)
+    return new Map()
+  }
+}
+
+/**
+ * Save embeddings to cache
+ */
+async function saveEmbeddingsToCache(
+  items: Array<{ contentHash: string; embedding: number[] }>
+): Promise<void> {
+  if (!supabase || !ENABLE_EMBEDDING_CACHE || items.length === 0) {
+    return
+  }
+
+  try {
+    const rows = items.map(item => ({
+      content_hash: item.contentHash,
+      embedding: item.embedding,
+      created_at: new Date().toISOString()
+    }))
+
+    // Use upsert to handle duplicate hashes
+    const { error } = await supabase
+      .from('embedding_cache')
+      .upsert(rows, { onConflict: 'content_hash' })
+
+    if (error) {
+      console.warn('⚠️ Failed to cache embeddings:', error.message)
+    } else {
+      console.log(`💾 Cached ${items.length} new embeddings`)
+    }
+  } catch (error) {
+    console.warn('⚠️ Error saving to embedding cache:', error)
+  }
+}
 
 export interface ArticleForEmbedding {
   id: string
@@ -25,6 +122,7 @@ export interface EmbeddingResult {
 /**
  * Generate embeddings for multiple articles
  * Combines title and first 200 chars of content for better similarity detection
+ * OPTIMIZED: Uses cache to avoid regenerating embeddings for same content
  */
 export async function generateEmbeddings(
   articles: ArticleForEmbedding[]
@@ -38,36 +136,88 @@ export async function generateEmbeddings(
   }
 
   console.log(`🔍 Generating embeddings for ${articles.length} articles...`)
-  
+
   // Prepare texts for embedding - combine title with content preview
-  const texts = articles.map(article => {
+  const articlesWithText = articles.map(article => {
     const contentPreview = article.summary || article.content?.substring(0, 200) || ''
     // Normalize text: remove extra whitespace, lowercase for consistency
     const combinedText = `${article.title} ${contentPreview}`
       .toLowerCase()
       .replace(/\s+/g, ' ')
       .trim()
-    
-    return combinedText
+    const contentHash = generateContentHash(combinedText)
+
+    return {
+      article,
+      text: combinedText,
+      contentHash
+    }
   })
 
+  // Check cache for existing embeddings
+  const contentHashes = articlesWithText.map(a => a.contentHash)
+  const cachedEmbeddings = await getCachedEmbeddings(contentHashes)
+
+  // Separate cached from uncached
+  const cachedResults: EmbeddingResult[] = []
+  const uncachedArticles: typeof articlesWithText = []
+
+  for (const item of articlesWithText) {
+    const cached = cachedEmbeddings.get(item.contentHash)
+    if (cached) {
+      cachedResults.push({
+        articleId: item.article.id,
+        embedding: cached,
+        text: item.text
+      })
+    } else {
+      uncachedArticles.push(item)
+    }
+  }
+
+  console.log(`📦 Cache status: ${cachedResults.length} cached, ${uncachedArticles.length} need generation`)
+
+  // If all cached, return early
+  if (uncachedArticles.length === 0) {
+    console.log(`✅ All ${cachedResults.length} embeddings retrieved from cache (0 API calls)`)
+    return cachedResults
+  }
+
   try {
+    // Generate embeddings for uncached articles only
+    const textsToEmbed = uncachedArticles.map(a => a.text)
+
     // Use text-embedding-3-small for cost efficiency
     // 512 dimensions is sufficient for news article similarity
     const response = await openai.embeddings.create({
       model: 'text-embedding-3-small',
-      input: texts,
+      input: textsToEmbed,
       dimensions: 512
     })
 
-    const results: EmbeddingResult[] = response.data.map((item, index) => ({
-      articleId: articles[index].id,
+    const newResults: EmbeddingResult[] = response.data.map((item, index) => ({
+      articleId: uncachedArticles[index].article.id,
       embedding: item.embedding,
-      text: texts[index]
+      text: uncachedArticles[index].text
     }))
 
-    console.log(`✅ Generated ${results.length} embeddings successfully`)
-    return results
+    // Save new embeddings to cache (async, don't wait)
+    const itemsToCache = newResults.map((result, index) => ({
+      contentHash: uncachedArticles[index].contentHash,
+      embedding: result.embedding
+    }))
+    saveEmbeddingsToCache(itemsToCache).catch(err =>
+      console.warn('⚠️ Background cache save failed:', err)
+    )
+
+    // Combine cached and new results
+    const allResults = [...cachedResults, ...newResults]
+
+    const savedCost = cachedResults.length * 0.00002
+    console.log(`✅ Generated ${newResults.length} new embeddings, ${cachedResults.length} from cache`)
+    console.log(`💰 Estimated savings: $${savedCost.toFixed(5)} (${cachedResults.length} cached embeddings)`)
+
+    return allResults
 
   } catch (error) {
     console.error('❌ Error generating embeddings:', error)

@@ -10,6 +10,17 @@ import {
   EnhancementConfig,
   defaultConfig
 } from './enhancement-helpers';
+import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
+
+// Initialize Supabase client for search caching
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+
+// Feature flag and TTL for search cache
+const ENABLE_SEARCH_CACHE = process.env.ENABLE_SEARCH_CACHE === 'true';
+const SEARCH_CACHE_TTL_HOURS = 4; // News freshness requires shorter TTL
 
 export class PerplexityEnhancerV4 {
   private apiKey: string;
@@ -48,8 +59,10 @@ export class PerplexityEnhancerV4 {
     console.log(`   Generated ${searchQueries.length} search queries`);
     
     // Perform searches with error handling and retries
-    const allSearchResults = await this.performMultipleSearchesWithRetry(searchQueries.slice(0, 5), options);
-    console.log(`   Found ${allSearchResults.length} total search results`);
+    // OPTIMIZED: Now using 3 queries instead of 5 (controlled by REDUCED_SEARCH_QUERIES env)
+    const queryLimit = process.env.REDUCED_SEARCH_QUERIES !== 'false' ? 3 : 5;
+    const allSearchResults = await this.performMultipleSearchesWithRetry(searchQueries.slice(0, queryLimit), options);
+    console.log(`   Found ${allSearchResults.length} total search results (from ${queryLimit} queries)`);
     
     // Global deduplication and ranking
     const uniqueResults = rankSearchResults(dedupeGlobally(allSearchResults));
@@ -87,56 +100,263 @@ export class PerplexityEnhancerV4 {
   
   /**
    * Generate enhanced search queries using key phrase extraction
+   * OPTIMIZED: Reduced from 5-7 queries to 3 focused queries for better cost efficiency
+   * while maintaining citation quality through smarter query construction
    */
   private generateEnhancedSearchQueries(title: string, content: string): string[] {
+    const useReducedQueries = process.env.REDUCED_SEARCH_QUERIES !== 'false';
+
+    if (!useReducedQueries) {
+      // Legacy behavior: generate 5-7 queries
+      const queries: string[] = [];
+      queries.push(`"${title}" Hong Kong latest news 2025`);
+      const keyPhrases = extractKeyPhrases(content);
+      keyPhrases.forEach(phrase => {
+        queries.push(`${phrase} Hong Kong recent updates`);
+      });
+      queries.push(...this.generateSearchQueries(title, content));
+      return [...new Set(queries)].slice(0, 5);
+    }
+
+    // OPTIMIZED: 3 focused queries with better coverage
     const queries: string[] = [];
-    
-    // Primary topic search
-    queries.push(`"${title}" Hong Kong latest news 2025`);
-    
-    // Extract key phrases from content
+
+    // Query 1: Entity-focused - Extract key people, organizations, locations
+    const entities = this.extractEntities(title, content);
+    if (entities.length > 0) {
+      queries.push(`${entities.slice(0, 3).join(' ')} Hong Kong news 2025`);
+    } else {
+      // Fallback to title-based
+      queries.push(`"${title}" Hong Kong latest news 2025`);
+    }
+
+    // Query 2: Event/action-focused - What happened?
     const keyPhrases = extractKeyPhrases(content);
-    keyPhrases.forEach(phrase => {
-      queries.push(`${phrase} Hong Kong recent updates`);
+    if (keyPhrases.length > 0) {
+      queries.push(`${keyPhrases[0]} Hong Kong recent updates context`);
+    } else {
+      // Fallback: use first sentence
+      const firstSentence = content.substring(0, 150).split(/[.!?]/)[0];
+      queries.push(`${firstSentence} Hong Kong news`);
+    }
+
+    // Query 3: Background/context - Historical context for depth
+    const backgroundTerms = this.extractBackgroundTerms(title, content);
+    queries.push(`${backgroundTerms} Hong Kong background history context`);
+
+    console.log(`🔍 Generated ${queries.length} optimized search queries (reduced from 5)`);
+    queries.forEach((q, i) => console.log(`   ${i + 1}. ${q.substring(0, 80)}...`));
+
+    return queries;
+  }
+
+  /**
+   * Extract named entities (people, organizations, locations) from text
+   */
+  private extractEntities(title: string, content: string): string[] {
+    const text = title + ' ' + content.substring(0, 500);
+    const entities: string[] = [];
+
+    // Pattern 1: Capitalized multi-word names (e.g., "John Chan", "Hong Kong Government")
+    const namePattern = /(?:[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/g;
+    const names = text.match(namePattern) || [];
+    entities.push(...names.slice(0, 2));
+
+    // Pattern 2: Chinese names and organizations (2-4 character sequences)
+    const chinesePattern = /[\u4e00-\u9fa5]{2,4}(?:長|局|會|署|處|公司|集團|銀行|政府)/g;
+    const chineseEntities = text.match(chinesePattern) || [];
+    entities.push(...chineseEntities.slice(0, 2));
+
+    // Pattern 3: Known Hong Kong entities
+    const knownEntities = [
+      'MTR', 'HKMA', 'SFC', 'HKEX', 'Cathay Pacific', 'HSBC', 'Hang Seng',
+      'LegCo', 'ExCo', 'Chief Executive', 'Secretary', 'Commissioner'
+    ];
+    knownEntities.forEach(entity => {
+      if (text.includes(entity)) entities.push(entity);
     });
-    
-    // Add fallback queries from existing method
-    queries.push(...this.generateSearchQueries(title, content));
-    
-    // Remove duplicates
-    return [...new Set(queries)].slice(0, 7);
+
+    // Deduplicate and return top entities
+    return [...new Set(entities)].slice(0, 5);
+  }
+
+  /**
+   * Extract terms for background/context query
+   */
+  private extractBackgroundTerms(title: string, content: string): string {
+    // Extract the main topic/subject from the title
+    const titleWords = title
+      .replace(/[^\w\s\u4e00-\u9fa5]/g, ' ')
+      .split(/\s+/)
+      .filter(word => word.length > 3)
+      .filter(word => !['news', 'says', 'report', 'latest', 'update', 'hong', 'kong'].includes(word.toLowerCase()))
+      .slice(0, 3);
+
+    return titleWords.join(' ') || title.substring(0, 50);
   }
   
   /**
    * Perform multiple searches with retry and error handling
+   * OPTIMIZED: Implements stop-on-coverage strategy to reduce API calls
    */
   private async performMultipleSearchesWithRetry(
     queries: string[],
     options: EnhancementOptions
   ): Promise<SearchResult[]> {
-    const searchPromises = queries.map(async (query, index) => {
-      // Stagger requests to avoid rate limiting
-      if (index > 0) {
-        await new Promise(resolve => setTimeout(resolve, 200 * index));
+    const useStopOnCoverage = process.env.STOP_ON_COVERAGE === 'true';
+    const MIN_SOURCES_TARGET = 8; // Stop if we reach this many unique quality sources
+
+    if (!useStopOnCoverage) {
+      // Legacy parallel execution
+      const searchPromises = queries.map(async (query, index) => {
+        if (index > 0) {
+          await new Promise(resolve => setTimeout(resolve, 200 * index));
+        }
+        return safeSearch(
+          (q) => this.performDedicatedSearch(q, options),
+          query
+        );
+      });
+      const results = await Promise.all(searchPromises);
+      return results.flat();
+    }
+
+    // OPTIMIZED: Sequential execution with stop-on-coverage
+    const allResults: SearchResult[] = [];
+    const seenUrls = new Set<string>();
+
+    for (let i = 0; i < queries.length; i++) {
+      const query = queries[i];
+
+      // Stagger requests
+      if (i > 0) {
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
-      
-      return safeSearch(
-        (q) => this.performDedicatedSearch(q, options),
-        query
-      );
-    });
-    
-    const results = await Promise.all(searchPromises);
-    return results.flat();
+
+      try {
+        const results = await safeSearch(
+          (q) => this.performDedicatedSearch(q, options),
+          query
+        );
+
+        // Add new unique results
+        for (const result of results) {
+          if (!seenUrls.has(result.url)) {
+            seenUrls.add(result.url);
+            allResults.push(result);
+          }
+        }
+
+        // Check if we have enough quality sources
+        const qualitySources = allResults.filter(r => this.isQualitySource(r));
+        if (qualitySources.length >= MIN_SOURCES_TARGET) {
+          console.log(`   ✅ Stop-on-coverage: Found ${qualitySources.length} quality sources after ${i + 1}/${queries.length} queries`);
+          break;
+        }
+      } catch (error) {
+        console.warn(`   ⚠️ Search query ${i + 1} failed, continuing...`);
+      }
+    }
+
+    return allResults;
+  }
+
+  /**
+   * Check if a search result is a quality source (trusted domain, recent, has snippet)
+   */
+  private isQualitySource(result: SearchResult): boolean {
+    // Must have URL
+    if (!result.url) return false;
+
+    // Check if from trusted domain
+    const domain = result.domain || this.extractDomain(result.url);
+    const isTrustedDomain = this.TRUSTED_DOMAINS.some(trusted =>
+      domain.includes(trusted) || trusted.includes(domain)
+    );
+
+    // Has meaningful snippet (at least 50 chars)
+    const hasSnippet = (result.snippet?.length || 0) >= 50;
+
+    // Quality = trusted domain OR has good snippet
+    return isTrustedDomain || hasSnippet;
+  }
+
+  /**
+   * Generate hash for search query (for caching)
+   */
+  private generateQueryHash(query: string): string {
+    const normalized = query.toLowerCase().trim().replace(/\s+/g, ' ');
+    return crypto.createHash('md5').update(normalized).digest('hex');
+  }
+
+  /**
+   * Get cached search results
+   */
+  private async getCachedSearchResults(queryHash: string): Promise<SearchResult[] | null> {
+    if (!supabase || !ENABLE_SEARCH_CACHE) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('search_result_cache')
+        .select('results')
+        .eq('query_hash', queryHash)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (error || !data) return null;
+
+      console.log(`📦 Search cache hit for query`);
+      return data.results as SearchResult[];
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Save search results to cache
+   */
+  private async saveSearchResultsToCache(
+    queryHash: string,
+    queryText: string,
+    results: SearchResult[]
+  ): Promise<void> {
+    if (!supabase || !ENABLE_SEARCH_CACHE || results.length === 0) return;
+
+    try {
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + SEARCH_CACHE_TTL_HOURS);
+
+      await supabase
+        .from('search_result_cache')
+        .upsert({
+          query_hash: queryHash,
+          query_text: queryText,
+          results: results,
+          result_count: results.length,
+          expires_at: expiresAt.toISOString()
+        }, { onConflict: 'query_hash' });
+
+      console.log(`💾 Cached ${results.length} search results (TTL: ${SEARCH_CACHE_TTL_HOURS}h)`);
+    } catch (error) {
+      console.warn('⚠️ Failed to cache search results:', error);
+    }
   }
   
   /**
    * Perform a dedicated search using Perplexity's search capabilities
+   * OPTIMIZED: Uses cache to avoid duplicate API calls for same queries
    */
   private async performDedicatedSearch(
     query: string,
     options: EnhancementOptions
   ): Promise<SearchResult[]> {
+    // Check cache first
+    const queryHash = this.generateQueryHash(query);
+    const cachedResults = await this.getCachedSearchResults(queryHash);
+    if (cachedResults) {
+      return cachedResults;
+    }
+
     const requestBody = {
       model: 'sonar',
       messages: [
@@ -217,7 +437,12 @@ export class PerplexityEnhancerV4 {
         });
       }
     });
-    
+
+    // Cache the results for future use (async, don't wait)
+    this.saveSearchResultsToCache(queryHash, query, searchResults).catch(err =>
+      console.warn('⚠️ Background search cache save failed:', err)
+    );
+
     return searchResults;
   }
   

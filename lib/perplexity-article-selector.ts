@@ -78,6 +78,69 @@ const SOURCE_QUALITY_WEIGHTS: Record<string, number> = {
   'bastillepost': 58  // Local news focus with opinion pieces
 };
 
+// Feature flags for optimization experiments
+const FEATURE_FLAGS = {
+  DYNAMIC_SCORE_THRESHOLD: process.env.DYNAMIC_SCORE_THRESHOLD !== 'false',
+  FLEXIBLE_ARTICLE_COUNT: process.env.FLEXIBLE_ARTICLE_COUNT === 'true',
+  BREAKING_NEWS_FAST_LANE: process.env.BREAKING_NEWS_FAST_LANE === 'true',
+};
+
+// Breaking news detection keywords
+const BREAKING_NEWS_KEYWORDS = [
+  'breaking', 'just in', 'developing', 'urgent', 'alert',
+  '突發', '快訊', '最新', '緊急', '即時'
+];
+
+// Calculate dynamic score threshold based on candidate distribution
+function calculateDynamicThreshold(scores: number[]): { threshold: number; method: string } {
+  if (!FEATURE_FLAGS.DYNAMIC_SCORE_THRESHOLD || scores.length < 3) {
+    return { threshold: 80, method: 'fixed' };
+  }
+
+  const sortedScores = [...scores].sort((a, b) => b - a);
+  const MIN_THRESHOLD = 65;
+  const MAX_THRESHOLD = 85;
+  const TARGET_PERCENTILE = 0.3; // Top 30% of candidates
+
+  // Calculate percentile-based threshold
+  const targetIndex = Math.floor(scores.length * TARGET_PERCENTILE);
+  const percentileThreshold = sortedScores[targetIndex] || sortedScores[sortedScores.length - 1];
+
+  // Calculate median for context
+  const medianIndex = Math.floor(scores.length / 2);
+  const medianScore = sortedScores[medianIndex];
+
+  // Dynamic threshold: use percentile but clamp to bounds
+  let dynamicThreshold = Math.max(MIN_THRESHOLD, Math.min(MAX_THRESHOLD, percentileThreshold));
+
+  // In low-quality periods (median < 70), lower the threshold
+  if (medianScore < 70) {
+    dynamicThreshold = Math.max(MIN_THRESHOLD, dynamicThreshold - 10);
+  }
+
+  console.log(`📊 Dynamic threshold calculation:`);
+  console.log(`   • Scores: min=${Math.min(...scores)}, median=${medianScore}, max=${Math.max(...scores)}`);
+  console.log(`   • Target percentile (top 30%): ${percentileThreshold}`);
+  console.log(`   • Dynamic threshold: ${dynamicThreshold} (bounds: ${MIN_THRESHOLD}-${MAX_THRESHOLD})`);
+
+  return { threshold: dynamicThreshold, method: 'dynamic' };
+}
+
+// Check if article is breaking news
+function isBreakingNews(title: string, content: string): boolean {
+  const text = (title + ' ' + content).toLowerCase();
+  return BREAKING_NEWS_KEYWORDS.some(keyword => text.includes(keyword.toLowerCase()));
+}
+
+// Calculate recency bonus for article (articles < 2 hours get boost)
+function getRecencyBonus(createdAt: string): number {
+  const hoursAgo = (Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60);
+  if (hoursAgo <= 1) return 10;  // Very fresh: +10
+  if (hoursAgo <= 2) return 7;   // Fresh: +7
+  if (hoursAgo <= 4) return 3;   // Recent: +3
+  return 0;
+}
+
 export async function selectArticlesWithPerplexity(count: number = 10): Promise<SelectedArticle[]> {
   const sessionId = `selection_${Date.now()}_${Math.random().toString(36).substring(7)}`;
   console.log(`🚀 Starting Perplexity-assisted article selection for ${count} articles (Session: ${sessionId})`);
@@ -1056,27 +1119,64 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
       throw new Error('Perplexity did not select any articles');
     }
 
-    // Validate each selection has required fields and meets minimum score
-    const validSelections = selections.filter(selection => 
-      selection.id && 
-      typeof selection.score === 'number' &&
-      selection.score >= 70 // Minimum score threshold
+    // First pass: validate basic structure
+    const structurallyValid = selections.filter(selection =>
+      selection.id &&
+      typeof selection.score === 'number'
     );
 
-    if (validSelections.length !== selections.length) {
-      console.warn(`Filtered out ${selections.length - validSelections.length} selections (below score threshold or invalid).`);
+    // Calculate dynamic threshold based on all scores
+    const allScores = structurallyValid.map(s => s.score);
+    const { threshold, method } = calculateDynamicThreshold(allScores);
+
+    console.log(`🎯 Score threshold: ${threshold} (method: ${method})`);
+
+    // Apply threshold with recency consideration
+    const validSelections = structurallyValid.filter(selection => {
+      // Hard floor: never accept below 60
+      if (selection.score < 60) {
+        console.log(`   ⚠️ Rejected ${selection.id}: score ${selection.score} below hard floor (60)`);
+        return false;
+      }
+
+      // Dynamic threshold check
+      if (selection.score >= threshold) {
+        return true;
+      }
+
+      // Borderline case (within 5 points): log but still filter
+      if (selection.score >= threshold - 5) {
+        console.log(`   ⚠️ Borderline rejection ${selection.id}: score ${selection.score} (threshold: ${threshold})`);
+      }
+
+      return false;
+    });
+
+    if (validSelections.length !== structurallyValid.length) {
+      console.warn(`Filtered out ${structurallyValid.length - validSelections.length} selections (below dynamic threshold ${threshold}).`);
     }
 
-    console.log(`Perplexity selected ${validSelections.length} articles for enhancement`);
-    
+    // Apply flexible article count if enabled
+    let finalSelections = validSelections;
+    if (FEATURE_FLAGS.FLEXIBLE_ARTICLE_COUNT) {
+      // Allow up to 5 articles if they all score >= 85
+      const highQuality = validSelections.filter(s => s.score >= 85);
+      if (highQuality.length > 3) {
+        finalSelections = highQuality.slice(0, 5);
+        console.log(`📈 Flexible count: Expanded to ${finalSelections.length} high-quality articles (scores >= 85)`);
+      }
+    }
+
+    console.log(`Perplexity selected ${finalSelections.length} articles for enhancement`);
+
     // Debug: Log the scored selections
-    console.log(`📝 Scored selections:`, validSelections.map(s => ({
+    console.log(`📝 Scored selections:`, finalSelections.map(s => ({
       id: s.id,
       scores: `I:${s.I || '?'} N:${s.N || '?'} D:${s.D || '?'} S:${s.S || '?'} U:${s.U || '?'}`,
       total: s.score
     })));
-    
-    return validSelections;
+
+    return finalSelections;
     
   } catch (error) {
     console.error('Error calling Perplexity for selection:', error);
@@ -1385,19 +1485,24 @@ export async function getSelectionStatistics(): Promise<any> {
 }
 
 // Get recently enhanced topics for deduplication
-async function getRecentlyEnhancedTopics(): Promise<Array<{ title: string, summary?: string, created_at: string }>> {
+// Reduced from 7 days to 4 days to allow revisiting important ongoing stories
+async function getRecentlyEnhancedTopics(): Promise<Array<{ title: string, summary?: string, created_at: string, category?: string }>> {
   try {
+    // Use 4-day window for general topics (reduced from 7)
+    // This allows important developing stories to be re-covered after 4 days
+    const DEDUP_WINDOW_DAYS = parseInt(process.env.TOPIC_DEDUP_DAYS || '4', 10);
+
     const { data: recentEnhanced, error } = await supabase
       .from('articles')
-      .select('title, summary, created_at')
+      .select('title, summary, created_at, category')
       .eq('is_ai_enhanced', true)
-      .gte('created_at', getDateDaysAgo(7)) // Extended to 7 days to match candidate selection window
+      .gte('created_at', getDateDaysAgo(DEDUP_WINDOW_DAYS))
       .order('created_at', { ascending: false })
-      .limit(50); // Increased limit to account for longer time window
+      .limit(40); // Reduced limit to match shorter window
 
     if (error) throw error;
 
-    console.log(`📊 Deduplication check: Found ${recentEnhanced?.length || 0} enhanced articles in last 7 days`);
+    console.log(`📊 Deduplication check: Found ${recentEnhanced?.length || 0} enhanced articles in last ${DEDUP_WINDOW_DAYS} days`);
     return recentEnhanced || [];
   } catch (error) {
     console.error('Error fetching recently enhanced topics:', error);
