@@ -149,40 +149,30 @@ export async function GET(request: NextRequest) {
     }
 
     console.log("Fetching AI-enhanced articles from database...")
-    
-    // Build a more sophisticated query that checks both language field and metadata language
+
+    // Build query using proper language_variant column (indexed, reliable)
     try {
       let query = supabase
         .from("articles")
         .select("*")
         .eq('is_ai_enhanced', true)
         .is('deleted_at', null)
+        .not('original_article_id', 'is', null) // Only enhanced versions
         .order("published_at", { ascending: false, nullsFirst: false })
-      
-      // CRITICAL FIX: Exclude source articles that have enhanced versions
-      // Only show articles that either:
-      // 1. Have an original_article_id (are enhanced versions), OR
-      // 2. Don't have any enhanced versions pointing to them (standalone enhanced articles)
-      
-      // For now, prioritize articles with original_article_id (properly linked enhanced articles)
-      // This will exclude the source articles that are incorrectly marked as enhanced
-      query = query.not('original_article_id', 'is', null)
-      
+
+      // Filter by language using language_variant column
+      // This is the proper indexed column for language filtering
+      query = query.eq('language_variant', language)
+
       // Filter by category
       if (category) {
+        // Specific category selected
         query = query.eq('category', category)
       } else {
         // "Top Stories" feed = Top Stories + Local + General merged
         query = query.in('category', ['Top Stories', 'Local', 'General'])
       }
 
-      // Filter by language
-      if (language && language !== "en") {
-        query = query.eq('enhancement_metadata->>language', language)
-      }
-      // For English: skip language filter entirely - most articles default to English
-      // This avoids the .or() + .in() combination issue in Supabase
-      
       const { data: articles, error } = await query.range(page * limit, (page + 1) * limit - 1)
       
       if (error) {
@@ -207,7 +197,7 @@ export async function GET(request: NextRequest) {
           category: article.category || "General",
           readTime: Math.ceil((article.content?.length || 0) / 200) || 3,
           isAiEnhanced: article.is_ai_enhanced || false,
-          language: article.enhancement_metadata?.language || language,
+          language: article.language_variant || article.enhancement_metadata?.language || language,
           originalArticleId: article.original_article_id,
           enhancementMetadata: article.enhancement_metadata
         }))
