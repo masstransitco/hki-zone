@@ -168,7 +168,7 @@ export async function GET(request: NextRequest) {
       // This will exclude the source articles that are incorrectly marked as enhanced
       query = query.not('original_article_id', 'is', null)
       
-      // Filter by category FIRST (before language filter to avoid .or() + .in() issues)
+      // Filter by category
       if (category) {
         query = query.eq('category', category)
       } else {
@@ -176,13 +176,12 @@ export async function GET(request: NextRequest) {
         query = query.in('category', ['Top Stories', 'Local', 'General'])
       }
 
-      // Filter by language AFTER category
+      // Filter by language
       if (language && language !== "en") {
         query = query.eq('enhancement_metadata->>language', language)
-      } else {
-        // For English, include articles marked as English OR with null metadata
-        query = query.or('enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null,enhancement_metadata.is.null')
       }
+      // For English: skip language filter entirely - most articles default to English
+      // This avoids the .or() + .in() combination issue in Supabase
       
       const { data: articles, error } = await query.range(page * limit, (page + 1) * limit - 1)
       
