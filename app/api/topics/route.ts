@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
         .select("*")
         .eq('is_ai_enhanced', true)
         .is('deleted_at', null)
-        .order("created_at", { ascending: false })
+        .order("published_at", { ascending: false })
       
       // CRITICAL FIX: Exclude source articles that have enhanced versions
       // Only show articles that either:
