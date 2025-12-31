@@ -1101,10 +1101,18 @@ async function callPerplexityForSelection(prompt: string): Promise<Array<{id: st
     // Debug: Log raw response for reasoning validation
     console.log(`🔍 Raw Perplexity Response for Validation:`, content.substring(0, 500) + '...');
     
-    // Parse the JSON response
+    // Parse the JSON response - strip markdown code blocks if present
     let selections: Array<{id: string, I?: number, N?: number, D?: number, S?: number, U?: number, score: number}>;
     try {
-      selections = JSON.parse(content);
+      // Strip markdown code blocks (```json ... ``` or ``` ... ```)
+      let jsonContent = content.trim();
+      if (jsonContent.startsWith('```')) {
+        // Remove opening ``` or ```json
+        jsonContent = jsonContent.replace(/^```(?:json)?\s*\n?/, '');
+        // Remove closing ```
+        jsonContent = jsonContent.replace(/\n?```\s*$/, '');
+      }
+      selections = JSON.parse(jsonContent.trim());
     } catch (error) {
       console.error('Failed to parse Perplexity selection response:', content);
       throw new Error('Invalid response format from Perplexity');
@@ -1759,11 +1767,17 @@ async function callPerplexityForSimilarity(prompt: string): Promise<string[]> {
 
     const data = await response.json();
     const content = data.choices[0].message.content;
-    
-    // Parse the JSON response
+
+    // Parse the JSON response - strip markdown code blocks if present
     let similarIds: string[];
     try {
-      similarIds = JSON.parse(content);
+      // Strip markdown code blocks (```json ... ``` or ``` ... ```)
+      let jsonContent = content.trim();
+      if (jsonContent.startsWith('```')) {
+        jsonContent = jsonContent.replace(/^```(?:json)?\s*\n?/, '');
+        jsonContent = jsonContent.replace(/\n?```\s*$/, '');
+      }
+      similarIds = JSON.parse(jsonContent.trim());
     } catch (error) {
       console.error('Failed to parse Perplexity similarity response:', content);
       return []; // Return empty array if parsing fails
