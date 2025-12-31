@@ -178,9 +178,12 @@ export async function GET(request: NextRequest) {
         query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null,enhancement_metadata.is.null`)
       }
       
-      // Add category filtering if specified
+      // Add category filtering
       if (category) {
         query = query.eq('category', category)
+      } else {
+        // When no category specified, show "Top Stories" feed (merged: Top Stories + Local + General)
+        query = query.in('category', ['Top Stories', 'Local', 'General'])
       }
       
       const { data: articles, error } = await query.range(page * limit, (page + 1) * limit - 1)
