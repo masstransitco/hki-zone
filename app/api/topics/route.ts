@@ -168,22 +168,20 @@ export async function GET(request: NextRequest) {
       // This will exclude the source articles that are incorrectly marked as enhanced
       query = query.not('original_article_id', 'is', null)
       
-      // Filter by language using only metadata (since language column doesn't exist)
-      if (language && language !== "en") {
-        // For non-English languages, check metadata language
-        query = query.eq('enhancement_metadata->>language', language)
-      } else {
-        // For English, include articles marked as English OR with null/missing metadata
-        // This catches new articles that haven't been fully processed yet
-        query = query.or(`enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null,enhancement_metadata.is.null`)
-      }
-      
-      // Add category filtering
+      // Filter by category FIRST (before language filter to avoid .or() + .in() issues)
       if (category) {
         query = query.eq('category', category)
       } else {
-        // When no category specified, show "Top Stories" feed (merged: Top Stories + Local + General)
+        // "Top Stories" feed = Top Stories + Local + General merged
         query = query.in('category', ['Top Stories', 'Local', 'General'])
+      }
+
+      // Filter by language AFTER category
+      if (language && language !== "en") {
+        query = query.eq('enhancement_metadata->>language', language)
+      } else {
+        // For English, include articles marked as English OR with null metadata
+        query = query.or('enhancement_metadata->>language.eq.en,enhancement_metadata->>language.is.null,enhancement_metadata.is.null')
       }
       
       const { data: articles, error } = await query.range(page * limit, (page + 1) * limit - 1)
