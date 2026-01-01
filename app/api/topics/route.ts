@@ -266,3 +266,5 @@ export async function GET(request: NextRequest) {
     return addCacheHeaders(response, paginatedArticles)
   }
 }
+
+// Cache bust: 1735747200 - Force rebuild to clear stale serverless cache
