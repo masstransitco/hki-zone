@@ -180,9 +180,6 @@ export async function GET(request: NextRequest) {
       }
       
       console.log(`Fetched ${articles?.length || 0} AI-enhanced articles from database`)
-      if (articles && articles.length > 0) {
-        console.log(`First article: "${articles[0].title?.substring(0, 50)}..." published_at: ${articles[0].published_at}`)
-      }
       
       // If we got articles, continue with processing
       if (articles && articles.length > 0) {
@@ -269,5 +266,3 @@ export async function GET(request: NextRequest) {
     return addCacheHeaders(response, paginatedArticles)
   }
 }
-
-// Cache bust: 1735747200 - Force rebuild to clear stale serverless cache
