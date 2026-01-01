@@ -168,10 +168,9 @@ export async function GET(request: NextRequest) {
       if (category) {
         // Specific category selected
         query = query.eq('category', category)
-      } else {
-        // "Top Stories" feed = Top Stories + Local + General merged
-        query = query.in('category', ['Top Stories', 'Local', 'General'])
       }
+      // When no category specified ("Top Stories"), fetch ALL categories
+      // This ensures the feed shows the latest articles regardless of category
 
       const { data: articles, error } = await query.range(page * limit, (page + 1) * limit - 1)
       
