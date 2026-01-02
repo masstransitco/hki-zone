@@ -189,11 +189,11 @@ async function runWithRetry<T>(fn: () => Promise<T>, tries = 2): Promise<T> {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { imageUrl, articleId } = body;
+    const { articleId } = body;
 
-    if (!imageUrl || !articleId) {
+    if (!articleId) {
       return NextResponse.json(
-        { error: 'Image URL and Article ID are required' },
+        { error: 'Article ID is required' },
         { status: 400 }
       );
     }

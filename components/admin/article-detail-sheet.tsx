@@ -543,28 +543,23 @@ export default function ArticleDetailSheet({
   }, [article, setGenerating])
 
   const handleGenerateOpenAIImage = useCallback(async () => {
-    if (!article.imageUrl) {
-      toast.error('No image URL available for enhancement')
-      return
-    }
-
+    // Editorial image generation works without an existing image (uses DALL-E 3)
     setGenerating(article.id, 'openai', true)
-    
+
     // Use a single toast with ID to update its content
     const toastId = 'openai-generation'
-    
+
     toast.loading('🚀 Starting AI image generation...', { id: toastId })
-    
+
     try {
       toast.loading('📝 Analyzing article content with GPT-4...', { id: toastId })
-      
+
       const response = await fetch('/api/admin/generate-openai-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          imageUrl: article.imageUrl,
           articleId: article.id
         })
       })
@@ -1200,10 +1195,10 @@ export default function ArticleDetailSheet({
               </div>
               
               <div className="grid grid-cols-1 gap-3">
-                <Button 
+                <Button
                   variant="outline"
                   onClick={handleGenerateOpenAIImage}
-                  disabled={isGeneratingOpenAIImage || !article.imageUrl}
+                  disabled={isGeneratingOpenAIImage}
                   className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 text-green-700 hover:from-green-100 hover:to-emerald-100"
                 >
                   {isGeneratingOpenAIImage ? (
