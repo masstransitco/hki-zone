@@ -142,30 +142,36 @@ async function processArticle(article: any): Promise<{ success: boolean; article
       return { success: false, articleId: article.id, title: article.title, error: 'Image generation failed' }
     }
 
-    // Update article with new image
-    const { error: updateError } = await supabase
-      .from('articles')
-      .update({ image_url: imageUrl, updated_at: new Date().toISOString() })
-      .eq('id', article.id)
-
-    if (updateError) {
-      return { success: false, articleId: article.id, title: article.title, error: updateError.message }
-    }
-
-    // Sync image to trilingual versions
+    // Update ALL language versions at once using base URL pattern
     const baseUrl = article.url?.replace(/#enhanced.*$/, '') || ''
-    if (baseUrl) {
-      const { error: syncError } = await supabase
-        .from('articles')
-        .update({ image_url: imageUrl, updated_at: new Date().toISOString() })
-        .like('url', `${baseUrl}%`)
-        .neq('id', article.id)
+    const now = new Date().toISOString()
+    let updatedCount = 0
 
-      if (syncError) {
-        console.log(`   ⚠️ Failed to sync to related articles: ${syncError.message}`)
-      } else {
-        console.log(`   🔄 Synced image to related trilingual articles`)
+    if (baseUrl) {
+      // Update all articles with matching base URL (all 3 language versions)
+      const { data: updated, error: updateError } = await supabase
+        .from('articles')
+        .update({ image_url: imageUrl, updated_at: now })
+        .like('url', `${baseUrl}%`)
+        .select('id')
+
+      if (updateError) {
+        return { success: false, articleId: article.id, title: article.title, error: updateError.message }
       }
+
+      updatedCount = updated?.length || 0
+      console.log(`   🔄 Updated ${updatedCount} language versions with same image`)
+    } else {
+      // Fallback: just update this article
+      const { error: updateError } = await supabase
+        .from('articles')
+        .update({ image_url: imageUrl, updated_at: now })
+        .eq('id', article.id)
+
+      if (updateError) {
+        return { success: false, articleId: article.id, title: article.title, error: updateError.message }
+      }
+      updatedCount = 1
     }
 
     // Auto-process for social media
@@ -211,20 +217,21 @@ export async function GET(request: NextRequest) {
     console.log('🖼️ Starting auto image generation for enhanced articles...')
     console.log(`⏰ Time: ${new Date().toISOString()}`)
 
-    // Find enhanced articles without images (limit to 2 per run to manage costs/time)
-    const { data: articles, error: fetchError } = await supabase
+    // Find unique articles without images, grouped by base URL
+    // This ensures we only generate once per story, not per language version
+    const { data: rawArticles, error: fetchError } = await supabase
       .from('articles')
-      .select('id, title, summary, content, category, url, source')
+      .select('id, title, summary, content, category, url, source, created_at')
       .eq('is_ai_enhanced', true)
       .or('image_url.is.null,image_url.eq.')
       .order('created_at', { ascending: false })
-      .limit(2)
+      .limit(50) // Fetch more to find unique stories
 
     if (fetchError) {
       throw new Error(`Failed to fetch articles: ${fetchError.message}`)
     }
 
-    if (!articles || articles.length === 0) {
+    if (!rawArticles || rawArticles.length === 0) {
       console.log('✅ No enhanced articles without images found')
       return NextResponse.json({
         success: true,
@@ -233,7 +240,31 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    console.log(`📋 Found ${articles.length} enhanced articles without images`)
+    // Group by base URL (remove #enhanced-xxx suffix) to find unique stories
+    // Prefer English version for better DALL-E prompt generation
+    const uniqueStories = new Map<string, typeof rawArticles[0]>()
+
+    for (const article of rawArticles) {
+      const baseUrl = article.url?.replace(/#enhanced.*$/, '') || article.id
+
+      if (!uniqueStories.has(baseUrl)) {
+        uniqueStories.set(baseUrl, article)
+      } else {
+        // Prefer English version (title starts with capital letter, not Chinese)
+        const existing = uniqueStories.get(baseUrl)!
+        const isEnglish = /^[A-Z]/.test(article.title || '')
+        const existingIsEnglish = /^[A-Z]/.test(existing.title || '')
+
+        if (isEnglish && !existingIsEnglish) {
+          uniqueStories.set(baseUrl, article)
+        }
+      }
+    }
+
+    // Take only 2 unique stories per run
+    const articles = Array.from(uniqueStories.values()).slice(0, 2)
+
+    console.log(`📋 Found ${rawArticles.length} articles, ${uniqueStories.size} unique stories, processing ${articles.length}`)
 
     // Process articles
     const results = []
