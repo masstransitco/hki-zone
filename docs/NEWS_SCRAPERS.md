@@ -8,7 +8,7 @@ This document tracks the development progress of news scrapers for HKI Zone, inc
 
 ---
 
-## Current Sources (10 Active)
+## Current Sources (13 Active)
 
 | Source | Language | Type | Status | Notes |
 |--------|----------|------|--------|-------|
@@ -22,6 +22,9 @@ This document tracks the development progress of news scrapers for HKI Zone, inc
 | ONCC | ZH | Local | ✅ Active | Oriental Daily |
 | Bastille Post | ZH | Local | ✅ Active | Digital media |
 | Bloomberg | EN | International | ✅ Active | Business/Finance |
+| **BBC News Asia** | EN | International | ✅ Active | RSS Feed, ~15 articles |
+| **Reuters** | EN | International | ✅ Active | Section scraping, ~15 articles |
+| **CGTN** | EN | China | ✅ Active | Multi-section RSS, ~20 articles |
 
 ---
 
@@ -31,7 +34,7 @@ This document tracks the development progress of news scrapers for HKI Zone, inc
 
 | Source | Language | Priority | Status | Scraping Method |
 |--------|----------|----------|--------|-----------------|
-| Reuters | EN | 🔴 High | ⬜ Planned | RSS Feed |
+| Reuters | EN | 🔴 High | ✅ Complete | Section page scraping |
 | AP News | EN | 🔴 High | ⬜ Planned | RSS Feed |
 | AFP | EN/ZH | 🟡 Medium | ⬜ Planned | RSS Feed |
 
@@ -39,7 +42,7 @@ This document tracks the development progress of news scrapers for HKI Zone, inc
 
 | Source | Language | Priority | Status | Scraping Method |
 |--------|----------|----------|--------|-----------------|
-| BBC News Asia | EN | 🔴 High | ⬜ Planned | RSS Feed |
+| BBC News Asia | EN | 🔴 High | ✅ Complete | RSS Feed |
 | The Guardian Asia | EN | 🟡 Medium | ⬜ Planned | RSS Feed |
 | Nikkei Asia | EN | 🟡 Medium | ⬜ Planned | HTML/API |
 | CNN Asia | EN | 🟢 Low | ⬜ Planned | RSS Feed |
@@ -49,7 +52,7 @@ This document tracks the development progress of news scrapers for HKI Zone, inc
 
 | Source | Language | Priority | Status | Scraping Method |
 |--------|----------|----------|--------|-----------------|
-| CGTN | EN/ZH | 🔴 High | ⬜ Planned | RSS Feed |
+| CGTN | EN/ZH | 🔴 High | ✅ Complete | RSS Feed (multi-section) |
 | Xinhua (新华社) | EN/ZH | 🔴 High | ⬜ Planned | RSS/HTML |
 | Global Times (环球时报) | EN | 🟡 Medium | ⬜ Planned | RSS Feed |
 | Caixin (财新) | EN/ZH | 🟡 Medium | ⬜ Planned | HTML/API |
@@ -184,6 +187,12 @@ Articles go through a multi-stage selection process:
 
 ## Changelog
 
+### 2026-01-02
+- Added BBC News Asia scraper (RSS-based, ~15 articles)
+- Added Reuters scraper (section page scraping, ~15 articles)
+- Added CGTN scraper (multi-section RSS, ~20 articles)
+- Updated documentation with new sources
+
 ### 2026-01-01
 - Improved HK01 scraper with JSON API
 - Enhanced AM730 content extraction
@@ -199,10 +208,12 @@ Articles go through a multi-stage selection process:
 
 ## Next Steps
 
-1. **Immediate**: Build Reuters + BBC + CGTN scrapers
+1. ~~**Immediate**: Build Reuters + BBC + CGTN scrapers~~ ✅ Complete
 2. **Short-term**: Add Caixin for mainland financial perspective
-3. **Medium-term**: Implement Channel News Asia for regional balance
-4. **Long-term**: Evaluate paywall sources (FT, Nikkei)
+3. **Short-term**: Add AP News for additional wire coverage
+4. **Medium-term**: Implement Channel News Asia for regional balance
+5. **Medium-term**: Add Xinhua for official China coverage
+6. **Long-term**: Evaluate paywall sources (FT, Nikkei)
 
 ---
 
