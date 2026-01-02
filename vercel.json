@@ -13,6 +13,10 @@
       "schedule": "10,40 * * * *"
     },
     {
+      "path": "/api/cron/scrape-cgtn",
+      "schedule": "15,45 * * * *"
+    },
+    {
       "path": "/api/cron/select-article",
       "schedule": "0,15,30,45 * * * *"
     },

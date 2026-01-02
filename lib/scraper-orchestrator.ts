@@ -15,6 +15,11 @@ const { scrapeSCMP } = require("./scrapers/scmp")
 const { scrapeBloombergWithContent } = require("./scrapers/bloomberg")
 const { scrapeTheStandard } = require("./scrapers/thestandard")
 const { scrapeBastillePost } = require("./scrapers/bastillepost")
+const { scrapeBBCWithContent } = require("./scrapers/bbc")
+const { scrapeReutersWithContent } = require("./scrapers/reuters")
+const { scrapeCGTNWithContent } = require("./scrapers/cgtn")
+const { scrapeAPNewsWithContent } = require("./scrapers/apnews")
+const { scrapeXinhuaWithContent } = require("./scrapers/xinhua")
 
 const OUTLET_SCRAPERS = {
   hkfp: scrapeHKFPWithContent,
@@ -28,11 +33,16 @@ const OUTLET_SCRAPERS = {
   bloomberg: scrapeBloombergWithContent,
   thestandard: scrapeTheStandard,
   bastillepost: scrapeBastillePost,
+  bbc: scrapeBBCWithContent,
+  reuters: scrapeReutersWithContent,
+  cgtn: scrapeCGTNWithContent,
+  apnews: scrapeAPNewsWithContent,
+  xinhua: scrapeXinhuaWithContent,
 }
 
 const OUTLET_NAMES = {
   hkfp: "HKFP",
-  singtao: "SingTao", 
+  singtao: "SingTao",
   hk01: "HK01",
   oncc: "ONCC",
   rthk: "RTHK",
@@ -42,12 +52,16 @@ const OUTLET_NAMES = {
   bloomberg: "Bloomberg",
   thestandard: "TheStandard",
   bastillepost: "BastillePost",
+  bbc: "BBC",
+  reuters: "Reuters",
+  cgtn: "CGTN",
+  apnews: "AP News",
+  xinhua: "Xinhua",
 }
 
 // Separate news scrapers from car scrapers for runAllScrapers
 // Car scraping is handled by a dedicated cron job at /api/cron/scrape-cars
-// HK01 and am730 are in separate crons (/api/cron/scrape-hk01 and /api/cron/scrape-am730)
-// because they're slow and cause timeouts when run in parallel with other scrapers
+// HK01, am730, CGTN, and Xinhua are in separate crons because they're slow
 const NEWS_OUTLET_SCRAPERS = {
   hkfp: scrapeHKFPWithContent,
   singtao: scrapeSingTaoWithContent,
@@ -57,6 +71,11 @@ const NEWS_OUTLET_SCRAPERS = {
   bloomberg: scrapeBloombergWithContent,
   thestandard: scrapeTheStandard,
   bastillepost: scrapeBastillePost,
+  bbc: scrapeBBCWithContent,         // ~14s - fast international source
+  reuters: scrapeReutersWithContent, // ~31s - acceptable international source
+  apnews: scrapeAPNewsWithContent,   // ~21s - AP wire service
+  // CGTN excluded - slow (~97s), runs in dedicated cron at /api/cron/scrape-cgtn
+  // Xinhua excluded - slow (~28s), runs with CGTN in dedicated cron
 }
 
 // Individual scraper function with progress tracking
@@ -446,6 +465,11 @@ export async function runAllScrapers(withProgress = false) {
         Bloomberg: allArticles.filter((a) => a.source === "bloomberg").length,
         TheStandard: allArticles.filter((a) => a.source === "TheStandard").length,
         BastillePost: allArticles.filter((a) => a.source === "bastillepost").length,
+        BBC: allArticles.filter((a) => a.source === "BBC").length,
+        Reuters: allArticles.filter((a) => a.source === "Reuters").length,
+        CGTN: allArticles.filter((a) => a.source === "CGTN").length,
+        APNews: allArticles.filter((a) => a.source === "apnews").length,
+        Xinhua: allArticles.filter((a) => a.source === "xinhua").length,
       },
       database: {
         before: initialStats,
@@ -490,6 +514,16 @@ function getCategoryFromSource(source: string): string {
       return "Local"
     case "bastillepost":
       return "Local"
+    case "bbc":
+      return "International"
+    case "reuters":
+      return "International"
+    case "cgtn":
+      return "International"
+    case "apnews":
+      return "International"
+    case "xinhua":
+      return "International"
     default:
       return "General"
   }

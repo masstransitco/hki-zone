@@ -43,8 +43,8 @@ interface TierConfig {
 
 const SOURCE_TIERS: Record<string, TierConfig> = {
   premium: {
-    sources: ['HKFP', 'scmp', 'bloomberg', 'TheStandard'],
-    quota: 15,        // Higher quota for premium sources
+    sources: ['HKFP', 'scmp', 'bloomberg', 'TheStandard', 'BBC', 'Reuters', 'CGTN', 'apnews', 'xinhua'],
+    quota: 25,        // Increased quota for more international sources
     maxAgeHours: 12,  // Longer time window due to lower frequency
     minQuality: 200,  // Higher content threshold
     weight: 100       // Highest quality weight
@@ -68,14 +68,19 @@ const SOURCE_TIERS: Record<string, TierConfig> = {
 const SOURCE_QUALITY_WEIGHTS: Record<string, number> = {
   'HKFP': 100,        // Premium investigative journalism
   'scmp': 95,         // International quality
+  'Reuters': 94,      // Wire service - very reliable
+  'apnews': 93,       // AP wire service - reliable
   'TheStandard': 92,  // Quality English news
+  'BBC': 92,          // Quality international journalism
   'bloomberg': 90,    // Financial expertise
   'RTHK': 85,         // Public broadcaster reliability
+  'xinhua': 76,       // State media - official China perspective
+  'CGTN': 75,         // State media - useful perspective but lower weight
   'SingTao': 70,      // Mainstream reliability
   'on.cc': 65,        // Popular but mixed quality
   'HK01': 60,         // High volume, variable quality
+  'bastillepost': 58, // Local news focus with opinion pieces
   'am730': 55,        // Lifestyle focus
-  'bastillepost': 58  // Local news focus with opinion pieces
 };
 
 // Feature flags for optimization experiments

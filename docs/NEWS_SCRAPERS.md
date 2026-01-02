@@ -1,6 +1,6 @@
 # News Scrapers Development Plan
 
-> Last updated: 2026-01-01
+> Last updated: 2026-01-02
 
 ## Overview
 
@@ -81,15 +81,21 @@ This document tracks the development progress of news scrapers for HKI Zone, inc
 
 ### In Progress
 
-- [ ] Reuters scraper
-- [ ] BBC News Asia scraper
-- [ ] CGTN scraper
+- [ ] Channel News Asia scraper
+
+### Recently Completed
+
+- [x] AP News scraper - integrated with main cron (2026-01-02)
+- [x] Xinhua scraper - dedicated cron with CGTN (2026-01-02)
+- [x] Reuters scraper - integrated with main cron (2026-01-02)
+- [x] BBC News Asia scraper - integrated with main cron (2026-01-02)
+- [x] CGTN scraper - dedicated cron at :15,:45 (2026-01-02)
 
 ### Backlog
 
 - [ ] Caixin scraper
 - [ ] Channel News Asia scraper
-- [ ] Xinhua scraper
+- [ ] Global Times scraper
 
 ---
 
@@ -188,9 +194,16 @@ Articles go through a multi-stage selection process:
 ## Changelog
 
 ### 2026-01-02
-- Added BBC News Asia scraper (RSS-based, ~15 articles)
-- Added Reuters scraper (section page scraping, ~15 articles)
-- Added CGTN scraper (multi-section RSS, ~20 articles)
+- Added BBC News Asia scraper (RSS-based, ~15 articles, ~14s)
+- Added Reuters scraper (section page scraping, ~15 articles, ~31s)
+- Added CGTN scraper (multi-section RSS, ~20 articles, ~97s)
+- **Integrated with cron jobs**:
+  - BBC & Reuters → main scrape-news cron (*/30)
+  - CGTN → dedicated cron at :15,:45 (slow scraper)
+- **Updated perplexity-article-selector.ts**:
+  - Added to premium tier sources
+  - Quality weights: Reuters=94, BBC=92, CGTN=75
+- Created `/api/cron/scrape-cgtn/route.ts`
 - Updated documentation with new sources
 
 ### 2026-01-01
@@ -209,11 +222,12 @@ Articles go through a multi-stage selection process:
 ## Next Steps
 
 1. ~~**Immediate**: Build Reuters + BBC + CGTN scrapers~~ ✅ Complete
-2. **Short-term**: Add Caixin for mainland financial perspective
+2. ~~**Immediate**: Integrate scrapers with cron jobs & selection~~ ✅ Complete
 3. **Short-term**: Add AP News for additional wire coverage
-4. **Medium-term**: Implement Channel News Asia for regional balance
-5. **Medium-term**: Add Xinhua for official China coverage
-6. **Long-term**: Evaluate paywall sources (FT, Nikkei)
+4. **Short-term**: Add Xinhua for official China coverage
+5. **Medium-term**: Add Caixin for mainland financial perspective
+6. **Medium-term**: Implement Channel News Asia for regional balance
+7. **Long-term**: Evaluate paywall sources (FT, Nikkei)
 
 ---
 
