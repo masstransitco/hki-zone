@@ -145,7 +145,8 @@ async function handleConversations(page: number, limit: number, startTime: numbe
   // Group by user_id + article_id to get unique conversations
   const conversationMap = new Map<string, { user_id: string; article_id: string; first_message: string; message_count: number }>()
 
-  (data || []).forEach(msg => {
+  const messages = data || []
+  messages.forEach(msg => {
     const key = `${msg.user_id}:${msg.article_id}`
     if (!conversationMap.has(key)) {
       conversationMap.set(key, {
