@@ -21,7 +21,12 @@ import {
   User,
   Calendar,
   AlertCircle,
-  Loader2
+  Loader2,
+  Activity,
+  Globe,
+  Zap,
+  Clock,
+  Database
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -61,6 +66,38 @@ interface Conversation {
   message_count: number
 }
 
+interface ChatLog {
+  id: string
+  article_id: string
+  user_id: string
+  search_triggered: boolean
+  search_reason: string | null
+  search_query: string | null
+  search_cached: boolean
+  search_results: {
+    answer?: string
+    results?: Array<{ title: string; url: string; snippet: string }>
+    cached?: boolean
+    preview?: string
+  } | null
+  search_duration_ms: number | null
+  model_used: string
+  prompt_tokens: number | null
+  completion_tokens: number | null
+  total_tokens: number | null
+  llm_duration_ms: number | null
+  total_duration_ms: number
+  created_at: string
+}
+
+interface LogsSummary {
+  totalLogs: number
+  searchTriggered: number
+  searchRate: number
+  totalTokens: number
+  avgDuration: number
+}
+
 async function fetchChatStats(): Promise<ChatStats> {
   const res = await fetch('/api/admin/chats?operation=stats')
   if (!res.ok) throw new Error('Failed to fetch stats')
@@ -94,6 +131,13 @@ async function deleteConversation(userId: string, articleId: string) {
   return res.json()
 }
 
+async function fetchLogs(page: number = 0): Promise<{ logs: ChatLog[]; summary: LogsSummary }> {
+  const res = await fetch(`/api/admin/chats?operation=logs&page=${page}&limit=50`)
+  if (!res.ok) throw new Error('Failed to fetch logs')
+  const data = await res.json()
+  return { logs: data.logs, summary: data.summary }
+}
+
 export default function AdminChatPage() {
   const queryClient = useQueryClient()
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
@@ -120,6 +164,16 @@ export default function AdminChatPage() {
     enabled: !!selectedConversation
   })
 
+  // Fetch agent process logs
+  const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
+    queryKey: ['adminChatLogs'],
+    queryFn: () => fetchLogs(0),
+    refetchInterval: 30000
+  })
+
+  // Selected log for detail view
+  const [selectedLog, setSelectedLog] = useState<ChatLog | null>(null)
+
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: ({ userId, articleId }: { userId: string; articleId: string }) =>
@@ -138,6 +192,7 @@ export default function AdminChatPage() {
   const handleRefresh = () => {
     refetchStats()
     refetchConversations()
+    refetchLogs()
     toast.success('Data refreshed')
   }
 
@@ -416,6 +471,193 @@ export default function AdminChatPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Agent Process Logs */}
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-white flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Agent Process Logs
+              </CardTitle>
+              <CardDescription className="text-gray-400 mt-1">
+                Track agent decisions, web searches, and LLM usage
+              </CardDescription>
+            </div>
+            {logsData?.summary && (
+              <div className="flex gap-4 text-sm">
+                <div className="text-center">
+                  <p className="text-gray-400">Search Rate</p>
+                  <p className="text-lg font-bold text-blue-400">{logsData.summary.searchRate}%</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-400">Total Tokens</p>
+                  <p className="text-lg font-bold text-green-400">{logsData.summary.totalTokens.toLocaleString()}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-gray-400">Avg Duration</p>
+                  <p className="text-lg font-bold text-amber-400">{logsData.summary.avgDuration}ms</p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {logsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            </div>
+          ) : !logsData?.logs.length ? (
+            <div className="text-center py-8 text-gray-500">
+              <Activity className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>No agent logs yet. Logs will appear when users chat with articles.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Logs List */}
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {logsData.logs.map((log) => (
+                  <button
+                    key={log.id}
+                    onClick={() => setSelectedLog(log)}
+                    className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                      selectedLog?.id === log.id
+                        ? 'bg-gray-800 border-blue-500'
+                        : 'bg-gray-800/50 border-gray-700 hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {log.search_triggered ? (
+                          <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30">
+                            <Globe className="h-3 w-3 mr-1" />
+                            Search
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-gray-700 text-gray-400">
+                            <Zap className="h-3 w-3 mr-1" />
+                            Direct
+                          </Badge>
+                        )}
+                        {log.search_cached && (
+                          <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                            <Database className="h-3 w-3 mr-1" />
+                            Cached
+                          </Badge>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {log.total_tokens || 0} tokens
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 truncate">
+                      Article: {log.article_id.slice(0, 8)}...
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                      <Clock className="h-3 w-3" />
+                      {log.total_duration_ms}ms
+                      <span className="text-gray-600">•</span>
+                      {formatDate(log.created_at)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Log Detail */}
+              <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4">
+                {!selectedLog ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <Activity className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                    <p>Select a log to view details</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-400 mb-2">Decision</h4>
+                      <div className="flex items-center gap-2">
+                        <Badge className={selectedLog.search_triggered ? 'bg-blue-500/20 text-blue-400' : 'bg-gray-700 text-gray-400'}>
+                          {selectedLog.search_triggered ? 'Web Search Triggered' : 'Direct Response'}
+                        </Badge>
+                        {selectedLog.search_reason && (
+                          <span className="text-xs text-gray-500">
+                            Reason: {selectedLog.search_reason}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {selectedLog.search_triggered && (
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Search Query</h4>
+                        <p className="text-sm text-gray-300 bg-gray-900 p-2 rounded">
+                          {selectedLog.search_query || 'N/A'}
+                        </p>
+                        {selectedLog.search_results?.results && (
+                          <div className="mt-2">
+                            <p className="text-xs text-gray-500 mb-1">Sources found:</p>
+                            <div className="space-y-1">
+                              {selectedLog.search_results.results.slice(0, 3).map((r, i) => (
+                                <a
+                                  key={i}
+                                  href={r.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block text-xs text-blue-400 hover:underline truncate"
+                                >
+                                  • {r.title}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Timing</h4>
+                        <div className="space-y-1 text-sm">
+                          {selectedLog.search_duration_ms && (
+                            <p className="text-gray-300">
+                              Search: <span className="text-blue-400">{selectedLog.search_duration_ms}ms</span>
+                            </p>
+                          )}
+                          <p className="text-gray-300">
+                            LLM: <span className="text-green-400">{selectedLog.llm_duration_ms}ms</span>
+                          </p>
+                          <p className="text-gray-300">
+                            Total: <span className="text-amber-400">{selectedLog.total_duration_ms}ms</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-400 mb-2">Token Usage</h4>
+                        <div className="space-y-1 text-sm">
+                          <p className="text-gray-300">
+                            Prompt: <span className="text-purple-400">{selectedLog.prompt_tokens || 0}</span>
+                          </p>
+                          <p className="text-gray-300">
+                            Completion: <span className="text-purple-400">{selectedLog.completion_tokens || 0}</span>
+                          </p>
+                          <p className="text-gray-300">
+                            Total: <span className="text-purple-400 font-medium">{selectedLog.total_tokens || 0}</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-400 mb-2">Model</h4>
+                      <Badge className="bg-purple-500/20 text-purple-400">{selectedLog.model_used}</Badge>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Empty State */}
       {!statsLoading && stats?.totalMessages === 0 && (

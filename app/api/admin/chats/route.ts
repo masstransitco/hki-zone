@@ -21,6 +21,8 @@ export async function GET(request: NextRequest) {
         return await handleStats(startTime)
       case 'conversations':
         return await handleConversations(page, limit, startTime)
+      case 'logs':
+        return await handleLogs(page, limit, articleId, startTime)
       default:
         return NextResponse.json({ error: 'Invalid operation' }, { status: 400 })
     }
@@ -175,6 +177,71 @@ async function handleConversations(page: number, limit: number, startTime: numbe
     limit,
     _metadata: {
       operation: 'conversations',
+      executionTime: Date.now() - startTime
+    }
+  })
+}
+
+async function handleLogs(page: number, limit: number, articleId: string | null, startTime: number) {
+  let query = supabaseAdmin
+    .from('chat_logs')
+    .select(`
+      id,
+      article_id,
+      user_id,
+      search_triggered,
+      search_reason,
+      search_query,
+      search_cached,
+      search_results,
+      search_duration_ms,
+      model_used,
+      prompt_tokens,
+      completion_tokens,
+      total_tokens,
+      llm_duration_ms,
+      total_duration_ms,
+      created_at
+    `)
+    .order('created_at', { ascending: false })
+    .range(page * limit, (page + 1) * limit - 1)
+
+  if (articleId) {
+    query = query.eq('article_id', articleId)
+  }
+
+  const { data, error, count } = await query
+
+  if (error) {
+    throw error
+  }
+
+  // Get aggregate stats
+  const { data: statsData } = await supabaseAdmin
+    .from('chat_logs')
+    .select('search_triggered, total_tokens, total_duration_ms')
+
+  const logs = statsData || []
+  const totalLogs = logs.length
+  const searchTriggered = logs.filter(l => l.search_triggered).length
+  const totalTokens = logs.reduce((sum, l) => sum + (l.total_tokens || 0), 0)
+  const avgDuration = totalLogs > 0
+    ? Math.round(logs.reduce((sum, l) => sum + (l.total_duration_ms || 0), 0) / totalLogs)
+    : 0
+
+  return NextResponse.json({
+    logs: data || [],
+    summary: {
+      totalLogs,
+      searchTriggered,
+      searchRate: totalLogs > 0 ? Math.round((searchTriggered / totalLogs) * 100) : 0,
+      totalTokens,
+      avgDuration
+    },
+    page,
+    limit,
+    _metadata: {
+      operation: 'logs',
       executionTime: Date.now() - startTime
     }
   })

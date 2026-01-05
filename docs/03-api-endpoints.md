@@ -165,12 +165,51 @@ GET /api/topics
 **Parameters**:
 - `page` (optional): Page number (default: 0)
 - `language` (optional): Language code (en, zh-TW, zh-CN)
+- `category` (optional): Category filter. If null/omitted, returns ALL categories (Top Stories feed)
 
-**Response Format**: Similar to articles endpoint with additional language and enhancement metadata
+**Category Behavior**:
+- **With category**: Returns articles only from the specified category
+- **Without category (Top Stories)**: Returns articles from ALL categories, sorted by `published_at DESC`
 
-**Example Request**:
+> **Note (Jan 1, 2026):** Previously, the "Top Stories" feed only returned articles from `['Top Stories', 'Local', 'General']` categories. This was changed to include ALL categories to ensure the latest articles are always shown regardless of their category.
+
+**Response Format**:
+```json
+{
+  "articles": [
+    {
+      "id": "string",
+      "title": "string",
+      "summary": "string",
+      "content": "string",
+      "url": "string",
+      "source": "string",
+      "publishedAt": "ISO 8601 date",
+      "imageUrl": "string",
+      "category": "string",
+      "readTime": number,
+      "isAiEnhanced": boolean,
+      "language": "en" | "zh-TW" | "zh-CN",
+      "originalArticleId": "string",
+      "enhancementMetadata": object
+    }
+  ],
+  "nextPage": number | null,
+  "usingMockData": boolean,
+  "debug": "string"
+}
+```
+
+**Example Requests**:
 ```bash
-curl "https://your-domain.com/api/topics?language=zh-TW&page=0"
+# English Top Stories (all categories, latest articles)
+curl "https://your-domain.com/api/topics?language=en"
+
+# Traditional Chinese Politics only
+curl "https://your-domain.com/api/topics?language=zh-TW&category=Politics"
+
+# Simplified Chinese Finance, page 2
+curl "https://your-domain.com/api/topics?language=zh-CN&category=Finance&page=1"
 ```
 
 ### 5. Discovery
