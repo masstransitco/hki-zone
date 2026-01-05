@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import Header from "@/components/header"
-import FooterNav from "@/components/footer-nav"
 import PerplexityPublicList from "@/components/perplexity-public-list"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -124,7 +123,7 @@ export default function PerplexityPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 pb-20">
+      <main className="flex-1 pb-4">
         <div className="container mx-auto px-4 py-8">
           <Card className="mb-6">
             <CardHeader>
@@ -206,8 +205,6 @@ export default function PerplexityPage() {
           />
         </div>
       </main>
-
-      <FooterNav />
     </div>
   )
 }

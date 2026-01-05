@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import ArticleDetailSheet from "./article-detail-sheet"
 import ShareButton from "./share-button"
-import BookmarkButton from "./bookmark-button"
 import { useSelector, useDispatch } from 'react-redux'
 import { 
   selectTTSCurrentArticle,
@@ -360,12 +359,7 @@ export default function ArticleBottomSheet({
                   }
                 </span>
               </Button>
-              
-              <BookmarkButton
-                articleId={articleId}
-                articleTitle={article?.title}
-              />
-              
+
               <ShareButton 
                 articleId={articleId} 
                 isPerplexityArticle={isPerplexityArticle}

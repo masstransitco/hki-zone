@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react"
 import Header from "@/components/header"
-import FooterNav from "@/components/footer-nav"
 import SignalsList from "@/components/signals-list"
 import AeHospitalsList from "@/components/ae-hospitals-list"
 import JourneyTimeList from "@/components/journey-time-list"
@@ -102,7 +101,7 @@ export default function SignalsPage() {
     <div className="flex flex-col min-h-screen">
       <Header />
 
-      <main className="flex-1 pb-20 pt-16">
+      <main className="flex-1 pb-4 pt-16">
         <div className="max-w-7xl mx-auto px-4 py-6">
           {/* Modern header with category filters and refresh button */}
           <div className="flex items-center justify-between mb-8 gap-4">
@@ -196,8 +195,6 @@ export default function SignalsPage() {
           ) : null}
         </div>
       </main>
-
-      <FooterNav />
     </div>
   )
 }

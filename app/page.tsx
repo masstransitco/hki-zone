@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect } from "react"
 import UnifiedHeader from "@/components/unified-header"
-import FooterNav from "@/components/footer-nav"
 import MainContent from "@/components/main-content-with-selector"
 import AboutUs from "@/components/about-us"
 import SideMenu from "@/components/side-menu"
@@ -121,9 +120,6 @@ export default function HomePage() {
           />
         )}
       </div>
-
-      {/* Fixed bottom navigation */}
-      <FooterNav />
     </>
   )
 }

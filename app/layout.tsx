@@ -10,12 +10,8 @@ import { WebsiteStructuredData } from "@/components/structured-data"
 import { ServiceWorkerCleanup } from "@/components/service-worker-cleanup"
 import { HeaderVisibilityProvider } from "@/contexts/header-visibility"
 import ReduxProvider from "@/components/redux-provider"
-import { AuthModalProvider } from "@/contexts/auth-modal-context"
-import { BookmarkProvider } from "@/contexts/bookmark-context"
-import AuthInitializer from "@/components/auth-initializer"
 import TTSInitializer from "@/components/tts-initializer"
 import GlobalTTSHUD from "@/components/global-tts-hud"
-import GlobalAuthModal from "@/components/global-auth-modal"
 // import { ServiceWorkerRegister } from "@/components/service-worker-register"
 
 const inter = Inter({ 
@@ -108,21 +104,15 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             <LanguageProvider>
               <QueryProvider>
-                <AuthModalProvider>
-                  <BookmarkProvider>
-                    <HeaderVisibilityProvider>
-                        <WebsiteStructuredData />
-                        <ServiceWorkerCleanup />
-                        <AuthInitializer />
-                        <TTSInitializer />
-                        {/* <ServiceWorkerRegister /> */}
-                        {children}
-                        <GlobalTTSHUD />
-                        <GlobalAuthModal />
-                        <Analytics />
-                    </HeaderVisibilityProvider>
-                  </BookmarkProvider>
-                </AuthModalProvider>
+                <HeaderVisibilityProvider>
+                  <WebsiteStructuredData />
+                  <ServiceWorkerCleanup />
+                  <TTSInitializer />
+                  {/* <ServiceWorkerRegister /> */}
+                  {children}
+                  <GlobalTTSHUD />
+                  <Analytics />
+                </HeaderVisibilityProvider>
               </QueryProvider>
             </LanguageProvider>
           </ThemeProvider>

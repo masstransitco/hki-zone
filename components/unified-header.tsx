@@ -3,11 +3,9 @@
 import Logo from "./logo"
 import { Button } from "@/components/ui/button"
 import { Menu, X, ArrowLeft } from "lucide-react"
-import AddBoxIcon from '@mui/icons-material/AddBox'
 import { cn } from "@/lib/utils"
 import { useHeaderVisibility } from "@/contexts/header-visibility"
-import { useRef, useState } from "react"
-import CategoryMenuBottomSheet from "./category-menu-bottom-sheet"
+import { useRef } from "react"
 
 interface UnifiedHeaderProps {
   isMenuOpen: boolean
@@ -17,8 +15,8 @@ interface UnifiedHeaderProps {
   backButtonLabel?: string
 }
 
-export default function UnifiedHeader({ 
-  isMenuOpen, 
+export default function UnifiedHeader({
+  isMenuOpen,
   onMenuOpenChange,
   showBackButton = false,
   onBackClick,
@@ -26,12 +24,11 @@ export default function UnifiedHeader({
 }: UnifiedHeaderProps) {
   const headerRef = useRef<HTMLElement>(null)
   const { isHeaderVisible } = useHeaderVisibility()
-  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false)
 
   const shouldHide = !isHeaderVisible
 
   return (
-    <header 
+    <header
       ref={headerRef}
       className={cn(
         "fixed top-0 left-0 right-0 z-40 bg-background",
@@ -45,7 +42,7 @@ export default function UnifiedHeader({
     >
       {/* Top section with logo and menu */}
       <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center">
+        <div className="flex items-center w-11">
           {showBackButton ? (
             <Button
               variant="ghost"
@@ -78,27 +75,13 @@ export default function UnifiedHeader({
           )}
         </div>
 
-        <div className="absolute left-1/2 transform -translate-x-1/2">
+        <div className="flex-1 flex justify-center">
           <Logo />
         </div>
 
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-11 h-11 p-0 text-foreground hover:bg-muted touch-manipulation"
-            aria-label="Open category menu"
-            onClick={() => setIsBottomSheetOpen(true)}
-          >
-            <AddBoxIcon className="w-6 h-6" />
-          </Button>
-        </div>
+        {/* Empty spacer to balance the layout */}
+        <div className="w-11" />
       </div>
-      
-      <CategoryMenuBottomSheet 
-        isOpen={isBottomSheetOpen} 
-        onClose={() => setIsBottomSheetOpen(false)} 
-      />
     </header>
   )
 }

@@ -2,16 +2,13 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { X, User, LogOut, UserPlus, LogIn, Info } from "lucide-react"
+import { X } from "lucide-react"
 import LiveNewsIndicator from "./live-news-indicator"
 import LanguageSelector from "./language-selector"
 import ThemeToggle from "./theme-toggle"
-import LoginForm from "./auth/login-form"
-import RegisterForm from "./auth/register-form"
 import LongLogo from "./long-logo"
 import { cn } from "@/lib/utils"
 import { useSwipeGesture } from "@/hooks/use-swipe-gesture"
-import { useAuth } from "@/hooks/redux-auth"
 import { useLanguage } from "./language-provider"
 
 interface SideMenuProps {
@@ -21,13 +18,11 @@ interface SideMenuProps {
 }
 
 export default function SideMenu({ isOpen, onOpenChange, onNavigate }: SideMenuProps) {
-  const { user, session, signOut, loading, sessionValid } = useAuth()
   const { t } = useLanguage()
   const menuRef = React.useRef<HTMLDivElement>(null)
   const [isDragging, setIsDragging] = React.useState(false)
   const [dragX, setDragX] = React.useState(0)
   const touchStartX = React.useRef(0)
-  const [authView, setAuthView] = React.useState<'login' | 'register' | null>(null)
   const [shouldRender, setShouldRender] = React.useState(false)
 
   // Control when menu should be rendered (for animation and to avoid Next.js warnings)
@@ -101,26 +96,6 @@ export default function SideMenu({ isOpen, onOpenChange, onNavigate }: SideMenuP
     setDragX(0)
   }
 
-  const handleAuthSuccess = () => {
-    setAuthView(null)
-    // Optionally close the menu after successful auth
-    // onOpenChange(false)
-  }
-
-  const handleSignOut = async () => {
-    const { error } = await signOut()
-    if (error) {
-      console.error('Error signing out:', error)
-    }
-  }
-
-  // Reset auth view when menu opens/closes
-  React.useEffect(() => {
-    if (!isOpen) {
-      setAuthView(null)
-    }
-  }, [isOpen])
-
   // Don't render anything if menu shouldn't be visible
   if (!shouldRender) {
     return null
@@ -179,120 +154,38 @@ export default function SideMenu({ isOpen, onOpenChange, onNavigate }: SideMenuP
             variant="ghost"
             size="sm"
             className="w-9 h-9 p-0 text-foreground hover:bg-muted touch-manipulation flex-shrink-0"
-            onClick={() => {
-              if (authView) {
-                setAuthView(null)
-              } else {
-                onOpenChange(false)
-              }
-            }}
-            aria-label={authView ? t('menu.backToMenu') : t('menu.closeMenu')}
+            onClick={() => onOpenChange(false)}
+            aria-label={t('menu.closeMenu')}
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
-        
+
         <div className="flex-1 flex flex-col">
-          {authView === 'login' ? (
-            <LoginForm
-              onSuccess={handleAuthSuccess}
-              onSwitchToRegister={() => setAuthView('register')}
-            />
-          ) : authView === 'register' ? (
-            <RegisterForm
-              onSuccess={handleAuthSuccess}
-              onSwitchToLogin={() => setAuthView('login')}
-            />
-          ) : (
-            <div className="flex flex-col gap-4">
-              {/* Authentication Section */}
-              <div className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium text-foreground">{t('menu.account')}</h3>
-                <div className="pl-2 space-y-2">
-                  {loading ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      {t('menu.loading')}
-                    </div>
-                  ) : user && session && sessionValid ? (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                        <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">
-                            {user.profile?.username 
-                              ? `@${user.profile.username}` 
-                              : user.email 
-                                ? `@${user.email.split('@')[0]}` 
-                                : 'User'
-                            }
-                          </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user.email}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={handleSignOut}
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        {t('profile.signOut')}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setAuthView('login')}
-                      >
-                        <LogIn className="h-4 w-4 mr-2" />
-                        {t('auth.signInButton')}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full justify-start"
-                        onClick={() => setAuthView('register')}
-                      >
-                        <UserPlus className="h-4 w-4 mr-2" />
-                        {t('auth.createAccountButton')}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-
-              {/* System Settings */}
-              <div className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium text-foreground">{t('menu.systemStatus')}</h3>
-                <div className="pl-2">
-                  <LiveNewsIndicator />
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium text-foreground">{t('profile.language')}</h3>
-                <div className="pl-2">
-                  <LanguageSelector />
-                </div>
-              </div>
-              
-              <div className="flex flex-col gap-2">
-                <h3 className="text-sm font-medium text-foreground">{t('menu.theme')}</h3>
-                <div className="pl-2">
-                  <ThemeToggle />
-                </div>
+          <div className="flex flex-col gap-4">
+            {/* Settings */}
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium text-foreground">{t('profile.language')}</h3>
+              <div className="pl-2">
+                <LanguageSelector />
               </div>
             </div>
-          )}
+
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium text-foreground">{t('menu.theme')}</h3>
+              <div className="pl-2">
+                <ThemeToggle />
+              </div>
+            </div>
+
+            {/* System Status */}
+            <div className="flex flex-col gap-2">
+              <h3 className="text-sm font-medium text-foreground">{t('menu.systemStatus')}</h3>
+              <div className="pl-2">
+                <LiveNewsIndicator />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* About HKI Button */}

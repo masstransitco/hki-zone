@@ -10,7 +10,6 @@ import { InlineSourcesBadge } from "./public-sources"
 import { useHydrationSafeDate } from "@/hooks/use-hydration-safe-date"
 import { useState, useEffect } from "react"
 import OutletFavicon from "./outlet-favicon"
-import BookmarkButton from "./bookmark-button"
 import type { Article } from "@/lib/types"
 
 // Custom time formatting for Perplexity articles (shows minutes instead of hours)
@@ -41,10 +40,9 @@ interface ArticleCardProps {
   aspectRatio?: string
   showHkiLogo?: boolean
   showTimestamp?: boolean
-  showBookmark?: boolean
 }
 
-export default function ArticleCard({ article, onReadMore, className, aspectRatio, showHkiLogo = false, showTimestamp = true, showBookmark = true }: ArticleCardProps) {
+export default function ArticleCard({ article, onReadMore, className, aspectRatio, showHkiLogo = false, showTimestamp = true }: ArticleCardProps) {
   const { t } = useLanguage()
   const timeAgo = useHydrationSafeDate(article.publishedAt)
   const [perplexityTime, setPerplexityTime] = useState("")
@@ -134,13 +132,6 @@ export default function ArticleCard({ article, onReadMore, className, aspectRati
                   {displayTime && (isPerplexityArticle ? displayTime : `${displayTime.replace(/minute/g, 'min').replace(/minutes/g, 'mins')} ${t("time.ago")}`)}
                 </span>
               </div>
-            )}
-            {showBookmark && (
-              <BookmarkButton
-                articleId={article.id}
-                articleTitle={article.title}
-                compact={true}
-              />
             )}
           </div>
         </div>

@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 import Header from "@/components/header"
-import FooterNav from "@/components/footer-nav"
 import NewsFeedMasonry from "@/components/news-feed-masonry"
 import DatabaseStatus from "@/components/database-status"
 import LoadingSkeleton from "@/components/loading-skeleton"
@@ -20,7 +19,7 @@ export default function NewsPage() {
         <Header />
       </ClientOnly>
 
-      <main className="flex-1 pb-20 pt-16 overscroll-contain">
+      <main className="flex-1 pb-4 pt-16 overscroll-contain">
         <div className="px-6 pt-4 pb-2">
           <ClientOnly>
             <DatabaseStatus />
@@ -31,12 +30,6 @@ export default function NewsPage() {
           <NewsFeedMasonry />
         </ClientOnly>
       </main>
-
-      <ClientOnly fallback={
-        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t border-stone-200/60 dark:border-neutral-700/60 pb-safe h-[76px]" />
-      }>
-        <FooterNav />
-      </ClientOnly>
     </div>
   )
 }
