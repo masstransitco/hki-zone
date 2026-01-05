@@ -17,6 +17,7 @@ import {
   Search,
   Trash2,
   ChevronRight,
+  ChevronDown,
   Bot,
   User,
   Calendar,
@@ -26,7 +27,12 @@ import {
   Globe,
   Zap,
   Clock,
-  Database
+  Database,
+  Settings,
+  Code,
+  Cpu,
+  Eye,
+  EyeOff
 } from "lucide-react"
 import { toast } from "sonner"
 import {
@@ -96,6 +102,48 @@ interface LogsSummary {
   searchRate: number
   totalTokens: number
   avgDuration: number
+}
+
+// Agent Configuration (from edge function)
+const AGENT_CONFIG = {
+  model: 'gpt-4o-mini',
+  temperature: 0.5,
+  maxTokens: 800,
+  searchTriggerPatterns: [
+    { pattern: 'recent|latest|current|today|now|202[4-9]|this (week|month|year)', reason: 'temporal_keywords' },
+    { pattern: 'compare|vs|versus|differ|different from|similar to', reason: 'comparison_request' },
+    { pattern: 'verify|check|confirm|fact|source|accurate|true|false', reason: 'fact_check_request' },
+    { pattern: '^(what happened|what\'s new|any updates|latest)', reason: 'update_request' },
+    { pattern: 'more info|learn more|tell me more|background|context|多一點|多點|更多', reason: 'more_info_request' },
+    { pattern: '(who is|what is|where is).*\\?', reason: 'entity_question' },
+  ],
+  articleAgeThresholdDays: 14,
+  systemPrompt: `You are an expert Hong Kong news analyst helping readers deeply understand this article.
+
+ARTICLE CONTEXT:
+Title: {articleTitle}
+Published: {articlePublishedAt}
+Summary: {articleSummary}
+Content: {truncatedContent}
+{searchContext}
+
+YOUR APPROACH:
+1. Add value beyond the article - connect to broader trends and implications
+2. Be specific to Hong Kong context (districts, policies, local factors)
+3. Highlight practical implications for HK residents and professionals
+4. Think critically - note what the article doesn't cover or questions it raises
+5. When using web search results, cite sources with URLs
+
+RESPONSE STYLE:
+- Lead with the most valuable insight
+- Keep responses focused (2-4 paragraphs max)
+- Suggest follow-up angles if relevant
+- If you don't know something, say so honestly
+
+AVOID:
+- Repeating article content verbatim
+- Generic responses that could apply to any article
+- Excessive hedging ("it might be...", "perhaps...")`,
 }
 
 async function fetchChatStats(): Promise<ChatStats> {
@@ -173,6 +221,10 @@ export default function AdminChatPage() {
 
   // Selected log for detail view
   const [selectedLog, setSelectedLog] = useState<ChatLog | null>(null)
+
+  // Agent configuration visibility
+  const [showConfig, setShowConfig] = useState(false)
+  const [showFullPrompt, setShowFullPrompt] = useState(false)
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -295,6 +347,131 @@ export default function AdminChatPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Agent Configuration */}
+      <Card className="bg-gray-900 border-gray-800">
+        <CardHeader className="cursor-pointer" onClick={() => setShowConfig(!showConfig)}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-gray-400" />
+              <CardTitle className="text-white">Agent Configuration</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge className="bg-purple-500/20 text-purple-400">{AGENT_CONFIG.model}</Badge>
+              <Badge className="bg-blue-500/20 text-blue-400">temp: {AGENT_CONFIG.temperature}</Badge>
+              <Badge className="bg-green-500/20 text-green-400">max: {AGENT_CONFIG.maxTokens}</Badge>
+              {showConfig ? (
+                <ChevronDown className="h-5 w-5 text-gray-400" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              )}
+            </div>
+          </div>
+          <CardDescription className="text-gray-400 mt-1">
+            View system prompt, model parameters, and search trigger patterns
+          </CardDescription>
+        </CardHeader>
+
+        {showConfig && (
+          <CardContent className="space-y-6">
+            {/* Model Parameters */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                <Cpu className="h-4 w-4" />
+                Model Parameters
+              </h4>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+                  <p className="text-xs text-gray-500 mb-1">Model</p>
+                  <p className="text-sm font-medium text-white">{AGENT_CONFIG.model}</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+                  <p className="text-xs text-gray-500 mb-1">Temperature</p>
+                  <p className="text-sm font-medium text-white">{AGENT_CONFIG.temperature}</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+                  <p className="text-xs text-gray-500 mb-1">Max Tokens</p>
+                  <p className="text-sm font-medium text-white">{AGENT_CONFIG.maxTokens}</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+                  <p className="text-xs text-gray-500 mb-1">Article Age Threshold</p>
+                  <p className="text-sm font-medium text-white">{AGENT_CONFIG.articleAgeThresholdDays} days</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Search Trigger Patterns */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-400 mb-3 flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                Web Search Trigger Patterns
+              </h4>
+              <p className="text-xs text-gray-500 mb-3">
+                The agent triggers a web search when user messages match these patterns:
+              </p>
+              <div className="space-y-2">
+                {AGENT_CONFIG.searchTriggerPatterns.map((trigger, i) => (
+                  <div key={i} className="flex items-start gap-3 bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+                    <Badge className="bg-blue-500/20 text-blue-400 text-xs shrink-0">
+                      {trigger.reason.replace(/_/g, ' ')}
+                    </Badge>
+                    <code className="text-xs text-gray-400 font-mono break-all">
+                      {trigger.pattern}
+                    </code>
+                  </div>
+                ))}
+                <div className="flex items-start gap-3 bg-gray-800/50 rounded-lg p-3 border border-gray-700">
+                  <Badge className="bg-amber-500/20 text-amber-400 text-xs shrink-0">
+                    article age
+                  </Badge>
+                  <span className="text-xs text-gray-400">
+                    Triggers search if article is older than {AGENT_CONFIG.articleAgeThresholdDays} days
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* System Prompt */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-gray-400 flex items-center gap-2">
+                  <Code className="h-4 w-4" />
+                  System Prompt
+                </h4>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => { e.stopPropagation(); setShowFullPrompt(!showFullPrompt); }}
+                  className="text-xs text-gray-400 hover:text-white"
+                >
+                  {showFullPrompt ? (
+                    <>
+                      <EyeOff className="h-3 w-3 mr-1" />
+                      Collapse
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="h-3 w-3 mr-1" />
+                      Expand
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className={`relative bg-gray-950 rounded-lg border border-gray-700 overflow-hidden ${!showFullPrompt ? 'max-h-[200px]' : ''}`}>
+                <pre className="p-4 text-xs text-gray-300 font-mono whitespace-pre-wrap overflow-y-auto max-h-[500px]">
+                  {AGENT_CONFIG.systemPrompt}
+                </pre>
+                {!showFullPrompt && (
+                  <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-950 to-transparent pointer-events-none" />
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Variables in curly braces are replaced at runtime with article data and search results.
+              </p>
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       {/* Activity Chart */}
       {stats?.messagesByDay && stats.messagesByDay.length > 0 && (
