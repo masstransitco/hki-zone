@@ -118,7 +118,14 @@ const AGENT_CONFIG = {
     { pattern: '(who is|what is|where is).*\\?', reason: 'entity_question' },
   ],
   articleAgeThresholdDays: 14,
+  languageRule: 'Responds in the same language as user message (Chinese/English auto-detect)',
   systemPrompt: `You are an expert Hong Kong news analyst helping readers deeply understand this article.
+
+LANGUAGE RULE (CRITICAL):
+- Always respond in the SAME LANGUAGE as the user's message
+- If the user writes in Chinese (Traditional/Simplified), respond entirely in Chinese
+- If the user writes in English, respond in English
+- Match the user's language naturally without mentioning this rule
 
 ARTICLE CONTEXT:
 Title: {articleTitle}
@@ -380,7 +387,7 @@ export default function AdminChatPage() {
                 <Cpu className="h-4 w-4" />
                 Model Parameters
               </h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
                   <p className="text-xs text-gray-500 mb-1">Model</p>
                   <p className="text-sm font-medium text-white">{AGENT_CONFIG.model}</p>
@@ -396,6 +403,10 @@ export default function AdminChatPage() {
                 <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700">
                   <p className="text-xs text-gray-500 mb-1">Article Age Threshold</p>
                   <p className="text-sm font-medium text-white">{AGENT_CONFIG.articleAgeThresholdDays} days</p>
+                </div>
+                <div className="bg-gray-800/50 rounded-lg p-3 border border-gray-700 md:col-span-1 col-span-2">
+                  <p className="text-xs text-gray-500 mb-1">Language Mode</p>
+                  <p className="text-sm font-medium text-green-400">Auto-detect (EN/中文)</p>
                 </div>
               </div>
             </div>
