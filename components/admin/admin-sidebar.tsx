@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MessageSquare,
+  Headphones,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -68,6 +69,12 @@ const navigationItems = [
     url: "/admin/chat",
     icon: MessageSquare,
     description: "Article chat monitoring",
+  },
+  {
+    title: "Radio",
+    url: "/admin/radio",
+    icon: Headphones,
+    description: "Live radio streams",
   },
   {
     title: "Database",

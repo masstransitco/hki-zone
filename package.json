@@ -73,6 +73,7 @@
     "framer-motion": "^12.23.6",
     "fs-extra": "^11.3.0",
     "he": "^1.2.0",
+    "hls.js": "^1.6.15",
     "icojs": "^0.19.5",
     "iconv-lite": "^0.6.3",
     "image-size": "^2.0.2",
