@@ -307,7 +307,25 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
 
         const hls = new Hls({
           enableWorker: true,
-          lowLatencyMode: true,
+          // Live streaming configuration
+          liveSyncDurationCount: 3, // Start 3 segments from live edge
+          liveMaxLatencyDurationCount: 6, // Max 6 segments behind before seeking to live
+          liveBackBufferLength: 30, // Keep 30s of back buffer
+          maxBufferLength: 30, // Max 30s forward buffer
+          maxMaxBufferLength: 60, // Absolute max buffer
+          // Playlist loading - keep fetching fresh chunklists
+          manifestLoadingTimeOut: 10000,
+          manifestLoadingMaxRetry: 3,
+          manifestLoadingRetryDelay: 1000,
+          levelLoadingTimeOut: 10000,
+          levelLoadingMaxRetry: 3,
+          levelLoadingRetryDelay: 1000,
+          // Fragment (segment) loading
+          fragLoadingTimeOut: 20000,
+          fragLoadingMaxRetry: 6,
+          fragLoadingRetryDelay: 1000,
+          // Start at live edge, not from beginning
+          startPosition: -1, // -1 means live edge
         })
         hlsRef.current = hls
 
@@ -328,9 +346,26 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
         hls.on(Hls.Events.ERROR, (event, data) => {
           console.error("HLS error:", event, data)
           if (data.fatal) {
-            setError("Stream error. Click refresh to reconnect.")
-            setIsPlaying(false)
-            setIsLoading(false)
+            switch (data.type) {
+              case Hls.ErrorTypes.NETWORK_ERROR:
+                // Try to recover from network error
+                console.log("Network error, attempting recovery...")
+                hls.startLoad()
+                break
+              case Hls.ErrorTypes.MEDIA_ERROR:
+                // Try to recover from media error
+                console.log("Media error, attempting recovery...")
+                hls.recoverMediaError()
+                break
+              default:
+                // Cannot recover, destroy and show error
+                console.error("Fatal error, cannot recover:", data)
+                hls.destroy()
+                setError("Stream error. Click refresh to reconnect.")
+                setIsPlaying(false)
+                setIsLoading(false)
+                break
+            }
           }
         })
       } else if (audioRef.current.canPlayType("application/vnd.apple.mpegurl")) {
