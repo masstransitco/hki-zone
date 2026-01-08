@@ -2,9 +2,9 @@
 
 ## Overview
 
-This document details the implementation of a server-side proxy system that enables direct browser playback of Commercial Radio Hong Kong (CRHK) live streams. The system bypasses CRHK's token-based authentication by extracting CloudFront signed cookies via headless browser automation.
+This document details the implementation of an edge-distributed proxy system that enables instant browser playback of Commercial Radio Hong Kong (CRHK) live streams. The system solves CloudFront's IP-restricted cookie authentication by running Playwright extraction from a Hong Kong GCE VM, then distributes streams globally via Cloudflare's edge network.
 
-**Status:** Working implementation for FM 881, FM 903, and AM 864
+**Status:** Production - Instant playback for FM 881, FM 903, and AM 864
 **Last Updated:** January 2026
 
 ---
@@ -21,279 +21,311 @@ This document details the implementation of a server-side proxy system that enab
 
 ---
 
-## System Architecture
+## System Architecture (Current)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Browser (Client)                             │
-│  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  /admin/radio page                                           │    │
-│  │  ┌──────────────────┐                                        │    │
-│  │  │ ProxyStreamPlayer │ ──── HLS.js ──── <audio> element      │    │
-│  │  └────────┬─────────┘                                        │    │
-│  └───────────┼──────────────────────────────────────────────────┘    │
-└──────────────┼───────────────────────────────────────────────────────┘
-               │
-               │ 1. Initialize stream
-               ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                      Next.js Server                                   │
-│                                                                       │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  /api/radio/stream                                              │  │
-│  │  - Check cache for existing credentials                         │  │
-│  │  - If not cached: launch Playwright browser                     │  │
-│  │  - Navigate to 881903.com/live/{channel}                        │  │
-│  │  - Extract CloudFront cookies from browser context              │  │
-│  │  - Cache credentials for 45 minutes                             │  │
-│  │  - Return proxy URL to client                                   │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-│                                                                       │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  /api/radio/proxy                                               │  │
-│  │  - Receive HLS requests from client                             │  │
-│  │  - Attach CloudFront cookies to upstream requests               │  │
-│  │  - Fetch from live.881903.com or live2.881903.com               │  │
-│  │  - Rewrite m3u8 playlist URLs to route through proxy            │  │
-│  │  - Return stream data to client                                 │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-│                                                                       │
-│  ┌────────────────────────────────────────────────────────────────┐  │
-│  │  In-Memory Cache (streamCache)                                  │  │
-│  │  - Stores: streamUrl, cookies, cookieDomain, timestamp          │  │
-│  │  - TTL: 45 minutes                                              │  │
-│  │  - Prevents concurrent extractions via locks                    │  │
-│  └────────────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────────┘
-               │
-               │ 2. Proxy HLS requests
-               ▼
-┌──────────────────────────────────────────────────────────────────────┐
-│                    Commercial Radio CDN                               │
-│                                                                       │
-│  live.881903.com / live2.881903.com (CloudFront)                     │
-│  - Validates CloudFront-Policy, CloudFront-Signature,                │
-│    CloudFront-Key-Pair-Id cookies                                    │
-│  - Returns HLS playlist and audio segments                           │
-│                                                                       │
-│  Stream URLs:                                                         │
-│  - https://live.881903.com/edge-aac/881hd/playlist.m3u8              │
-│  - https://live.881903.com/edge-aac/903hd/playlist.m3u8              │
-│  - https://live.881903.com/edge-aac/864sd/playlist.m3u8              │
-└──────────────────────────────────────────────────────────────────────┘
+│                         Client (iOS/Web)                             │
+│  AVPlayer / HLS.js → https://radio.air.zone/{channel}/playlist.m3u8 │
+└──────────────────────────────────┬──────────────────────────────────┘
+                                   │ ~50-100ms (edge latency)
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Cloudflare Worker (Edge Proxy)                    │
+│  workers/radio-proxy/src/index.ts                                    │
+│                                                                      │
+│  Routes:                                                             │
+│    /{channel}/playlist.m3u8  → master playlist (no-cache)           │
+│    /{channel}/{path}         → chunklist or audio segments          │
+│    /health                   → health check                          │
+│                                                                      │
+│  Responsibilities:                                                   │
+│  - Edge caching of audio segments (60s TTL)                         │
+│  - Rewrite m3u8 URLs to route through edge                          │
+│  - Forward requests to GCE origin via Cloudflare Tunnel             │
+└──────────────────────────────────┬──────────────────────────────────┘
+                                   │
+                                   │ Cloudflare Tunnel (HTTPS)
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    GCE VM (Hong Kong) - Origin Server                │
+│  IP: 34.92.40.84 (asia-east2-c)                                      │
+│  Tunnel: origin-radio.air.zone                                       │
+│                                                                      │
+│  servers/radio-proxy/src/server.ts (Express + Playwright)            │
+│                                                                      │
+│  Endpoints:                                                          │
+│    /health                       → health check                      │
+│    /api/radio/stream?channel=X   → extract cookies (if needed)       │
+│    /api/radio/proxy?channel=X    → proxy HLS with cookies            │
+│    /api/radio/refresh/:channel   → force cookie refresh              │
+│    /api/radio/prewarm            → refresh all channels              │
+│                                                                      │
+│  Key Features:                                                       │
+│  - Playwright cookie extraction from same HK IP                      │
+│  - In-memory credential cache (45 min TTL)                           │
+│  - CDN fallback (live ↔ live2)                                      │
+│  - Runs as systemd service with auto-restart                         │
+│                                                                      │
+│  Cron (keeps cookies warm):                                          │
+│    */20 * * * * curl -s -X POST http://localhost:3001/api/radio/prewarm │
+└──────────────────────────────────┬──────────────────────────────────┘
+                                   │
+                                   │ Fetch with CloudFront cookies
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Commercial Radio CDN (CloudFront)                 │
+│  live.881903.com / live2.881903.com                                  │
+│                                                                      │
+│  Stream URLs:                                                        │
+│    https://live.881903.com/edge-aac/881hd/playlist.m3u8             │
+│    https://live.881903.com/edge-aac/903hd/playlist.m3u8             │
+│    https://live.881903.com/edge-aac/864sd/playlist.m3u8             │
+│                                                                      │
+│  Authentication:                                                     │
+│    - CloudFront-Policy                                               │
+│    - CloudFront-Signature                                            │
+│    - CloudFront-Key-Pair-Id                                          │
+│  + IP restriction (AWS:SourceIp condition)                           │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## How It Works
+## Why This Architecture?
 
-### Step 1: Stream Initialization
+### The IP Restriction Problem
 
-When a user clicks play on a Commercial Radio station:
+CloudFront signed cookies for CRHK streams have an **IP address restriction** (`AWS:SourceIp` condition in the policy). This means:
 
-1. **Client** calls `GET /api/radio/stream?channel=903`
-2. **Server** checks in-memory cache for valid credentials
-3. If **cached** (< 45 min old): Return cached proxy URL immediately
-4. If **not cached**: Proceed to cookie extraction
+1. Cookies extracted from **IP A** only work when requests come from **IP A**
+2. Vercel's serverless functions have **dynamic IPs** - each invocation may use a different IP
+3. Extracting cookies on Vercel → fetching CDN from Vercel = **different IPs = 403 Forbidden**
 
-### Step 2: Cookie Extraction (First Play Only)
+### The Solution
 
-```typescript
-// Simplified flow from /api/radio/stream/route.ts
+Run **both** cookie extraction **and** CDN fetching from the **same static IP**:
 
-1. Launch headless Chromium via Playwright
-2. Navigate to https://www.881903.com/live/{channel}
-3. Wait for page to load (domcontentloaded + 3s delay)
-4. Attempt to click play button to trigger stream initialization
-5. Extract all cookies from browser context
-6. Filter for CloudFront-* cookies:
-   - CloudFront-Policy
-   - CloudFront-Signature
-   - CloudFront-Key-Pair-Id
-7. Detect cookie domain (live.881903.com vs live2.881903.com)
-8. Cache credentials with timestamp
-9. Close browser
-10. Return proxy URL to client
-```
-
-### Step 3: HLS Playback via Proxy
-
-1. **Client** receives proxy URL: `/api/radio/proxy?channel=903`
-2. **HLS.js** requests the master playlist from proxy
-3. **Proxy** fetches from CDN with CloudFront cookies attached
-4. **Proxy** rewrites URLs in m3u8 to route through itself:
-   ```
-   Original:  chunks.m3u8
-   Rewritten: /api/radio/proxy?channel=903&path=chunks.m3u8
-   ```
-5. **HLS.js** requests audio segments through proxy
-6. **Proxy** fetches segments with authentication, returns raw audio data
-7. **Audio element** plays the decoded stream
-
-### Step 4: CDN Fallback Logic
-
-The proxy handles CDN domain mismatches:
-
-```typescript
-// If primary CDN returns 404, try alternate
-if (response.status === 404) {
-  const altHost = currentHost === "live.881903.com"
-    ? "live2.881903.com"
-    : "live.881903.com"
-  response = await fetchWithAuth(altUrl)
-
-  // For 864, also try SD quality suffix
-  if (response.status === 404 && channel === "864") {
-    response = await fetchWithAuth(url.replace("864hd", "864sd"))
-  }
-}
-```
+- **GCE VM in Hong Kong** (34.92.40.84) runs Playwright extraction
+- **Same VM** fetches from CloudFront CDN
+- **Same IP** for both operations = cookies work!
+- **Cloudflare Worker** at the edge handles client requests and caches segments
 
 ---
 
-## API Reference
+## Performance Comparison
 
-### GET /api/radio/stream
-
-Initialize a stream and get the proxy URL.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| channel | string | Yes | Channel ID: `881`, `903`, or `864` |
-
-**Response:**
-```json
-{
-  "success": true,
-  "channel": "903",
-  "proxyUrl": "/api/radio/proxy?channel=903",
-  "streamUrl": "https://live2.881903.com/edge-aac/903hd/playlist.m3u8",
-  "hasCookies": true,
-  "cacheAge": 120,
-  "cacheTTL": 2700
-}
-```
-
-**Timing:**
-- First request (no cache): 8-10 seconds
-- Subsequent requests (cached): < 100ms
-
-### GET /api/radio/proxy
-
-Proxy HLS requests with authentication.
-
-**Parameters:**
-| Name | Type | Required | Description |
-|------|------|----------|-------------|
-| channel | string | Yes | Channel ID: `881`, `903`, or `864` |
-| path | string | No | Relative path for segment requests |
-
-**Response:**
-- For `.m3u8` files: Rewritten playlist with proxy URLs
-- For `.aac` segments: Raw audio data
-
-**Headers Set:**
-```
-Content-Type: application/vnd.apple.mpegurl (playlists)
-Content-Type: audio/aac (segments)
-Access-Control-Allow-Origin: *
-Cache-Control: no-cache (playlists) / public, max-age=2 (segments)
-```
+| Metric | Old (Vercel-only) | New (Edge + GCE) |
+|--------|-------------------|------------------|
+| First play latency | 8-10 seconds | **< 1 second** |
+| Cached play latency | < 1 second | **< 500ms** |
+| Cookie warmth | On-demand | **Always warm (cron)** |
+| Global latency | Single region | **Edge-distributed** |
+| Segment caching | None | **60s edge cache** |
 
 ---
 
 ## File Structure
 
 ```
-/app/
-├── admin/
-│   └── radio/
-│       └── page.tsx          # Radio player UI with HLS.js integration
-└── api/
-    └── radio/
-        ├── stream/
-        │   └── route.ts      # Cookie extraction endpoint
-        └── proxy/
-            └── route.ts      # HLS proxy endpoint
+/
+├── workers/
+│   └── radio-proxy/
+│       ├── src/
+│       │   └── index.ts          # Cloudflare Worker (edge proxy)
+│       ├── wrangler.toml         # Worker configuration
+│       └── package.json
+│
+├── servers/
+│   └── radio-proxy/
+│       └── src/
+│           └── server.ts         # GCE origin server (Express + Playwright)
+│
+├── app/
+│   ├── admin/
+│   │   └── radio/
+│   │       └── page.tsx          # Radio player UI
+│   └── api/
+│       └── radio/
+│           ├── stream/
+│           │   └── route.ts      # Legacy Vercel endpoint (fallback)
+│           └── proxy/
+│               └── route.ts      # Legacy Vercel proxy (fallback)
+│
+└── docs/
+    └── radio-stream-research.md  # This file
 ```
 
 ---
 
-## Key Implementation Files
+## Component Details
 
-### /app/api/radio/stream/route.ts
+### 1. Cloudflare Worker (Edge Proxy)
 
-Handles cookie extraction via Playwright:
+**Location:** `workers/radio-proxy/src/index.ts`
+**Deployed to:** `radio.air.zone`
 
 ```typescript
-interface StreamCache {
+// Key configuration
+const VALID_CHANNELS = ["881", "903", "864"]
+const PROXY_ORIGIN = "https://origin-radio.air.zone"  // GCE via tunnel
+
+// URL routing
+// https://radio.air.zone/903/playlist.m3u8 → master playlist
+// https://radio.air.zone/903/chunks.m3u8   → chunklist
+// https://radio.air.zone/903/seg123.aac    → audio segment
+
+// Caching strategy
+// - Playlists (.m3u8): no-cache (live content, always fresh)
+// - Segments (.aac/.ts): Cache-Control: public, max-age=60
+
+// URL rewriting for playlists
+function rewritePlaylist(content: string, channel: string, origin: string): string {
+  // Converts CDN URLs to edge proxy URLs
+  // e.g., "chunks.m3u8" → "https://radio.air.zone/903/chunks.m3u8"
+}
+```
+
+### 2. GCE Origin Server
+
+**Location:** `servers/radio-proxy/src/server.ts`
+**Runs on:** GCE VM in Hong Kong (34.92.40.84:3001)
+**Exposed via:** Cloudflare Tunnel → `origin-radio.air.zone`
+
+```typescript
+// Express server with endpoints:
+app.get("/health", ...)
+app.get("/api/radio/stream", ...)   // Cookie extraction
+app.get("/api/radio/proxy", ...)    // HLS proxy with cookies
+app.post("/api/radio/refresh/:channel", ...)
+app.post("/api/radio/prewarm", ...)
+
+// Credential cache
+interface CachedCredentials {
   streamUrl: string
   cookies: Record<string, string>
-  headers: Record<string, string>
-  cookieDomain: string  // Track which CDN domain cookies are for
+  cookieDomain: string
   timestamp: number
   channel: string
 }
 
-// Cache configuration
 const CACHE_TTL_MS = 45 * 60 * 1000  // 45 minutes
-const streamCache: Map<string, StreamCache> = new Map()
+const credentialCache: Map<string, CachedCredentials> = new Map()
 
-// Extraction uses Playwright with stealth settings
-browser = await chromium.launch({
-  headless: true,
-  args: ["--no-sandbox", "--disable-setuid-sandbox"]
-})
-```
-
-### /app/api/radio/proxy/route.ts
-
-Handles authenticated HLS proxying:
-
-```typescript
-// Build cookie header from cached credentials
-const cookieHeader = Object.entries(credentials.cookies)
-  .map(([name, value]) => `${name}=${value}`)
-  .join("; ")
-
-// Fetch with authentication
-const response = await fetch(targetUrl, {
-  headers: {
-    "User-Agent": "Mozilla/5.0...",
-    "Referer": `https://www.881903.com/live/${channel}`,
-    "Origin": "https://www.881903.com",
-    "Cookie": cookieHeader,
-  },
-})
-
-// Rewrite playlist URLs to go through proxy
-const rewrittenLines = lines.map((line) => {
-  if (line.startsWith("#") || line === "") return line
-  return `/api/radio/proxy?channel=${channel}&path=${encodeURIComponent(line)}`
-})
-```
-
-### /app/admin/radio/page.tsx
-
-Frontend player using HLS.js:
-
-```typescript
-import Hls from "hls.js"
-
-function ProxyStreamPlayer({ station }) {
-  const hlsRef = useRef<Hls | null>(null)
-
-  const togglePlay = async () => {
-    if (Hls.isSupported()) {
-      const hls = new Hls({ enableWorker: true, lowLatencyMode: true })
-      hls.loadSource(proxyUrl)
-      hls.attachMedia(audioRef.current)
-      hls.on(Hls.Events.MANIFEST_PARSED, () => audioRef.current.play())
-    }
-  }
+// Cookie extraction via Playwright
+async function extractStreamCredentials(channel: string) {
+  const browser = await chromium.launch({ headless: true })
+  const page = await browser.newPage()
+  await page.goto(`https://www.881903.com/live/${channel}`)
+  // Wait for CloudFront cookies to be set
+  // Extract and cache cookies
 }
 ```
+
+### 3. Cloudflare Tunnel
+
+**Tunnel ID:** `c8c45f8f-fd77-4825-a9b4-cf83af35bd89`
+**Config:** `/etc/cloudflared/config.yml` on GCE
+
+```yaml
+tunnel: c8c45f8f-fd77-4825-a9b4-cf83af35bd89
+credentials-file: /etc/cloudflared/c8c45f8f-fd77-4825-a9b4-cf83af35bd89.json
+
+ingress:
+  - hostname: origin-radio.air.zone
+    service: http://localhost:3001
+  - service: http_status:404
+```
+
+**Systemd service:** `/etc/systemd/system/cloudflared.service`
+
+```ini
+[Unit]
+Description=Cloudflare Tunnel
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/cloudflared tunnel run
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### 4. Frontend Player
+
+**Location:** `app/admin/radio/page.tsx`
+
+```typescript
+// Edge proxy URL
+const EDGE_PROXY_URL = "https://radio.air.zone"
+
+function ProxyStreamPlayer({ station }: { station: RadioStation }) {
+  // Stream URL directly from edge
+  const streamUrl = `${EDGE_PROXY_URL}/${station.channel}/playlist.m3u8`
+
+  // HLS.js for playback
+  const hls = new Hls({ enableWorker: true, lowLatencyMode: true })
+  hls.loadSource(streamUrl)
+  hls.attachMedia(audioRef.current)
+}
+```
+
+---
+
+## Cookie Prewarm System
+
+To ensure instant playback, cookies are refreshed proactively:
+
+### Cron Job (on GCE)
+
+```bash
+# /etc/cron.d/radio-prewarm
+*/20 * * * * root curl -s -X POST http://localhost:3001/api/radio/prewarm
+```
+
+### Prewarm Endpoint
+
+```typescript
+app.post("/api/radio/prewarm", async (req, res) => {
+  const channels = ["881", "903", "864"]
+  const results = []
+
+  for (const channel of channels) {
+    try {
+      await extractStreamCredentials(channel)
+      results.push({ channel, status: "success" })
+    } catch (error) {
+      results.push({ channel, status: "failed", error: error.message })
+    }
+  }
+
+  res.json({ prewarmed: results })
+})
+```
+
+### Cookie Lifecycle
+
+```
+0:00  - Cron triggers prewarm
+0:01  - Cookies extracted for 881, 903, 864
+0:20  - Cron triggers prewarm (refresh)
+0:40  - Cron triggers prewarm (refresh)
+0:45  - Cache TTL would expire, but already refreshed at 0:40
+...   - Continuous 20-minute refresh cycle
+```
+
+---
+
+## DNS Configuration
+
+| Domain | Type | Target | Purpose |
+|--------|------|--------|---------|
+| `radio.air.zone` | Worker Route | Cloudflare Worker | Client-facing edge proxy |
+| `origin-radio.air.zone` | CNAME | Tunnel UUID.cfargotunnel.com | GCE origin via tunnel |
 
 ---
 
@@ -301,108 +333,154 @@ function ProxyStreamPlayer({ station }) {
 
 ### CloudFront Signed Cookies
 
-Commercial Radio uses AWS CloudFront with signed cookies for stream access:
-
 | Cookie | Purpose |
 |--------|---------|
-| `CloudFront-Policy` | Base64-encoded access policy (resource patterns, expiry) |
+| `CloudFront-Policy` | Base64-encoded access policy with IP restriction |
 | `CloudFront-Signature` | RSA signature validating the policy |
-| `CloudFront-Key-Pair-Id` | Identifies the CloudFront key pair used |
+| `CloudFront-Key-Pair-Id` | Identifies the CloudFront key pair |
 
-Cookies are domain-scoped to either `live.881903.com` or `live2.881903.com`.
+### IP Restriction in Policy
 
-### Why Cookies Are Needed
+The decoded `CloudFront-Policy` contains:
 
+```json
+{
+  "Statement": [{
+    "Condition": {
+      "IpAddress": {
+        "AWS:SourceIp": "34.92.40.84/32"  // GCE VM IP
+      },
+      "DateLessThan": {
+        "AWS:EpochTime": 1736456789
+      }
+    }
+  }]
+}
 ```
-Direct access without cookies:
-GET https://live.881903.com/edge-aac/903hd/playlist.m3u8
-→ 403 Forbidden
 
-With valid CloudFront cookies:
-GET https://live.881903.com/edge-aac/903hd/playlist.m3u8
-Cookie: CloudFront-Policy=...; CloudFront-Signature=...; CloudFront-Key-Pair-Id=...
-→ 200 OK (HLS playlist)
+This is why extraction and fetching must happen from the same IP.
+
+---
+
+## Troubleshooting
+
+### Stream Not Playing
+
+1. **Check GCE server health:**
+   ```bash
+   curl https://origin-radio.air.zone/health
+   ```
+
+2. **Check Worker health:**
+   ```bash
+   curl https://radio.air.zone/health
+   ```
+
+3. **Check cookie freshness:**
+   ```bash
+   curl https://origin-radio.air.zone/api/radio/stream?channel=903
+   # Look at cacheAge - should be < 2700 (45 min in seconds)
+   ```
+
+4. **Force cookie refresh:**
+   ```bash
+   curl -X POST https://origin-radio.air.zone/api/radio/refresh/903
+   ```
+
+### 403 Forbidden from CDN
+
+- Cookies expired → Trigger prewarm
+- IP mismatch → Should not happen with current architecture
+- Check GCE VM hasn't changed IPs
+
+### 404 Not Found
+
+- CDN domain mismatch → Proxy auto-retries alternate domain
+- 864 channel → Uses `864sd` not `864hd`
+
+### Tunnel Issues
+
+```bash
+# On GCE VM
+sudo systemctl status cloudflared
+sudo journalctl -u cloudflared -f
+
+# Restart if needed
+sudo systemctl restart cloudflared
 ```
 
-### Cookie Lifecycle
+---
 
-1. **Generation**: Cookies are set when the official player page loads
-2. **Validity**: ~1 hour from generation
-3. **Our cache TTL**: 45 minutes (conservative margin)
-4. **Refresh**: Automatic on next play after cache expires
+## Deployment Commands
+
+### Deploy Worker
+
+```bash
+cd workers/radio-proxy
+npx wrangler deploy
+```
+
+### Update GCE Server
+
+```bash
+# SSH to GCE
+gcloud compute ssh radio-proxy --zone=asia-east2-c
+
+# Pull latest code
+cd ~/radio-proxy
+git pull
+
+# Restart server
+pm2 restart radio-proxy
+```
+
+### Restart Tunnel
+
+```bash
+sudo systemctl restart cloudflared
+```
 
 ---
 
-## Stream URL Patterns
+## Monitoring
 
-| Channel | Quality | URL Pattern |
-|---------|---------|-------------|
-| FM 881 | HD | `https://{cdn}/edge-aac/881hd/playlist.m3u8` |
-| FM 903 | HD | `https://{cdn}/edge-aac/903hd/playlist.m3u8` |
-| AM 864 | SD | `https://{cdn}/edge-aac/864sd/playlist.m3u8` |
+### Worker Analytics
 
-Where `{cdn}` is `live.881903.com` or `live2.881903.com`
+- Cloudflare Dashboard → Workers → radio-proxy → Analytics
+- Monitor: Request count, latency percentiles, error rates
 
----
+### GCE Server Logs
 
-## Dependencies
+```bash
+# PM2 logs
+pm2 logs radio-proxy
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `playwright` | ^1.x | Headless browser for cookie extraction |
-| `hls.js` | ^1.x | HLS playback in browsers without native support |
+# Systemd logs for tunnel
+sudo journalctl -u cloudflared -f
+```
 
----
+### Key Metrics to Watch
 
-## Performance Characteristics
-
-| Metric | Value |
-|--------|-------|
-| First play latency | 8-10 seconds |
-| Cached play latency | < 1 second |
-| Cache duration | 45 minutes |
-| Memory per cached channel | ~2KB |
-| Playwright browser launch | ~2-3 seconds |
-| Page navigation | ~3-5 seconds |
-
----
-
-## Limitations & Known Issues
-
-### AM 864 Reliability
-
-The 864 channel sometimes fails because:
-- Uses SD quality (`864sd`) instead of HD
-- May be served from different CDN domain than cookies are scoped to
-- Fallback logic handles most cases but not all
-
-### Single-Instance Caching
-
-The current implementation uses in-memory caching:
-- Cache is lost on server restart
-- Not shared across multiple server instances
-- **Production recommendation**: Use Redis for distributed caching
-
-### Browser Resource Usage
-
-Playwright browser launches are resource-intensive:
-- Each extraction spawns a Chromium process
-- Concurrent extractions are prevented via locks
-- Consider rate limiting in high-traffic scenarios
+| Metric | Normal | Alert |
+|--------|--------|-------|
+| Cache age | < 20 min | > 40 min |
+| Worker latency | < 200ms | > 1000ms |
+| Origin latency | < 500ms | > 2000ms |
+| Error rate | < 1% | > 5% |
 
 ---
 
 ## Comparison: RTHK vs CRHK
 
-| Feature | RTHK | CRHK (with proxy) |
+| Feature | RTHK | CRHK (Edge Proxy) |
 |---------|------|-------------------|
-| Stream Access | Public HLS | Authenticated HLS |
-| Direct Browser Play | Yes | Via proxy |
-| First Play Latency | Instant | 8-10s |
-| Subsequent Play | Instant | Instant (cached) |
-| Server Resources | None | Playwright + proxy |
+| Stream Access | Public HLS | IP-restricted CloudFront |
+| Architecture | Direct to CDN | Edge → Tunnel → GCE → CDN |
+| First Play | Instant | **Instant** (prewarmed) |
+| Global Latency | Varies | **Optimized** (edge cache) |
+| Maintenance | None | Cookie refresh cron |
 
-### RTHK Stream URLs (Public)
+### RTHK Stream URLs (Public - No Auth)
 
 ```
 https://rthkaudio1-lh.akamaihd.net/i/radio1_1@355864/master.m3u8
@@ -414,48 +492,26 @@ https://rthkaudio5-lh.akamaihd.net/i/radio5_1@355868/master.m3u8
 
 ---
 
-## Troubleshooting
+## Cost Estimate
 
-### No Sound Playing
+| Service | Free Tier | Expected Usage | Monthly Cost |
+|---------|-----------|----------------|--------------|
+| Cloudflare Workers | 100k req/day | ~10k req/day | $0 |
+| GCE e2-micro | 1 free/month | 1 instance | $0 |
+| Cloudflare Tunnel | Free | Unlimited | $0 |
+| Bandwidth | - | ~10GB/month | ~$1 |
 
-1. Check browser console for HLS.js errors
-2. Verify `/api/radio/stream` returns `hasCookies: true`
-3. Check server logs for `[Radio]` and `[Proxy]` messages
-4. Try clicking the refresh button to re-extract cookies
-
-### 403 Forbidden Errors
-
-- Cookies may have expired → Refresh stream
-- Cookie domain mismatch → Proxy will auto-retry alternate CDN
-- Server logs will show `[Proxy] Cleared expired cache`
-
-### 404 Not Found Errors
-
-- CDN domain mismatch → Proxy tries alternate domain
-- For 864: Quality suffix mismatch (hd vs sd) → Auto-corrected
-
-### Slow First Play
-
-Normal behavior - cookie extraction takes 8-10 seconds. Subsequent plays within 45 minutes are instant.
+**Total: ~$1/month**
 
 ---
 
 ## Security Considerations
 
-- Cookies are stored server-side only, never exposed to client
-- Proxy validates channel parameter against whitelist
-- No user credentials are stored or transmitted
-- Stream access is for internal/admin use only
-
----
-
-## Future Improvements
-
-1. **Redis caching** for multi-instance deployments
-2. **Pre-warming** cookies on server start
-3. **Health checks** to proactively refresh expiring cookies
-4. **Metrics** for cache hit rates and extraction times
-5. **Fallback** to external player if proxy fails
+- CloudFront cookies never exposed to client
+- All traffic via HTTPS (tunnel + worker)
+- GCE firewall allows only Cloudflare IPs on port 3001
+- No user credentials stored
+- Stream access is for internal/admin use
 
 ---
 
@@ -465,12 +521,15 @@ Normal behavior - cookie extraction takes 8-10 seconds. Subsequent plays within 
 |------|--------|
 | 2026-01-07 | Initial research - documented protection mechanisms |
 | 2026-01-07 | Created /admin/radio page with external popup player |
-| 2026-01-08 | Implemented Playwright-based cookie extraction |
+| 2026-01-08 | Implemented Playwright-based cookie extraction (Vercel) |
 | 2026-01-08 | Created HLS proxy with URL rewriting |
-| 2026-01-08 | Added dynamic CDN domain detection |
-| 2026-01-08 | Fixed 864 channel SD quality suffix |
-| 2026-01-08 | Added HLS.js for cross-browser playback |
-| 2026-01-08 | All three channels (881, 903, 864) working |
+| 2026-01-08 | Discovered IP restriction on CloudFront cookies |
+| 2026-01-08 | Deployed GCE VM in Hong Kong with static IP |
+| 2026-01-08 | Set up Cloudflare Tunnel for secure HTTPS access |
+| 2026-01-08 | Created Cloudflare Worker for edge caching |
+| 2026-01-08 | Added cookie prewarm cron (every 20 min) |
+| 2026-01-08 | **Production: Instant playback achieved** |
+| 2026-01-08 | Updated radio cards with gradient styling |
 
 ---
 
@@ -478,5 +537,7 @@ Normal behavior - cookie extraction takes 8-10 seconds. Subsequent plays within 
 
 - [HLS.js Documentation](https://github.com/video-dev/hls.js/)
 - [Playwright Documentation](https://playwright.dev/)
+- [Cloudflare Workers](https://developers.cloudflare.com/workers/)
+- [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/)
 - [AWS CloudFront Signed Cookies](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/private-content-signed-cookies.html)
 - [Commercial Radio Hong Kong](https://en.wikipedia.org/wiki/Commercial_Radio_Hong_Kong)
