@@ -6,14 +6,15 @@
  * - RTHK (rthk1-5): Direct fetch to Akamai (public streams, no auth needed)
  *
  * Routes:
- *   /{channel}/playlist.m3u8  → master/chunklist (3s edge cache for scalability)
- *   /{channel}/{path}         → audio segments (60s edge cache)
+ *   /{channel}/playlist.m3u8  → master playlist (3s edge cache)
+ *   /{channel}/{chunklist}    → live chunklist (NO cache - must be fresh)
+ *   /{channel}/{segment}      → audio segments (60s edge cache)
  *   /health                   → health check
  *
  * Caching Strategy:
- *   - Playlists: 3s edge cache (s-maxage) - balances freshness vs origin load
+ *   - Master playlist: 3s edge cache - rarely changes, safe to cache
+ *   - Chunklist: NO cache - updates every few seconds with new segments
  *   - Segments: 60s edge cache - immutable once published
- *   - This allows 1000s of concurrent listeners without overwhelming origin
  */
 
 interface Env {
@@ -97,10 +98,13 @@ export default {
       // Determine resource type
       const isSegment = resourcePath.includes(".aac") || resourcePath.includes(".ts")
       const isPlaylist = resourcePath.includes(".m3u8")
+      const isMasterPlaylist = resourcePath === "playlist.m3u8" // Entry point, rarely changes
+      const isChunklist = isPlaylist && !isMasterPlaylist // Live chunklist, updates frequently
       const cacheKey = new Request(url.toString(), request)
 
-      // Check edge cache first (for both playlists and segments)
-      if (isSegment || isPlaylist) {
+      // Check edge cache first (master playlists and segments only, NOT chunklists)
+      // Chunklists must always be fresh for live streaming
+      if (isSegment || isMasterPlaylist) {
         const cache = caches.default
         const cachedResponse = await cache.match(cacheKey)
         if (cachedResponse) {
@@ -113,11 +117,11 @@ export default {
       // Branch based on channel type
       if (isRthkChannel(channel)) {
         // RTHK: Direct fetch to Akamai (public streams, no auth needed)
-        return await handleRthkRequest(channel, resourcePath, url, request, cacheKey, isSegment, isPlaylist)
+        return await handleRthkRequest(channel, resourcePath, url, request, cacheKey, isSegment, isMasterPlaylist, isChunklist)
       }
 
       // CRHK: Proxy through GCE origin (IP-restricted CloudFront auth)
-      return await handleCrhkRequest(channel, resourcePath, url, request, cacheKey, isSegment, isPlaylist)
+      return await handleCrhkRequest(channel, resourcePath, url, request, cacheKey, isSegment, isMasterPlaylist, isChunklist)
     } catch (error) {
       console.error("[CDN] Error:", error)
       return errorResponse(500, "CDN proxy error")
@@ -133,7 +137,8 @@ async function handleRthkRequest(
   request: Request,
   cacheKey: Request,
   isSegment: boolean,
-  isPlaylist: boolean
+  isMasterPlaylist: boolean,
+  isChunklist: boolean
 ): Promise<Response> {
   // Build target URL
   let targetUrl: string
@@ -166,12 +171,12 @@ async function handleRthkRequest(
 
   const contentType = response.headers.get("content-type") || "application/octet-stream"
 
-  // For playlists, rewrite URLs and cache briefly at edge
-  if (isPlaylist) {
+  // For master playlists, rewrite URLs and cache at edge
+  if (isMasterPlaylist) {
     const content = await response.text()
     const rewritten = rewritePlaylist(content, channel, url.origin)
 
-    // Cache playlist at edge for scalability (s-maxage for edge, max-age=0 for client freshness)
+    // Cache master playlist at edge (s-maxage for edge, max-age=0 for client freshness)
     const playlistResponse = new Response(rewritten, {
       status: 200,
       headers: {
@@ -184,9 +189,25 @@ async function handleRthkRequest(
     // Store in edge cache
     const cache = caches.default
     await cache.put(cacheKey, playlistResponse.clone())
-    console.log(`[RTHK] Cached playlist (${PLAYLIST_CACHE_TTL}s): ${resourcePath}`)
+    console.log(`[RTHK] Cached master playlist (${PLAYLIST_CACHE_TTL}s): ${resourcePath}`)
 
     return playlistResponse
+  }
+
+  // For chunklists, rewrite URLs but DO NOT cache (must be fresh for live streaming)
+  if (isChunklist) {
+    const content = await response.text()
+    const rewritten = rewritePlaylist(content, channel, url.origin)
+
+    console.log(`[RTHK] Chunklist (no-cache): ${resourcePath}`)
+    return new Response(rewritten, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/vnd.apple.mpegurl",
+        ...corsHeaders(),
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    })
   }
 
   // For segments, cache at edge
@@ -227,7 +248,8 @@ async function handleCrhkRequest(
   request: Request,
   cacheKey: Request,
   isSegment: boolean,
-  isPlaylist: boolean
+  isMasterPlaylist: boolean,
+  isChunklist: boolean
 ): Promise<Response> {
   // Build GCE origin URL - proxy handles extraction if needed
   let originUrl: string
@@ -254,12 +276,12 @@ async function handleCrhkRequest(
 
   const contentType = originResponse.headers.get("content-type") || "application/octet-stream"
 
-  // For playlists, rewrite URLs and cache briefly at edge
-  if (isPlaylist) {
+  // For master playlists, rewrite URLs and cache at edge
+  if (isMasterPlaylist) {
     const content = await originResponse.text()
     const rewritten = rewritePlaylist(content, channel, url.origin)
 
-    // Cache playlist at edge for scalability (s-maxage for edge, max-age=0 for client freshness)
+    // Cache master playlist at edge (s-maxage for edge, max-age=0 for client freshness)
     const playlistResponse = new Response(rewritten, {
       status: 200,
       headers: {
@@ -272,9 +294,25 @@ async function handleCrhkRequest(
     // Store in edge cache
     const cache = caches.default
     await cache.put(cacheKey, playlistResponse.clone())
-    console.log(`[CRHK] Cached playlist (${PLAYLIST_CACHE_TTL}s): ${resourcePath}`)
+    console.log(`[CRHK] Cached master playlist (${PLAYLIST_CACHE_TTL}s): ${resourcePath}`)
 
     return playlistResponse
+  }
+
+  // For chunklists, rewrite URLs but DO NOT cache (must be fresh for live streaming)
+  if (isChunklist) {
+    const content = await originResponse.text()
+    const rewritten = rewritePlaylist(content, channel, url.origin)
+
+    console.log(`[CRHK] Chunklist (no-cache): ${resourcePath}`)
+    return new Response(rewritten, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/vnd.apple.mpegurl",
+        ...corsHeaders(),
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    })
   }
 
   // For segments, cache at edge and return
