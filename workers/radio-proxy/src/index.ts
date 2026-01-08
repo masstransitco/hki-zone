@@ -17,8 +17,8 @@ interface Env {
 
 const VALID_CHANNELS = ["881", "903", "864"]
 
-// GCE origin via Cloudflare Tunnel (HTTPS required for Worker fetch)
-const PROXY_ORIGIN = "https://complex-complexity-nearly-colored.trycloudflare.com"
+// GCE origin via named Cloudflare Tunnel (separate from Worker route)
+const PROXY_ORIGIN = "https://origin-radio.air.zone"
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
