@@ -1,8 +1,8 @@
 /**
  * CRHK Radio Edge CDN Proxy
  *
- * Proxies HLS streams through Vercel origin and caches audio segments at the edge.
- * Vercel handles the IP-restricted CloudFront cookie extraction and fetching.
+ * Proxies HLS streams through GCE origin and caches audio segments at the edge.
+ * GCE handles the IP-restricted CloudFront cookie extraction and fetching.
  *
  * Routes:
  *   /{channel}/playlist.m3u8  → master playlist (no-cache, always fresh)
@@ -17,8 +17,8 @@ interface Env {
 
 const VALID_CHANNELS = ["881", "903", "864"]
 
-// Vercel origin for the actual streaming
-const VERCEL_ORIGIN = "https://hki.zone"
+// GCE origin via Cloudflare Tunnel (HTTPS required for Worker fetch)
+const PROXY_ORIGIN = "https://complex-complexity-nearly-colored.trycloudflare.com"
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -69,25 +69,15 @@ export default {
         console.log(`[CDN] Cache MISS: ${resourcePath}`)
       }
 
-      // Build Vercel origin URL
-      // For playlist requests, we need to first initialize the stream
+      // Build Vercel origin URL - proxy handles extraction if needed
       let vercelUrl: string
 
       if (resourcePath === "playlist.m3u8") {
-        // First call the stream endpoint to ensure cookies are extracted
-        const initUrl = `${VERCEL_ORIGIN}/api/radio/stream?channel=${channel}`
-        const initResponse = await fetch(initUrl)
-        if (!initResponse.ok) {
-          const error = await initResponse.text()
-          console.error(`[CDN] Init failed: ${initResponse.status} ${error}`)
-          return errorResponse(503, "Stream initialization failed", { "Retry-After": "5" })
-        }
-
-        // Now get the playlist through the proxy
-        vercelUrl = `${VERCEL_ORIGIN}/api/radio/proxy?channel=${channel}`
+        // Call proxy directly - it will trigger extraction if no cached credentials
+        vercelUrl = `${PROXY_ORIGIN}/api/radio/proxy?channel=${channel}`
       } else {
         // For segments and chunklists, go directly to proxy
-        vercelUrl = `${VERCEL_ORIGIN}/api/radio/proxy?channel=${channel}&path=${encodeURIComponent(resourcePath)}`
+        vercelUrl = `${PROXY_ORIGIN}/api/radio/proxy?channel=${channel}&path=${encodeURIComponent(resourcePath)}`
       }
 
       console.log(`[CDN] Fetching from origin: ${vercelUrl}`)
