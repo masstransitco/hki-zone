@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect } from "react"
 import Hls from "hls.js"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -230,6 +230,9 @@ function DirectStreamPlayer({ station }: { station: RadioStation }) {
   )
 }
 
+// Edge proxy URL for CRHK streams
+const EDGE_PROXY_URL = "https://radio.air.zone"
+
 function ProxyStreamPlayer({ station }: { station: RadioStation }) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const hlsRef = useRef<Hls | null>(null)
@@ -238,12 +241,9 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
   const [isMuted, setIsMuted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(false)
-  const [streamInfo, setStreamInfo] = useState<{
-    proxyUrl: string
-    cacheAge: number
-    cacheTTL: number
-  } | null>(null)
+
+  // Get edge stream URL directly
+  const streamUrl = station.channel ? `${EDGE_PROXY_URL}/${station.channel}/playlist.m3u8` : null
 
   useEffect(() => {
     if (audioRef.current) {
@@ -260,37 +260,8 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
     }
   }, [])
 
-  const initializeStream = useCallback(async () => {
-    if (!station.channel) return
-
-    setIsInitializing(true)
-    setError(null)
-
-    try {
-      const response = await fetch(`/api/radio/stream?channel=${station.channel}`)
-      const data = await response.json()
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || "Failed to initialize stream")
-      }
-
-      setStreamInfo({
-        proxyUrl: data.proxyUrl,
-        cacheAge: data.cacheAge,
-        cacheTTL: data.cacheTTL,
-      })
-
-      return data.proxyUrl
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to initialize stream")
-      return null
-    } finally {
-      setIsInitializing(false)
-    }
-  }, [station.channel])
-
   const togglePlay = async () => {
-    if (!audioRef.current || !station.channel) return
+    if (!audioRef.current || !streamUrl) return
 
     if (isPlaying) {
       audioRef.current.pause()
@@ -306,16 +277,6 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
     setError(null)
 
     try {
-      // Get or refresh stream URL
-      let proxyUrl = streamInfo?.proxyUrl
-      if (!proxyUrl) {
-        proxyUrl = await initializeStream()
-      }
-
-      if (!proxyUrl) {
-        throw new Error("Failed to get stream URL")
-      }
-
       // Use HLS.js for browsers that don't support HLS natively
       if (Hls.isSupported()) {
         // Destroy existing HLS instance
@@ -329,7 +290,7 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
         })
         hlsRef.current = hls
 
-        hls.loadSource(proxyUrl)
+        hls.loadSource(streamUrl)
         hls.attachMedia(audioRef.current)
 
         hls.on(Hls.Events.MANIFEST_PARSED, async () => {
@@ -349,12 +310,11 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
             setError("Stream error. Click refresh to reconnect.")
             setIsPlaying(false)
             setIsLoading(false)
-            setStreamInfo(null)
           }
         })
       } else if (audioRef.current.canPlayType("application/vnd.apple.mpegurl")) {
         // Safari native HLS support
-        audioRef.current.src = proxyUrl
+        audioRef.current.src = streamUrl
         await audioRef.current.play()
         setIsPlaying(true)
         setIsLoading(false)
@@ -364,7 +324,6 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
     } catch (err) {
       console.error("Playback error:", err)
       setError("Failed to play stream. Click refresh to retry.")
-      setStreamInfo(null)
       setIsLoading(false)
     }
   }
@@ -374,7 +333,6 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
       setError("Stream connection lost. Click refresh to reconnect.")
       setIsPlaying(false)
       setIsLoading(false)
-      setStreamInfo(null)
     }
   }
 
@@ -387,8 +345,7 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
       hlsRef.current = null
     }
     setIsPlaying(false)
-    setStreamInfo(null)
-    await initializeStream()
+    setError(null)
   }
 
   return (
@@ -404,10 +361,10 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
         <Button
           size="lg"
           onClick={togglePlay}
-          disabled={isLoading || isInitializing}
+          disabled={isLoading}
           className="w-14 h-14 rounded-full"
         >
-          {isLoading || isInitializing ? (
+          {isLoading ? (
             <Loader2 className="h-6 w-6 animate-spin" />
           ) : isPlaying ? (
             <Pause className="h-6 w-6" />
@@ -447,10 +404,9 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
           variant="ghost"
           size="icon"
           onClick={refreshStream}
-          disabled={isInitializing}
           title="Refresh stream connection"
         >
-          <RefreshCw className={`h-4 w-4 ${isInitializing ? "animate-spin" : ""}`} />
+          <RefreshCw className="h-4 w-4" />
         </Button>
 
         {isPlaying && (
@@ -461,23 +417,10 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
         )}
       </div>
 
-      {isInitializing && (
-        <div className="flex items-center gap-2 text-blue-400 text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Initializing stream connection...
-        </div>
-      )}
-
       {error && (
         <div className="flex items-center gap-2 text-amber-500 text-sm">
           <AlertCircle className="h-4 w-4" />
           {error}
-        </div>
-      )}
-
-      {streamInfo && !error && !isInitializing && (
-        <div className="text-xs text-muted-foreground">
-          Stream ready (cached {streamInfo.cacheAge}s ago)
         </div>
       )}
 
@@ -576,7 +519,7 @@ function RadioStationCard({ station }: { station: RadioStation }) {
       case "direct":
         return { variant: "default" as const, label: "HLS Stream" }
       case "proxy":
-        return { variant: "default" as const, label: "Proxied Stream" }
+        return { variant: "default" as const, label: "Edge Stream" }
       default:
         return { variant: "secondary" as const, label: "Official Player" }
     }
@@ -646,8 +589,8 @@ export default function RadioPage() {
               <p className="text-blue-200 font-medium">Stream Access Notes</p>
               <ul className="text-blue-300/80 mt-1 space-y-1">
                 <li>• <strong>RTHK</strong> stations use direct HLS streams - play directly in browser</li>
-                <li>• <strong>Commercial Radio</strong> (881/903/864) uses server-side stream proxy - first play may take a few seconds to initialize</li>
-                <li>• Stream connections are cached for 45 minutes for faster subsequent playback</li>
+                <li>• <strong>Commercial Radio</strong> (881/903/864) streams via edge proxy at radio.air.zone</li>
+                <li>• Instant playback - streams are always warm and ready</li>
               </ul>
             </div>
           </div>
