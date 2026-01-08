@@ -1,0 +1,25 @@
+name = "radio-proxy"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat_v2"]
+workers_dev = true
+
+[vars]
+ENVIRONMENT = "production"
+
+# Browser Rendering binding for cookie extraction
+[browser]
+binding = "BROWSER"
+
+[[kv_namespaces]]
+binding = "RADIO_COOKIES"
+id = "9bda99455e4c4911892600f04a3df22e"
+preview_id = "f97c4ca79a3f4dc195905c2fb52872d6"
+
+[[routes]]
+pattern = "radio.air.zone/*"
+zone_name = "air.zone"
+
+# Scheduled cookie refresh every 10 minutes
+[triggers]
+crons = ["*/10 * * * *"]

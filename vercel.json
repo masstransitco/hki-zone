@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/radio/prewarm",
+      "schedule": "*/10 * * * *"
+    },
+    {
       "path": "/api/cron/scrape-news",
       "schedule": "*/30 * * * *"
     },
