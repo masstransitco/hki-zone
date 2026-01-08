@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { readFromKV } from "@/lib/cloudflare-kv"
 
 // Import the cache from stream route
 // We need to use a shared cache mechanism
@@ -27,7 +28,30 @@ async function getCache(): Promise<Map<string, StreamCache>> {
 
 async function getCredentials(channel: string): Promise<StreamCache | null> {
   const cache = await getCache()
-  return cache.get(channel) || null
+  const localCached = cache.get(channel)
+
+  if (localCached) {
+    return localCached
+  }
+
+  // Fallback: Try reading from Cloudflare KV
+  console.log(`[Proxy] No local cache for ${channel}, checking KV`)
+  const kvData = await readFromKV(channel)
+
+  if (kvData && kvData.expiresAt > Date.now()) {
+    console.log(`[Proxy] Found valid cookies in KV for ${channel}`)
+    const creds: StreamCache = {
+      streamUrl: kvData.streamUrl,
+      cookies: kvData.cookies,
+      timestamp: kvData.updatedAt,
+      channel,
+    }
+    // Store in local cache for subsequent requests
+    cache.set(channel, creds)
+    return creds
+  }
+
+  return null
 }
 
 // Proxy the main playlist or any HLS resource

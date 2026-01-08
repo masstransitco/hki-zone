@@ -6,9 +6,14 @@
  * - RTHK (rthk1-5): Direct fetch to Akamai (public streams, no auth needed)
  *
  * Routes:
- *   /{channel}/playlist.m3u8  → master playlist (no-cache, always fresh)
- *   /{channel}/{path}         → chunklist or audio segments (edge cached)
+ *   /{channel}/playlist.m3u8  → master/chunklist (3s edge cache for scalability)
+ *   /{channel}/{path}         → audio segments (60s edge cache)
  *   /health                   → health check
+ *
+ * Caching Strategy:
+ *   - Playlists: 3s edge cache (s-maxage) - balances freshness vs origin load
+ *   - Segments: 60s edge cache - immutable once published
+ *   - This allows 1000s of concurrent listeners without overwhelming origin
  */
 
 interface Env {
@@ -36,6 +41,10 @@ const RTHK_STREAM_URLS: Record<string, string> = {
 
 // GCE origin via named Cloudflare Tunnel (for CRHK only)
 const PROXY_ORIGIN = "https://origin-radio.air.zone"
+
+// Cache TTLs for scalability
+const PLAYLIST_CACHE_TTL = 3 // seconds - short cache for live playlists
+const SEGMENT_CACHE_TTL = 60 // seconds - longer cache for immutable segments
 
 // Helper to check if channel is RTHK
 function isRthkChannel(channel: string): boolean {
@@ -85,11 +94,13 @@ export default {
     }
 
     try {
-      // Check cache first for audio segments (both CRHK and RTHK)
+      // Determine resource type
       const isSegment = resourcePath.includes(".aac") || resourcePath.includes(".ts")
+      const isPlaylist = resourcePath.includes(".m3u8")
       const cacheKey = new Request(url.toString(), request)
 
-      if (isSegment) {
+      // Check edge cache first (for both playlists and segments)
+      if (isSegment || isPlaylist) {
         const cache = caches.default
         const cachedResponse = await cache.match(cacheKey)
         if (cachedResponse) {
@@ -102,11 +113,11 @@ export default {
       // Branch based on channel type
       if (isRthkChannel(channel)) {
         // RTHK: Direct fetch to Akamai (public streams, no auth needed)
-        return await handleRthkRequest(channel, resourcePath, url, request, cacheKey, isSegment)
+        return await handleRthkRequest(channel, resourcePath, url, request, cacheKey, isSegment, isPlaylist)
       }
 
       // CRHK: Proxy through GCE origin (IP-restricted CloudFront auth)
-      return await handleCrhkRequest(channel, resourcePath, url, request, cacheKey, isSegment)
+      return await handleCrhkRequest(channel, resourcePath, url, request, cacheKey, isSegment, isPlaylist)
     } catch (error) {
       console.error("[CDN] Error:", error)
       return errorResponse(500, "CDN proxy error")
@@ -121,7 +132,8 @@ async function handleRthkRequest(
   url: URL,
   request: Request,
   cacheKey: Request,
-  isSegment: boolean
+  isSegment: boolean,
+  isPlaylist: boolean
 ): Promise<Response> {
   // Build target URL
   let targetUrl: string
@@ -154,19 +166,27 @@ async function handleRthkRequest(
 
   const contentType = response.headers.get("content-type") || "application/octet-stream"
 
-  // For playlists, rewrite URLs to route through worker
-  if (contentType.includes("mpegurl") || resourcePath.includes(".m3u8")) {
+  // For playlists, rewrite URLs and cache briefly at edge
+  if (isPlaylist) {
     const content = await response.text()
     const rewritten = rewritePlaylist(content, channel, url.origin)
 
-    return new Response(rewritten, {
+    // Cache playlist at edge for scalability (s-maxage for edge, max-age=0 for client freshness)
+    const playlistResponse = new Response(rewritten, {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.apple.mpegurl",
         ...corsHeaders(),
-        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Cache-Control": `public, s-maxage=${PLAYLIST_CACHE_TTL}, max-age=0`,
       },
     })
+
+    // Store in edge cache
+    const cache = caches.default
+    await cache.put(cacheKey, playlistResponse.clone())
+    console.log(`[RTHK] Cached playlist (${PLAYLIST_CACHE_TTL}s): ${resourcePath}`)
+
+    return playlistResponse
   }
 
   // For segments, cache at edge
@@ -177,7 +197,7 @@ async function handleRthkRequest(
     headers: {
       "Content-Type": contentType,
       ...corsHeaders(),
-      "Cache-Control": "public, max-age=60",
+      "Cache-Control": `public, max-age=${SEGMENT_CACHE_TTL}`,
     },
   })
 
@@ -189,11 +209,11 @@ async function handleRthkRequest(
       headers: {
         "Content-Type": contentType,
         ...corsHeaders(),
-        "Cache-Control": "public, max-age=60",
+        "Cache-Control": `public, max-age=${SEGMENT_CACHE_TTL}`,
       },
     })
     await cache.put(cacheKey, responseToCache)
-    console.log(`[RTHK] Cached: ${resourcePath}`)
+    console.log(`[RTHK] Cached segment (${SEGMENT_CACHE_TTL}s): ${resourcePath}`)
   }
 
   return edgeResponse
@@ -206,7 +226,8 @@ async function handleCrhkRequest(
   url: URL,
   request: Request,
   cacheKey: Request,
-  isSegment: boolean
+  isSegment: boolean,
+  isPlaylist: boolean
 ): Promise<Response> {
   // Build GCE origin URL - proxy handles extraction if needed
   let originUrl: string
@@ -233,19 +254,27 @@ async function handleCrhkRequest(
 
   const contentType = originResponse.headers.get("content-type") || "application/octet-stream"
 
-  // For playlists, rewrite URLs to go through edge
-  if (contentType.includes("mpegurl") || resourcePath.includes(".m3u8")) {
+  // For playlists, rewrite URLs and cache briefly at edge
+  if (isPlaylist) {
     const content = await originResponse.text()
     const rewritten = rewritePlaylist(content, channel, url.origin)
 
-    return new Response(rewritten, {
+    // Cache playlist at edge for scalability (s-maxage for edge, max-age=0 for client freshness)
+    const playlistResponse = new Response(rewritten, {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.apple.mpegurl",
         ...corsHeaders(),
-        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Cache-Control": `public, s-maxage=${PLAYLIST_CACHE_TTL}, max-age=0`,
       },
     })
+
+    // Store in edge cache
+    const cache = caches.default
+    await cache.put(cacheKey, playlistResponse.clone())
+    console.log(`[CRHK] Cached playlist (${PLAYLIST_CACHE_TTL}s): ${resourcePath}`)
+
+    return playlistResponse
   }
 
   // For segments, cache at edge and return
@@ -256,7 +285,7 @@ async function handleCrhkRequest(
     headers: {
       "Content-Type": contentType,
       ...corsHeaders(),
-      "Cache-Control": "public, max-age=60",
+      "Cache-Control": `public, max-age=${SEGMENT_CACHE_TTL}`,
     },
   })
 
@@ -268,11 +297,11 @@ async function handleCrhkRequest(
       headers: {
         "Content-Type": contentType,
         ...corsHeaders(),
-        "Cache-Control": "public, max-age=60",
+        "Cache-Control": `public, max-age=${SEGMENT_CACHE_TTL}`,
       },
     })
     await cache.put(cacheKey, responseToCache)
-    console.log(`[CRHK] Cached: ${resourcePath}`)
+    console.log(`[CRHK] Cached segment (${SEGMENT_CACHE_TTL}s): ${resourcePath}`)
   }
 
   return response
