@@ -80,8 +80,8 @@ const radioStations: RadioStation[] = [
     frequency: "92.6-94.4 MHz FM",
     description: "Cantonese news, current affairs, and talk shows",
     officialUrl: "https://www.rthk.hk/radio/radio1",
-    streamUrl: "https://rthkaudio1-lh.akamaihd.net/i/radio1_1@355864/master.m3u8",
-    type: "direct",
+    channel: "rthk1",
+    type: "proxy",
     gradient: "from-red-600 via-orange-600 to-red-800",
     accentColor: "bg-red-500"
   },
@@ -92,8 +92,8 @@ const radioStations: RadioStation[] = [
     frequency: "94.8-96.9 MHz FM",
     description: "Cantonese music and entertainment",
     officialUrl: "https://www.rthk.hk/radio/radio2",
-    streamUrl: "https://rthkaudio2-lh.akamaihd.net/i/radio2_1@355865/master.m3u8",
-    type: "direct",
+    channel: "rthk2",
+    type: "proxy",
     gradient: "from-orange-500 via-amber-500 to-orange-700",
     accentColor: "bg-orange-500"
   },
@@ -104,8 +104,8 @@ const radioStations: RadioStation[] = [
     frequency: "567 kHz AM / 97.9 MHz FM",
     description: "English news, talk shows, and music",
     officialUrl: "https://www.rthk.hk/radio/radio3",
-    streamUrl: "https://rthkaudio3-lh.akamaihd.net/i/radio3_1@355866/master.m3u8",
-    type: "direct",
+    channel: "rthk3",
+    type: "proxy",
     gradient: "from-emerald-600 via-green-600 to-emerald-800",
     accentColor: "bg-emerald-500"
   },
@@ -116,8 +116,8 @@ const radioStations: RadioStation[] = [
     frequency: "97.6-98.9 MHz FM",
     description: "Classical music and fine arts",
     officialUrl: "https://www.rthk.hk/radio/radio4",
-    streamUrl: "https://rthkaudio4-lh.akamaihd.net/i/radio4_1@355867/master.m3u8",
-    type: "direct",
+    channel: "rthk4",
+    type: "proxy",
     gradient: "from-indigo-600 via-violet-600 to-indigo-800",
     accentColor: "bg-indigo-500"
   },
@@ -128,8 +128,8 @@ const radioStations: RadioStation[] = [
     frequency: "783 kHz AM",
     description: "Cantonese programming for elderly listeners",
     officialUrl: "https://www.rthk.hk/radio/radio5",
-    streamUrl: "https://rthkaudio5-lh.akamaihd.net/i/radio5_1@355868/master.m3u8",
-    type: "direct",
+    channel: "rthk5",
+    type: "proxy",
     gradient: "from-rose-600 via-pink-500 to-rose-800",
     accentColor: "bg-rose-500"
   }
@@ -627,9 +627,10 @@ export default function RadioPage() {
             <div className="text-sm">
               <p className="text-blue-200 font-medium">Stream Access Notes</p>
               <ul className="text-blue-300/80 mt-1 space-y-1">
-                <li>• <strong>RTHK</strong> stations use direct HLS streams - play directly in browser</li>
-                <li>• <strong>Commercial Radio</strong> (881/903/864) streams via edge proxy at radio.air.zone</li>
-                <li>• Instant playback - streams are always warm and ready</li>
+                <li>• All streams via edge proxy at <strong>radio.air.zone</strong></li>
+                <li>• <strong>RTHK</strong> - public Akamai streams with edge caching</li>
+                <li>• <strong>Commercial Radio</strong> - authenticated CloudFront streams</li>
+                <li>• Instant playback with global edge distribution</li>
               </ul>
             </div>
           </div>

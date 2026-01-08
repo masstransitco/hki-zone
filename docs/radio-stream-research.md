@@ -1,10 +1,14 @@
-# Commercial Radio Hong Kong - Stream Proxy Implementation
+# Hong Kong Radio - Stream Proxy Implementation
 
 ## Overview
 
-This document details the implementation of an edge-distributed proxy system that enables instant browser playback of Commercial Radio Hong Kong (CRHK) live streams. The system solves CloudFront's IP-restricted cookie authentication by running Playwright extraction from a Hong Kong GCE VM, then distributes streams globally via Cloudflare's edge network.
+This document details the implementation of an edge-distributed proxy system that enables instant browser playback of Hong Kong radio live streams. The system handles both:
+- **CRHK (Commercial Radio)** - Solves CloudFront's IP-restricted cookie authentication via GCE VM in Hong Kong
+- **RTHK (Radio Television Hong Kong)** - Proxies public Akamai streams with edge caching and URL resilience
 
-**Status:** Production - Instant playback for FM 881, FM 903, and AM 864
+All streams are distributed globally via Cloudflare's edge network at `radio.air.zone`.
+
+**Status:** Production - Instant playback for all 8 channels
 **Last Updated:** January 2026
 
 ---
@@ -472,23 +476,62 @@ sudo journalctl -u cloudflared -f
 
 ## Comparison: RTHK vs CRHK
 
-| Feature | RTHK | CRHK (Edge Proxy) |
-|---------|------|-------------------|
-| Stream Access | Public HLS | IP-restricted CloudFront |
-| Architecture | Direct to CDN | Edge → Tunnel → GCE → CDN |
-| First Play | Instant | **Instant** (prewarmed) |
-| Global Latency | Varies | **Optimized** (edge cache) |
+| Feature | RTHK (Edge Proxy) | CRHK (Edge Proxy) |
+|---------|-------------------|-------------------|
+| Stream Access | Public Akamai HLS | IP-restricted CloudFront |
+| Architecture | Edge → Akamai direct | Edge → Tunnel → GCE → CDN |
+| Authentication | None needed | CloudFront signed cookies |
+| First Play | **Instant** (edge cached) | **Instant** (prewarmed) |
+| Global Latency | **Optimized** (edge cache) | **Optimized** (edge cache) |
 | Maintenance | None | Cookie refresh cron |
 
-### RTHK Stream URLs (Public - No Auth)
+---
 
+## RTHK Edge Proxy (Added January 2026)
+
+RTHK streams are public and do not require authentication. They are now proxied through the same Cloudflare Worker for:
+- Consistent URL pattern across all stations
+- Edge caching of audio segments (60s TTL)
+- Resilience against URL changes (redirects handled server-side)
+- Single point of management
+
+### RTHK URL Resolution
+
+**Old Akamai URLs (302 redirect):**
 ```
 https://rthkaudio1-lh.akamaihd.net/i/radio1_1@355864/master.m3u8
-https://rthkaudio2-lh.akamaihd.net/i/radio2_1@355865/master.m3u8
-https://rthkaudio3-lh.akamaihd.net/i/radio3_1@355866/master.m3u8
-https://rthkaudio4-lh.akamaihd.net/i/radio4_1@355867/master.m3u8
-https://rthkaudio5-lh.akamaihd.net/i/radio5_1@355868/master.m3u8
+→ redirects to new URL
 ```
+
+**New Akamai URLs (current):**
+```
+https://rthkradio1-live.akamaized.net/hls/live/2035313/radio1/master.m3u8
+https://rthkradio2-live.akamaized.net/hls/live/2040078/radio2/master.m3u8
+https://rthkradio3-live.akamaized.net/hls/live/2040079/radio3/master.m3u8
+https://rthkradio4-live.akamaized.net/hls/live/2040080/radio4/master.m3u8
+https://rthkradio5-live.akamaized.net/hls/live/2040081/radio5/master.m3u8
+```
+
+**Proxy URLs (client-facing):**
+```
+https://radio.air.zone/rthk1/playlist.m3u8
+https://radio.air.zone/rthk2/playlist.m3u8
+https://radio.air.zone/rthk3/playlist.m3u8
+https://radio.air.zone/rthk4/playlist.m3u8
+https://radio.air.zone/rthk5/playlist.m3u8
+```
+
+### RTHK Architecture
+
+```
+Client → radio.air.zone/rthk1/playlist.m3u8
+       → Cloudflare Worker (edge)
+       → Direct fetch to Akamai (with redirect: follow)
+       → Return with URLs rewritten to worker
+       → Edge cache segments for 60s
+```
+
+The worker uses `redirect: "follow"` when fetching, so if Akamai changes redirect destinations again, it will still work automatically
 
 ---
 
@@ -530,6 +573,7 @@ https://rthkaudio5-lh.akamaihd.net/i/radio5_1@355868/master.m3u8
 | 2026-01-08 | Added cookie prewarm cron (every 20 min) |
 | 2026-01-08 | **Production: Instant playback achieved** |
 | 2026-01-08 | Updated radio cards with gradient styling |
+| 2026-01-08 | Added RTHK to edge proxy (fixed broken Akamai URL redirects) |
 
 ---
 
