@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import Hls from "hls.js"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -32,6 +32,8 @@ interface RadioStation {
   streamUrl?: string
   channel?: string // For proxy-based streams
   type: "external" | "direct" | "proxy"
+  gradient?: string // Gradient background for card header
+  accentColor?: string // Accent color for badges
 }
 
 const radioStations: RadioStation[] = [
@@ -43,7 +45,9 @@ const radioStations: RadioStation[] = [
     description: "Talk radio - current affairs, traffic, financial info",
     officialUrl: "https://www.881903.com/live/881",
     channel: "881",
-    type: "proxy"
+    type: "proxy",
+    gradient: "from-blue-600 via-blue-700 to-blue-900",
+    accentColor: "bg-blue-500"
   },
   {
     id: "fm903",
@@ -53,7 +57,9 @@ const radioStations: RadioStation[] = [
     description: "Music radio - Cantopop, Japanese, English songs",
     officialUrl: "https://www.881903.com/live/903",
     channel: "903",
-    type: "proxy"
+    type: "proxy",
+    gradient: "from-purple-600 via-pink-600 to-purple-900",
+    accentColor: "bg-purple-500"
   },
   {
     id: "am864",
@@ -63,7 +69,9 @@ const radioStations: RadioStation[] = [
     description: "English channel - international hits, hip-hop, R&B, jazz",
     officialUrl: "https://www.881903.com/live/864",
     channel: "864",
-    type: "proxy"
+    type: "proxy",
+    gradient: "from-teal-600 via-cyan-600 to-teal-900",
+    accentColor: "bg-teal-500"
   },
   {
     id: "rthk1",
@@ -73,7 +81,9 @@ const radioStations: RadioStation[] = [
     description: "Cantonese news, current affairs, and talk shows",
     officialUrl: "https://www.rthk.hk/radio/radio1",
     streamUrl: "https://rthkaudio1-lh.akamaihd.net/i/radio1_1@355864/master.m3u8",
-    type: "direct"
+    type: "direct",
+    gradient: "from-red-600 via-orange-600 to-red-800",
+    accentColor: "bg-red-500"
   },
   {
     id: "rthk2",
@@ -83,7 +93,9 @@ const radioStations: RadioStation[] = [
     description: "Cantonese music and entertainment",
     officialUrl: "https://www.rthk.hk/radio/radio2",
     streamUrl: "https://rthkaudio2-lh.akamaihd.net/i/radio2_1@355865/master.m3u8",
-    type: "direct"
+    type: "direct",
+    gradient: "from-orange-500 via-amber-500 to-orange-700",
+    accentColor: "bg-orange-500"
   },
   {
     id: "rthk3",
@@ -93,7 +105,9 @@ const radioStations: RadioStation[] = [
     description: "English news, talk shows, and music",
     officialUrl: "https://www.rthk.hk/radio/radio3",
     streamUrl: "https://rthkaudio3-lh.akamaihd.net/i/radio3_1@355866/master.m3u8",
-    type: "direct"
+    type: "direct",
+    gradient: "from-emerald-600 via-green-600 to-emerald-800",
+    accentColor: "bg-emerald-500"
   },
   {
     id: "rthk4",
@@ -103,7 +117,9 @@ const radioStations: RadioStation[] = [
     description: "Classical music and fine arts",
     officialUrl: "https://www.rthk.hk/radio/radio4",
     streamUrl: "https://rthkaudio4-lh.akamaihd.net/i/radio4_1@355867/master.m3u8",
-    type: "direct"
+    type: "direct",
+    gradient: "from-indigo-600 via-violet-600 to-indigo-800",
+    accentColor: "bg-indigo-500"
   },
   {
     id: "rthk5",
@@ -113,7 +129,9 @@ const radioStations: RadioStation[] = [
     description: "Cantonese programming for elderly listeners",
     officialUrl: "https://www.rthk.hk/radio/radio5",
     streamUrl: "https://rthkaudio5-lh.akamaihd.net/i/radio5_1@355868/master.m3u8",
-    type: "direct"
+    type: "direct",
+    gradient: "from-rose-600 via-pink-500 to-rose-800",
+    accentColor: "bg-rose-500"
   }
 ]
 
@@ -169,26 +187,36 @@ function DirectStreamPlayer({ station }: { station: RadioStation }) {
         preload="none"
       />
 
-      <div className="flex items-center gap-4">
-        <Button
-          size="lg"
-          onClick={togglePlay}
-          disabled={isLoading}
-          className="w-14 h-14 rounded-full"
-        >
-          {isLoading ? (
-            <RefreshCw className="h-6 w-6 animate-spin" />
-          ) : isPlaying ? (
-            <Pause className="h-6 w-6" />
-          ) : (
-            <Play className="h-6 w-6 ml-1" />
-          )}
-        </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-3">
+          <Button
+            size="lg"
+            onClick={togglePlay}
+            disabled={isLoading}
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shrink-0"
+          >
+            {isLoading ? (
+              <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+            ) : isPlaying ? (
+              <Pause className="h-5 w-5 sm:h-6 sm:w-6" />
+            ) : (
+              <Play className="h-5 w-5 sm:h-6 sm:w-6 ml-0.5" />
+            )}
+          </Button>
 
-        <div className="flex items-center gap-2 flex-1">
+          {isPlaying && (
+            <Badge variant="default" className="bg-green-600 animate-pulse shrink-0">
+              <Wifi className="h-3 w-3 mr-1" />
+              Live
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 min-w-0">
           <Button
             variant="ghost"
             size="icon"
+            className="shrink-0"
             onClick={() => setIsMuted(!isMuted)}
           >
             {isMuted ? (
@@ -205,19 +233,12 @@ function DirectStreamPlayer({ station }: { station: RadioStation }) {
             }}
             max={100}
             step={1}
-            className="w-32"
+            className="w-20 sm:w-32"
           />
-          <span className="text-sm text-muted-foreground w-8">
+          <span className="text-sm text-muted-foreground w-8 shrink-0">
             {isMuted ? 0 : volume}%
           </span>
         </div>
-
-        {isPlaying && (
-          <Badge variant="default" className="bg-green-600 animate-pulse">
-            <Wifi className="h-3 w-3 mr-1" />
-            Live
-          </Badge>
-        )}
       </div>
 
       {error && (
@@ -357,26 +378,36 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
         preload="none"
       />
 
-      <div className="flex items-center gap-4">
-        <Button
-          size="lg"
-          onClick={togglePlay}
-          disabled={isLoading}
-          className="w-14 h-14 rounded-full"
-        >
-          {isLoading ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
-          ) : isPlaying ? (
-            <Pause className="h-6 w-6" />
-          ) : (
-            <Play className="h-6 w-6 ml-1" />
-          )}
-        </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-3">
+          <Button
+            size="lg"
+            onClick={togglePlay}
+            disabled={isLoading}
+            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full shrink-0"
+          >
+            {isLoading ? (
+              <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 animate-spin" />
+            ) : isPlaying ? (
+              <Pause className="h-5 w-5 sm:h-6 sm:w-6" />
+            ) : (
+              <Play className="h-5 w-5 sm:h-6 sm:w-6 ml-0.5" />
+            )}
+          </Button>
 
-        <div className="flex items-center gap-2 flex-1">
+          {isPlaying && (
+            <Badge variant="default" className="bg-green-600 animate-pulse shrink-0">
+              <Wifi className="h-3 w-3 mr-1" />
+              Live
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 min-w-0">
           <Button
             variant="ghost"
             size="icon"
+            className="shrink-0"
             onClick={() => setIsMuted(!isMuted)}
           >
             {isMuted ? (
@@ -393,9 +424,9 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
             }}
             max={100}
             step={1}
-            className="w-32"
+            className="w-20 sm:w-32"
           />
-          <span className="text-sm text-muted-foreground w-8">
+          <span className="text-sm text-muted-foreground w-8 shrink-0">
             {isMuted ? 0 : volume}%
           </span>
         </div>
@@ -403,18 +434,12 @@ function ProxyStreamPlayer({ station }: { station: RadioStation }) {
         <Button
           variant="ghost"
           size="icon"
+          className="shrink-0"
           onClick={refreshStream}
           title="Refresh stream connection"
         >
           <RefreshCw className="h-4 w-4" />
         </Button>
-
-        {isPlaying && (
-          <Badge variant="default" className="bg-green-600 animate-pulse">
-            <Wifi className="h-3 w-3 mr-1" />
-            Live
-          </Badge>
-        )}
       </div>
 
       {error && (
@@ -517,40 +542,54 @@ function RadioStationCard({ station }: { station: RadioStation }) {
   const getBadgeInfo = () => {
     switch (station.type) {
       case "direct":
-        return { variant: "default" as const, label: "HLS Stream" }
+        return { label: "HLS Stream", className: "bg-white/20 text-white border-white/30" }
       case "proxy":
-        return { variant: "default" as const, label: "Edge Stream" }
+        return { label: "Edge Stream", className: "bg-white/20 text-white border-white/30" }
       default:
-        return { variant: "secondary" as const, label: "Official Player" }
+        return { label: "Official Player", className: "bg-white/20 text-white border-white/30" }
     }
   }
 
   const badge = getBadgeInfo()
+  const gradient = station.gradient || "from-gray-600 via-gray-700 to-gray-800"
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Headphones className="h-5 w-5" />
-              {station.name}
-            </CardTitle>
-            <CardDescription className="mt-1">
-              <span className="text-lg font-medium text-foreground">{station.nameZh}</span>
-              <span className="mx-2">•</span>
-              <span>{station.frequency}</span>
-            </CardDescription>
+    <Card className="overflow-hidden">
+      {/* Gradient Banner Header */}
+      <div className={`relative bg-gradient-to-br ${gradient} px-6 py-8`}>
+        {/* Badge positioned in top-right */}
+        <Badge
+          variant="outline"
+          className={`absolute top-3 right-3 ${badge.className} text-xs`}
+        >
+          {badge.label}
+        </Badge>
+
+        {/* Channel Info */}
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+            <Radio className="h-6 w-6 text-white" />
           </div>
-          <Badge variant={badge.variant}>
-            {badge.label}
-          </Badge>
+          <div>
+            <h3 className="text-2xl font-bold text-white">{station.nameZh}</h3>
+            <p className="text-white/80 text-sm font-medium">{station.name}</p>
+          </div>
         </div>
-        <p className="text-sm text-muted-foreground mt-2">
+
+        {/* Frequency */}
+        <div className="flex items-center gap-2">
+          <span className="text-white/90 text-sm font-mono bg-black/20 px-2 py-0.5 rounded">
+            {station.frequency}
+          </span>
+        </div>
+      </div>
+
+      {/* Description */}
+      <CardContent className="pt-4">
+        <p className="text-sm text-muted-foreground mb-4">
           {station.description}
         </p>
-      </CardHeader>
-      <CardContent>
+
         {station.type === "direct" ? (
           <DirectStreamPlayer station={station} />
         ) : station.type === "proxy" ? (
