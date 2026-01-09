@@ -1,9 +1,10 @@
 /**
  * Hong Kong Radio Edge CDN Proxy
  *
- * Proxies HLS streams for both CRHK and RTHK:
+ * Proxies HLS streams for CRHK, RTHK, and Metro:
  * - CRHK (881/903/864): Routes through GCE origin for IP-restricted CloudFront auth
  * - RTHK (rthk1-5): Direct fetch to Akamai (public streams, no auth needed)
+ * - Metro (metro104/metro997/metro1044): Direct fetch to CDN77 (public streams, no auth needed)
  *
  * Routes:
  *   /{channel}/playlist.m3u8  → master playlist (3s edge cache)
@@ -28,8 +29,11 @@ const CRHK_CHANNELS = ["881", "903", "864"]
 // RTHK channels - public streams, direct fetch to Akamai
 const RTHK_CHANNELS = ["rthk1", "rthk2", "rthk3", "rthk4", "rthk5"]
 
+// Metro channels - public streams, direct fetch to CDN77
+const METRO_CHANNELS = ["metro104", "metro997", "metro1044"]
+
 // All valid channels
-const ALL_CHANNELS = [...CRHK_CHANNELS, ...RTHK_CHANNELS]
+const ALL_CHANNELS = [...CRHK_CHANNELS, ...RTHK_CHANNELS, ...METRO_CHANNELS]
 
 // RTHK stream URLs (new Akamai URLs - the old ones 302 redirect to these)
 const RTHK_STREAM_URLS: Record<string, string> = {
@@ -38,6 +42,14 @@ const RTHK_STREAM_URLS: Record<string, string> = {
   rthk3: "https://rthkradio3-live.akamaized.net/hls/live/2040079/radio3/master.m3u8",
   rthk4: "https://rthkradio4-live.akamaized.net/hls/live/2040080/radio4/master.m3u8",
   rthk5: "https://rthkradio5-live.akamaized.net/hls/live/2040081/radio5/master.m3u8",
+}
+
+// Metro stream URLs (CDN77 - streams are chunklists directly, no master playlist)
+// Format: https://{stream_id}.rsc.cdn77.org/{stream_id}/tracks-a1/mono.ts.m3u8
+const METRO_STREAM_URLS: Record<string, string> = {
+  metro104: "https://1716664847.rsc.cdn77.org/1716664847/tracks-a1/mono.ts.m3u8", // Metro Finance FM 104
+  metro997: "https://1603884249.rsc.cdn77.org/1603884249/tracks-a1/mono.ts.m3u8", // Metro Info FM 99.7
+  metro1044: "https://1946218710.rsc.cdn77.org/1946218710/tracks-a1/mono.ts.m3u8", // Metro Plus AM 1044
 }
 
 // GCE origin via named Cloudflare Tunnel (for CRHK only)
@@ -50,6 +62,11 @@ const SEGMENT_CACHE_TTL = 60 // seconds - longer cache for immutable segments
 // Helper to check if channel is RTHK
 function isRthkChannel(channel: string): boolean {
   return RTHK_CHANNELS.includes(channel)
+}
+
+// Helper to check if channel is Metro
+function isMetroChannel(channel: string): boolean {
+  return METRO_CHANNELS.includes(channel)
 }
 
 export default {
@@ -74,6 +91,7 @@ export default {
           channels: {
             crhk: CRHK_CHANNELS,
             rthk: RTHK_CHANNELS,
+            metro: METRO_CHANNELS,
           },
         }),
         { headers: { "Content-Type": "application/json" } }
@@ -118,6 +136,11 @@ export default {
       if (isRthkChannel(channel)) {
         // RTHK: Direct fetch to Akamai (public streams, no auth needed)
         return await handleRthkRequest(channel, resourcePath, url, request, cacheKey, isSegment, isMasterPlaylist, isChunklist)
+      }
+
+      if (isMetroChannel(channel)) {
+        // Metro: Direct fetch to CDN77 (public streams, no auth needed)
+        return await handleMetroRequest(channel, resourcePath, url, request, cacheKey, isSegment, isMasterPlaylist, isChunklist)
       }
 
       // CRHK: Proxy through GCE origin (IP-restricted CloudFront auth)
@@ -238,6 +261,130 @@ async function handleRthkRequest(
   }
 
   return edgeResponse
+}
+
+// Handle Metro requests - direct fetch to CDN77 (public, no auth)
+// Metro streams are simpler: the "playlist" is actually a chunklist with date-based segment paths
+async function handleMetroRequest(
+  channel: string,
+  resourcePath: string,
+  url: URL,
+  request: Request,
+  cacheKey: Request,
+  isSegment: boolean,
+  isMasterPlaylist: boolean,
+  isChunklist: boolean
+): Promise<Response> {
+  const streamUrl = METRO_STREAM_URLS[channel]
+  const baseUrl = new URL(streamUrl)
+  // Base path: e.g., https://1716664847.rsc.cdn77.org/1716664847/
+  const streamId = baseUrl.pathname.split("/")[1] // Extract stream ID from path
+  const basePath = `${baseUrl.origin}/${streamId}/`
+
+  // Build target URL
+  let targetUrl: string
+
+  if (resourcePath === "playlist.m3u8") {
+    // Metro's "playlist" is actually the chunklist (mono.ts.m3u8)
+    targetUrl = streamUrl
+  } else {
+    // Segments have date-based paths like 2026/01/09/03/26/55-05035.ts
+    // These are relative to the stream base, not the chunklist path
+    targetUrl = `${basePath}${resourcePath}`
+  }
+
+  console.log(`[Metro] Fetching: ${targetUrl}`)
+
+  const response = await fetch(targetUrl, {
+    headers: {
+      "User-Agent": request.headers.get("User-Agent") || "CloudflareWorker",
+      Accept: "*/*",
+    },
+    redirect: "follow",
+  })
+
+  if (!response.ok) {
+    console.error(`[Metro] Upstream error: ${response.status}`)
+    return errorResponse(response.status, `Metro stream error: ${response.status}`)
+  }
+
+  const contentType = response.headers.get("content-type") || "application/octet-stream"
+
+  // For Metro, the "playlist" request returns the chunklist directly
+  // We treat it as a chunklist (no-cache) since it updates frequently
+  if (isMasterPlaylist) {
+    const content = await response.text()
+    const rewritten = rewriteMetroPlaylist(content, channel, url.origin, basePath)
+
+    // Don't cache the chunklist - it updates every few seconds
+    console.log(`[Metro] Chunklist (no-cache): ${resourcePath}`)
+    return new Response(rewritten, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/vnd.apple.mpegurl",
+        ...corsHeaders(),
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+      },
+    })
+  }
+
+  // For segments, cache at edge
+  const body = await response.arrayBuffer()
+
+  const edgeResponse = new Response(body, {
+    status: 200,
+    headers: {
+      "Content-Type": contentType,
+      ...corsHeaders(),
+      "Cache-Control": `public, max-age=${SEGMENT_CACHE_TTL}`,
+    },
+  })
+
+  // Store in cache for segments
+  if (isSegment) {
+    const cache = caches.default
+    const responseToCache = new Response(body, {
+      status: 200,
+      headers: {
+        "Content-Type": contentType,
+        ...corsHeaders(),
+        "Cache-Control": `public, max-age=${SEGMENT_CACHE_TTL}`,
+      },
+    })
+    await cache.put(cacheKey, responseToCache)
+    console.log(`[Metro] Cached segment (${SEGMENT_CACHE_TTL}s): ${resourcePath}`)
+  }
+
+  return edgeResponse
+}
+
+// Rewrite Metro playlist URLs
+// Metro segments have date-based paths like "2026/01/09/03/26/55-05035.ts"
+function rewriteMetroPlaylist(content: string, channel: string, origin: string, basePath: string): string {
+  const lines = content.split("\n")
+
+  const rewrittenLines = lines.map((line) => {
+    const trimmed = line.trim()
+
+    // Skip comments and empty lines
+    if (trimmed.startsWith("#") || trimmed === "") {
+      return line
+    }
+
+    // Handle relative URLs (date-based paths like 2026/01/09/03/26/55-05035.ts)
+    if (!trimmed.startsWith("http")) {
+      return `${origin}/${channel}/${trimmed}`
+    }
+
+    // Handle absolute URLs - extract path after stream ID
+    const url = new URL(trimmed)
+    const pathParts = url.pathname.split("/")
+    // Skip first empty part and stream ID, keep the rest
+    const relativePath = pathParts.slice(2).join("/")
+    return `${origin}/${channel}/${relativePath}`
+  })
+
+  return rewrittenLines.join("\n")
 }
 
 // Handle CRHK requests - proxy through GCE origin (IP-restricted CloudFront auth)

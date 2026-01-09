@@ -2,18 +2,21 @@
 
 ## Overview
 
-This document details the implementation of an edge-distributed proxy system that enables instant browser playback of Hong Kong radio live streams. The system handles both:
+This document details the implementation of an edge-distributed proxy system that enables instant browser playback of Hong Kong radio live streams. The system handles:
 - **CRHK (Commercial Radio)** - Solves CloudFront's IP-restricted cookie authentication via GCE VM in Hong Kong
 - **RTHK (Radio Television Hong Kong)** - Proxies public Akamai streams with edge caching and URL resilience
+- **Metro Radio (新城電台)** - Proxies public CDN77 streams with edge caching
 
 All streams are distributed globally via Cloudflare's edge network at `radio.air.zone`.
 
-**Status:** Production - Instant playback for all 8 channels
+**Status:** Production - Instant playback for all 11 channels
 **Last Updated:** January 2026
 
 ---
 
 ## Radio Stations
+
+### CRHK (Commercial Radio Hong Kong)
 
 | Station | Frequency | Chinese Name | Stream Quality | CDN Domain |
 |---------|-----------|--------------|----------------|------------|
@@ -22,6 +25,28 @@ All streams are distributed globally via Cloudflare's edge network at `radio.air
 | AM 864 | 864 kHz | 豁達864 | SD (AAC) | live.881903.com or live2.881903.com |
 
 **Official Website:** https://www.881903.com
+
+### RTHK (Radio Television Hong Kong)
+
+| Station | Frequency | Chinese Name | Stream Quality | CDN Domain |
+|---------|-----------|--------------|----------------|------------|
+| RTHK Radio 1 | 92.6-94.4 MHz | 香港電台第一台 | HD (AAC) | rthkradio1-live.akamaized.net |
+| RTHK Radio 2 | 94.8-96.9 MHz | 香港電台第二台 | HD (AAC) | rthkradio2-live.akamaized.net |
+| RTHK Radio 3 | 97.9-106.8 MHz | 香港電台第三台 | HD (AAC) | rthkradio3-live.akamaized.net |
+| RTHK Radio 4 | 97.6-98.9 MHz | 香港電台第四台 | HD (AAC) | rthkradio4-live.akamaized.net |
+| RTHK Radio 5 | 783 kHz | 香港電台第五台 | HD (AAC) | rthkradio5-live.akamaized.net |
+
+**Official Website:** https://www.rthk.hk
+
+### Metro Radio (新城電台)
+
+| Station | Frequency | Chinese Name | Stream Quality | CDN Domain |
+|---------|-----------|--------------|----------------|------------|
+| Metro Finance | FM 102.4-106.3 MHz | 新城財經台 | SD (TS) | 1716664847.rsc.cdn77.org |
+| Metro Info | FM 99.7-102.1 MHz | 新城知訊台 | SD (TS) | 1603884249.rsc.cdn77.org |
+| Metro Plus | AM 1044 kHz | 新城採訊台 | SD (TS) | 1946218710.rsc.cdn77.org |
+
+**Official Website:** https://www.metroradio.com.hk
 
 ---
 
@@ -535,6 +560,76 @@ The worker uses `redirect: "follow"` when fetching, so if Akamai changes redirec
 
 ---
 
+## Metro Radio Edge Proxy (Added January 2026)
+
+Metro Radio (新城電台) is Hong Kong's third major radio broadcaster. They migrated from Akamai to **CDN77** for their streaming infrastructure. Streams are public with no authentication required.
+
+### Metro Stream Discovery
+
+Metro Radio streams were discovered using browser automation (Playwright) to capture network requests from their website. The key findings:
+
+1. **CDN Migration**: Metro moved from `metroradio-lh.akamaihd.net` (now returns 400 errors) to CDN77
+2. **Stream Structure**: No master playlist - entry point IS the chunklist directly
+3. **Segment Paths**: Date-based paths (e.g., `2026/01/09/04/13/57-05035.ts`)
+
+### Metro Stream URLs
+
+**Source URLs (CDN77):**
+```
+https://1716664847.rsc.cdn77.org/1716664847/tracks-a1/mono.ts.m3u8  (Metro Finance FM 104)
+https://1603884249.rsc.cdn77.org/1603884249/tracks-a1/mono.ts.m3u8  (Metro Info FM 99.7)
+https://1946218710.rsc.cdn77.org/1946218710/tracks-a1/mono.ts.m3u8  (Metro Plus AM 1044)
+```
+
+**Proxy URLs (client-facing):**
+```
+https://radio.air.zone/metro104/playlist.m3u8   (Metro Finance)
+https://radio.air.zone/metro997/playlist.m3u8   (Metro Info)
+https://radio.air.zone/metro1044/playlist.m3u8  (Metro Plus)
+```
+
+### Metro Architecture
+
+```
+Client → radio.air.zone/metro104/playlist.m3u8
+       → Cloudflare Worker (edge)
+       → Direct fetch to CDN77 (public, no auth)
+       → Return with URLs rewritten to worker
+       → Edge cache segments for 60s
+```
+
+### Metro-Specific Implementation
+
+Metro has a unique stream structure compared to CRHK and RTHK:
+
+```typescript
+// Metro stream URLs - entry point is chunklist, not master playlist
+const METRO_STREAM_URLS: Record<string, string> = {
+  metro104: "https://1716664847.rsc.cdn77.org/1716664847/tracks-a1/mono.ts.m3u8",
+  metro997: "https://1603884249.rsc.cdn77.org/1603884249/tracks-a1/mono.ts.m3u8",
+  metro1044: "https://1946218710.rsc.cdn77.org/1946218710/tracks-a1/mono.ts.m3u8",
+}
+
+// URL rewriting for Metro playlists
+// Segments have date-based paths: 2026/01/09/04/13/57-05035.ts
+// Rewrite: "2026/01/09/04/13/57-05035.ts" → "https://radio.air.zone/metro104/2026/01/09/04/13/57-05035.ts"
+```
+
+### Comparison: Metro vs RTHK vs CRHK
+
+| Feature | Metro (Edge Proxy) | RTHK (Edge Proxy) | CRHK (Edge Proxy) |
+|---------|-------------------|-------------------|-------------------|
+| Stream Access | Public CDN77 HLS | Public Akamai HLS | IP-restricted CloudFront |
+| CDN Provider | CDN77 | Akamai | CloudFront |
+| Architecture | Edge → CDN77 direct | Edge → Akamai direct | Edge → Tunnel → GCE → CDN |
+| Authentication | None needed | None needed | CloudFront signed cookies |
+| Stream Format | .ts segments | .aac segments | .aac segments |
+| Playlist Type | Chunklist only | Master + Chunklist | Master + Chunklist |
+| First Play | **Instant** (edge cached) | **Instant** (edge cached) | **Instant** (prewarmed) |
+| Maintenance | None | None | Cookie refresh cron |
+
+---
+
 ## Cost Estimate
 
 | Service | Free Tier | Expected Usage | Monthly Cost |
@@ -574,6 +669,8 @@ The worker uses `redirect: "follow"` when fetching, so if Akamai changes redirec
 | 2026-01-08 | **Production: Instant playback achieved** |
 | 2026-01-08 | Updated radio cards with gradient styling |
 | 2026-01-08 | Added RTHK to edge proxy (fixed broken Akamai URL redirects) |
+| 2026-01-09 | Researched Metro Radio - discovered CDN migration from Akamai to CDN77 |
+| 2026-01-09 | Added Metro Radio (3 channels) to edge proxy - instant playback for all 11 HK radio streams |
 
 ---
 
