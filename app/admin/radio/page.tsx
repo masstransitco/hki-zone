@@ -132,6 +132,42 @@ const radioStations: RadioStation[] = [
     type: "proxy",
     gradient: "from-rose-600 via-pink-500 to-rose-800",
     accentColor: "bg-rose-500"
+  },
+  {
+    id: "metro104",
+    name: "Metro Finance",
+    nameZh: "新城財經台",
+    frequency: "FM 102.4-106.3 MHz",
+    description: "Finance and business-focused content in Cantonese",
+    officialUrl: "https://www.metroradio.com.hk/MetroFinance/",
+    channel: "metro104",
+    type: "proxy",
+    gradient: "from-amber-600 via-yellow-500 to-amber-800",
+    accentColor: "bg-amber-500"
+  },
+  {
+    id: "metro997",
+    name: "Metro Info",
+    nameZh: "新城知訊台",
+    frequency: "FM 99.7-102.1 MHz",
+    description: "News, information and entertainment in Cantonese",
+    officialUrl: "https://www.metroradio.com.hk/MetroInfo/",
+    channel: "metro997",
+    type: "proxy",
+    gradient: "from-sky-600 via-blue-500 to-sky-800",
+    accentColor: "bg-sky-500"
+  },
+  {
+    id: "metro1044",
+    name: "Metro Plus",
+    nameZh: "新城採訊台",
+    frequency: "AM 1044 kHz",
+    description: "English and multilingual service for ethnic communities",
+    officialUrl: "https://www.metroradio.com.hk/MetroPlus/",
+    channel: "metro1044",
+    type: "proxy",
+    gradient: "from-lime-600 via-green-500 to-lime-800",
+    accentColor: "bg-lime-500"
   }
 ]
 
@@ -640,6 +676,7 @@ function RadioStationCard({ station }: { station: RadioStation }) {
 export default function RadioPage() {
   const commercialRadio = radioStations.filter(s => s.id.startsWith("fm") || s.id.startsWith("am"))
   const rthkRadio = radioStations.filter(s => s.id.startsWith("rthk"))
+  const metroRadio = radioStations.filter(s => s.id.startsWith("metro"))
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -665,6 +702,7 @@ export default function RadioPage() {
                 <li>• All streams via edge proxy at <strong>radio.air.zone</strong></li>
                 <li>• <strong>RTHK</strong> - public Akamai streams with edge caching</li>
                 <li>• <strong>Commercial Radio</strong> - authenticated CloudFront streams</li>
+                <li>• <strong>Metro Radio</strong> - public CDN77 streams with edge caching</li>
                 <li>• Instant playback with global edge distribution</li>
               </ul>
             </div>
@@ -681,6 +719,9 @@ export default function RadioPage() {
           <TabsTrigger value="rthk">
             RTHK 香港電台
           </TabsTrigger>
+          <TabsTrigger value="metro">
+            Metro Radio 新城電台
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="commercial" className="mt-6">
@@ -694,6 +735,14 @@ export default function RadioPage() {
         <TabsContent value="rthk" className="mt-6">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {rthkRadio.map((station) => (
+              <RadioStationCard key={station.id} station={station} />
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="metro" className="mt-6">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {metroRadio.map((station) => (
               <RadioStationCard key={station.id} station={station} />
             ))}
           </div>
@@ -722,6 +771,14 @@ export default function RadioPage() {
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               RTHK Radio
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open("https://www.metroradio.com.hk/", "_blank")}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Metro Radio
             </Button>
             <Button
               variant="outline"
