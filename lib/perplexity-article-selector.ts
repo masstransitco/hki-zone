@@ -57,9 +57,9 @@ const SOURCE_TIERS: Record<string, TierConfig> = {
     weight: 80        // Good quality weight
   },
   local: {
-    sources: ['HK01', 'am730', 'bastillepost'],
-    quota: 12,        // Slightly increased quota for 3 sources
-    maxAgeHours: 3,   // Shorter window due to high frequency
+    sources: ['hk01', 'am730', 'bastillepost'],  // hk01 lowercase to match scraper
+    quota: 15,        // Increased quota for better local coverage
+    maxAgeHours: 6,   // Extended window to match mainstream tier
     minQuality: 50,   // Lower threshold for Chinese content
     weight: 60        // Moderate quality weight
   }
@@ -78,7 +78,7 @@ const SOURCE_QUALITY_WEIGHTS: Record<string, number> = {
   'CGTN': 75,         // State media - useful perspective but lower weight
   'SingTao': 70,      // Mainstream reliability
   'on.cc': 65,        // Popular but mixed quality
-  'HK01': 60,         // High volume, variable quality
+  'hk01': 60,         // High volume, variable quality (lowercase to match scraper)
   'bastillepost': 58, // Local news focus with opinion pieces
   'am730': 55,        // Lifestyle focus
 };
@@ -356,7 +356,8 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
 async function getCandidateArticles(): Promise<CandidateArticle[]> {
   try {
     // Get recent scraped articles that haven't been AI enhanced and haven't been selected before
-    const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg', 'TheStandard', 'bastillepost'];  // Note: am730, scmp, bloomberg, and bastillepost are lowercase in database
+    // Note: Source names must match exactly what scrapers save to database
+    const scrapedSources = ['HKFP', 'SingTao', 'hk01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg', 'TheStandard', 'bastillepost'];
     
     // First, get recently selected article titles to avoid re-selecting similar content
     const { data: recentlySelected } = await supabase
@@ -1816,7 +1817,8 @@ async function callPerplexityForSimilarity(prompt: string): Promise<string[]> {
 
 // Debug function to understand why no articles are available
 async function debugArticleAvailability() {
-  const scrapedSources = ['HKFP', 'SingTao', 'HK01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg', 'TheStandard'];
+  // Note: Source names must match exactly what scrapers save to database
+  const scrapedSources = ['HKFP', 'SingTao', 'hk01', 'on.cc', 'RTHK', 'am730', 'scmp', 'bloomberg', 'TheStandard', 'bastillepost'];
   const sixHoursAgo = getDateHoursAgo(6);
   
   const { count: totalCount } = await supabase

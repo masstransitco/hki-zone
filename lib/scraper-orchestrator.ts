@@ -349,7 +349,7 @@ export async function runAllScrapers(withProgress = false) {
           summary: "教育局公布改革方案，加強STEM教育和職業培訓，培養未來人才。",
           url: "https://www.hk01.com/2024/01/13/education-reform-new-phase",
           imageUrl: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&h=400&fit=crop",
-          source: "HK01",
+          source: "hk01",  // lowercase to match scraper
           author: "教育記者",
           publishDate: new Date(Date.now() - 172800000).toISOString(),
         },
@@ -457,19 +457,19 @@ export async function runAllScrapers(withProgress = false) {
       sources: {
         HKFP: allArticles.filter((a) => a.source === "HKFP").length,
         SingTao: allArticles.filter((a) => a.source === "SingTao").length,
-        HK01: allArticles.filter((a) => a.source === "HK01").length,
-        ONCC: allArticles.filter((a) => a.source === "ONCC").length,
+        hk01: allArticles.filter((a) => a.source === "hk01").length,  // lowercase to match scraper
+        'on.cc': allArticles.filter((a) => a.source === "on.cc").length,  // on.cc to match scraper
         RTHK: allArticles.filter((a) => a.source === "RTHK").length,
-        AM730: allArticles.filter((a) => a.source === "am730").length,
-        SCMP: allArticles.filter((a) => a.source === "scmp").length,
-        Bloomberg: allArticles.filter((a) => a.source === "bloomberg").length,
+        am730: allArticles.filter((a) => a.source === "am730").length,
+        scmp: allArticles.filter((a) => a.source === "scmp").length,
+        bloomberg: allArticles.filter((a) => a.source === "bloomberg").length,
         TheStandard: allArticles.filter((a) => a.source === "TheStandard").length,
-        BastillePost: allArticles.filter((a) => a.source === "bastillepost").length,
+        bastillepost: allArticles.filter((a) => a.source === "bastillepost").length,
         BBC: allArticles.filter((a) => a.source === "BBC").length,
         Reuters: allArticles.filter((a) => a.source === "Reuters").length,
         CGTN: allArticles.filter((a) => a.source === "CGTN").length,
-        APNews: allArticles.filter((a) => a.source === "apnews").length,
-        Xinhua: allArticles.filter((a) => a.source === "xinhua").length,
+        apnews: allArticles.filter((a) => a.source === "apnews").length,
+        xinhua: allArticles.filter((a) => a.source === "xinhua").length,
       },
       database: {
         before: initialStats,
@@ -638,17 +638,17 @@ export async function collectDailyHeadlines() {
           published_at: new Date().toISOString()
         },
         {
-          category: "Economy", 
+          category: "Economy",
           title: "Hong Kong Property Prices Show Slight Decline",
           url: "https://hk01.com/economy/property-prices",
-          source: "HK01",
+          source: "hk01",  // lowercase to match scraper
           published_at: new Date().toISOString()
         },
         {
           category: "Crime",
           title: "Police Arrest Three in Cross-Border Operation",
           url: "https://oncc.com/crime/arrest",
-          source: "ONCC", 
+          source: "on.cc",  // on.cc to match scraper
           published_at: new Date().toISOString()
         }
       ]
