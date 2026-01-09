@@ -251,17 +251,12 @@ export async function selectArticlesWithPerplexity(count: number = 10): Promise<
     console.log(`   ${actualIndex + 1}. [${timeAgo}] "${article.title.substring(0, 60)}..." (ID: ${article.id})`);
   });
   
-  // Limit candidates to top 15 by content quality + recency to reduce token usage
-  const topCandidates = deduplicatedArticles
-    .sort((a, b) => {
-      // Sort by content length + recency score
-      const aScore = a.content_length + (24 - getHoursAgo(new Date(a.created_at))) * 10;
-      const bScore = b.content_length + (24 - getHoursAgo(new Date(b.created_at))) * 10;
-      return bScore - aScore;
-    })
-    .slice(0, 15);
-  
+  // Limit candidates to top 15 with SOURCE DIVERSITY to ensure mainstream sources get representation
+  // Without this, longer-content sources (bastillepost avg 3600 chars) dominate shorter ones (on.cc avg 480 chars)
+  const topCandidates = selectTopCandidatesWithDiversity(deduplicatedArticles, 15);
+
   console.log(`🎯 Sending top ${topCandidates.length} candidates to Perplexity (from ${deduplicatedArticles.length} available)`);
+  console.log(`   Source distribution: ${getSourceDistribution(topCandidates)}`);
   
   const selectionPrompt = createArticleSelectionPrompt(topCandidates, count, recentlyEnhancedTopics);
 
@@ -839,12 +834,73 @@ async function applyDeduplication(candidates: CandidateArticle[]): Promise<Candi
   return finalCandidates;
 }
 
+/**
+ * Select top N candidates while ensuring source diversity
+ * Each tier gets proportional representation, preventing long-content sources from dominating
+ */
+function selectTopCandidatesWithDiversity(articles: CandidateArticle[], limit: number): CandidateArticle[] {
+  if (articles.length <= limit) {
+    return articles;
+  }
+
+  // Group articles by tier
+  const tierGroups: Record<string, CandidateArticle[]> = {
+    premium: [],
+    mainstream: [],
+    local: []
+  };
+
+  articles.forEach(article => {
+    if (SOURCE_TIERS.premium.sources.includes(article.source)) {
+      tierGroups.premium.push(article);
+    } else if (SOURCE_TIERS.mainstream.sources.includes(article.source)) {
+      tierGroups.mainstream.push(article);
+    } else if (SOURCE_TIERS.local.sources.includes(article.source)) {
+      tierGroups.local.push(article);
+    }
+  });
+
+  // Sort each tier by recency + content length
+  const sortByScore = (a: CandidateArticle, b: CandidateArticle) => {
+    const aScore = a.content_length + (24 - getHoursAgo(new Date(a.created_at))) * 10;
+    const bScore = b.content_length + (24 - getHoursAgo(new Date(b.created_at))) * 10;
+    return bScore - aScore;
+  };
+
+  Object.values(tierGroups).forEach(group => group.sort(sortByScore));
+
+  // Allocate slots: 6 premium, 5 mainstream, 4 local (total 15)
+  const allocation = { premium: 6, mainstream: 5, local: 4 };
+  const selected: CandidateArticle[] = [];
+  const remaining: CandidateArticle[] = [];
+
+  for (const [tier, quota] of Object.entries(allocation)) {
+    const group = tierGroups[tier];
+    selected.push(...group.slice(0, quota));
+    remaining.push(...group.slice(quota));
+  }
+
+  // Fill any remaining slots from overflow
+  remaining.sort(sortByScore);
+  const slotsRemaining = limit - selected.length;
+  if (slotsRemaining > 0) {
+    selected.push(...remaining.slice(0, slotsRemaining));
+  }
+
+  // Sort final selection by recency for consistent display
+  selected.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  console.log(`   Diversity allocation: premium:${Math.min(tierGroups.premium.length, allocation.premium)}, mainstream:${Math.min(tierGroups.mainstream.length, allocation.mainstream)}, local:${Math.min(tierGroups.local.length, allocation.local)}`);
+
+  return selected.slice(0, limit);
+}
+
 function getSourceDistribution(articles: CandidateArticle[]): string {
   const distribution: Record<string, number> = {};
   articles.forEach(article => {
     distribution[article.source] = (distribution[article.source] || 0) + 1;
   });
-  
+
   return Object.entries(distribution)
     .map(([source, count]) => `${source}:${count}`)
     .join(', ');
