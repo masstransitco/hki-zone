@@ -27,7 +27,7 @@ interface Env {
 const CRHK_CHANNELS = ["881", "903", "864"]
 
 // RTHK channels - public streams, direct fetch to Akamai
-const RTHK_CHANNELS = ["rthk1", "rthk2", "rthk3", "rthk4", "rthk5"]
+const RTHK_CHANNELS = ["rthk1", "rthk2", "rthk3", "rthk4", "rthk5", "rthkpth", "rthkcnrhk"]
 
 // Metro channels - public streams, direct fetch to CDN77
 const METRO_CHANNELS = ["metro104", "metro997", "metro1044"]
@@ -42,6 +42,8 @@ const RTHK_STREAM_URLS: Record<string, string> = {
   rthk3: "https://rthkradio3-live.akamaized.net/hls/live/2040079/radio3/master.m3u8",
   rthk4: "https://rthkradio4-live.akamaized.net/hls/live/2040080/radio4/master.m3u8",
   rthk5: "https://rthkradio5-live.akamaized.net/hls/live/2040081/radio5/master.m3u8",
+  rthkpth: "https://rthkradiopth-live.akamaized.net/hls/live/2040082/radiopth/master.m3u8",      // Putonghua 普通話台
+  rthkcnrhk: "https://rthkradiocnrhk-live.akamaized.net/hls/live/2046111/radiocnrhk/master.m3u8", // CNR/HK 香港之聲
 }
 
 // Metro stream URLs (CDN77 - streams are chunklists directly, no master playlist)

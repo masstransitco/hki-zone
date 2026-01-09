@@ -143,6 +143,30 @@ const radioStations: RadioStation[] = [
     logo: "/radio/am983.webp"
   },
   {
+    id: "rthkpth",
+    name: "RTHK Putonghua",
+    nameZh: "香港電台普通話台",
+    frequency: "AM 621 / FM 100.9 MHz",
+    description: "Mandarin programming for Putonghua-speaking community",
+    officialUrl: "https://www.rthk.hk/radio/pth",
+    channel: "rthkpth",
+    type: "proxy",
+    gradient: "from-yellow-600 via-orange-500 to-yellow-800",
+    accentColor: "bg-yellow-500"
+  },
+  {
+    id: "rthkcnrhk",
+    name: "RTHK CNR/HK",
+    nameZh: "香港之聲",
+    frequency: "AM 675 kHz",
+    description: "24-hour relay of China National Radio 'Voice of Hong Kong'",
+    officialUrl: "https://www.rthk.hk/radio/radiocnrhk",
+    channel: "rthkcnrhk",
+    type: "proxy",
+    gradient: "from-red-700 via-red-600 to-red-900",
+    accentColor: "bg-red-600"
+  },
+  {
     id: "metro104",
     name: "Metro Finance",
     nameZh: "新城財經台",

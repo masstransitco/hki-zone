@@ -9,7 +9,7 @@ This document details the implementation of an edge-distributed proxy system tha
 
 All streams are distributed globally via Cloudflare's edge network at `radio.air.zone`.
 
-**Status:** Production - Instant playback for all 11 channels
+**Status:** Production - Instant playback for all 13 channels
 **Last Updated:** January 2026
 
 ---
@@ -35,6 +35,8 @@ All streams are distributed globally via Cloudflare's edge network at `radio.air
 | RTHK Radio 3 | 97.9-106.8 MHz | 香港電台第三台 | HD (AAC) | rthkradio3-live.akamaized.net |
 | RTHK Radio 4 | 97.6-98.9 MHz | 香港電台第四台 | HD (AAC) | rthkradio4-live.akamaized.net |
 | RTHK Radio 5 | 783 kHz | 香港電台第五台 | HD (AAC) | rthkradio5-live.akamaized.net |
+| RTHK Putonghua | AM 621 / FM 100.9 | 香港電台普通話台 | HD (AAC) | rthkradiopth-live.akamaized.net |
+| RTHK CNR/HK | AM 675 | 香港之聲 | HD (AAC) | rthkradiocnrhk-live.akamaized.net |
 
 **Official Website:** https://www.rthk.hk
 
@@ -535,6 +537,8 @@ https://rthkradio2-live.akamaized.net/hls/live/2040078/radio2/master.m3u8
 https://rthkradio3-live.akamaized.net/hls/live/2040079/radio3/master.m3u8
 https://rthkradio4-live.akamaized.net/hls/live/2040080/radio4/master.m3u8
 https://rthkradio5-live.akamaized.net/hls/live/2040081/radio5/master.m3u8
+https://rthkradiopth-live.akamaized.net/hls/live/2040082/radiopth/master.m3u8
+https://rthkradiocnrhk-live.akamaized.net/hls/live/2046111/radiocnrhk/master.m3u8
 ```
 
 **Proxy URLs (client-facing):**
@@ -544,6 +548,8 @@ https://radio.air.zone/rthk2/playlist.m3u8
 https://radio.air.zone/rthk3/playlist.m3u8
 https://radio.air.zone/rthk4/playlist.m3u8
 https://radio.air.zone/rthk5/playlist.m3u8
+https://radio.air.zone/rthkpth/playlist.m3u8
+https://radio.air.zone/rthkcnrhk/playlist.m3u8
 ```
 
 ### RTHK Architecture
@@ -671,6 +677,7 @@ const METRO_STREAM_URLS: Record<string, string> = {
 | 2026-01-08 | Added RTHK to edge proxy (fixed broken Akamai URL redirects) |
 | 2026-01-09 | Researched Metro Radio - discovered CDN migration from Akamai to CDN77 |
 | 2026-01-09 | Added Metro Radio (3 channels) to edge proxy - instant playback for all 11 HK radio streams |
+| 2026-01-09 | Added RTHK Putonghua (普通話台) and RTHK CNR/HK (香港之聲) - complete coverage of all 13 HK radio channels |
 
 ---
 
