@@ -34,6 +34,7 @@ interface RadioStation {
   type: "external" | "direct" | "proxy"
   gradient?: string // Gradient background for card header
   accentColor?: string // Accent color for badges
+  logo?: string // Path to station logo
 }
 
 const radioStations: RadioStation[] = [
@@ -47,7 +48,8 @@ const radioStations: RadioStation[] = [
     channel: "881",
     type: "proxy",
     gradient: "from-blue-600 via-blue-700 to-blue-900",
-    accentColor: "bg-blue-500"
+    accentColor: "bg-blue-500",
+    logo: "/radio/fm881.webp"
   },
   {
     id: "fm903",
@@ -59,7 +61,8 @@ const radioStations: RadioStation[] = [
     channel: "903",
     type: "proxy",
     gradient: "from-purple-600 via-pink-600 to-purple-900",
-    accentColor: "bg-purple-500"
+    accentColor: "bg-purple-500",
+    logo: "/radio/fm903.webp"
   },
   {
     id: "am864",
@@ -71,7 +74,8 @@ const radioStations: RadioStation[] = [
     channel: "864",
     type: "proxy",
     gradient: "from-teal-600 via-cyan-600 to-teal-900",
-    accentColor: "bg-teal-500"
+    accentColor: "bg-teal-500",
+    logo: "/radio/am864.webp"
   },
   {
     id: "rthk1",
@@ -83,7 +87,8 @@ const radioStations: RadioStation[] = [
     channel: "rthk1",
     type: "proxy",
     gradient: "from-red-600 via-orange-600 to-red-800",
-    accentColor: "bg-red-500"
+    accentColor: "bg-red-500",
+    logo: "/radio/fm926.webp"
   },
   {
     id: "rthk2",
@@ -95,7 +100,8 @@ const radioStations: RadioStation[] = [
     channel: "rthk2",
     type: "proxy",
     gradient: "from-orange-500 via-amber-500 to-orange-700",
-    accentColor: "bg-orange-500"
+    accentColor: "bg-orange-500",
+    logo: "/radio/fm948.webp"
   },
   {
     id: "rthk3",
@@ -107,7 +113,8 @@ const radioStations: RadioStation[] = [
     channel: "rthk3",
     type: "proxy",
     gradient: "from-emerald-600 via-green-600 to-emerald-800",
-    accentColor: "bg-emerald-500"
+    accentColor: "bg-emerald-500",
+    logo: "/radio/am567.webp"
   },
   {
     id: "rthk4",
@@ -119,7 +126,8 @@ const radioStations: RadioStation[] = [
     channel: "rthk4",
     type: "proxy",
     gradient: "from-indigo-600 via-violet-600 to-indigo-800",
-    accentColor: "bg-indigo-500"
+    accentColor: "bg-indigo-500",
+    logo: "/radio/fm946.webp"
   },
   {
     id: "rthk5",
@@ -131,7 +139,8 @@ const radioStations: RadioStation[] = [
     channel: "rthk5",
     type: "proxy",
     gradient: "from-rose-600 via-pink-500 to-rose-800",
-    accentColor: "bg-rose-500"
+    accentColor: "bg-rose-500",
+    logo: "/radio/am983.webp"
   },
   {
     id: "metro104",
@@ -155,7 +164,8 @@ const radioStations: RadioStation[] = [
     channel: "metro997",
     type: "proxy",
     gradient: "from-sky-600 via-blue-500 to-sky-800",
-    accentColor: "bg-sky-500"
+    accentColor: "bg-sky-500",
+    logo: "/radio/fm997.webp"
   },
   {
     id: "metro1044",
@@ -167,7 +177,8 @@ const radioStations: RadioStation[] = [
     channel: "metro1044",
     type: "proxy",
     gradient: "from-lime-600 via-green-500 to-lime-800",
-    accentColor: "bg-lime-500"
+    accentColor: "bg-lime-500",
+    logo: "/radio/am1044.webp"
   }
 ]
 
@@ -638,9 +649,19 @@ function RadioStationCard({ station }: { station: RadioStation }) {
 
         {/* Channel Info */}
         <div className="flex items-center gap-3 mb-3">
-          <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
-            <Radio className="h-6 w-6 text-white" />
-          </div>
+          {station.logo ? (
+            <div className="w-14 h-14 rounded-lg bg-white/90 backdrop-blur-sm overflow-hidden flex items-center justify-center p-1">
+              <img
+                src={station.logo}
+                alt={station.name}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          ) : (
+            <div className="p-2 rounded-lg bg-white/10 backdrop-blur-sm">
+              <Radio className="h-6 w-6 text-white" />
+            </div>
+          )}
           <div>
             <h3 className="text-2xl font-bold text-white">{station.nameZh}</h3>
             <p className="text-white/80 text-sm font-medium">{station.name}</p>
