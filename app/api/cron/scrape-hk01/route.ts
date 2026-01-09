@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { runSingleScraper } from "@/lib/scraper-orchestrator"
 
-export const maxDuration = 60 // 60 seconds for slow scraper
+export const maxDuration = 120 // 120 seconds for expanded scraper (30 articles × ~1s each + overhead)
 
 export async function GET(request: NextRequest) {
   // Verify the request is from Vercel Cron
