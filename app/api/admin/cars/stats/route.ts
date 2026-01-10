@@ -58,8 +58,12 @@ export async function GET() {
         price: parseInt(statsData.avg_price) || 0,
       },
 
-      // Top makes
-      topMakes: topMakes || [],
+      // Top makes - transform make_zh to make and parse avg_price
+      topMakes: (topMakes || []).map((m: { make_zh: string; count: number; avg_price: string }) => ({
+        make: m.make_zh,
+        count: m.count,
+        avg_price: parseInt(m.avg_price) || 0,
+      })),
 
       // Feed counts
       feeds: feedCounts,

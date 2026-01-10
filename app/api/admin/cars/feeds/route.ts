@@ -94,10 +94,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Transform listings to extract image_url from images array
+    const listings = (data || []).map((item: Record<string, unknown>) => ({
+      ...item,
+      image_url: Array.isArray(item.images) && item.images.length > 0 ? item.images[0] : null,
+    }))
+
     return NextResponse.json({
       feed: feedType,
       ...FEED_DESCRIPTIONS[feedType],
-      listings: data || [],
+      listings,
       total: count || 0,
       hasMore: (offset + limit) < (count || 0),
       pagination: {
