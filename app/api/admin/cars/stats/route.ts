@@ -5,139 +5,164 @@ export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
-    // Get total count of cars
-    const { count: totalCount, error: totalError } = await supabase
-      .from('articles_unified')
-      .select('*', { count: 'exact', head: true })
-      .eq('category', 'cars')
-      .eq('source', '28car')
-    
-    if (totalError) {
-      console.error('Error fetching total car count:', totalError)
+    // Get stats from materialized view
+    const { data: statsData, error: statsError } = await supabase
+      .from('mv_cars_stats')
+      .select('*')
+      .single()
+
+    if (statsError) {
+      console.error('Error fetching car stats from materialized view:', statsError)
+      // Fallback to direct query if materialized view doesn't exist
+      return await getFallbackStats()
+    }
+
+    // Get top makes
+    const { data: topMakes, error: makesError } = await supabase
+      .from('mv_cars_top_makes')
+      .select('*')
+      .limit(15)
+
+    if (makesError) {
+      console.error('Error fetching top makes:', makesError)
+    }
+
+    // Get feed counts
+    const feedCounts = await getFeedCounts()
+
+    return NextResponse.json({
+      // Core stats
+      total: statsData.total_listings,
+      recent24h: statsData.last_24h,
+      recent7d: statsData.last_7d,
+
+      // Price ranges
+      priceRanges: {
+        budget: statsData.budget_count,        // < 50K
+        midLow: statsData.mid_low_count,       // 50K-100K
+        mid: statsData.mid_count,              // 100K-200K
+        premium: statsData.premium_count,      // 200K-500K
+        luxury: statsData.luxury_count,        // > 500K
+      },
+
+      // Quality metrics
+      qualityMetrics: {
+        firstOwner: statsData.first_owner_count,
+        highEngagement: statsData.high_engagement,
+        enriched: statsData.enriched_count,
+      },
+
+      // Averages
+      averages: {
+        views: parseFloat(statsData.avg_views) || 0,
+        price: parseInt(statsData.avg_price) || 0,
+      },
+
+      // Top makes
+      topMakes: topMakes || [],
+
+      // Feed counts
+      feeds: feedCounts,
+
+      // Metadata
+      lastListingAt: statsData.last_listing_at,
+      statsRefreshedAt: statsData.refreshed_at,
+    })
+
+  } catch (error) {
+    console.error('Error fetching car statistics:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+async function getFallbackStats() {
+  // Fallback if materialized views don't exist
+  const { count: totalCount } = await supabase
+    .from('articles_unified')
+    .select('*', { count: 'exact', head: true })
+    .eq('category', 'cars')
+    .eq('source', '28car')
+
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { count: recentCount } = await supabase
+    .from('articles_unified')
+    .select('*', { count: 'exact', head: true })
+    .eq('category', 'cars')
+    .eq('source', '28car')
+    .gte('created_at', dayAgo)
+
+  return NextResponse.json({
+    total: totalCount || 0,
+    recent24h: recentCount || 0,
+    recent7d: 0,
+    priceRanges: {
+      budget: 0,
+      midLow: 0,
+      mid: 0,
+      premium: 0,
+      luxury: 0,
+    },
+    qualityMetrics: {
+      firstOwner: 0,
+      highEngagement: 0,
+      enriched: 0,
+    },
+    averages: {
+      views: 0,
+      price: 0,
+    },
+    topMakes: [],
+    feeds: {},
+    lastListingAt: null,
+    statsRefreshedAt: null,
+  })
+}
+
+async function getFeedCounts() {
+  const feeds = ['mv_cars_hot_deals', 'mv_cars_first_owner', 'mv_cars_budget',
+                 'mv_cars_enthusiast', 'mv_cars_trending', 'mv_cars_new_today']
+
+  const counts: Record<string, number> = {}
+
+  for (const feed of feeds) {
+    try {
+      const { count } = await supabase
+        .from(feed)
+        .select('*', { count: 'exact', head: true })
+
+      const feedName = feed.replace('mv_cars_', '')
+      counts[feedName] = count || 0
+    } catch {
+      // Ignore errors for missing views
+    }
+  }
+
+  return counts
+}
+
+// POST to refresh stats
+export async function POST() {
+  try {
+    // Refresh the stats materialized view
+    const { error } = await supabase.rpc('refresh_car_materialized_views')
+
+    if (error) {
+      console.error('Error refreshing stats:', error)
       return NextResponse.json(
-        { error: 'Failed to fetch car statistics' },
+        { error: 'Failed to refresh stats' },
         { status: 500 }
       )
     }
-    
-    // Get count of cars added in the last 24 hours
-    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-    const { count: recentCount, error: recentError } = await supabase
-      .from('articles_unified')
-      .select('*', { count: 'exact', head: true })
-      .eq('category', 'cars')
-      .eq('source', '28car')
-      .gte('created_at', dayAgo)
-    
-    if (recentError) {
-      console.error('Error fetching recent car count:', recentError)
-    }
-    
-    // Get all cars with content to analyze price ranges
-    const { data: allCars, error: carsError } = await supabase
-      .from('articles_unified')
-      .select('id, content')
-      .eq('category', 'cars')
-      .eq('source', '28car')
-      .limit(1000) // Limit to avoid memory issues, can be increased if needed
-    
-    if (carsError) {
-      console.error('Error fetching cars for price analysis:', carsError)
-    }
-    
-    // Parse car specifications from content (using same logic as car feed)
-    const parseCarSpecs = (content: string) => {
-      const specs: Record<string, string> = {}
-      if (!content) return specs
-      
-      // Split by ", " but first protect numbers with commas
-      let tempContent = content
-      
-      // Find all instances of numbers with commas (prices, mileage, etc.)
-      const numberWithCommasRegex = /(\d+,\d+)/g
-      const numbersWithCommas = tempContent.match(numberWithCommasRegex) || []
-      
-      // Replace each number with commas with a placeholder
-      numbersWithCommas.forEach((num, index) => {
-        tempContent = tempContent.replace(num, `###NUMBER_${index}###`)
-      })
-      
-      // Now split by comma
-      const pairs = tempContent.split(',').map(pair => pair.trim())
-      
-      for (const pair of pairs) {
-        const colonIndex = pair.indexOf(':')
-        if (colonIndex === -1) continue
-        
-        const key = pair.substring(0, colonIndex).trim()
-        let value = pair.substring(colonIndex + 1).trim()
-        
-        // Restore numbers with commas
-        numbersWithCommas.forEach((num, index) => {
-          value = value.replace(`###NUMBER_${index}###`, num)
-        })
-        
-        if (key && value) {
-          const lowerKey = key.toLowerCase()
-          
-          if (lowerKey === 'engine') specs.engine = value
-          else if (lowerKey === 'transmission') specs.transmission = value
-          else if (lowerKey === 'fuel') specs.fuel = value
-          else if (lowerKey === 'mileage') specs.mileage = value
-          else if (lowerKey === 'year') specs.year = value
-          else if (lowerKey === 'make') specs.make = value
-          else if (lowerKey === 'model') specs.model = value
-          else if (lowerKey === 'price') specs.price = value
-          else if (lowerKey === 'doors') specs.doors = value
-          else if (lowerKey === 'color') specs.color = value
-        }
-      }
-      
-      return specs
-    }
-    
-    // Analyze price ranges - 4 ranges with top at HK$500k+
-    const priceRanges = { 
-      under200k: 0,    // Under HK$200k
-      range200to300k: 0, // HK$200k - HK$300k
-      range300to500k: 0, // HK$300k - HK$500k
-      over500k: 0      // HK$500k and above
-    }
-    
-    if (allCars) {
-      for (const car of allCars) {
-        const specs = parseCarSpecs(car.content || '')
-        let price = specs.price || ''
-        
-        if (price) {
-          // Extract numeric value from price string (removing commas for parsing)
-          // Handle both HK$ and HKD$ formats
-          const cleanPrice = price.replace(/HKD?\$/, '').replace(/減價.*$/, '').trim()
-          // Remove commas BEFORE parsing to handle prices like "1,200,000"
-          const priceNum = parseInt(cleanPrice.replace(/,/g, ''), 10)
-          
-          if (priceNum > 0) {
-            if (priceNum < 200000) priceRanges.under200k++
-            else if (priceNum < 300000) priceRanges.range200to300k++
-            else if (priceNum < 500000) priceRanges.range300to500k++
-            else priceRanges.over500k++
-          }
-        }
-      }
-    }
-    
-    console.log('Price ranges calculated:', priceRanges)
-    
-    const stats = {
-      total: totalCount || 0,
-      recent24h: recentCount || 0,
-      priceRanges
-    }
-    
-    return NextResponse.json(stats)
-    
+
+    return NextResponse.json({
+      success: true,
+      message: 'Stats refreshed successfully'
+    })
   } catch (error) {
-    console.error('Error fetching car statistics:', error)
+    console.error('Error refreshing stats:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

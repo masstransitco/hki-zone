@@ -1,71 +1,94 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Search, Filter, RefreshCw, Car, Play, Clock, AlertCircle, CheckCircle, ExternalLink, Brain, Zap } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  Search, RefreshCw, Car, Play, Clock, AlertCircle, CheckCircle,
+  ExternalLink, Brain, Zap, TrendingUp, DollarSign, Eye, Star,
+  Flame, User, Wallet, Gauge, BarChart3, ChevronRight
+} from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useLanguage } from "@/components/language-provider"
+import { Progress } from "@/components/ui/progress"
 
 interface CarListing {
   id: string
   title: string
-  make?: string
-  model?: string
-  year?: string
-  price?: string
-  content?: string
-  summary?: string
-  ai_summary?: string
   url: string
   source: string
-  imageUrl?: string
-  images?: string[]
-  category: string
-  publishedAt: string
-  createdAt: string
-  specs?: Record<string, string>
+  image_url?: string
+  created_at: string
+  price_hkd?: number
+  view_count?: number
+  is_first_owner?: boolean
+  value_score?: number
+  description_text?: string
+  ai_summary?: string
+  content?: string
 }
 
-interface CarsResponse {
-  articles: CarListing[]
-  nextPage: number | null
-  hasMore: boolean
-  totalCount?: number
-  debug?: {
-    source: 'database' | 'mock'
-    query?: any
-    error?: string
+interface FeedInfo {
+  id: string
+  title: string
+  description: string
+  count: number
+}
+
+interface Stats {
+  total: number
+  recent24h: number
+  recent7d: number
+  priceRanges: {
+    budget: number
+    midLow: number
+    mid: number
+    premium: number
+    luxury: number
   }
+  qualityMetrics: {
+    firstOwner: number
+    highEngagement: number
+    enriched: number
+  }
+  averages: {
+    views: number
+    price: number
+  }
+  topMakes: Array<{ make: string; count: number; avg_price: number }>
+  feeds: Record<string, number>
+  lastListingAt: string | null
+  statsRefreshedAt: string | null
+}
+
+const FEED_ICONS: Record<string, React.ReactNode> = {
+  hot_deals: <Flame className="h-4 w-4" />,
+  first_owner: <User className="h-4 w-4" />,
+  budget: <Wallet className="h-4 w-4" />,
+  enthusiast: <Gauge className="h-4 w-4" />,
+  trending: <TrendingUp className="h-4 w-4" />,
+  new_today: <Clock className="h-4 w-4" />,
 }
 
 export default function CarsManagementPage() {
-  const { t } = useLanguage()
-  const [cars, setCars] = useState<CarListing[]>([])
+  const [stats, setStats] = useState<Stats | null>(null)
+  const [feeds, setFeeds] = useState<FeedInfo[]>([])
+  const [activeFeed, setActiveFeed] = useState<string>('hot_deals')
+  const [feedListings, setFeedListings] = useState<CarListing[]>([])
+  const [feedLoading, setFeedLoading] = useState(false)
+  const [feedTotal, setFeedTotal] = useState(0)
+  const [feedOffset, setFeedOffset] = useState(0)
+
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [sortBy, setSortBy] = useState("newest")
-  const [enrichmentFilter, setEnrichmentFilter] = useState("all")
-  const [page, setPage] = useState(0)
-  const [hasMore, setHasMore] = useState(true)
   const [selectedCar, setSelectedCar] = useState<CarListing | null>(null)
+
   const [scraperStatus, setScraperStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle')
   const [scraperMessage, setScraperMessage] = useState('')
   const [lastScraperRun, setLastScraperRun] = useState<string | null>(null)
-  const [totalCarsCount, setTotalCarsCount] = useState(0)
-  const [stats, setStats] = useState({
-    total: 0,
-    recent24h: 0,
-    priceRanges: { 
-      under200k: 0,
-      range200to300k: 0,
-      range300to500k: 0,
-      over500k: 0
-    }
-  })
+
   const [enrichmentStatus, setEnrichmentStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle')
   const [enrichmentMessage, setEnrichmentMessage] = useState('')
   const [enrichmentStats, setEnrichmentStats] = useState({
@@ -75,70 +98,9 @@ export default function CarsManagementPage() {
     isConfigured: false
   })
 
-  useEffect(() => {
-    loadCars()
-    checkLastScraperRun()
-    loadStats()
-    loadEnrichmentStats()
-  }, [page, sortBy, enrichmentFilter])
+  const [refreshingViews, setRefreshingViews] = useState(false)
 
-  useEffect(() => {
-    loadStats()
-    loadEnrichmentStats()
-  }, [])
-
-  const loadCars = async () => {
-    try {
-      setLoading(true)
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: "20",
-        category: "cars"
-      })
-      
-      if (searchQuery) {
-        params.set("search", searchQuery)
-      }
-
-      // Add enrichment filter
-      if (enrichmentFilter === "enriched") {
-        params.set("enriched", "true")
-      } else if (enrichmentFilter === "not_enriched") {
-        params.set("enriched", "false")
-      }
-
-      const response = await fetch(`/api/articles?${params}`)
-      if (!response.ok) throw new Error("Failed to fetch cars")
-      
-      const data: CarsResponse = await response.json()
-      
-      if (page === 0) {
-        setCars(data.articles)
-      } else {
-        setCars(prev => [...prev, ...data.articles])
-      }
-      
-      setHasMore(data.hasMore)
-    } catch (error) {
-      console.error("Error loading cars:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const checkLastScraperRun = async () => {
-    try {
-      const response = await fetch('/api/admin/scraper-status?type=cars')
-      if (response.ok) {
-        const data = await response.json()
-        setLastScraperRun(data.lastRun)
-      }
-    } catch (error) {
-      console.error("Error checking scraper status:", error)
-    }
-  }
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/cars/stats')
       if (response.ok) {
@@ -148,9 +110,42 @@ export default function CarsManagementPage() {
     } catch (error) {
       console.error("Error loading car stats:", error)
     }
-  }
+  }, [])
 
-  const loadEnrichmentStats = async () => {
+  const loadFeeds = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/cars/feeds')
+      if (response.ok) {
+        const data = await response.json()
+        setFeeds(data.feeds)
+      }
+    } catch (error) {
+      console.error("Error loading feeds:", error)
+    }
+  }, [])
+
+  const loadFeedListings = useCallback(async (feed: string, offset = 0) => {
+    setFeedLoading(true)
+    try {
+      const response = await fetch(`/api/admin/cars/feeds?feed=${feed}&limit=20&offset=${offset}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (offset === 0) {
+          setFeedListings(data.listings)
+        } else {
+          setFeedListings(prev => [...prev, ...data.listings])
+        }
+        setFeedTotal(data.total)
+        setFeedOffset(offset)
+      }
+    } catch (error) {
+      console.error("Error loading feed listings:", error)
+    } finally {
+      setFeedLoading(false)
+    }
+  }, [])
+
+  const loadEnrichmentStats = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/cars/enrich')
       if (response.ok) {
@@ -160,59 +155,90 @@ export default function CarsManagementPage() {
     } catch (error) {
       console.error("Error loading enrichment stats:", error)
     }
+  }, [])
+
+  const checkLastScraperRun = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/scraper-status?type=cars')
+      if (response.ok) {
+        const data = await response.json()
+        setLastScraperRun(data.lastRun)
+      }
+    } catch (error) {
+      console.error("Error checking scraper status:", error)
+    }
+  }, [])
+
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true)
+      await Promise.all([
+        loadStats(),
+        loadFeeds(),
+        loadEnrichmentStats(),
+        checkLastScraperRun()
+      ])
+      setLoading(false)
+    }
+    init()
+  }, [loadStats, loadFeeds, loadEnrichmentStats, checkLastScraperRun])
+
+  useEffect(() => {
+    loadFeedListings(activeFeed, 0)
+  }, [activeFeed, loadFeedListings])
+
+  const handleRefresh = async () => {
+    setLoading(true)
+    await Promise.all([
+      loadStats(),
+      loadFeeds(),
+      loadEnrichmentStats(),
+      checkLastScraperRun()
+    ])
+    loadFeedListings(activeFeed, 0)
+    setLoading(false)
   }
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    setPage(0)
-    loadCars()
-  }
-
-  const handleRefresh = () => {
-    setPage(0)
-    setSelectedCar(null)
-    loadCars()
-    loadStats()
-    loadEnrichmentStats()
-  }
-
-  const handleLoadMore = () => {
-    setPage(prev => prev + 1)
+  const refreshMaterializedViews = async () => {
+    setRefreshingViews(true)
+    try {
+      const response = await fetch('/api/admin/cars/feeds', { method: 'POST' })
+      if (response.ok) {
+        await handleRefresh()
+      }
+    } catch (error) {
+      console.error("Error refreshing views:", error)
+    } finally {
+      setRefreshingViews(false)
+    }
   }
 
   const triggerScraper = async () => {
     setScraperStatus('running')
     setScraperMessage('Starting 28car scraper...')
-    
+
     try {
       const response = await fetch('/api/admin/trigger-scraper', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: 'cars' })
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         setScraperStatus('success')
         setScraperMessage(data.message || 'Car scraper triggered successfully')
-        setTimeout(() => {
-          handleRefresh()
-          checkLastScraperRun()
-          loadStats()
-        }, 2000)
+        setTimeout(() => handleRefresh(), 2000)
       } else {
         setScraperStatus('error')
         setScraperMessage(data.error || 'Failed to trigger scraper')
       }
-    } catch (error) {
+    } catch {
       setScraperStatus('error')
       setScraperMessage('Network error occurred')
     }
-    
-    // Reset status after 5 seconds
+
     setTimeout(() => {
       setScraperStatus('idle')
       setScraperMessage('')
@@ -222,501 +248,346 @@ export default function CarsManagementPage() {
   const triggerEnrichment = async () => {
     if (!enrichmentStats.isConfigured) {
       setEnrichmentStatus('error')
-      setEnrichmentMessage('Perplexity API not configured. Please add PERPLEXITY_API_KEY to environment variables.')
+      setEnrichmentMessage('Perplexity API not configured')
       return
     }
 
     setEnrichmentStatus('running')
-    setEnrichmentMessage('Starting car enrichment process...')
-    
+    setEnrichmentMessage('Starting car enrichment...')
+
     try {
       const response = await fetch('/api/admin/cars/enrich', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enrichAll: true })
       })
-      
+
       const data = await response.json()
-      
+
       if (response.ok) {
         setEnrichmentStatus('success')
-        setEnrichmentMessage(data.message || 'Car enrichment completed successfully')
-        setTimeout(() => {
-          handleRefresh()
-        }, 2000)
+        setEnrichmentMessage(data.message || 'Enrichment completed')
+        setTimeout(() => handleRefresh(), 2000)
       } else {
         setEnrichmentStatus('error')
-        setEnrichmentMessage(data.error || 'Failed to enrich cars')
+        setEnrichmentMessage(data.error || 'Enrichment failed')
       }
-    } catch (error) {
+    } catch {
       setEnrichmentStatus('error')
       setEnrichmentMessage('Network error occurred')
     }
-    
-    // Reset status after 8 seconds (enrichment takes longer)
+
     setTimeout(() => {
       setEnrichmentStatus('idle')
       setEnrichmentMessage('')
     }, 8000)
   }
 
-  const parseCarSpecs = (content: string) => {
-    const specs: Record<string, string> = {}
-    if (!content) return specs
-    
-    // Split by ", " but first protect numbers with commas
-    let tempContent = content
-    
-    // Find all instances of numbers with commas (prices, mileage, etc.)
-    // Updated regex to handle multi-comma numbers like 2,450,001
-    const numberWithCommasRegex = /(\d{1,3}(?:,\d{3})*)/g
-    const numbersWithCommas = tempContent.match(numberWithCommasRegex) || []
-    
-    // Replace each number with commas with a placeholder
-    numbersWithCommas.forEach((num, index) => {
-      tempContent = tempContent.replace(num, `###NUMBER_${index}###`)
-    })
-    
-    // Now split by comma
-    const pairs = tempContent.split(',').map(pair => pair.trim())
-    
-    for (const pair of pairs) {
-      const colonIndex = pair.indexOf(':')
-      if (colonIndex === -1) continue
-      
-      const key = pair.substring(0, colonIndex).trim()
-      let value = pair.substring(colonIndex + 1).trim()
-      
-      // Restore numbers with commas
-      numbersWithCommas.forEach((num, index) => {
-        value = value.replace(`###NUMBER_${index}###`, num)
-      })
-      
-      if (key && value) {
-        const lowerKey = key.toLowerCase()
-        
-        if (lowerKey === 'engine') specs.engine = value
-        else if (lowerKey === 'transmission') specs.transmission = value
-        else if (lowerKey === 'fuel') specs.fuel = value
-        else if (lowerKey === 'mileage') specs.mileage = value
-        else if (lowerKey === 'year') specs.year = value
-        else if (lowerKey === 'make') specs.make = value
-        else if (lowerKey === 'model') specs.model = value
-        else if (lowerKey === 'price') specs.price = value
-        else if (lowerKey === 'doors') specs.doors = value
-        else if (lowerKey === 'color') specs.color = value
-      }
-    }
-    
-    return specs
-  }
-
-  const formatPrice = (price: string) => {
+  const formatPrice = (price?: number) => {
     if (!price) return 'N/A'
-    // Handle different price formats and preserve commas
-    return price
-      .replace(/HKD\$/, 'HK$')
-      .replace(/減價.*$/, '')
-      .trim()
+    return `HK$${price.toLocaleString()}`
   }
 
-  const totalCars = stats.total
-  const recentCars = stats.recent24h
+  const formatNumber = (num?: number) => {
+    if (!num) return '0'
+    return num.toLocaleString()
+  }
+
+  const getValueScoreColor = (score?: number) => {
+    if (!score) return 'bg-gray-200'
+    if (score >= 70) return 'bg-green-500'
+    if (score >= 50) return 'bg-yellow-500'
+    if (score >= 30) return 'bg-orange-500'
+    return 'bg-red-500'
+  }
+
+  if (loading && !stats) {
+    return (
+      <div className="flex flex-1 items-center justify-center">
+        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Car Listings Management</h1>
-          <p className="text-muted-foreground">Manage car listings and scraper operations</p>
+          <h1 className="text-2xl font-bold tracking-tight">Car Listings Dashboard</h1>
+          <p className="text-muted-foreground">
+            Monitor and manage 28car listings with smart feeds
+          </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            onClick={refreshMaterializedViews}
+            variant="outline"
+            size="sm"
+            disabled={refreshingViews}
+          >
+            {refreshingViews ? (
+              <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+            ) : (
+              <BarChart3 className="h-4 w-4 mr-1" />
+            )}
+            Refresh Views
+          </Button>
           <Button onClick={handleRefresh} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4 mr-1" />
             Refresh
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+      {/* Key Metrics Row */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Cars</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Listings</CardTitle>
             <Car className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCars}</div>
+            <div className="text-2xl font-bold">{formatNumber(stats?.total)}</div>
             <p className="text-xs text-muted-foreground">
-              Currently in database
+              Avg price: {formatPrice(stats?.averages.price)}
             </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent (24h)</CardTitle>
+            <CardTitle className="text-sm font-medium">New Today</CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{recentCars}</div>
+            <div className="text-2xl font-bold">{formatNumber(stats?.recent24h)}</div>
             <p className="text-xs text-muted-foreground">
-              Added in last 24h
+              Last 7 days: {formatNumber(stats?.recent7d)}
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Under HK$200k</CardTitle>
+            <CardTitle className="text-sm font-medium">First Owner</CardTitle>
+            <Star className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.priceRanges.under200k}</div>
+            <div className="text-2xl font-bold">{formatNumber(stats?.qualityMetrics.firstOwner)}</div>
             <p className="text-xs text-muted-foreground">
-              Budget cars
+              Premium single-owner cars
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">HK$200k-300k</CardTitle>
+            <CardTitle className="text-sm font-medium">High Engagement</CardTitle>
+            <Eye className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.priceRanges.range200to300k}</div>
+            <div className="text-2xl font-bold">{formatNumber(stats?.qualityMetrics.highEngagement)}</div>
             <p className="text-xs text-muted-foreground">
-              Mid-range cars
+              Avg views: {stats?.averages.views.toFixed(0)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">AI Enriched</CardTitle>
+            <Brain className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{formatNumber(stats?.qualityMetrics.enriched)}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats?.total ? ((stats.qualityMetrics.enriched / stats.total) * 100).toFixed(1) : 0}% coverage
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Additional Price Range Stats */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-2">
+      {/* Price Distribution & Top Makes */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Price Distribution */}
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">HK$300k-500k</CardTitle>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="h-5 w-5" />
+              Price Distribution
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.priceRanges.range300to500k}</div>
-            <p className="text-xs text-muted-foreground">
-              Premium cars
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">HK$500k+</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.priceRanges.over500k}</div>
-            <p className="text-xs text-muted-foreground">
-              Luxury cars
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Scraper Control */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Play className="h-5 w-5" />
-            28car Scraper Control
-          </CardTitle>
-          <CardDescription>
-            Manually trigger the car scraper to fetch latest listings from 28car.com
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Scraper Status</p>
-                <p className="text-sm text-muted-foreground">
-                  {lastScraperRun ? `Last run: ${new Date(lastScraperRun).toLocaleString()}` : 'Never run'}
-                </p>
-              </div>
-              <Button 
-                onClick={triggerScraper} 
-                disabled={scraperStatus === 'running'}
-                className="flex items-center gap-2"
-              >
-                {scraperStatus === 'running' ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Running...
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4" />
-                    Trigger Scraper
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            {scraperMessage && (
-              <Alert className={scraperStatus === 'error' ? 'border-red-200' : scraperStatus === 'success' ? 'border-green-200' : ''}>
-                {scraperStatus === 'error' ? (
-                  <AlertCircle className="h-4 w-4" />
-                ) : scraperStatus === 'success' ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                <AlertDescription>{scraperMessage}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Car Enrichment Control */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Brain className="h-5 w-5" />
-            Car Enrichment Control
-          </CardTitle>
-          <CardDescription>
-            Use AI to enrich car listings with estimated year, common faults, and fuel consumption data
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-muted/50 p-3 rounded-lg">
-                <div className="text-sm font-medium">Total Cars</div>
-                <div className="text-2xl font-bold">{enrichmentStats.totalCars}</div>
-              </div>
-              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
-                <div className="text-sm font-medium">Enriched</div>
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{enrichmentStats.enrichedCars}</div>
-              </div>
-              <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg">
-                <div className="text-sm font-medium">Pending</div>
-                <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{enrichmentStats.unenrichedCars}</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">Enrichment Status</p>
-                <p className="text-sm text-muted-foreground">
-                  {enrichmentStats.isConfigured ? (
-                    enrichmentStats.unenrichedCars > 0 ? 
-                      `${enrichmentStats.unenrichedCars} cars need enrichment` : 
-                      'All cars are enriched'
-                  ) : (
-                    'API not configured'
-                  )}
-                </p>
-              </div>
-              <Button 
-                onClick={triggerEnrichment} 
-                disabled={enrichmentStatus === 'running' || !enrichmentStats.isConfigured || enrichmentStats.unenrichedCars === 0}
-                className="flex items-center gap-2"
-              >
-                {enrichmentStatus === 'running' ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                    Enriching...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="h-4 w-4" />
-                    Enrich Cars
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            {enrichmentMessage && (
-              <Alert className={enrichmentStatus === 'error' ? 'border-red-200' : enrichmentStatus === 'success' ? 'border-green-200' : ''}>
-                {enrichmentStatus === 'error' ? (
-                  <AlertCircle className="h-4 w-4" />
-                ) : enrichmentStatus === 'success' ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                <AlertDescription>{enrichmentMessage}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Car Listings</CardTitle>
-          <CardDescription>
-            Browse and manage car listings from 28car.com
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            {/* Search Bar */}
-            <form onSubmit={handleSearch} className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search cars by make, model, or title..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <Button type="submit" variant="outline" size="icon">
-                <Search className="h-4 w-4" />
-              </Button>
-            </form>
-            
-            {/* Filters */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="newest">Newest First</SelectItem>
-                  <SelectItem value="oldest">Oldest First</SelectItem>
-                  <SelectItem value="price-low">Price: Low to High</SelectItem>
-                  <SelectItem value="price-high">Price: High to Low</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={enrichmentFilter} onValueChange={setEnrichmentFilter}>
-                <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Enrichment status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Cars</SelectItem>
-                  <SelectItem value="enriched">Enriched Only</SelectItem>
-                  <SelectItem value="not_enriched">Not Enriched</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Car Listings Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Current Listings ({totalCars})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="border rounded-lg p-4">
-                  <div className="aspect-video bg-muted rounded-lg animate-pulse mb-3" />
-                  <div className="space-y-2">
-                    <div className="h-4 bg-muted rounded animate-pulse" />
-                    <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
-                    <div className="h-3 bg-muted rounded animate-pulse w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : cars.length === 0 ? (
-            <div className="text-center py-8">
-              <Car className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-medium mb-2">No cars found</h3>
-              <p className="text-muted-foreground mb-4">
-                Try running the scraper to fetch some car listings
-              </p>
-              <Button onClick={triggerScraper} disabled={scraperStatus === 'running'}>
-                <Play className="h-4 w-4 mr-2" />
-                Run Scraper
-              </Button>
-            </div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {cars.map((car) => {
-                const specs = parseCarSpecs(car.content || '')
-                const priceFromContent = specs.price || car.price || ''
-                const isOnSale = priceFromContent.includes('減價')
-                
+            <div className="space-y-3">
+              {[
+                { label: 'Budget (<50K)', value: stats?.priceRanges.budget, color: 'bg-green-500' },
+                { label: 'Mid-Low (50-100K)', value: stats?.priceRanges.midLow, color: 'bg-blue-500' },
+                { label: 'Mid (100-200K)', value: stats?.priceRanges.mid, color: 'bg-yellow-500' },
+                { label: 'Premium (200-500K)', value: stats?.priceRanges.premium, color: 'bg-orange-500' },
+                { label: 'Luxury (>500K)', value: stats?.priceRanges.luxury, color: 'bg-red-500' },
+              ].map((range) => {
+                const percentage = stats?.total ? ((range.value || 0) / stats.total) * 100 : 0
                 return (
-                  <div
-                    key={car.id}
-                    className={`border rounded-lg p-4 cursor-pointer transition-colors hover:bg-muted/50 ${
-                      selectedCar?.id === car.id ? 'ring-2 ring-primary' : ''
-                    }`}
-                    onClick={() => setSelectedCar(car)}
-                  >
-                    <div className="aspect-video bg-muted rounded-lg mb-3 relative overflow-hidden">
-                      {car.imageUrl ? (
-                        <img
-                          src={car.imageUrl}
-                          alt={car.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Car className="h-8 w-8 text-muted-foreground" />
-                        </div>
-                      )}
-                      {isOnSale && (
-                        <Badge className="absolute top-2 left-2 bg-stone-600 text-white">
-                          Price Reduced
-                        </Badge>
-                      )}
-                      {car.ai_summary && (
-                        <Badge className="absolute top-2 right-2 bg-green-600 text-white">
-                          AI Enriched
-                        </Badge>
-                      )}
+                  <div key={range.label} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>{range.label}</span>
+                      <span className="font-medium">{formatNumber(range.value)}</span>
                     </div>
-                    
-                    <div className="space-y-2">
-                      <h3 className="font-medium line-clamp-1">{car.title}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {formatPrice(priceFromContent)}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span>{specs.year || 'N/A'}</span>
-                        <span>•</span>
-                        <span>{new Date(car.createdAt || car.publishedAt).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.open(car.url, '_blank')
-                          }}
-                        >
-                          <ExternalLink className="h-3 w-3 mr-1" />
-                          View on 28car
-                        </Button>
-                      </div>
-                    </div>
+                    <Progress value={percentage} className="h-2" />
                   </div>
                 )
               })}
             </div>
-          )}
-          
-          {hasMore && cars.length > 0 && (
-            <div className="flex justify-center mt-6">
-              <Button onClick={handleLoadMore} variant="outline" disabled={loading}>
-                {loading ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : null}
-                Load More
-              </Button>
+          </CardContent>
+        </Card>
+
+        {/* Top Makes */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Top Makes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {stats?.topMakes?.slice(0, 10).map((make, index) => (
+                <div key={make.make} className="flex items-center justify-between py-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground w-5">{index + 1}.</span>
+                    <span className="font-medium">{make.make}</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground">
+                      {formatPrice(make.avg_price)} avg
+                    </span>
+                    <Badge variant="secondary">{make.count}</Badge>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Feed Tabs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Smart Feeds</CardTitle>
+          <CardDescription>
+            Curated listings based on different strategies
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={activeFeed} onValueChange={(v) => { setActiveFeed(v); setFeedOffset(0); }}>
+            <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6">
+              {feeds.map((feed) => (
+                <TabsTrigger key={feed.id} value={feed.id} className="flex items-center gap-1">
+                  {FEED_ICONS[feed.id]}
+                  <span className="hidden sm:inline">{feed.title}</span>
+                  <Badge variant="secondary" className="ml-1 text-xs">{feed.count}</Badge>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {feeds.map((feed) => (
+              <TabsContent key={feed.id} value={feed.id} className="mt-4">
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground">{feed.description}</p>
+                </div>
+
+                {feedLoading && feedListings.length === 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    {[...Array(8)].map((_, i) => (
+                      <div key={i} className="border rounded-lg p-3">
+                        <div className="aspect-video bg-muted rounded animate-pulse mb-2" />
+                        <div className="h-4 bg-muted rounded animate-pulse mb-2" />
+                        <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                      {feedListings.map((car) => (
+                        <div
+                          key={car.id}
+                          className={`border rounded-lg overflow-hidden cursor-pointer transition-all hover:shadow-md ${
+                            selectedCar?.id === car.id ? 'ring-2 ring-primary' : ''
+                          }`}
+                          onClick={() => setSelectedCar(car)}
+                        >
+                          <div className="aspect-video bg-muted relative">
+                            {car.image_url ? (
+                              <img
+                                src={car.image_url}
+                                alt={car.title}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Car className="h-8 w-8 text-muted-foreground" />
+                              </div>
+                            )}
+                            {car.is_first_owner && (
+                              <Badge className="absolute top-2 left-2 bg-yellow-500">
+                                First Owner
+                              </Badge>
+                            )}
+                            {car.value_score && car.value_score >= 60 && (
+                              <Badge className="absolute top-2 right-2 bg-green-600">
+                                Score: {car.value_score}
+                              </Badge>
+                            )}
+                          </div>
+
+                          <div className="p-3 space-y-2">
+                            <h3 className="font-medium text-sm line-clamp-1">{car.title}</h3>
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-primary">
+                                {formatPrice(car.price_hkd)}
+                              </span>
+                              {car.view_count && (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Eye className="h-3 w-3" />
+                                  {car.view_count}
+                                </span>
+                              )}
+                            </div>
+                            {car.value_score && (
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full ${getValueScoreColor(car.value_score)}`}
+                                    style={{ width: `${car.value_score}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-muted-foreground">{car.value_score}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {feedListings.length < feedTotal && (
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={() => loadFeedListings(activeFeed, feedOffset + 20)}
+                          variant="outline"
+                          disabled={feedLoading}
+                        >
+                          {feedLoading && <RefreshCw className="h-4 w-4 mr-2 animate-spin" />}
+                          Load More ({feedListings.length} of {feedTotal})
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </TabsContent>
+            ))}
+          </Tabs>
         </CardContent>
       </Card>
 
@@ -724,43 +595,208 @@ export default function CarsManagementPage() {
       {selectedCar && (
         <Card>
           <CardHeader>
-            <CardTitle>Car Details</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle>Listing Details</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(selectedCar.url, '_blank')}
+              >
+                <ExternalLink className="h-4 w-4 mr-1" />
+                View on 28car
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                {selectedCar.image_url && (
+                  <img
+                    src={selectedCar.image_url}
+                    alt={selectedCar.title}
+                    className="w-full rounded-lg mb-4"
+                  />
+                )}
+                <h3 className="font-bold text-lg mb-2">{selectedCar.title}</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Price:</span>
+                    <span className="font-bold">{formatPrice(selectedCar.price_hkd)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Views:</span>
+                    <span>{formatNumber(selectedCar.view_count)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">First Owner:</span>
+                    <span>{selectedCar.is_first_owner ? 'Yes' : 'No'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Value Score:</span>
+                    <span>{selectedCar.value_score || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Listed:</span>
+                    <span>{new Date(selectedCar.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {selectedCar.description_text && (
+                  <div>
+                    <h4 className="font-medium mb-2">Description</h4>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {selectedCar.description_text}
+                    </p>
+                  </div>
+                )}
+
+                {selectedCar.ai_summary && (
+                  <div>
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Brain className="h-4 w-4 text-purple-500" />
+                      AI Insights
+                    </h4>
+                    <div className="text-sm bg-purple-50 dark:bg-purple-900/20 p-3 rounded-lg whitespace-pre-wrap">
+                      {selectedCar.ai_summary}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Operations Panel */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Scraper Control */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Play className="h-5 w-5" />
+              Scraper Control
+            </CardTitle>
             <CardDescription>
-              Detailed information for selected car listing
+              Trigger 28car.com scraper to fetch new listings
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <h3 className="font-medium mb-2">Basic Information</h3>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Title:</span> {selectedCar.title}</div>
-                  <div><span className="font-medium">Source:</span> {selectedCar.source}</div>
-                  <div><span className="font-medium">Published:</span> {new Date(selectedCar.publishedAt).toLocaleString()}</div>
-                  <div><span className="font-medium">Added:</span> {new Date(selectedCar.createdAt || selectedCar.publishedAt).toLocaleString()}</div>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Last Run</p>
+                  <p className="text-sm text-muted-foreground">
+                    {lastScraperRun ? new Date(lastScraperRun).toLocaleString() : 'Never'}
+                  </p>
                 </div>
+                <Button
+                  onClick={triggerScraper}
+                  disabled={scraperStatus === 'running'}
+                >
+                  {scraperStatus === 'running' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+                      Running...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-1" />
+                      Run Scraper
+                    </>
+                  )}
+                </Button>
               </div>
-              
-              <div>
-                <h3 className="font-medium mb-2">Car Specifications</h3>
-                <div className="space-y-2 text-sm">
-                  {selectedCar.content && Object.entries(parseCarSpecs(selectedCar.content)).map(([key, value]) => (
-                    <div key={key}>
-                      <span className="font-medium capitalize">{key}:</span> {value}
-                    </div>
-                  ))}
-                </div>
-              </div>
+
+              {scraperMessage && (
+                <Alert className={scraperStatus === 'error' ? 'border-red-200' : scraperStatus === 'success' ? 'border-green-200' : ''}>
+                  {scraperStatus === 'error' ? <AlertCircle className="h-4 w-4" /> :
+                   scraperStatus === 'success' ? <CheckCircle className="h-4 w-4" /> :
+                   <RefreshCw className="h-4 w-4" />}
+                  <AlertDescription>{scraperMessage}</AlertDescription>
+                </Alert>
+              )}
             </div>
-            
-            {selectedCar.summary && (
-              <div className="mt-4">
-                <h3 className="font-medium mb-2">Summary</h3>
-                <p className="text-sm text-muted-foreground">{selectedCar.summary}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
+
+        {/* Enrichment Control */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              AI Enrichment
+            </CardTitle>
+            <CardDescription>
+              Enrich listings with AI-generated insights
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div className="bg-muted/50 p-2 rounded">
+                  <div className="text-lg font-bold">{enrichmentStats.totalCars}</div>
+                  <div className="text-xs text-muted-foreground">Total</div>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                  <div className="text-lg font-bold text-green-600">{enrichmentStats.enrichedCars}</div>
+                  <div className="text-xs text-muted-foreground">Enriched</div>
+                </div>
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-2 rounded">
+                  <div className="text-lg font-bold text-amber-600">{enrichmentStats.unenrichedCars}</div>
+                  <div className="text-xs text-muted-foreground">Pending</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Status</p>
+                  <p className="text-sm text-muted-foreground">
+                    {enrichmentStats.isConfigured ?
+                      `${enrichmentStats.unenrichedCars} pending` :
+                      'API not configured'}
+                  </p>
+                </div>
+                <Button
+                  onClick={triggerEnrichment}
+                  disabled={enrichmentStatus === 'running' || !enrichmentStats.isConfigured || enrichmentStats.unenrichedCars === 0}
+                >
+                  {enrichmentStatus === 'running' ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin mr-1" />
+                      Enriching...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-1" />
+                      Enrich
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {enrichmentMessage && (
+                <Alert className={enrichmentStatus === 'error' ? 'border-red-200' : enrichmentStatus === 'success' ? 'border-green-200' : ''}>
+                  {enrichmentStatus === 'error' ? <AlertCircle className="h-4 w-4" /> :
+                   enrichmentStatus === 'success' ? <CheckCircle className="h-4 w-4" /> :
+                   <RefreshCw className="h-4 w-4" />}
+                  <AlertDescription>{enrichmentMessage}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Stats Footer */}
+      {stats?.statsRefreshedAt && (
+        <p className="text-xs text-muted-foreground text-center">
+          Stats last refreshed: {new Date(stats.statsRefreshedAt).toLocaleString()}
+          {stats.lastListingAt && (
+            <> | Latest listing: {new Date(stats.lastListingAt).toLocaleString()}</>
+          )}
+        </p>
       )}
     </div>
   )
