@@ -509,6 +509,8 @@ Returns: makes (jsonb array), years (jsonb array), price_ranges (jsonb object)
 
 ## API Endpoints
 
+### Admin Endpoints
+
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/admin/cars/feeds` | GET | List feeds or fetch specific feed |
@@ -518,6 +520,75 @@ Returns: makes (jsonb array), years (jsonb array), price_ranges (jsonb object)
 | `/api/admin/cars/refresh-schedule` | GET | View refresh schedules |
 | `/api/admin/cars/refresh-schedule` | POST | Trigger manual refresh |
 | `/api/admin/cars/refresh-schedule` | PATCH | Enable/disable schedule |
+
+### Mobile App Feed API
+
+**Endpoint**: `GET /api/mobile/feed`
+
+Unified feed endpoint for mobile apps supporting all categories including cars.
+
+#### Query Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `category` | string | `news` | Feed category: `news`, `politics`, `business`, `tech`, `cars`, etc. |
+| `feed` | string | `all` | (Cars only) Specific feed: `all`, `hot_deals`, `trending`, `electric`, `midrange`, `luxury`, etc. |
+| `page` | int | `0` | Page number for pagination |
+| `limit` | int | `20` | Items per page |
+| `list_feeds` | bool | `false` | (Cars only) Return available feeds with counts |
+
+#### Example Requests
+
+```bash
+# Get all news
+GET /api/mobile/feed?category=news&page=0&limit=20
+
+# Get all cars (unified feed)
+GET /api/mobile/feed?category=cars&page=0
+
+# Get specific car feed
+GET /api/mobile/feed?category=cars&feed=electric
+
+# List available car feeds
+GET /api/mobile/feed?category=cars&list_feeds=true
+```
+
+#### Response Format
+
+```json
+{
+  "items": [
+    {
+      "id": "uuid",
+      "title": "Car Title",
+      "summary": "Brief description",
+      "url": "https://28car.com/...",
+      "source": "28car",
+      "category": "cars",
+      "created_at": "2024-01-10T...",
+      "image_url": "https://...",
+      "images": ["url1", "url2"],
+      "price_hkd": 150000,
+      "view_count": 234,
+      "is_first_owner": true,
+      "value_score": 75,
+      "make": "Toyota",
+      "feed_type": "trending",
+      "feed_types": ["trending", "first_owner"]
+    }
+  ],
+  "nextPage": 1,
+  "hasMore": true,
+  "totalCount": 721,
+  "category": "cars",
+  "feed": "all",
+  "availableFeeds": [
+    { "id": "all", "name": "All Cars", "count": 721 },
+    { "id": "hot_deals", "name": "Hot Deals", "count": 100 },
+    { "id": "electric", "name": "Electric & Hybrid", "count": 100 }
+  ]
+}
+```
 
 ## Related Documentation
 
