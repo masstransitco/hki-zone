@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Search, RefreshCw, Car, Play, Clock, AlertCircle, CheckCircle,
   ExternalLink, Brain, Zap, TrendingUp, DollarSign, Eye, Star,
-  Flame, User, Wallet, Gauge, BarChart3, ChevronRight
+  Flame, User, Wallet, Gauge, BarChart3, ChevronRight, Calendar,
+  Timer, History, ToggleLeft, ToggleRight
 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
@@ -63,6 +64,38 @@ interface Stats {
   statsRefreshedAt: string | null
 }
 
+interface RefreshScheduleItem {
+  view_name: string
+  display_name: string
+  description: string
+  refresh_interval_hours: number
+  cron_expression: string
+  last_refreshed_at: string | null
+  next_refresh_at: string | null
+  is_enabled: boolean
+  avg_refresh_duration_ms: number | null
+  refresh_count: number
+  last_error: string | null
+  is_overdue: boolean
+  minutes_until_next: number | null
+}
+
+interface RefreshLog {
+  view_name: string
+  started_at: string
+  completed_at: string | null
+  duration_ms: number | null
+  success: boolean
+  error_message: string | null
+  triggered_by: string
+}
+
+interface RefreshScheduleData {
+  schedules: RefreshScheduleItem[]
+  recent_logs: RefreshLog[]
+  fetched_at: string
+}
+
 const FEED_ICONS: Record<string, React.ReactNode> = {
   hot_deals: <Flame className="h-4 w-4" />,
   first_owner: <User className="h-4 w-4" />,
@@ -99,6 +132,9 @@ export default function CarsManagementPage() {
   })
 
   const [refreshingViews, setRefreshingViews] = useState(false)
+  const [refreshSchedule, setRefreshSchedule] = useState<RefreshScheduleData | null>(null)
+  const [refreshingView, setRefreshingView] = useState<string | null>(null)
+  const [showSchedulePanel, setShowSchedulePanel] = useState(false)
 
   const loadStats = useCallback(async () => {
     try {
@@ -169,6 +205,52 @@ export default function CarsManagementPage() {
     }
   }, [])
 
+  const loadRefreshSchedule = useCallback(async () => {
+    try {
+      const response = await fetch('/api/admin/cars/refresh-schedule')
+      if (response.ok) {
+        const data = await response.json()
+        setRefreshSchedule(data)
+      }
+    } catch (error) {
+      console.error("Error loading refresh schedule:", error)
+    }
+  }, [])
+
+  const refreshSingleView = async (viewName: string) => {
+    setRefreshingView(viewName)
+    try {
+      const response = await fetch('/api/admin/cars/refresh-schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ view_name: viewName })
+      })
+      if (response.ok) {
+        await loadRefreshSchedule()
+        await handleRefresh()
+      }
+    } catch (error) {
+      console.error("Error refreshing view:", error)
+    } finally {
+      setRefreshingView(null)
+    }
+  }
+
+  const toggleScheduleEnabled = async (viewName: string, enabled: boolean) => {
+    try {
+      const response = await fetch('/api/admin/cars/refresh-schedule', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ view_name: viewName, is_enabled: enabled })
+      })
+      if (response.ok) {
+        await loadRefreshSchedule()
+      }
+    } catch (error) {
+      console.error("Error toggling schedule:", error)
+    }
+  }
+
   useEffect(() => {
     const init = async () => {
       setLoading(true)
@@ -176,12 +258,13 @@ export default function CarsManagementPage() {
         loadStats(),
         loadFeeds(),
         loadEnrichmentStats(),
-        checkLastScraperRun()
+        checkLastScraperRun(),
+        loadRefreshSchedule()
       ])
       setLoading(false)
     }
     init()
-  }, [loadStats, loadFeeds, loadEnrichmentStats, checkLastScraperRun])
+  }, [loadStats, loadFeeds, loadEnrichmentStats, checkLastScraperRun, loadRefreshSchedule])
 
   useEffect(() => {
     loadFeedListings(activeFeed, 0)
@@ -193,7 +276,8 @@ export default function CarsManagementPage() {
       loadStats(),
       loadFeeds(),
       loadEnrichmentStats(),
-      checkLastScraperRun()
+      checkLastScraperRun(),
+      loadRefreshSchedule()
     ])
     loadFeedListings(activeFeed, 0)
     setLoading(false)
@@ -788,6 +872,218 @@ export default function CarsManagementPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Refresh Schedule Panel */}
+      <Card>
+        <CardHeader
+          className="cursor-pointer"
+          onClick={() => setShowSchedulePanel(!showSchedulePanel)}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              <CardTitle>Refresh Schedule</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              {refreshSchedule && (
+                <Badge variant="outline">
+                  {refreshSchedule.schedules.filter(s => s.is_overdue).length} overdue
+                </Badge>
+              )}
+              <ChevronRight className={`h-4 w-4 transition-transform ${showSchedulePanel ? 'rotate-90' : ''}`} />
+            </div>
+          </div>
+          <CardDescription>
+            Automated materialized view refresh jobs (pg_cron)
+          </CardDescription>
+        </CardHeader>
+
+        {showSchedulePanel && (
+          <CardContent>
+            <div className="space-y-4">
+              {/* Quick Actions */}
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => loadRefreshSchedule()}
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" />
+                  Refresh Status
+                </Button>
+                <Button
+                  size="sm"
+                  variant="default"
+                  disabled={refreshingView !== null}
+                  onClick={async () => {
+                    setRefreshingView('all')
+                    try {
+                      const response = await fetch('/api/admin/cars/refresh-schedule', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ refresh_all: true })
+                      })
+                      if (response.ok) {
+                        await loadRefreshSchedule()
+                        await handleRefresh()
+                      }
+                    } finally {
+                      setRefreshingView(null)
+                    }
+                  }}
+                >
+                  {refreshingView === 'all' ? (
+                    <><RefreshCw className="h-4 w-4 mr-1 animate-spin" />Refreshing All...</>
+                  ) : (
+                    <><Zap className="h-4 w-4 mr-1" />Refresh All Views</>
+                  )}
+                </Button>
+              </div>
+
+              {/* Schedule Table */}
+              {refreshSchedule?.schedules && (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50">
+                      <tr>
+                        <th className="text-left p-2 font-medium">View</th>
+                        <th className="text-left p-2 font-medium">Interval</th>
+                        <th className="text-left p-2 font-medium">Last Refresh</th>
+                        <th className="text-left p-2 font-medium">Next Refresh</th>
+                        <th className="text-center p-2 font-medium">Status</th>
+                        <th className="text-center p-2 font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {refreshSchedule.schedules.map((schedule) => (
+                        <tr key={schedule.view_name} className="border-t">
+                          <td className="p-2">
+                            <div className="flex items-center gap-2">
+                              {FEED_ICONS[schedule.view_name.replace('mv_cars_', '')] || <BarChart3 className="h-4 w-4" />}
+                              <div>
+                                <div className="font-medium">{schedule.display_name}</div>
+                                <div className="text-xs text-muted-foreground">{schedule.description}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-1">
+                              <Timer className="h-3 w-3 text-muted-foreground" />
+                              <span>{schedule.refresh_interval_hours}h</span>
+                            </div>
+                            <div className="text-xs text-muted-foreground font-mono">{schedule.cron_expression}</div>
+                          </td>
+                          <td className="p-2">
+                            {schedule.last_refreshed_at ? (
+                              <div>
+                                <div>{new Date(schedule.last_refreshed_at).toLocaleTimeString()}</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(schedule.last_refreshed_at).toLocaleDateString()}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Never</span>
+                            )}
+                          </td>
+                          <td className="p-2">
+                            {schedule.next_refresh_at ? (
+                              <div>
+                                <div className={schedule.is_overdue ? 'text-red-500 font-medium' : ''}>
+                                  {schedule.is_overdue ? 'Overdue' : new Date(schedule.next_refresh_at).toLocaleTimeString()}
+                                </div>
+                                {schedule.minutes_until_next !== null && !schedule.is_overdue && (
+                                  <div className="text-xs text-muted-foreground">
+                                    in {schedule.minutes_until_next}m
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="p-2 text-center">
+                            <button
+                              onClick={() => toggleScheduleEnabled(schedule.view_name, !schedule.is_enabled)}
+                              className="inline-flex items-center"
+                            >
+                              {schedule.is_enabled ? (
+                                <ToggleRight className="h-6 w-6 text-green-500" />
+                              ) : (
+                                <ToggleLeft className="h-6 w-6 text-muted-foreground" />
+                              )}
+                            </button>
+                          </td>
+                          <td className="p-2 text-center">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={refreshingView !== null}
+                              onClick={() => refreshSingleView(schedule.view_name)}
+                            >
+                              {refreshingView === schedule.view_name ? (
+                                <RefreshCw className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Recent Logs */}
+              {refreshSchedule?.recent_logs && refreshSchedule.recent_logs.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    Recent Refresh Logs
+                  </h4>
+                  <div className="space-y-1 max-h-40 overflow-y-auto">
+                    {refreshSchedule.recent_logs.slice(0, 10).map((log, idx) => (
+                      <div
+                        key={idx}
+                        className={`text-xs p-2 rounded flex items-center justify-between ${
+                          log.success ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {log.success ? (
+                            <CheckCircle className="h-3 w-3 text-green-500" />
+                          ) : (
+                            <AlertCircle className="h-3 w-3 text-red-500" />
+                          )}
+                          <span className="font-medium">{log.view_name.replace('mv_cars_', '')}</span>
+                          <span className="text-muted-foreground">
+                            {log.duration_ms ? `${log.duration_ms}ms` : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Badge variant="outline" className="text-xs">{log.triggered_by}</Badge>
+                          <span>{new Date(log.started_at).toLocaleTimeString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Schedule Summary */}
+              {refreshSchedule && (
+                <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+                  {refreshSchedule.schedules.filter(s => s.is_enabled).length} of {refreshSchedule.schedules.length} schedules enabled
+                  {' | '}
+                  Total refreshes: {refreshSchedule.schedules.reduce((sum, s) => sum + s.refresh_count, 0)}
+                  {' | '}
+                  Last updated: {new Date(refreshSchedule.fetched_at).toLocaleTimeString()}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       {/* Stats Footer */}
       {stats?.statsRefreshedAt && (
