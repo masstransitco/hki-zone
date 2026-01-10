@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 
-type FeedType = 'hot_deals' | 'first_owner' | 'budget' | 'enthusiast' | 'trending' | 'new_today'
+type FeedType = 'hot_deals' | 'first_owner' | 'budget' | 'enthusiast' | 'trending' | 'new_today' | 'electric' | 'midrange' | 'luxury'
 
 const FEED_VIEWS: Record<FeedType, string> = {
   hot_deals: 'mv_cars_hot_deals',
@@ -12,6 +12,9 @@ const FEED_VIEWS: Record<FeedType, string> = {
   enthusiast: 'mv_cars_enthusiast',
   trending: 'mv_cars_trending',
   new_today: 'mv_cars_new_today',
+  electric: 'mv_cars_electric',
+  midrange: 'mv_cars_midrange',
+  luxury: 'mv_cars_luxury',
 }
 
 const FEED_DESCRIPTIONS: Record<FeedType, { title: string; description: string }> = {
@@ -38,6 +41,18 @@ const FEED_DESCRIPTIONS: Record<FeedType, { title: string; description: string }
   new_today: {
     title: 'New Today',
     description: 'Fresh listings from the last 24 hours'
+  },
+  electric: {
+    title: 'Electric & Hybrid',
+    description: 'EVs and hybrids - Tesla, BYD, Prius, and more'
+  },
+  midrange: {
+    title: 'Mid-Range (50k-100k)',
+    description: 'Best value in the popular HK$50-100k range'
+  },
+  luxury: {
+    title: 'Luxury (500k+)',
+    description: 'Premium vehicles over HK$500,000'
   },
 }
 

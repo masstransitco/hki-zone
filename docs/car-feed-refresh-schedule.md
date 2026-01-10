@@ -33,14 +33,15 @@ The car feed refresh system automates the periodic refresh of PostgreSQL materia
 │                     Supabase/PostgreSQL                         │
 │  ┌──────────────────┐  ┌──────────────────┐                    │
 │  │  pg_cron jobs    │  │ Schedule Tables  │                    │
-│  │  (8 scheduled)   │  │ & Functions      │                    │
+│  │  (11 scheduled)  │  │ & Functions      │                    │
 │  └────────┬─────────┘  └────────┬─────────┘                    │
 │           │                     │                               │
 │           ▼                     ▼                               │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │              Materialized Views                           │  │
+│  │              Materialized Views (11 feeds)                │  │
 │  │  mv_cars_hot_deals, mv_cars_first_owner, mv_cars_budget  │  │
 │  │  mv_cars_enthusiast, mv_cars_trending, mv_cars_new_today │  │
+│  │  mv_cars_electric, mv_cars_midrange, mv_cars_luxury      │  │
 │  │  mv_cars_stats, mv_cars_top_makes                        │  │
 │  └──────────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────┘
@@ -131,10 +132,13 @@ Returns: JSON with:
 | `refresh_car_trending` | mv_cars_trending | `30 */2 * * *` | Every 2h at :30 | View counts change frequently |
 | `refresh_car_hot_deals` | mv_cars_hot_deals | `0 */4 * * *` | Every 4h | Engagement metrics update |
 | `refresh_car_stats` | mv_cars_stats | `15 */4 * * *` | Every 4h at :15 | Dashboard stats |
+| `refresh_car_electric` | mv_cars_electric | `30 */6 * * *` | Every 6h at :30 | EV/Hybrid segment |
+| `refresh_car_midrange` | mv_cars_midrange | `45 */6 * * *` | Every 6h at :45 | Popular price segment |
 | `refresh_car_top_makes` | mv_cars_top_makes | `0 */6 * * *` | Every 6h | Aggregate data, slow-changing |
 | `refresh_car_first_owner` | mv_cars_first_owner | `0 */12 * * *` | Every 12h | Rarely changes |
 | `refresh_car_budget` | mv_cars_budget | `30 */12 * * *` | Every 12h at :30 | Price-based, stable |
-| `refresh_car_enthusiast` | mv_cars_enthusiast | `0 0,12 * * *` | 8am & 8pm HKT | Niche segment |
+| `refresh_car_enthusiast` | mv_cars_enthusiast | `0 0,12 * * *` | Every 12h | Niche segment |
+| `refresh_car_luxury` | mv_cars_luxury | `0 */12 * * *` | Every 12h | Premium segment, low volume |
 
 **Note:** Times are staggered to prevent concurrent heavy database operations.
 

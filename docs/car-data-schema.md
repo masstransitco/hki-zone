@@ -156,48 +156,50 @@ LIMIT 100;
 **Purpose**: Affordable cars under HK$50,000
 **Refresh**: Every 12 hours
 **Criteria**:
-- `price_hkd < 50000`
-- Excludes salvage/parts listings
+- `price_hkd` between 10,000 and 50,000
+- Within last 60 days (prevents expired image URLs)
+- Minimum 10 views (filters low-quality listings)
 
 ```sql
 CREATE MATERIALIZED VIEW mv_cars_budget AS
 SELECT
-  id, title, url, source, created_at, image_url, images,
-  price_hkd, view_count, is_first_owner, value_score,
-  make, model, specs, ai_summary
-FROM articles
-WHERE category = 'cars'
-  AND source = '28car'
-  AND price_hkd > 0
+  id, title, url, price_hkd, view_count, is_first_owner,
+  created_at, images, description_text, value_score,
+  split_part(title, ' ', 1) AS make_zh
+FROM articles_unified
+WHERE source = '28car'
+  AND category = 'cars'
   AND price_hkd < 50000
+  AND price_hkd > 10000
+  AND view_count > 10
+  AND created_at > NOW() - INTERVAL '60 days'
 ORDER BY value_score DESC NULLS LAST, created_at DESC
 LIMIT 100;
 ```
 
 #### `mv_cars_enthusiast`
 **Purpose**: Sports and performance vehicles
-**Refresh**: Every 12 hours (8am & 8pm HKT)
+**Refresh**: Every 12 hours
 **Criteria**:
-- Sports car makes/models
+- Sports car makes/models (GT86, STI, Type R, AMG, M3/M4, 911, etc.)
 - High-performance variants
-- Manual transmission bonus
+- Within last 60 days (prevents expired image URLs)
 
 ```sql
 CREATE MATERIALIZED VIEW mv_cars_enthusiast AS
 SELECT
-  id, title, url, source, created_at, image_url, images,
-  price_hkd, view_count, is_first_owner, value_score,
-  make, model, specs, ai_summary
-FROM articles
-WHERE category = 'cars'
-  AND source = '28car'
+  id, title, url, price_hkd, view_count, is_first_owner,
+  created_at, images, description_text, value_score,
+  split_part(title, ' ', 1) AS make_zh
+FROM articles_unified
+WHERE source = '28car'
+  AND category = 'cars'
+  AND created_at > NOW() - INTERVAL '60 days'
   AND (
-    make IN ('Porsche', 'Ferrari', 'Lamborghini', 'McLaren', 'Aston Martin', 'Lotus', 'Alpine')
-    OR model ILIKE '%GTI%' OR model ILIKE '%Type R%' OR model ILIKE '%M3%' OR model ILIKE '%M4%'
-    OR model ILIKE '%AMG%' OR model ILIKE '%RS%' OR model ILIKE '%STI%' OR model ILIKE '%GT-R%'
-    OR specs->>'波箱' = '棍波'
+    title ~* '(GT86|GR86|STI|WRX|Type.?R|AMG|M3|M4|M5|911|Carrera|GTI|RS[0-9]|Cooper.?S|GTR|NSX|Supra|MX-5|Miata|S2000|86|BRZ)'
+    OR title ~* '(法拉利|蘭博|保時捷|麥拉倫|阿斯頓|瑪莎拉蒂)'
   )
-ORDER BY created_at DESC
+ORDER BY created_at DESC, view_count DESC
 LIMIT 100;
 ```
 
@@ -231,19 +233,97 @@ LIMIT 100;
 **Criteria**:
 - `created_at > NOW() - INTERVAL '24 hours'`
 - Most recent first
+- Limit 250 (captures full daily volume of ~225 listings)
 
 ```sql
 CREATE MATERIALIZED VIEW mv_cars_new_today AS
 SELECT
-  id, title, url, source, created_at, image_url, images,
-  price_hkd, view_count, is_first_owner, value_score,
-  make, model, specs, ai_summary
-FROM articles
-WHERE category = 'cars'
-  AND source = '28car'
-  AND created_at > NOW() - INTERVAL '24 hours'
+  id, title, url, price_hkd, view_count, is_first_owner,
+  created_at, images, description_text, value_score,
+  split_part(title, ' ', 1) AS make_zh
+FROM articles_unified
+WHERE source = '28car'
+  AND category = 'cars'
+  AND created_at >= NOW() - INTERVAL '24 hours'
 ORDER BY created_at DESC
-LIMIT 200;
+LIMIT 250;
+```
+
+#### `mv_cars_electric`
+**Purpose**: Electric vehicles and hybrids
+**Refresh**: Every 6 hours
+**Criteria**:
+- Pure EVs: Tesla, BYD, Nio, Polestar, e-tron, iX, EQS, etc.
+- Hybrids: Prius, Aqua, PHEV, e-Power models
+- Within last 60 days
+
+```sql
+CREATE MATERIALIZED VIEW mv_cars_electric AS
+SELECT
+  id, title, url, price_hkd, view_count, is_first_owner,
+  created_at, images, description_text, value_score,
+  split_part(title, ' ', 1) AS make_zh,
+  CASE
+    WHEN title ~* '(Tesla|特斯拉|Model [3SXY]|BYD|比亞迪|Nio|蔚來|Polestar|極星|e-tron|iX|EQS|EQE|EV6|Ioniq|ID\.[34])' THEN 'EV'
+    ELSE 'Hybrid'
+  END as powertrain_type
+FROM articles_unified
+WHERE source = '28car'
+  AND category = 'cars'
+  AND created_at > NOW() - INTERVAL '60 days'
+  AND (
+    title ~* '(Tesla|特斯拉|Model [3SXY]|BYD|比亞迪|Nio|蔚來|Polestar|極星|e-tron|iX|EQS|EQE|EV6|Ioniq|ID\.[34])'
+    OR title ~* '(Hybrid|混能|油電|e-Power|PHEV|插電|Prius|Aqua)'
+  )
+ORDER BY created_at DESC, view_count DESC
+LIMIT 100;
+```
+
+#### `mv_cars_midrange`
+**Purpose**: Best value in the popular HK$50,000-100,000 price range
+**Refresh**: Every 6 hours
+**Criteria**:
+- Price between HK$50,000 and HK$100,000
+- Largest market segment (~1,700 listings/month)
+- Sorted by value score
+
+```sql
+CREATE MATERIALIZED VIEW mv_cars_midrange AS
+SELECT
+  id, title, url, price_hkd, view_count, is_first_owner,
+  created_at, images, description_text, value_score,
+  split_part(title, ' ', 1) AS make_zh
+FROM articles_unified
+WHERE source = '28car'
+  AND category = 'cars'
+  AND price_hkd >= 50000
+  AND price_hkd < 100000
+  AND created_at > NOW() - INTERVAL '60 days'
+ORDER BY value_score DESC NULLS LAST, view_count DESC
+LIMIT 100;
+```
+
+#### `mv_cars_luxury`
+**Purpose**: Premium vehicles over HK$500,000
+**Refresh**: Every 12 hours
+**Criteria**:
+- Price >= HK$500,000
+- High-end luxury and exotic cars
+- Within last 60 days
+
+```sql
+CREATE MATERIALIZED VIEW mv_cars_luxury AS
+SELECT
+  id, title, url, price_hkd, view_count, is_first_owner,
+  created_at, images, description_text, value_score,
+  split_part(title, ' ', 1) AS make_zh
+FROM articles_unified
+WHERE source = '28car'
+  AND category = 'cars'
+  AND price_hkd >= 500000
+  AND created_at > NOW() - INTERVAL '60 days'
+ORDER BY created_at DESC, view_count DESC
+LIMIT 100;
 ```
 
 ### Statistics Views
@@ -419,10 +499,13 @@ Returns: makes (jsonb array), years (jsonb array), price_ranges (jsonb object)
 | mv_cars_trending | 2 hours | View counts change frequently |
 | mv_cars_hot_deals | 4 hours | Engagement metrics update |
 | mv_cars_stats | 4 hours | Dashboard stats |
+| mv_cars_electric | 6 hours | EV/Hybrid segment, moderate churn |
+| mv_cars_midrange | 6 hours | Popular price segment |
 | mv_cars_top_makes | 6 hours | Aggregate data, slow-changing |
 | mv_cars_first_owner | 12 hours | Ownership rarely changes |
 | mv_cars_budget | 12 hours | Price-based, stable |
 | mv_cars_enthusiast | 12 hours | Niche segment |
+| mv_cars_luxury | 12 hours | Premium segment, low volume |
 
 ## API Endpoints
 
